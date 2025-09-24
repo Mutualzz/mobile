@@ -1,4 +1,4 @@
-import { useTheme } from "@mutualzz/ui/native";
+import { useTheme } from "@mutualzz/ui";
 import {
     ThemeProvider as NavigationThemeProvider,
     Theme,

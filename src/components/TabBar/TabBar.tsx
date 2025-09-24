@@ -1,13 +1,14 @@
-import { Paper, useTheme } from "@mutualzz/ui/native";
+import { dynamicElevation, useTheme } from "@mutualzz/ui";
 import { PropsWithChildren } from "react";
+import { View } from "react-native";
 
 export const TabBar = ({ children }: PropsWithChildren) => {
     const { theme } = useTheme();
 
     return (
-        <Paper
-            elevation={2}
+        <View
             style={{
+                backgroundColor: dynamicElevation(theme.colors.surface, 2),
                 position: "absolute",
                 bottom: 0,
                 width: "100%",
@@ -17,12 +18,11 @@ export const TabBar = ({ children }: PropsWithChildren) => {
                 borderTopRightRadius: 16,
                 justifyContent: "space-between",
                 alignItems: "center",
-                flex: 0,
                 paddingHorizontal: 20,
                 paddingVertical: 10,
             }}
         >
             {children}
-        </Paper>
+        </View>
     );
 };

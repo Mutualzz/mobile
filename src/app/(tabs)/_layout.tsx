@@ -1,5 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { Button, IconButton, ThemeProvider } from "@mutualzz/ui/native";
+import { ThemeProvider } from "@mutualzz/ui";
 import { TabList, Tabs, TabSlot, TabTrigger } from "expo-router/ui";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
@@ -47,14 +47,14 @@ const RootLayout = () => {
                                 </IconButton>
                             </TabTrigger>
                             <TabTrigger asChild name="login" href="/login">
-                                <Button
+                                <IconButton
                                     color="neutral"
                                     variant="plain"
                                     aria-label="Login"
                                     size="lg"
                                 >
                                     <MaterialIcons name="login" size={24} />
-                                </Button>
+                                </IconButton>
                             </TabTrigger>
                         </TabBar>
                     </TabList>
