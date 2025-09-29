@@ -1,10 +1,9 @@
-import { useTheme } from "@mutualzz/ui";
+import { CssBaseline, useTheme } from "@mutualzz/ui-native";
 import {
     ThemeProvider as NavigationThemeProvider,
     Theme,
 } from "@react-navigation/native";
 import { PropsWithChildren, useMemo } from "react";
-import { StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export const NavigationWithTheme = ({ children }: PropsWithChildren) => {
@@ -46,14 +45,10 @@ export const NavigationWithTheme = ({ children }: PropsWithChildren) => {
     return (
         <SafeAreaView
             style={{ backgroundColor: theme.colors.background, flex: 1 }}
+            edges={["top", "left", "right"]}
         >
             <NavigationThemeProvider value={navTheme}>
-                <StatusBar
-                    barStyle={navTheme.dark ? "light-content" : "dark-content"}
-                    backgroundColor={theme.colors.background}
-                    animated
-                />
-                {children}
+                <CssBaseline>{children}</CssBaseline>
             </NavigationThemeProvider>
         </SafeAreaView>
     );

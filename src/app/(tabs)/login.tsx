@@ -1,13 +1,13 @@
-import { Stack, Typography } from "@mutualzz/ui/native";
-import { StyleSheet } from "react-native";
+import { Typography } from "@mutualzz/ui-native";
+import { StyleSheet, View } from "react-native";
 
 export default function LoginPage() {
     return (
-        <Stack style={styles.container}>
-            <Stack style={styles.main}>
+        <View style={styles.container}>
+            <View style={styles.main}>
                 <Typography level="h2">Login</Typography>
-            </Stack>
-        </Stack>
+            </View>
+        </View>
     );
 }
 

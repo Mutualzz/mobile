@@ -1,5 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { ThemeProvider } from "@mutualzz/ui";
+import { IconButton, ThemeProvider } from "@mutualzz/ui-native";
 import { TabList, Tabs, TabSlot, TabTrigger } from "expo-router/ui";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
