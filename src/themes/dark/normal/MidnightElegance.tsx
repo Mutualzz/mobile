@@ -1,5 +1,4 @@
 import type { Theme } from "@emotion/react";
-
 import { baseDarkTheme } from "@mutualzz/ui-core";
 
 export const midnightEleganceTheme: Theme = {
@@ -11,22 +10,22 @@ export const midnightEleganceTheme: Theme = {
     mode: "normal",
     colors: {
         ...baseDarkTheme.colors,
-        primary: "#6A4A8A",
-        neutral: "#8A7CA8",
+        primary: "#9F6CDA",
+        neutral: "#C2B5D8",
         background: "#18161C",
         surface: "#23203A",
-        danger: "#B85C5C",
-        warning: "#E6C463",
-        success: "#5CA88A",
-        info: "#5C7FA8",
+        danger: "#FF6B6B",
+        warning: "#F3CE72",
+        success: "#5CC8A6",
+        info: "#64A9FF",
     },
     typography: {
         ...baseDarkTheme.typography,
         colors: {
-            primary: "#F4F4F4",
-            secondary: "#B5B5B5",
-            accent: "#6A4A8A",
-            muted: "#8A7CA8",
+            primary: "#F5F5F7",
+            secondary: "#D8CCE8",
+            accent: "#9F6CDA",
+            muted: "#B7A8CC",
         },
     },
 };

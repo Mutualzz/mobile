@@ -1,5 +1,4 @@
 import type { Theme } from "@emotion/react";
-
 import { baseDarkTheme } from "@mutualzz/ui-core";
 
 export const shadowheartTheme: Theme = {
@@ -11,22 +10,22 @@ export const shadowheartTheme: Theme = {
     mode: "normal",
     colors: {
         ...baseDarkTheme.colors,
-        primary: "#5A5A7A",
-        neutral: "#8A8A8A",
+        primary: "#7F82B0",
+        neutral: "#B0B0B8",
         background: "#1A191E",
         surface: "#23243A",
-        danger: "#B85C5C",
-        warning: "#E6C463",
-        success: "#5CA88A",
-        info: "#5C7FA8",
+        danger: "#FF6B6B",
+        warning: "#F3CE72",
+        success: "#5CC8A6",
+        info: "#64A9FF",
     },
     typography: {
         ...baseDarkTheme.typography,
         colors: {
-            primary: "#F4F4F4",
-            secondary: "#B5B5B5",
-            accent: "#5A5A7A",
-            muted: "#8A8A8A",
+            primary: "#F5F5F7",
+            secondary: "#D0D0D4",
+            accent: "#7F82B0",
+            muted: "#A0A0AA",
         },
     },
 };

@@ -1,5 +1,4 @@
 import type { Theme } from "@emotion/react";
-
 import { baseDarkTheme } from "@mutualzz/ui-core";
 
 export const grungeIndustrialTheme: Theme = {
@@ -11,22 +10,22 @@ export const grungeIndustrialTheme: Theme = {
     mode: "normal",
     colors: {
         ...baseDarkTheme.colors,
-        primary: "#A87C5A",
-        neutral: "#A89A7A",
+        primary: "#D09663",
+        neutral: "#C4B48F",
         background: "#19171A",
         surface: "#23241A",
-        danger: "#B85C5C",
-        warning: "#E6C463",
-        success: "#5CA88A",
-        info: "#5C7FA8",
+        danger: "#FF6B6B",
+        warning: "#F3CE72",
+        success: "#5CC8A6",
+        info: "#64A9FF",
     },
     typography: {
         ...baseDarkTheme.typography,
         colors: {
-            primary: "#F4F4F4",
-            secondary: "#C5B6AA",
-            accent: "#A87C5A",
-            muted: "#A89A7A",
+            primary: "#F5F5F7",
+            secondary: "#E1D3C0",
+            accent: "#D09663",
+            muted: "#B8AB88",
         },
     },
 };

@@ -1,5 +1,4 @@
 import type { Theme } from "@emotion/react";
-
 import { baseDarkTheme } from "@mutualzz/ui-core";
 
 export const graveyardWhispersTheme: Theme = {
@@ -11,22 +10,22 @@ export const graveyardWhispersTheme: Theme = {
     mode: "normal",
     colors: {
         ...baseDarkTheme.colors,
-        primary: "#7A7A8A",
-        neutral: "#7A8A9A",
+        primary: "#9A9AAF",
+        neutral: "#A5B4C2",
         background: "#19171D",
         surface: "#23243A",
-        danger: "#B85C5C",
-        warning: "#E6C463",
-        success: "#5CA88A",
-        info: "#5C7FA8",
+        danger: "#FF6B6B",
+        warning: "#F3CE72",
+        success: "#5CC8A6",
+        info: "#64A9FF",
     },
     typography: {
         ...baseDarkTheme.typography,
         colors: {
-            primary: "#F4F4F4",
-            secondary: "#C2C2C2",
-            accent: "#7A7A8A",
-            muted: "#7A8A9A",
+            primary: "#F5F5F7",
+            secondary: "#D0D6DE",
+            accent: "#9A9AAF",
+            muted: "#97A9B8",
         },
     },
 };

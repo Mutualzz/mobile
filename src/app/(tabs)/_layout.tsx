@@ -22,19 +22,7 @@ const RootLayout = () => {
                     }}
                 >
                     <TabSlot />
-                    <TabList
-                        style={{
-                            width: "100%",
-                            position: "absolute",
-                            bottom: 0,
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                            backgroundColor: "black",
-                            paddingHorizontal: 20,
-                            paddingVertical: 10,
-                        }}
-                        asChild
-                    >
+                    <TabList asChild>
                         <TabBar>
                             <TabTrigger asChild name="index" href="/">
                                 <IconButton

@@ -1,5 +1,4 @@
 import type { Theme } from "@emotion/react";
-
 import { baseDarkTheme } from "@mutualzz/ui-core";
 
 export const melancholyRomanceTheme: Theme = {
@@ -11,22 +10,22 @@ export const melancholyRomanceTheme: Theme = {
     mode: "normal",
     colors: {
         ...baseDarkTheme.colors,
-        primary: "#A86A7A",
-        neutral: "#B8A8B8",
+        primary: "#D98098",
+        neutral: "#D9C0CC",
         background: "#181218",
         surface: "#23232A",
-        danger: "#B85C5C",
-        warning: "#E6C463",
-        success: "#5CA88A",
-        info: "#5C7FA8",
+        danger: "#FF6B6B",
+        warning: "#F3CE72",
+        success: "#5CC8A6",
+        info: "#64A9FF",
     },
     typography: {
         ...baseDarkTheme.typography,
         colors: {
-            primary: "#F4F4F4",
-            secondary: "#C0A5AF",
-            accent: "#A86A7A",
-            muted: "#B8A8B8",
+            primary: "#F5F5F7",
+            secondary: "#EBCDD7",
+            accent: "#D98098",
+            muted: "#CDAFB9",
         },
     },
 };

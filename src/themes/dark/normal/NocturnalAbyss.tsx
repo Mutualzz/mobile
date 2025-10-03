@@ -1,5 +1,4 @@
 import type { Theme } from "@emotion/react";
-
 import { baseDarkTheme } from "@mutualzz/ui-core";
 
 export const nocturnalAbyssTheme: Theme = {
@@ -11,22 +10,22 @@ export const nocturnalAbyssTheme: Theme = {
     mode: "normal",
     colors: {
         ...baseDarkTheme.colors,
-        primary: "#5A7C8A",
-        neutral: "#7A8A9A",
+        primary: "#63A9C8",
+        neutral: "#A5B4C2",
         background: "#151515",
         surface: "#23232A",
-        danger: "#B85C5C",
-        warning: "#E6C463",
-        success: "#5CA88A",
-        info: "#5C7FA8",
+        danger: "#FF6B6B",
+        warning: "#F3CE72",
+        success: "#5CC8A6",
+        info: "#64A9FF",
     },
     typography: {
         ...baseDarkTheme.typography,
         colors: {
-            primary: "#F4F4F4",
-            secondary: "#B5B5B5",
-            accent: "#5A7C8A",
-            muted: "#7A8A9A",
+            primary: "#F5F5F7",
+            secondary: "#CBD5DD",
+            accent: "#63A9C8",
+            muted: "#97A9B8",
         },
     },
 };

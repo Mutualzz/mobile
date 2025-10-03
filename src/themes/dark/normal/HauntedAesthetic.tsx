@@ -1,5 +1,4 @@
 import type { Theme } from "@emotion/react";
-
 import { baseDarkTheme } from "@mutualzz/ui-core";
 
 export const hauntedAestheticTheme: Theme = {
@@ -11,22 +10,22 @@ export const hauntedAestheticTheme: Theme = {
     mode: "normal",
     colors: {
         ...baseDarkTheme.colors,
-        primary: "#6A7CA8",
-        neutral: "#7A8A9A",
+        primary: "#87A8E8",
+        neutral: "#A5B4C2",
         background: "#191919",
         surface: "#23232A",
-        danger: "#B85C5C",
-        warning: "#E6C463",
-        success: "#5CA88A",
-        info: "#5C7FA8",
+        danger: "#FF6B6B",
+        warning: "#F3CE72",
+        success: "#5CC8A6",
+        info: "#64A9FF",
     },
     typography: {
         ...baseDarkTheme.typography,
         colors: {
-            primary: "#F4F4F4",
-            secondary: "#B5B5B5",
-            accent: "#6A7CA8",
-            muted: "#7A8A9A",
+            primary: "#F5F5F7",
+            secondary: "#CBD5E8",
+            accent: "#87A8E8",
+            muted: "#97A9B8",
         },
     },
 };

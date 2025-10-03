@@ -19,8 +19,8 @@ export const TabBar = ({ children }: PropsWithChildren) => {
                 borderTopRightRadius: 16,
                 justifyContent: "space-between",
                 alignItems: "center",
-                paddingHorizontal: 20,
-                paddingVertical: insets.bottom - 10,
+                paddingHorizontal: 30,
+                paddingVertical: insets.bottom - 7.5,
             }}
         >
             {children}

@@ -1,4 +1,4 @@
-import { CssBaseline, useTheme } from "@mutualzz/ui-native";
+import { useTheme } from "@mutualzz/ui-native";
 import {
     ThemeProvider as NavigationThemeProvider,
     Theme,
@@ -48,7 +48,7 @@ export const NavigationWithTheme = ({ children }: PropsWithChildren) => {
             edges={["top", "left", "right"]}
         >
             <NavigationThemeProvider value={navTheme}>
-                <CssBaseline>{children}</CssBaseline>
+                {children}
             </NavigationThemeProvider>
         </SafeAreaView>
     );
