@@ -1,5 +1,8 @@
+import { AppTheme } from "@contexts/AppTheme.context";
 import { MaterialIcons } from "@expo/vector-icons";
-import { IconButton, ThemeProvider } from "@mutualzz/ui-native";
+import { useAppStore } from "@hooks/useStores";
+import { Logger } from "@logger";
+import { IconButton } from "@mutualzz/ui-native";
 import { TabList, Tabs, TabSlot, TabTrigger } from "expo-router/ui";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
@@ -9,12 +12,24 @@ import { TabBar } from "../../components/TabBar/TabBar";
 SplashScreen.preventAutoHideAsync();
 
 const RootLayout = () => {
+    const app = useAppStore();
+    const logger = new Logger({
+        tag: "App",
+    });
+
     useEffect(() => {
         SplashScreen.hide();
     }, []);
 
+    useEffect(() => {
+        app.loadSettings();
+
+        logger.debug("Loading complete");
+        app.setAppLoading(false);
+    }, []);
+
     return (
-        <ThemeProvider>
+        <AppTheme>
             <NavigationWithTheme>
                 <Tabs
                     options={{
@@ -48,7 +63,7 @@ const RootLayout = () => {
                     </TabList>
                 </Tabs>
             </NavigationWithTheme>
-        </ThemeProvider>
+        </AppTheme>
     );
 };
 

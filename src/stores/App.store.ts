@@ -7,9 +7,25 @@ export class AppStore {
         tag: "AppStore",
     });
 
+    isAppLoading = true;
+
     theme = new ThemeStore();
+
+    version: string | null = null;
 
     constructor() {
         makeAutoObservable(this);
+    }
+
+    setAppLoading(loading: boolean) {
+        this.isAppLoading = loading;
+    }
+
+    get isReady() {
+        return !this.isAppLoading;
+    }
+
+    async loadSettings() {
+        this.theme.loadDefaultThemes();
     }
 }

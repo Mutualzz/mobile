@@ -1,6 +1,14 @@
 import { useAppStore } from "@hooks/useStores";
 import { ThemeMode } from "@mutualzz/ui-core";
-import { Divider, Radio, RadioGroup, useTheme } from "@mutualzz/ui-native";
+import {
+    Divider,
+    Option,
+    Radio,
+    RadioGroup,
+    Select,
+    useTheme,
+} from "@mutualzz/ui-native";
+import { sortThemes } from "@utils/index";
 import { observer } from "mobx-react";
 import { useState } from "react";
 import { View } from "react-native";
@@ -22,6 +30,8 @@ export const ThemeSelector = observer(() => {
 
         changeTheme(changeTo);
     };
+
+    console.log(themeStore.themes);
 
     return (
         <View
@@ -54,6 +64,56 @@ export const ThemeSelector = observer(() => {
                     <Radio label="System" value="system" />
                 </RadioGroup>
             </View>
+            {mode !== "system" && (
+                <View
+                    style={{
+                        gap: 10,
+                        justifyContent: "center",
+                        flexDirection: "column",
+                        alignItems: "center",
+                    }}
+                >
+                    <Divider>Color Mode</Divider>
+                    <RadioGroup
+                        variant="solid"
+                        onChange={(styleToSet) => {
+                            setStyle(styleToSet as "normal" | "gradient");
+                        }}
+                        orientation="horizontal"
+                        spacing={10}
+                        value={style}
+                    >
+                        <Radio label="Normal" value="normal" />
+                        <Radio label="Gradient" value="gradient" />
+                    </RadioGroup>
+                </View>
+            )}
+            {themes.length > 1 && mode !== "system" && (
+                <View
+                    style={{
+                        justifyContent: "center",
+                        alignItems: "center",
+                        gap: 10,
+                        flexDirection: "column",
+                    }}
+                >
+                    <Divider>Color Scheme</Divider>
+                    <Select
+                        variant="solid"
+                        onValueChange={(value) =>
+                            handleThemeChange(value.toString())
+                        }
+                        value={theme.id}
+                    >
+                        {sortThemes(themes).map((theme) => (
+                            <Option key={theme.id} value={theme.id}>
+                                {theme.name}
+                                {theme.createdBy ? ` (by You)` : ""}
+                            </Option>
+                        ))}
+                    </Select>
+                </View>
+            )}
         </View>
     );
 });
