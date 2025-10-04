@@ -12,8 +12,10 @@ export const rustRequiemTheme: Theme = {
         ...baseDarkTheme.colors,
         primary: "#D09663",
         neutral: "#C4B48F",
-        background: "linear-gradient(135deg, #19171A 0%, #23241A 100%)",
-        surface: "linear-gradient(135deg, #23241A 0%, #A87C5A 100%)",
+        background:
+            "linear-gradient(135deg, #19171A 0%, #1F1C20 52%, #23241A 100%)",
+        surface:
+            "linear-gradient(135deg, #23241A 0%, rgba(168,124,90,0.32) 55%, #A87C5A 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",

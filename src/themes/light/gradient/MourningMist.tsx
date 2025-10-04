@@ -12,8 +12,10 @@ export const mourningMistTheme: Theme = {
         ...baseLightTheme.colors,
         primary: "#664444",
         neutral: "#554848",
-        background: "linear-gradient(135deg, #F6F6F7 0%, #E6E6EA 100%)",
-        surface: "linear-gradient(135deg, #E6E6EA 0%, #7A5A5A 100%)",
+        background:
+            "linear-gradient(135deg, #F6F6F7 0%, #ECECF0 52%, #E6E6EA 100%)",
+        surface:
+            "linear-gradient(135deg, #E6E6EA 0%, rgba(122,90,90,0.28) 55%, #7A5A5A 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",

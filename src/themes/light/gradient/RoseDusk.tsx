@@ -12,8 +12,10 @@ export const roseDuskTheme: Theme = {
         ...baseLightTheme.colors,
         primary: "#A23A4F",
         neutral: "#5A4652",
-        background: "linear-gradient(135deg, #F6F4F6 0%, #EDE6EC 100%)",
-        surface: "linear-gradient(135deg, #EDE6EC 0%, #A23A4F 100%)",
+        background:
+            "linear-gradient(135deg, #F6F4F6 0%, #F1EEF2 52%, #EDE6EC 100%)",
+        surface:
+            "linear-gradient(135deg, #EDE6EC 0%, rgba(162,58,79,0.30) 55%, #A23A4F 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",

@@ -12,8 +12,10 @@ export const vintageSorrowTheme: Theme = {
         ...baseDarkTheme.colors,
         primary: "#D98098",
         neutral: "#D9C0CC",
-        background: "linear-gradient(135deg, #181218 0%, #23232A 100%)",
-        surface: "linear-gradient(135deg, #23232A 0%, #A86A7A 100%)",
+        background:
+            "linear-gradient(135deg, #181218 0%, #1F1A21 52%, #23232A 100%)",
+        surface:
+            "linear-gradient(135deg, #23232A 0%, rgba(168,106,122,0.35) 55%, #A86A7A 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",

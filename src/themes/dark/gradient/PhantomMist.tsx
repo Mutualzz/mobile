@@ -12,8 +12,10 @@ export const phantomMistTheme: Theme = {
         ...baseDarkTheme.colors,
         primary: "#63A9C8",
         neutral: "#A5B4C2",
-        background: "linear-gradient(135deg, #181A1D 0%, #23232A 100%)",
-        surface: "linear-gradient(135deg, #23232A 0%, #5A7C8A 100%)",
+        background:
+            "linear-gradient(135deg, #181A1D 0%, #1E2024 52%, #23232A 100%)",
+        surface:
+            "linear-gradient(135deg, #23232A 0%, rgba(90,124,138,0.33) 55%, #5A7C8A 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",

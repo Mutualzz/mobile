@@ -12,8 +12,10 @@ export const mysticAuroraTheme: Theme = {
         ...baseLightTheme.colors,
         primary: "#3A7C6A",
         neutral: "#5A4A3A",
-        background: "linear-gradient(135deg, #F7F5F3 0%, #EDE9E6 100%)",
-        surface: "linear-gradient(135deg, #EDE9E6 0%, #3A7C6A 100%)",
+        background:
+            "linear-gradient(135deg, #F7F5F3 0%, #F2EFEA 52%, #EDE9E6 100%)",
+        surface:
+            "linear-gradient(135deg, #EDE9E6 0%, rgba(58,124,106,0.32) 55%, #3A7C6A 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",

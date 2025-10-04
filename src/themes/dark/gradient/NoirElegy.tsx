@@ -12,8 +12,10 @@ export const noirElegyTheme: Theme = {
         ...baseDarkTheme.colors,
         primary: "#9F6CDA",
         neutral: "#C2B5D8",
-        background: "linear-gradient(135deg, #18121D 0%, #23232A 100%)",
-        surface: "linear-gradient(135deg, #23232A 0%, #6A4A8A 100%)",
+        background:
+            "linear-gradient(135deg, #18121D 0%, #1E1824 52%, #23232A 100%)",
+        surface:
+            "linear-gradient(135deg, #23232A 0%, rgba(106,74,138,0.34) 55%, #6A4A8A 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",

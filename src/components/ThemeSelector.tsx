@@ -31,8 +31,6 @@ export const ThemeSelector = observer(() => {
         changeTheme(changeTo);
     };
 
-    console.log(themeStore.themes);
-
     return (
         <View
             style={{

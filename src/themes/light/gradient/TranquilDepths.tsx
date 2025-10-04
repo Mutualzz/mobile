@@ -12,8 +12,10 @@ export const tranquilDepthsTheme: Theme = {
         ...baseLightTheme.colors,
         primary: "#3A5A4A",
         neutral: "#4A5555",
-        background: "linear-gradient(135deg, #F3F5F4 0%, #E2E6E4 100%)",
-        surface: "linear-gradient(135deg, #E2E6E4 0%, #3A5A4A 100%)",
+        background:
+            "linear-gradient(135deg, #F3F5F4 0%, #E9EEEC 52%, #E2E6E4 100%)",
+        surface:
+            "linear-gradient(135deg, #E2E6E4 0%, rgba(58,90,74,0.34) 55%, #3A5A4A 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",

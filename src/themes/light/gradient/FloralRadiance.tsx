@@ -12,8 +12,10 @@ export const floralRadianceTheme: Theme = {
         ...baseLightTheme.colors,
         primary: "#8A6C36",
         neutral: "#5A5842",
-        background: "linear-gradient(135deg, #F5F7F3 0%, #E6EDE6 100%)",
-        surface: "linear-gradient(135deg, #E6EDE6 0%, #A88A5A 100%)",
+        background:
+            "linear-gradient(135deg, #F5F7F3 0%, #EEF2EB 52%, #E6EDE6 100%)",
+        surface:
+            "linear-gradient(135deg, #E6EDE6 0%, rgba(168,138,90,0.30) 55%, #A88A5A 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",

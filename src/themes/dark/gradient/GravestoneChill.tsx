@@ -12,8 +12,10 @@ export const gravestoneChillTheme: Theme = {
         ...baseDarkTheme.colors,
         primary: "#9A9AAF",
         neutral: "#A5B4C2",
-        background: "linear-gradient(135deg, #19171D 0%, #23243A 100%)",
-        surface: "linear-gradient(135deg, #23243A 0%, #7A7A8A 100%)",
+        background:
+            "linear-gradient(135deg, #19171D 0%, #1F1D26 52%, #23243A 100%)",
+        surface:
+            "linear-gradient(135deg, #23243A 0%, rgba(122,122,138,0.32) 55%, #7A7A8A 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",

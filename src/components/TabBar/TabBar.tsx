@@ -1,7 +1,5 @@
-import { dynamicElevation } from "@mutualzz/ui-core";
-import { useTheme } from "@mutualzz/ui-native";
+import { Paper, useTheme } from "@mutualzz/ui-native";
 import { PropsWithChildren } from "react";
-import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export const TabBar = ({ children }: PropsWithChildren) => {
@@ -9,9 +7,8 @@ export const TabBar = ({ children }: PropsWithChildren) => {
     const insets = useSafeAreaInsets();
 
     return (
-        <View
+        <Paper
             style={{
-                backgroundColor: dynamicElevation(theme.colors.surface, 2),
                 width: "100%",
                 flexDirection: "row",
                 zIndex: 100,
@@ -24,6 +21,6 @@ export const TabBar = ({ children }: PropsWithChildren) => {
             }}
         >
             {children}
-        </View>
+        </Paper>
     );
 };
