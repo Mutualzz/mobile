@@ -4,7 +4,6 @@ import {
     Theme,
 } from "@react-navigation/native";
 import { PropsWithChildren, useMemo } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export const NavigationWithTheme = ({ children }: PropsWithChildren) => {
     const { theme } = useTheme();
@@ -43,13 +42,10 @@ export const NavigationWithTheme = ({ children }: PropsWithChildren) => {
     );
 
     return (
-        <SafeAreaView
-            style={{ backgroundColor: theme.colors.background, flex: 1 }}
-            edges={["top", "left", "right"]}
-        >
+        <>
             <NavigationThemeProvider value={navTheme}>
                 {children}
             </NavigationThemeProvider>
-        </SafeAreaView>
+        </>
     );
 };
