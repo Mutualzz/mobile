@@ -1,9 +1,8 @@
-import { Paper, useTheme } from "@mutualzz/ui-native";
+import { Paper } from "@mutualzz/ui-native";
 import { PropsWithChildren } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export const TabBar = ({ children }: PropsWithChildren) => {
-    const { theme } = useTheme();
     const insets = useSafeAreaInsets();
 
     return (

@@ -2,7 +2,7 @@ import { AppTheme } from "@contexts/AppTheme.context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useAppStore } from "@hooks/useStores";
 import { Logger } from "@logger";
-import { IconButton, NativeBasline } from "@mutualzz/ui-native";
+import { IconButton, NativeBaseline } from "@mutualzz/ui-native";
 import { TabList, Tabs, TabSlot, TabTrigger } from "expo-router/ui";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
@@ -31,7 +31,7 @@ const RootLayout = () => {
     return (
         <AppTheme>
             <NavigationWithTheme>
-                <NativeBasline>
+                <NativeBaseline>
                     <Tabs
                         options={{
                             backBehavior: "none",
@@ -63,7 +63,7 @@ const RootLayout = () => {
                             </TabBar>
                         </TabList>
                     </Tabs>
-                </NativeBasline>
+                </NativeBaseline>
             </NavigationWithTheme>
         </AppTheme>
     );
