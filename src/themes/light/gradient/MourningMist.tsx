@@ -13,9 +13,9 @@ export const mourningMistTheme: Theme = {
         primary: "#664444",
         neutral: "#554848",
         background:
-            "linear-gradient(135deg, #F6F6F7 0%, #ECECF0 52%, #E6E6EA 100%)",
+            "linear-gradient(180deg,#F6F6F7 0%,#F6F6F7 55%,#F1F1F4 72%,#ECECF2 82%,#E6E6EA 100%)",
         surface:
-            "linear-gradient(135deg, #E6E6EA 0%, rgba(122,90,90,0.28) 55%, #7A5A5A 100%)",
+            "linear-gradient(180deg,#E6E6EA 0%,#E6E6EA 55%,#D9D0D2 70%,#C8B6B7 85%,#7A5A5A 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",

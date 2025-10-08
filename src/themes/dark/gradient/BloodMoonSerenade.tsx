@@ -13,9 +13,9 @@ export const bloodMoonSerenadeTheme: Theme = {
         primary: "#E1556B",
         neutral: "#C7AFC0",
         background:
-            "linear-gradient(135deg, #18161A 0%, #1E171D 52%, #23141A 100%)",
+            "linear-gradient(180deg,#0D0D10 0%,#0D0D10 55%,#1A1114 72%,#24171C 82%,#301E24 100%)",
         surface:
-            "linear-gradient(135deg, #23141A 0%, rgba(162,58,79,0.34) 55%, #A23A4F 100%)",
+            "linear-gradient(180deg,#23141A 0%,#23141A 55%,#2B1A22 70%,#3C2631 85%,#A23A4F 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",

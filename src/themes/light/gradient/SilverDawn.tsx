@@ -13,9 +13,9 @@ export const silverDawnTheme: Theme = {
         primary: "#4A6A5A",
         neutral: "#555555",
         background:
-            "linear-gradient(135deg, #F3F4F5 0%, #EBEDF0 52%, #E2E4E6 100%)",
+            "linear-gradient(180deg,#F3F4F5 0%,#F3F4F5 55%,#EEF0F2 72%,#E9ECEF 82%,#E2E4E6 100%)",
         surface:
-            "linear-gradient(135deg, #E2E4E6 0%, rgba(74,106,90,0.28) 55%, #4A6A5A 100%)",
+            "linear-gradient(180deg,#E2E4E6 0%,#E2E4E6 55%,#CED5D3 70%,#B8C4C0 85%,#4A6A5A 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",

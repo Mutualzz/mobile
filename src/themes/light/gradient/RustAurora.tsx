@@ -13,9 +13,9 @@ export const rustAuroraTheme: Theme = {
         primary: "#8A5F36",
         neutral: "#5A5142",
         background:
-            "linear-gradient(135deg, #F7F5F3 0%, #F0EBE7 52%, #EDE6E3 100%)",
+            "linear-gradient(180deg,#F7F5F3 0%,#F7F5F3 55%,#F3EFE9 72%,#EDE9E4 82%,#EDE6E3 100%)",
         surface:
-            "linear-gradient(135deg, #EDE6E3 0%, rgba(168,124,90,0.34) 55%, #A87C5A 100%)",
+            "linear-gradient(180deg,#EDE6E3 0%,#EDE6E3 55%,#E1D5CA 70%,#D5C2AF 85%,#A87C5A 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",

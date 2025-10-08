@@ -4,6 +4,7 @@ import { arcaneMidnightTheme } from "./gradient/ArcaneMidnight";
 import { bloodMoonSerenadeTheme } from "./gradient/BloodMoonSerenade";
 import { gravestoneChillTheme } from "./gradient/GravestoneChill";
 import { noirElegyTheme } from "./gradient/NoirElegy";
+import { obsidianRequiemTheme } from "./gradient/ObsidianRequiem";
 import { phantomMistTheme } from "./gradient/PhantomMist";
 import { rustRequiemTheme } from "./gradient/RustRequiem";
 import { spectralVeilTheme } from "./gradient/SpectralVeil";
@@ -43,5 +44,6 @@ export const darkThemes = [
     rustRequiemTheme,
     spectralVeilTheme,
     steelShadowTheme,
+    obsidianRequiemTheme,
     vintageSorrowTheme,
 ];

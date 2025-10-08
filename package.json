@@ -42,6 +42,7 @@
         "build:ios": "eas build --platform ios --local",
         "ios": "expo run:ios",
         "start": "expo start",
+        "typecheck": "tsc --noEmit",
         "web": "expo start --web"
     },
     "version": "2.0.0"

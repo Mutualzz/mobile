@@ -13,9 +13,9 @@ export const etherealWhisperTheme: Theme = {
         primary: "#4A7D79",
         neutral: "#4A5E5E",
         background:
-            "linear-gradient(135deg, #F4F7F6 0%, #EEF3F2 52%, #E6EEEC 100%)",
+            "linear-gradient(180deg,#F4F7F6 0%,#F4F7F6 55%,#EEF4F3 72%,#EAF1EF 82%,#E6EEEC 100%)",
         surface:
-            "linear-gradient(135deg, #E6EEEC 0%, rgba(124,168,166,0.35) 55%, #7CA8A6 100%)",
+            "linear-gradient(180deg,#E6EEEC 0%,#E6EEEC 55%,#D3E2E0 70%,#BED3D1 85%,#7CA8A6 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",
