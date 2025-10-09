@@ -12,7 +12,6 @@ export default function HomePage() {
                 The UI is being made from scratch
             </Typography>
             <Typography level="h5">It's open source too :3</Typography>
-
             <ThemeSelector />
         </View>
     );

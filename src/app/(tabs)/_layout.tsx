@@ -1,13 +1,15 @@
+import { NavigationWithTheme } from "@components/NavigationWithTheme";
+import { TabBar } from "@components/TabBar/TabBar";
 import { AppTheme } from "@contexts/AppTheme.context";
-import { MaterialIcons } from "@expo/vector-icons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useAppStore } from "@hooks/useStores";
 import { Logger } from "@logger";
 import { IconButton, NativeBaseline } from "@mutualzz/ui-native";
+import * as Font from "expo-font";
 import { TabList, Tabs, TabSlot, TabTrigger } from "expo-router/ui";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import { NavigationWithTheme } from "../../components/NavigationWithTheme";
-import { TabBar } from "../../components/TabBar/TabBar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -17,15 +19,25 @@ const RootLayout = () => {
         tag: "App",
     });
 
-    useEffect(() => {
-        SplashScreen.hide();
-    }, []);
+    const insets = useSafeAreaInsets();
 
     useEffect(() => {
+        async function loadFonts() {
+            try {
+                await Font.loadAsync({
+                    ...MaterialIcons.font,
+                });
+            } catch (err) {
+                logger.warn("Error loading fonts", err);
+            }
+        }
+
+        loadFonts();
         app.loadSettings();
 
         logger.debug("Loading complete");
         app.setAppLoading(false);
+        SplashScreen.hide();
     }, []);
 
     return (
@@ -37,7 +49,7 @@ const RootLayout = () => {
                             backBehavior: "none",
                         }}
                     >
-                        <TabSlot />
+                        <TabSlot style={{ flex: 1, marginTop: insets.top }} />
                         <TabList asChild>
                             <TabBar>
                                 <TabTrigger asChild name="index" href="/">
