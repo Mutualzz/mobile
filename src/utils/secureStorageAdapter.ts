@@ -1,22 +1,24 @@
-import secureLocalStorage from "react-secure-storage";
+import * as secureStorage from "expo-secure-store";
 
 export const secureStorageAdapter: Storage = {
-    getItem: (key: string) => secureLocalStorage.getItem(key) as string | null,
+    getItem: (key: string) => secureStorage.getItem(key) as string | null,
     setItem: (key: string, value: string) => {
-        secureLocalStorage.setItem(key, value);
+        secureStorage.setItem(key, value);
         return value;
     },
     removeItem: (key: string) => {
-        secureLocalStorage.removeItem(key);
+        secureStorage.deleteItemAsync(key);
     },
     clear: () => {
-        secureLocalStorage.clear();
+        Object.keys(secureStorage).forEach((key) => {
+            secureStorage.deleteItemAsync(key);
+        });
     },
     key: (index: number) => {
-        const keys = Object.keys(secureLocalStorage);
+        const keys = Object.keys(secureStorage);
         return keys[index] ?? null;
     },
     get length() {
-        return Object.keys(secureLocalStorage).length;
+        return Object.keys(secureStorage).length;
     },
 };

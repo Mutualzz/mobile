@@ -30,6 +30,44 @@ interface LoggerOptions {
     withLevelPrefix?: boolean;
 }
 
+const ANSI = {
+    reset: "\x1b[0m",
+    bold: "\x1b[1m",
+    dim: "\x1b[2m",
+    gray: "\x1b[90m",
+    blue: "\x1b[34m",
+    yellow: "\x1b[33m",
+    red: "\x1b[31m",
+};
+
+function getAnsiColorForLevel(level: LogLevel) {
+    switch (level) {
+        case "debug":
+            return ANSI.gray;
+        case "info":
+            return ANSI.blue;
+        case "warn":
+            return ANSI.yellow;
+        case "error":
+            return ANSI.red;
+        default:
+            return ANSI.reset;
+    }
+}
+
+function formatArgForMessage(arg: any) {
+    if (typeof arg === "string") return arg;
+    try {
+        return JSON.stringify(arg);
+    } catch {
+        try {
+            return String(arg);
+        } catch {
+            return "[unserializable]";
+        }
+    }
+}
+
 export class Logger {
     private tag: string;
     private level: LogLevel;
@@ -67,27 +105,44 @@ export class Logger {
         if (!this.shouldLog(level)) return;
 
         const timestamp = new Date().toISOString();
-        const color = COLORS[level];
+        const colorCode = getAnsiColorForLevel(level);
+        const reset = ANSI.reset;
+        const bold = ANSI.bold;
+        const dim = ANSI.dim;
 
-        let prefix = `%c[${this.tag}]`;
-
-        const styles = [`color:${color}; font-weight:bold;`];
+        const prefixParts: string[] = [];
+        prefixParts.push(`${colorCode}${bold}[${this.tag}]${reset}`);
 
         if (this.withLevelPrefix) {
-            prefix += ` %c[${level.toUpperCase()}]`;
-            styles.push(`color:${color}; font-weight:normal;`);
+            prefixParts.push(`${colorCode}[${level.toUpperCase()}]${reset}`);
         }
 
         if (this.withTimestamp) {
-            prefix += ` %c${timestamp}`;
-            styles.push(`color:#888; font-style:italic;`);
+            prefixParts.push(`${dim}${timestamp}${reset}`);
         }
 
-        console[level](prefix, ...styles, ...args);
+        const coloredPrefix = prefixParts.join(" ");
+
+        const plainMessage = [
+            `[${this.tag}]`,
+            this.withLevelPrefix ? `[${level.toUpperCase()}]` : null,
+            this.withTimestamp ? timestamp : null,
+            ...args.map(formatArgForMessage),
+        ]
+            .filter(Boolean)
+            .join(" ");
+
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (console as any)[level](coloredPrefix, ...args);
+        } catch {
+            // fallback if console[level] doesn't exist
+            console.log(coloredPrefix, ...args);
+        }
 
         for (const transport of this.transports) {
             try {
-                transport(level, `[${this.tag}] ${args.join(" ")}`, args);
+                transport(level, plainMessage, args);
             } catch (error) {
                 console.warn(`[Logger] Failed to execute transport:`, error);
             }
