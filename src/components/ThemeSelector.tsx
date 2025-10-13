@@ -1,5 +1,6 @@
 import { useAppStore } from "@hooks/useStores";
-import { ThemeMode } from "@mutualzz/ui-core";
+import { ThemeStyle, ThemeType } from "@mutualzz/ui-core";
+
 import {
     Divider,
     Option,
@@ -10,19 +11,17 @@ import {
 } from "@mutualzz/ui-native";
 import { sortThemes } from "@utils/index";
 import { observer } from "mobx-react";
-import { useState } from "react";
 import { View } from "react-native";
 
 export const ThemeSelector = observer(() => {
     const { theme: themeStore } = useAppStore();
 
-    const { mode, theme, changeTheme, changeMode } = useTheme();
-
-    const [style, setStyle] = useState<"normal" | "gradient">("normal");
+    const { type, theme, style, changeTheme, changeType, changeStyle } =
+        useTheme();
 
     const themes = Array.from(themeStore.themes.values())
-        .filter((theme) => theme.type === mode)
-        .filter((theme) => theme.mode === style);
+        .filter((theme) => theme.type === type)
+        .filter((theme) => theme.style === style);
 
     const handleThemeChange = (themeId: string) => {
         const changeTo = themes.find((theme) => theme.id === themeId);
@@ -53,8 +52,8 @@ export const ThemeSelector = observer(() => {
                     variant="solid"
                     orientation="horizontal"
                     spacing={10}
-                    value={mode}
-                    onChange={(modeToSet) => changeMode(modeToSet as ThemeMode)}
+                    value={type}
+                    onChange={(typeToSet) => changeType(typeToSet as ThemeType)}
                     size="sm"
                 >
                     <Radio label="Dark" value="dark" />
@@ -62,7 +61,7 @@ export const ThemeSelector = observer(() => {
                     <Radio label="System" value="system" />
                 </RadioGroup>
             </View>
-            {mode !== "system" && (
+            {type !== "system" && (
                 <View
                     style={{
                         gap: 10,
@@ -71,11 +70,11 @@ export const ThemeSelector = observer(() => {
                         alignItems: "center",
                     }}
                 >
-                    <Divider>Color Mode</Divider>
+                    <Divider>Color Style</Divider>
                     <RadioGroup
                         variant="solid"
                         onChange={(styleToSet) => {
-                            setStyle(styleToSet as "normal" | "gradient");
+                            changeStyle(styleToSet as ThemeStyle);
                         }}
                         orientation="horizontal"
                         spacing={10}
@@ -86,7 +85,7 @@ export const ThemeSelector = observer(() => {
                     </RadioGroup>
                 </View>
             )}
-            {themes.length > 1 && mode !== "system" && (
+            {themes.length > 1 && type !== "system" && (
                 <View
                     style={{
                         justifyContent: "center",

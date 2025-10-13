@@ -1,14 +1,14 @@
 import type { Theme } from "@emotion/react";
 import type { APITheme } from "@mutualzz/types";
-import type { ColorLike } from "@mutualzz/ui-core";
+import type { ColorLike, ThemeStyle, ThemeType } from "@mutualzz/ui-core";
 
 export type MzTheme = Theme & APITheme;
 
 export interface ThemeDraft {
     name: string;
     description?: string;
-    type: "dark" | "light";
-    mode: "normal" | "gradient";
+    type: Omit<ThemeType, "system">;
+    style: ThemeStyle;
     colors: {
         common: {
             white: ColorLike;

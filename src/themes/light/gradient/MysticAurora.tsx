@@ -7,7 +7,7 @@ export const mysticAuroraTheme: Theme = {
     name: "Mystic Aurora",
     description: "Magical morning gradients",
     type: "light",
-    mode: "gradient",
+    style: "gradient",
     colors: {
         ...baseLightTheme.colors,
         primary: "#3A7C6A",

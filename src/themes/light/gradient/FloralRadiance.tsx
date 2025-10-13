@@ -7,7 +7,7 @@ export const floralRadianceTheme: Theme = {
     name: "Floral Radiance",
     description: "Floral, radiant gradients",
     type: "light",
-    mode: "gradient",
+    style: "gradient",
     colors: {
         ...baseLightTheme.colors,
         primary: "#8A6C36",

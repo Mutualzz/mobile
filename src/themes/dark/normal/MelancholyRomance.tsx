@@ -7,7 +7,7 @@ export const melancholyRomanceTheme: Theme = {
     name: "Melancholy Romance",
     description: "Dramatic, Vintage, and Elegant",
     type: "dark",
-    mode: "normal",
+    style: "normal",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#D98098",

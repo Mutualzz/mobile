@@ -7,7 +7,7 @@ export const noirElegyTheme: Theme = {
     name: "Noir Elegy",
     description: "Melancholic gothic gradients",
     type: "dark",
-    mode: "gradient",
+    style: "gradient",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#9F6CDA",

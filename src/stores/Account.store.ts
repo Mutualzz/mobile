@@ -1,15 +1,15 @@
 import { Logger } from "@logger";
 import {
-    APIPrivateUser,
-    APITheme,
-    APIUserSettings,
-    AvatarFormat,
     CDNRoutes,
-    DefaultAvatar,
     ImageFormat,
-    Sizes,
+    type APIPrivateUser,
+    type APITheme,
+    type APIUserSettings,
+    type AvatarFormat,
+    type DefaultAvatar,
+    type Sizes,
 } from "@mutualzz/types";
-import { Hex } from "@mutualzz/ui-core";
+import type { Hex } from "@mutualzz/ui-core";
 import { makeAutoObservable } from "mobx";
 import { REST } from "./REST.store";
 

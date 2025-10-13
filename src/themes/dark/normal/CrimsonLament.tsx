@@ -7,7 +7,7 @@ export const crimsonLamentTheme: Theme = {
     name: "Crimson Lament",
     description: "Dark Romance & Tragedy",
     type: "dark",
-    mode: "normal",
+    style: "normal",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#E1556B",

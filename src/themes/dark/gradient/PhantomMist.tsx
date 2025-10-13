@@ -7,7 +7,7 @@ export const phantomMistTheme: Theme = {
     name: "Phantom Mist",
     description: "Ethereal gradients of despair",
     type: "dark",
-    mode: "gradient",
+    style: "gradient",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#63A9C8",

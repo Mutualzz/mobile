@@ -7,7 +7,7 @@ export const rustRequiemTheme: Theme = {
     name: "Rust Requiem",
     description: "Grunge & industrial gradients",
     type: "dark",
-    mode: "gradient",
+    style: "gradient",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#D09663",

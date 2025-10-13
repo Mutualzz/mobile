@@ -7,7 +7,7 @@ export const bloodMoonSerenadeTheme: Theme = {
     name: "Blood Moon Serenade",
     description: "Crimson gradients of romance and tragedy",
     type: "dark",
-    mode: "gradient",
+    style: "gradient",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#E1556B",

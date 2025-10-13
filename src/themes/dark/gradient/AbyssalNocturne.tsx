@@ -7,7 +7,7 @@ export const abyssalNocturneTheme: Theme = {
     name: "Abyssal Nocturne",
     description: "Deep, mysterious gradients",
     type: "dark",
-    mode: "gradient",
+    style: "gradient",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#63A9C8",

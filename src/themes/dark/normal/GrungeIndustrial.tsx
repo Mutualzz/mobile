@@ -7,7 +7,7 @@ export const grungeIndustrialTheme: Theme = {
     name: "Grunge & Industrial",
     description: "90s Underground Aesthetic",
     type: "dark",
-    mode: "normal",
+    style: "normal",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#D09663",

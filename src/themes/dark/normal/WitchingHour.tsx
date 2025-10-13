@@ -7,7 +7,7 @@ export const witchingHourTheme: Theme = {
     name: "Witching Hour",
     description: "Mystical, Arcane, and Enigmatic",
     type: "dark",
-    mode: "normal",
+    style: "normal",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#9F6CDA",

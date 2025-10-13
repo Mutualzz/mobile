@@ -7,7 +7,7 @@ export const violetNocturneTheme: Theme = {
     name: "Violet Nocturne",
     description: "Gothic violet gradients",
     type: "light",
-    mode: "gradient",
+    style: "gradient",
     colors: {
         ...baseLightTheme.colors,
         primary: "#4A5FA0",

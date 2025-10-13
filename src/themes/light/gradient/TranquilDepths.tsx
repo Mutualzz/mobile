@@ -7,7 +7,7 @@ export const tranquilDepthsTheme: Theme = {
     name: "Tranquil Depths",
     description: "Calm, oceanic gradients",
     type: "light",
-    mode: "gradient",
+    style: "gradient",
     colors: {
         ...baseLightTheme.colors,
         primary: "#3A5A4A",

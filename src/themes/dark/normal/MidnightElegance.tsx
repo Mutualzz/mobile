@@ -7,7 +7,7 @@ export const midnightEleganceTheme: Theme = {
     name: "Midnight Elegance",
     description: "Dark Victorian Vibes",
     type: "dark",
-    mode: "normal",
+    style: "normal",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#9F6CDA",

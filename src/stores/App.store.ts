@@ -1,5 +1,5 @@
 import { Logger } from "@logger";
-import { APIPrivateUser } from "@mutualzz/types";
+import type { APIPrivateUser } from "@mutualzz/types";
 import { secureStorageAdapter } from "@utils/secureStorageAdapter";
 import { makeAutoObservable } from "mobx";
 import { makePersistable } from "mobx-persist-store";
@@ -23,9 +23,9 @@ export class AppStore {
     account: AccountStore | null = null;
     gateway = new GatewayStore(this);
     draft = new DraftStore();
+    theme = new ThemeStore();
     rest = new REST();
     users = new UserStore(this);
-    theme = new ThemeStore();
 
     version: string | null = null;
 
@@ -66,14 +66,19 @@ export class AppStore {
             this.setToken(this.token);
             this.logger.debug("Token loaded from the storage");
         } else {
-            this.logger.debug("No token found in the storage");
+            this.logger.warn("No token found in the storage");
+            this.setGatewayReady(true);
         }
     }
 
     logout() {
         this.token = null;
         this.isAppLoading = false;
+        this.isGatewayReady = true;
+        this.account = null;
+        this.rest.setToken(null);
         secureStorageAdapter.clear();
+        this.theme.reset();
     }
 
     async loadSettings() {

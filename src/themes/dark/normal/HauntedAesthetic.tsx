@@ -7,7 +7,7 @@ export const hauntedAestheticTheme: Theme = {
     name: "Haunted Aesthetic",
     description: "Ethereal, Eerie, and Softly Dark",
     type: "dark",
-    mode: "normal",
+    style: "normal",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#87A8E8",

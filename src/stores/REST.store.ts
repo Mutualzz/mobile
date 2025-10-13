@@ -1,10 +1,14 @@
 import { Logger } from "@logger";
 import { Platform } from "react-native";
 
+let isTauri = false;
+let os = Platform.OS;
+let client = "Mutualzz Mobile";
+
 const clientMeta = {
     type: "Mobile",
-    os: Platform.OS,
-    client: "Mutualzz Mobile",
+    os,
+    client,
 };
 
 const DEFAULT_HEADERS = {
@@ -46,7 +50,7 @@ export class REST {
         path: string,
         queryParams: Record<string, any> = {},
     ) {
-        const url = new URL(`${process.env.EXPO_CDN_URL}${path}`);
+        const url = new URL(`${process.env.EXPo_CDN_URL}${path}`);
         Object.entries(queryParams).forEach(([key, value]) => {
             url.searchParams.append(key, value);
         });

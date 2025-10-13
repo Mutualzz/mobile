@@ -4,7 +4,8 @@ import type { APITheme, APIUser } from "@mutualzz/types";
 import {
     baseDarkTheme,
     baseLightTheme,
-    type ThemeMode,
+    type ThemeStyle,
+    type ThemeType,
 } from "@mutualzz/ui-core";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { themes as defaultThemes } from "@themes/index";
@@ -19,8 +20,8 @@ export class ThemeStore {
     themes: MzTheme[] = [];
 
     currentTheme: string | null = null;
-
-    currentMode: ThemeMode = "system";
+    currentType: ThemeType = "system";
+    currentStyle: ThemeStyle = "normal";
 
     defaultThemesLoaded = false;
     userThemesLoaded = false;
@@ -30,7 +31,7 @@ export class ThemeStore {
 
         makePersistable(this, {
             name: "ThemeStore",
-            properties: ["currentTheme", "currentMode"],
+            properties: ["currentTheme", "currentStyle", "currentType"],
             storage: AsyncStorage,
         });
     }
@@ -39,8 +40,12 @@ export class ThemeStore {
         this.currentTheme = themeId;
     }
 
-    setCurrentMode(mode: ThemeMode) {
-        this.currentMode = mode;
+    setCurrentType(type: ThemeType) {
+        this.currentType = type;
+    }
+
+    setCurrentStyle(style: ThemeStyle) {
+        this.currentStyle = style;
     }
 
     reset() {
@@ -59,7 +64,7 @@ export class ThemeStore {
                 updatedTimestamp: 0,
                 createdBy: undefined,
             };
-            this.addTheme(themeWithMetadata);
+            this.addTheme(themeWithMetadata as any);
         });
 
         this.defaultThemesLoaded = true;

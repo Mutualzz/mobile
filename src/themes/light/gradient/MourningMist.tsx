@@ -7,7 +7,7 @@ export const mourningMistTheme: Theme = {
     name: "Mourning Mist",
     description: "Muted, misty gradients",
     type: "light",
-    mode: "gradient",
+    style: "gradient",
     colors: {
         ...baseLightTheme.colors,
         primary: "#664444",

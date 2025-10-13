@@ -7,7 +7,7 @@ export const graveyardWhispersTheme: Theme = {
     name: "Graveyard Whispers",
     description: "Muted, Eerie, and Cold",
     type: "dark",
-    mode: "normal",
+    style: "normal",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#9A9AAF",

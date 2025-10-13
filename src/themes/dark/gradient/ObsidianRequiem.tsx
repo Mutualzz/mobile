@@ -7,7 +7,7 @@ export const obsidianRequiemTheme: Theme = {
     name: "Obsidian Requiem",
     description: "Darkened symphonic deathcore gradients",
     type: "dark",
-    mode: "gradient",
+    style: "gradient",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#6B58C7",

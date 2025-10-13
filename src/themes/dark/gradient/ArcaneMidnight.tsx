@@ -7,7 +7,7 @@ export const arcaneMidnightTheme: Theme = {
     name: "Arcane Midnight",
     description: "Mystical, arcane gradients",
     type: "dark",
-    mode: "gradient",
+    style: "gradient",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#9F6CDA",

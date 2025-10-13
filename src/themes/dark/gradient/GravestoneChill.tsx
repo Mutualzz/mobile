@@ -7,7 +7,7 @@ export const gravestoneChillTheme: Theme = {
     name: "Gravestone Chill",
     description: "Eerie, muted gradients from the graveyard",
     type: "dark",
-    mode: "gradient",
+    style: "gradient",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#9A9AAF",

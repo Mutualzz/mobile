@@ -7,7 +7,7 @@ export const nocturnalAbyssTheme: Theme = {
     name: "Nocturnal Abyss",
     description: "Deep, Mysterious, and Shadowy",
     type: "dark",
-    mode: "normal",
+    style: "normal",
     colors: {
         ...baseDarkTheme.colors,
         primary: "#63A9C8",
