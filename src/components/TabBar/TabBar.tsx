@@ -1,16 +1,17 @@
-import { Paper } from "@mutualzz/ui-native";
+import { Paper, useTheme } from "@mutualzz/ui-native";
 import { PropsWithChildren } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export const TabBar = ({ children }: PropsWithChildren) => {
     const insets = useSafeAreaInsets();
+    const { theme } = useTheme();
 
     return (
         <Paper
             style={{
                 width: "100%",
                 flexDirection: "row",
-                zIndex: 100,
+                zIndex: theme.zIndex.appBar,
                 borderTopLeftRadius: 16,
                 borderTopRightRadius: 16,
                 justifyContent: "space-between",
