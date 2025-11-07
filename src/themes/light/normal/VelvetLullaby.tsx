@@ -5,7 +5,9 @@ export const velvetLullabyTheme: Theme = {
     ...baseLightTheme,
     id: "velvetLullaby",
     name: "Velvet Lullaby",
-    description: "Vintage & Dramatic",
+    description: "Vintage, dramatic palette with soft rose tones.",
+    adaptive: false,
+    style: "normal",
     type: "light",
     colors: {
         ...baseLightTheme.colors,

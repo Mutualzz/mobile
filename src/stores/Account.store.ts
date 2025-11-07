@@ -3,7 +3,6 @@ import {
     CDNRoutes,
     ImageFormat,
     type APIPrivateUser,
-    type APITheme,
     type APIUserSettings,
     type AvatarFormat,
     type DefaultAvatar,
@@ -24,7 +23,6 @@ export class AccountStore {
     avatar?: string | null = null;
     globalName?: string | null = null;
     email?: string | null = null;
-    themes: APITheme[] | null = [];
     accentColor: Hex;
     createdAt: Date;
     createdTimestamp: number;
@@ -41,7 +39,6 @@ export class AccountStore {
         this.previousAvatars = user.previousAvatars ?? [];
         this.globalName = user.globalName ?? null;
         this.email = user.email ?? null;
-        this.themes = user.themes ?? [];
         this.settings = user.settings;
         this.createdAt = user.createdAt;
         this.createdTimestamp = user.createdTimestamp;

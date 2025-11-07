@@ -5,17 +5,18 @@ export const obsidianRequiemTheme: Theme = {
     ...baseDarkTheme,
     id: "obsidianRequiem",
     name: "Obsidian Requiem",
-    description: "Darkened symphonic deathcore gradients",
+    description: "Intense obsidian gradients with brooding violet undertones.",
+    adaptive: false,
     type: "dark",
     style: "gradient",
     colors: {
         ...baseDarkTheme.colors,
-        primary: "#6B58C7",
+        primary: "#8365E2",
         neutral: "#9AA0AE",
         background:
-            "linear-gradient(180deg,#0D0D10 0%,#0D0D10 50%,#14131C 65%,#1C1A28 78%,#23232C 90%,#2E2740 100%)",
+            "linear-gradient(90deg,#070608 0%,#0C0B10 45%,#16121F 65%,#2B2540 80%,#8365E2 100%)",
         surface:
-            "linear-gradient(180deg,#23232C 0%,#23232C 55%,#2A2A38 70%,#37354A 85%,#57407A 100%)",
+            "linear-gradient(90deg,#16141A 0%,#23232C 45%,#2C2A38 72%,#4A3962 90%,#8365E2 100%)",
         danger: "#E04B5A",
         warning: "#D1A24A",
         success: "#4FAF7A",
@@ -26,7 +27,7 @@ export const obsidianRequiemTheme: Theme = {
         colors: {
             primary: "#F5F5F7",
             secondary: "#C7C9D2",
-            accent: "#6B58C7",
+            accent: "#8365E2",
             muted: "#9AA0AE",
         },
     },

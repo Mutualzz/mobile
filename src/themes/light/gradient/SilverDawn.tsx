@@ -5,17 +5,18 @@ export const silverDawnTheme: Theme = {
     ...baseLightTheme,
     id: "silverDawn",
     name: "Silver Dawn",
-    description: "Industrial metallic gradients",
+    description: "Cool metallic gradients evoking early morning steel.",
+    adaptive: false,
     type: "light",
     style: "gradient",
     colors: {
         ...baseLightTheme.colors,
-        primary: "#4A6A5A",
+        primary: "#5B8E6F",
         neutral: "#555555",
         background:
-            "linear-gradient(180deg,#F3F4F5 0%,#F3F4F5 55%,#EEF0F2 72%,#E9ECEF 82%,#E2E4E6 100%)",
+            "linear-gradient(90deg,#F4F7F8 0%,#EAF0F2 40%,#D8E6E6 68%,#86B39E 88%,#5B8E6F 100%)",
         surface:
-            "linear-gradient(180deg,#E2E4E6 0%,#E2E4E6 55%,#CED5D3 70%,#B8C4C0 85%,#4A6A5A 100%)",
+            "linear-gradient(90deg,#EEF3F3 0%,#DCE9E7 45%,#B6D6CB 75%,#86B39E 90%,#5B8E6F 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",
@@ -26,7 +27,7 @@ export const silverDawnTheme: Theme = {
         colors: {
             primary: "#1A1A1A",
             secondary: "#3A3A3A",
-            accent: "#4A6A5A",
+            accent: "#5B8E6F",
             muted: "#5A5A5F",
         },
     },

@@ -371,9 +371,11 @@ export class GatewayStore {
         this.logger.info(
             `[Ready] took ${Date.now() - this.identifyStartTime!}ms`,
         );
-        const { sessionId, user } = payload;
+        const { sessionId, user, themes } = payload;
         this.sessionId = sessionId;
         this.app.setUser(user);
+        this.app.users.add(user);
+        this.app.theme.loadThemes(themes);
 
         this.reconnectTimeout = 0;
         this.app.setGatewayReady(true);

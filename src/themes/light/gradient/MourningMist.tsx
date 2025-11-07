@@ -5,17 +5,18 @@ export const mourningMistTheme: Theme = {
     ...baseLightTheme,
     id: "mourningMist",
     name: "Mourning Mist",
-    description: "Muted, misty gradients",
+    description: "Misty muted gradients with solemn, soft tones.",
+    adaptive: false,
     type: "light",
     style: "gradient",
     colors: {
         ...baseLightTheme.colors,
-        primary: "#664444",
+        primary: "#7A4A4A",
         neutral: "#554848",
         background:
-            "linear-gradient(180deg,#F6F6F7 0%,#F6F6F7 55%,#F1F1F4 72%,#ECECF2 82%,#E6E6EA 100%)",
+            "linear-gradient(90deg,#FBFBFC 0%,#F5F5F7 40%,#ECE9EE 68%,#A88082 88%,#7A4A4A 100%)",
         surface:
-            "linear-gradient(180deg,#E6E6EA 0%,#E6E6EA 55%,#D9D0D2 70%,#C8B6B7 85%,#7A5A5A 100%)",
+            "linear-gradient(90deg,#F4F2F4 0%,#ECE7EA 45%,#D9C8CA 75%,#B37E80 90%,#7A4A4A 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",
@@ -26,7 +27,7 @@ export const mourningMistTheme: Theme = {
         colors: {
             primary: "#1A1A1A",
             secondary: "#3A3A3A",
-            accent: "#664444",
+            accent: "#7A4A4A",
             muted: "#5A5A5F",
         },
     },

@@ -5,7 +5,9 @@ export const twilightElegyTheme: Theme = {
     ...baseLightTheme,
     id: "twilightElegy",
     name: "Twilight Elegy",
-    description: "Gothic Violet Glow",
+    description: "Gothic violet glow with cool, moody accents.",
+    adaptive: false,
+    style: "normal",
     type: "light",
     colors: {
         ...baseLightTheme.colors,

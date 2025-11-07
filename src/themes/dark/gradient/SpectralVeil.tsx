@@ -5,17 +5,18 @@ export const spectralVeilTheme: Theme = {
     ...baseDarkTheme,
     id: "spectralVeil",
     name: "Spectral Veil",
-    description: "Ethereal, softly dark gradients",
+    description: "Ethereal soft-dark gradients with luminous blue highlights.",
+    adaptive: false,
     type: "dark",
     style: "gradient",
     colors: {
         ...baseDarkTheme.colors,
-        primary: "#87A8E8",
+        primary: "#6E9EF0",
         neutral: "#A5B4C2",
         background:
-            "linear-gradient(180deg,#0D0D10 0%,#0D0D10 55%,#141923 72%,#1B2530 82%,#233040 100%)",
+            "linear-gradient(90deg,#07080A 0%,#0D1116 45%,#0F1726 70%,#2B3B57 88%,#6E9EF0 100%)",
         surface:
-            "linear-gradient(180deg,#23232A 0%,#23232A 55%,#2A313A 70%,#36465A 85%,#6A7CA8 100%)",
+            "linear-gradient(90deg,#161822 0%,#202633 45%,#2A3A4B 72%,#3F5B80 90%,#6E9EF0 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",
@@ -26,7 +27,7 @@ export const spectralVeilTheme: Theme = {
         colors: {
             primary: "#F5F5F7",
             secondary: "#CBD5E8",
-            accent: "#87A8E8",
+            accent: "#6E9EF0",
             muted: "#97A9B8",
         },
     },

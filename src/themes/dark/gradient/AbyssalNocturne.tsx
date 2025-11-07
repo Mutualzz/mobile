@@ -5,17 +5,18 @@ export const abyssalNocturneTheme: Theme = {
     ...baseDarkTheme,
     id: "abyssalNocturne",
     name: "Abyssal Nocturne",
-    description: "Deep, mysterious gradients",
+    description: "Deep mysterious gradients with oceanic indigo hues.",
+    adaptive: false,
     type: "dark",
     style: "gradient",
     colors: {
         ...baseDarkTheme.colors,
-        primary: "#63A9C8",
+        primary: "#2EA8D8",
         neutral: "#A5B4C2",
         background:
-            "linear-gradient(180deg,#0D0D10 0%,#0D0D10 55%,#112229 72%,#16323C 82%,#1D3E4B 100%)",
+            "linear-gradient(90deg,#07080A 0%,#0D1115 45%,#081F2B 70%,#135269 88%,#2EA8D8 100%)",
         surface:
-            "linear-gradient(180deg,#23232A 0%,#23232A 55%,#2B3640 70%,#36505C 85%,#5A7C8A 100%)",
+            "linear-gradient(90deg,#15171A 0%,#23232A 45%,#2B3942 72%,#2E5160 90%,#2EA8D8 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",
@@ -26,7 +27,7 @@ export const abyssalNocturneTheme: Theme = {
         colors: {
             primary: "#F5F5F7",
             secondary: "#CBD5DD",
-            accent: "#63A9C8",
+            accent: "#2EA8D8",
             muted: "#97A9B8",
         },
     },

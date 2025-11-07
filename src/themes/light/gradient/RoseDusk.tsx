@@ -5,17 +5,18 @@ export const roseDuskTheme: Theme = {
     ...baseLightTheme,
     id: "roseDusk",
     name: "Rose Dusk",
-    description: "Romantic, soft gradients",
+    description: "Romantic soft gradients shifting from blush to deep rose.",
+    adaptive: false,
     type: "light",
     style: "gradient",
     colors: {
         ...baseLightTheme.colors,
-        primary: "#A23A4F",
+        primary: "#C14A63",
         neutral: "#5A4652",
         background:
-            "linear-gradient(180deg,#F6F4F6 0%,#F6F4F6 55%,#F2EEF3 72%,#EDE8EE 82%,#EDE6EC 100%)",
+            "linear-gradient(90deg,#F9F6F7 0%,#F3EDF0 40%,#F0D6DE 68%,#E37586 88%,#C14A63 100%)",
         surface:
-            "linear-gradient(180deg,#EDE6EC 0%,#EDE6EC 55%,#E0CED6 70%,#D7BCC6 85%,#A23A4F 100%)",
+            "linear-gradient(90deg,#F2EBEE 0%,#EAD7DB 45%,#DFB7C2 75%,#D36A7D 90%,#C14A63 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",
@@ -26,7 +27,7 @@ export const roseDuskTheme: Theme = {
         colors: {
             primary: "#1A1A1A",
             secondary: "#3A3A3A",
-            accent: "#A23A4F",
+            accent: "#C14A63",
             muted: "#5A5A5F",
         },
     },

@@ -1,5 +1,6 @@
 import { Logger } from "@logger";
-import type { APIPrivateUser } from "@mutualzz/types";
+import type { APIPrivateUser, AppMode } from "@mutualzz/types";
+import { themes } from "@themes/index";
 import { secureStorageAdapter } from "@utils/secureStorageAdapter";
 import { makeAutoObservable } from "mobx";
 import { makePersistable } from "mobx-persist-store";
@@ -23,11 +24,13 @@ export class AppStore {
     account: AccountStore | null = null;
     gateway = new GatewayStore(this);
     draft = new DraftStore();
-    theme = new ThemeStore();
+    theme = new ThemeStore(this);
     rest = new REST();
     users = new UserStore(this);
 
     version: string | null = null;
+
+    mode: AppMode | null = null;
 
     constructor() {
         makeAutoObservable(this);
@@ -41,7 +44,7 @@ export class AppStore {
 
     setUser(user: APIPrivateUser) {
         this.account = new AccountStore(user);
-        this.theme.loadUserThemes(user);
+        this.mode = user.settings.preferredMode;
     }
 
     setGatewayReady(ready: boolean) {
@@ -50,6 +53,14 @@ export class AppStore {
 
     setAppLoading(loading: boolean) {
         this.isAppLoading = loading;
+    }
+
+    setMode(mode: AppMode) {
+        this.mode = mode;
+    }
+
+    resetMode() {
+        this.mode = null;
     }
 
     get isReady() {
@@ -76,13 +87,15 @@ export class AppStore {
         this.isAppLoading = false;
         this.isGatewayReady = true;
         this.account = null;
+        this.mode = null;
         this.rest.setToken(null);
         secureStorageAdapter.clear();
+        this.resetMode();
         this.theme.reset();
     }
 
     async loadSettings() {
         this.loadToken();
-        this.theme.loadDefaultThemes();
+        this.theme.loadThemes(themes);
     }
 }

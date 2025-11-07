@@ -5,17 +5,18 @@ export const floralRadianceTheme: Theme = {
     ...baseLightTheme,
     id: "floralRadiance",
     name: "Floral Radiance",
-    description: "Floral, radiant gradients",
+    description: "Floral radiant gradients with warm golden undertones.",
+    adaptive: false,
     type: "light",
     style: "gradient",
     colors: {
         ...baseLightTheme.colors,
-        primary: "#8A6C36",
+        primary: "#C08A2A",
         neutral: "#5A5842",
         background:
-            "linear-gradient(180deg,#F5F7F3 0%,#F5F7F3 55%,#EFF3EC 72%,#EBF0E8 82%,#E6EDE6 100%)",
+            "linear-gradient(90deg,#FBFCF9 0%,#F4F7F2 40%,#EEF5EA 68%,#F0D27A 88%,#C08A2A 100%)",
         surface:
-            "linear-gradient(180deg,#E6EDE6 0%,#E6EDE6 55%,#DBE3D6 70%,#D0D9C8 85%,#A88A5A 100%)",
+            "linear-gradient(90deg,#F6F7EE 0%,#EAEFD9 45%,#E0D8B4 75%,#D6B56A 90%,#C08A2A 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",
@@ -26,7 +27,7 @@ export const floralRadianceTheme: Theme = {
         colors: {
             primary: "#1A1A1A",
             secondary: "#3A3A3A",
-            accent: "#8A6C36",
+            accent: "#C08A2A",
             muted: "#5A5A5F",
         },
     },

@@ -12,7 +12,7 @@ const clientMeta = {
 };
 
 const DEFAULT_HEADERS = {
-    "User-Agent": "Mutualzz-Client/1.0",
+    "User-Agent": "Mutualzz-Mobile/1.0",
     accept: "application/json",
     ...clientMeta,
 };

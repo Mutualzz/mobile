@@ -5,17 +5,18 @@ export const rustRequiemTheme: Theme = {
     ...baseDarkTheme,
     id: "rustRequiem",
     name: "Rust Requiem",
-    description: "Grunge & industrial gradients",
+    description: "Grunge industrial gradients with warm oxidized layers.",
+    adaptive: false,
     type: "dark",
     style: "gradient",
     colors: {
         ...baseDarkTheme.colors,
-        primary: "#D09663",
+        primary: "#FFB37A",
         neutral: "#C4B48F",
         background:
-            "linear-gradient(180deg,#0D0D10 0%,#0D0D10 55%,#181410 72%,#221B14 82%,#2C241A 100%)",
+            "linear-gradient(90deg,#070605 0%,#0D0D0B 45%,#241B14 70%,#905E3F 88%,#FFB37A 100%)",
         surface:
-            "linear-gradient(180deg,#23241A 0%,#23241A 55%,#2B2E22 70%,#3A3C2C 85%,#A87C5A 100%)",
+            "linear-gradient(90deg,#15140F 0%,#201E18 45%,#2E2A23 72%,#6F4E3D 90%,#FFB37A 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",
@@ -26,7 +27,7 @@ export const rustRequiemTheme: Theme = {
         colors: {
             primary: "#F5F5F7",
             secondary: "#E1D3C0",
-            accent: "#D09663",
+            accent: "#FFB37A",
             muted: "#B8AB88",
         },
     },

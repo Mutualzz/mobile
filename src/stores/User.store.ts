@@ -1,4 +1,4 @@
-import type { APIUser } from "@mutualzz/types";
+import { type APIUser } from "@mutualzz/types";
 import { makeAutoObservable, observable, type ObservableMap } from "mobx";
 import type { AppStore } from "./App.store";
 import { User } from "./objects/User";
@@ -27,6 +27,10 @@ export class UserStore {
 
     get(id: string) {
         return this.users.get(id);
+    }
+
+    remove(id: string) {
+        this.users.delete(id);
     }
 
     get all() {

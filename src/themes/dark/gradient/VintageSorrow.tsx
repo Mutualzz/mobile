@@ -5,17 +5,19 @@ export const vintageSorrowTheme: Theme = {
     ...baseDarkTheme,
     id: "vintageSorrow",
     name: "Vintage Sorrow",
-    description: "Dramatic, vintage gradients",
+    description:
+        "Dramatic vintage gradients with melancholic rose transitions.",
+    adaptive: false,
     type: "dark",
     style: "gradient",
     colors: {
         ...baseDarkTheme.colors,
-        primary: "#D98098",
+        primary: "#FF95AB",
         neutral: "#D9C0CC",
         background:
-            "linear-gradient(180deg,#0D0D10 0%,#0D0D10 55%,#181216 72%,#23181E 82%,#2D1F26 100%)",
+            "linear-gradient(90deg,#070609 0%,#0F0D11 45%,#2A1720 70%,#8B4B5A 90%,#FF95AB 100%)",
         surface:
-            "linear-gradient(180deg,#23232A 0%,#23232A 55%,#2B2732 70%,#3A3442 85%,#A86A7A 100%)",
+            "linear-gradient(90deg,#19161A 0%,#20161A 45%,#3C2430 72%,#7A4B57 90%,#FF95AB 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",
@@ -26,7 +28,7 @@ export const vintageSorrowTheme: Theme = {
         colors: {
             primary: "#F5F5F7",
             secondary: "#EBCDD7",
-            accent: "#D98098",
+            accent: "#FF95AB",
             muted: "#CDAFB9",
         },
     },
