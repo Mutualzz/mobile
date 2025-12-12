@@ -1,5 +1,5 @@
 import type { Theme as MzTheme } from "@emotion/react";
-import { Logger } from "@logger";
+import { Logger } from "@mutualzz/logger";
 import type { APITheme } from "@mutualzz/types";
 import {
     baseDarkTheme,
@@ -10,12 +10,11 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { makeAutoObservable, observable, ObservableMap } from "mobx";
 import { makePersistable } from "mobx-persist-store";
+import { useColorScheme } from "react-native";
 import type { AppStore } from "./App.store";
 import { Theme } from "./objects/Theme";
 
 export class ThemeStore {
-    private readonly app: AppStore;
-
     private readonly logger = new Logger({
         tag: "ThemeStore",
     });
@@ -23,18 +22,25 @@ export class ThemeStore {
     readonly themes: ObservableMap<string, Theme>;
 
     currentTheme: string | null = null;
+
+    // NOTE: If the currentIcon is null, it means its adaptive to the theme
+    currentIcon: string | null = null;
+
     currentType: ThemeType = "system";
     currentStyle: ThemeStyle = "normal";
 
-    constructor(app: AppStore) {
-        this.app = app;
-
+    constructor(private readonly app: AppStore) {
         this.themes = observable.map();
         makeAutoObservable(this);
 
         makePersistable(this, {
             name: "ThemeStore",
-            properties: ["currentTheme", "currentType", "currentStyle"],
+            properties: [
+                "currentTheme",
+                "currentType",
+                "currentStyle",
+                "currentIcon",
+            ],
             storage: AsyncStorage,
         });
     }
@@ -51,14 +57,18 @@ export class ThemeStore {
         this.currentStyle = style;
     }
 
-    reset() {
-        this.themes.clear();
-        this.themes.set(baseDarkTheme.id, new Theme(baseDarkTheme));
-        this.themes.set(baseLightTheme.id, new Theme(baseLightTheme));
+    setCurrentIcon(icon: string | null) {
+        this.currentIcon = icon;
     }
 
-    loadThemes(themes: (APITheme | MzTheme)[]) {
+    addAll(themes: (APITheme | MzTheme)[]) {
         themes.forEach((theme) => this.add(theme));
+    }
+
+    reset() {
+        this.themes.forEach((theme) => {
+            if (theme.author) this.themes.delete(theme.id);
+        });
     }
 
     add(theme: APITheme | MzTheme) {
@@ -68,8 +78,8 @@ export class ThemeStore {
         }
 
         const newTheme = new Theme(theme);
-        if ("createdBy" in theme && theme.createdBy)
-            newTheme.createdBy = this.app.users.get(theme.createdBy) ?? null;
+        if ("author" in theme && theme.author)
+            newTheme.author = this.app.users.get(theme.author) ?? null;
 
         this.themes.set(newTheme.id, newTheme);
         this.logger.debug(`Added theme: ${newTheme.id}`);
@@ -85,12 +95,26 @@ export class ThemeStore {
         existingTheme.update(theme);
     }
 
-    remove(themeId: string) {
-        if (!this.themes.has(themeId)) {
-            this.logger.warn(`Theme ${themeId} does not exist.`);
+    get(id: string) {
+        return this.themes.get(id) ?? baseDarkTheme;
+    }
+
+    get all() {
+        return Array.from(this.themes.values());
+    }
+
+    remove(id: string) {
+        if (!this.themes.has(id)) {
+            this.logger.warn(`Theme ${id} does not exist.`);
             return;
         }
 
-        this.themes.delete(themeId);
+        this.themes.delete(id);
+
+        if (this.currentTheme === id)
+            this.currentTheme =
+                useColorScheme() === "dark"
+                    ? baseDarkTheme.id
+                    : baseLightTheme.id;
     }
 }

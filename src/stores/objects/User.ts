@@ -1,12 +1,14 @@
 import {
+    BitField,
     CDNRoutes,
     ImageFormat,
+    userFlags,
     type APIUser,
     type AvatarFormat,
     type DefaultAvatar,
     type Sizes,
+    type UserFlags,
 } from "@mutualzz/types";
-import type { Hex } from "@mutualzz/ui-core";
 import { REST } from "@stores/REST.store";
 import { makeAutoObservable } from "mobx";
 
@@ -16,11 +18,10 @@ export class User {
     defaultAvatar: DefaultAvatar;
     avatar?: string | null = null;
     globalName?: string | null = null;
-    accentColor: Hex;
-    createdAt: Date;
-    createdTimestamp: number;
-    updatedAt: Date;
-    updatedTimestamp: number;
+    accentColor: string;
+    created: Date;
+    updated: Date;
+    flags: BitField<UserFlags>;
 
     raw: APIUser;
 
@@ -31,10 +32,9 @@ export class User {
         this.avatar = user.avatar ?? null;
         this.globalName = user.globalName ?? null;
         this.accentColor = user.accentColor;
-        this.createdAt = user.createdAt;
-        this.createdTimestamp = user.createdTimestamp;
-        this.updatedAt = user.updatedAt;
-        this.updatedTimestamp = user.updatedTimestamp;
+        this.created = new Date(user.created);
+        this.updated = new Date(user.updated);
+        this.flags = BitField.fromString(userFlags, user.flags.toString());
 
         this.raw = user;
 

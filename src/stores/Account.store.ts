@@ -1,14 +1,12 @@
-import { Logger } from "@logger";
+import { Logger } from "@mutualzz/logger";
 import {
     CDNRoutes,
     ImageFormat,
     type APIPrivateUser,
-    type APIUserSettings,
     type AvatarFormat,
     type DefaultAvatar,
     type Sizes,
 } from "@mutualzz/types";
-import type { Hex } from "@mutualzz/ui-core";
 import { makeAutoObservable } from "mobx";
 import { REST } from "./REST.store";
 
@@ -23,10 +21,8 @@ export class AccountStore {
     avatar?: string | null = null;
     globalName?: string | null = null;
     email?: string | null = null;
-    accentColor: Hex;
-    createdAt: Date;
-    createdTimestamp: number;
-    settings: APIUserSettings;
+    accentColor: string;
+    created: Date;
 
     raw: APIPrivateUser;
 
@@ -39,9 +35,7 @@ export class AccountStore {
         this.previousAvatars = user.previousAvatars ?? [];
         this.globalName = user.globalName ?? null;
         this.email = user.email ?? null;
-        this.settings = user.settings;
-        this.createdAt = user.createdAt;
-        this.createdTimestamp = user.createdTimestamp;
+        this.created = new Date(user.created);
 
         this.raw = user;
 

@@ -1,5 +1,5 @@
 import type { ThemeDraft } from "@app-types/theme";
-import { Logger } from "@logger";
+import { Logger } from "@mutualzz/logger";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { makeAutoObservable } from "mobx";
 import { makePersistable } from "mobx-persist-store";

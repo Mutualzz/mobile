@@ -1,13 +1,20 @@
+import { Logger } from "@mutualzz/logger";
 import {
     GatewayCloseCodes,
     GatewayDispatchEvents,
     GatewayOpcodes,
     type APIPrivateUser,
+    type APISpace,
     type APIUser,
     type GatewayReadyDispatchPayload,
 } from "@mutualzz/types";
+import { createCodec, type Codec, type Encoding } from "@utils/codec";
+import {
+    createCompressor,
+    type Compression,
+    type Compressor,
+} from "@utils/compressor";
 import { makeAutoObservable } from "mobx";
-import { Logger } from "../Logger";
 import type { AppStore } from "./App.store";
 
 // We have to create our own GatewayStatus "enum" to avoid issues with SSR
@@ -22,15 +29,13 @@ export const GatewayStatus = {
 
 export type GatewayStatus = (typeof GatewayStatus)[keyof typeof GatewayStatus];
 
-const RECONNECT_TIMEOUT = 10000;
+const RECONNECT_TIMEOUT = 5000;
 
 export class GatewayStore {
     socket: WebSocket | null = null;
     private readonly logger = new Logger({
         tag: "GatewayStore",
     });
-
-    private readonly app: AppStore;
 
     public readyState: GatewayStatus = GatewayStatus.CLOSED;
     private sessionId: string | null = null;
@@ -41,6 +46,12 @@ export class GatewayStore {
     private initialHeartbeatTimeout: NodeJS.Timeout | null = null;
     private heartbeatAck = true;
     private url?: string;
+
+    private encoding: Encoding = "json";
+    private compress: Compression = "zlib-stream";
+
+    private codec!: Codec;
+    private compressor!: Compressor;
 
     private connectionStartTime?: number;
     private identifyStartTime?: number;
@@ -55,22 +66,28 @@ export class GatewayStore {
         (...args: any[]) => any
     >();
 
-    constructor(app: AppStore) {
-        this.app = app;
-
+    constructor(private readonly app: AppStore) {
         makeAutoObservable(this);
     }
 
-    async connect(url: string = process.env.EXPO_WS_URL || "") {
+    async connect(
+        url: string = process.env.EXPO_WS_URL || "wss://gateway.mutualzz.com",
+    ) {
         if (!this.url) {
             const newUrl = new URL(url);
+            newUrl.searchParams.set("encoding", this.encoding);
+            newUrl.searchParams.set("compress", this.compress);
             this.url = newUrl.href;
         }
 
         this.logger.debug(`[Connect] Gateway URL ${this.url}`);
         this.connectionStartTime = Date.now();
         this.socket = new WebSocket(this.url);
+        this.socket.binaryType = "arraybuffer";
         this.readyState = GatewayStatus.CONNECTING;
+
+        this.codec = await createCodec(this.encoding);
+        this.compressor = await createCompressor(this.compress);
 
         this.setupListeners();
         this.setupDispatchHandlers();
@@ -110,6 +127,11 @@ export class GatewayStore {
             GatewayDispatchEvents.UserUpdate,
             this.onUserUpdate,
         );
+
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.SpaceAdded,
+            this.onSpaceAdded,
+        );
     }
 
     private onOpen = () => {
@@ -120,7 +142,7 @@ export class GatewayStore {
         this.reconnectTimeout = 0;
 
         if (this.sessionId) {
-            this.logger.debug("[Gateway] Resuming session:", this.sessionId);
+            this.logger.debug("[Gateway] Resuming session");
             this.handleResume();
         } else {
             this.logger.debug("[Gateway] Identifying");
@@ -128,10 +150,29 @@ export class GatewayStore {
         }
     };
 
-    private onMessage = (e: MessageEvent) => {
-        const payload = JSON.parse(e.data);
+    private onMessage = async (e: MessageEvent) => {
+        try {
+            let bytes: Uint8Array;
+
+            if (typeof e.data === "string")
+                bytes = new TextEncoder().encode(e.data);
+            else if (e.data instanceof ArrayBuffer)
+                bytes = new Uint8Array(e.data);
+            else if (e.data instanceof Blob) {
+                const ab = await e.data.arrayBuffer();
+                bytes = new Uint8Array(ab);
+            } else {
+                this.logger.error("Unknown message data type");
+                return;
+            }
+        } catch (err) {
+            this.logger.error("Failed to decompress message", err);
+        }
+    };
+
+    private handlePayload = (payload: any) => {
         if (payload.op !== GatewayOpcodes.Dispatch) {
-            this.logger.debug(`[Gateway] -> ${payload.op}`, payload);
+            this.logger.debug(`[Gateway] -> ${payload.op}`);
         }
 
         switch (payload.op) {
@@ -168,12 +209,11 @@ export class GatewayStore {
         this.handleClose(e.code);
     };
 
-    private sendJson = (payload: any) => {
+    private send = async (payload: any) => {
         if (!this.socket) {
             this.logger.error("Socket is not open");
             return;
         }
-
         if (this.socket.readyState !== WebSocket.OPEN) {
             this.logger.error(
                 `Socket is not open; readyState: ${this.socket.readyState}`,
@@ -181,8 +221,21 @@ export class GatewayStore {
             return;
         }
 
-        this.logger.debug(`[Gateway] <- ${payload.op}`, payload);
-        this.socket.send(JSON.stringify(payload));
+        const raw = this.codec.encode(payload);
+
+        const out =
+            this.compress !== "none"
+                ? this.compressor.compress(Uint8Array.from(raw))
+                : raw;
+
+        try {
+            if (this.compress !== "none") this.socket.send(out);
+            else this.socket.send(new TextDecoder().decode(raw));
+
+            this.logger.debug(`[Gateway] <- ${payload.op}`);
+        } catch (err) {
+            this.logger.error("Failed to send message", err);
+        }
     };
 
     private handleIdentify() {
@@ -200,7 +253,7 @@ export class GatewayStore {
             },
         };
 
-        this.sendJson(payload);
+        this.send(payload);
     }
 
     private handleInvalidSession = (resumable: boolean) => {
@@ -228,7 +281,7 @@ export class GatewayStore {
             return;
         }
 
-        this.sendJson({
+        this.send({
             op: GatewayOpcodes.Resume,
             d: {
                 token: this.app.token,
@@ -335,7 +388,7 @@ export class GatewayStore {
             d: this.sequence,
         };
         this.logger.debug("Sending heartbeat");
-        this.sendJson(payload);
+        this.send(payload);
     };
 
     private cleanup = () => {
@@ -352,7 +405,7 @@ export class GatewayStore {
 
     private handleDispatch = (data: any) => {
         const { d, t, s } = data;
-        this.logger.debug(`[Gateway] -> ${t}`, d);
+        this.logger.debug(`[Gateway] -> ${t}`);
         this.sequence = s;
         const handler = this.dispatchHandlers.get(t);
         if (!handler) {
@@ -364,21 +417,30 @@ export class GatewayStore {
     };
 
     private onResume = () => {
-        this.logger.debug("[Resume] Session:", this.sessionId);
+        this.logger.debug("[Resume] Session");
     };
 
     private onReady = (payload: GatewayReadyDispatchPayload) => {
         this.logger.info(
             `[Ready] took ${Date.now() - this.identifyStartTime!}ms`,
         );
-        const { sessionId, user, themes } = payload;
+
+        const { sessionId, user, themes, spaces, settings } = payload;
+
         this.sessionId = sessionId;
-        this.app.setUser(user);
+
+        this.app.setUser(user, settings);
         this.app.users.add(user);
-        this.app.theme.loadThemes(themes);
+        this.app.themes.addAll(themes);
+        this.app.spaces.addAll(spaces);
 
         this.reconnectTimeout = 0;
         this.app.setGatewayReady(true);
+    };
+
+    private onSpaceAdded = (payload: APISpace) => {
+        this.app.spaces.add(payload);
+        this.app.settings?.addPoistion(payload.id);
     };
 
     private onUserUpdate = (payload: APIUser | APIPrivateUser) => {

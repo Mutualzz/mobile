@@ -1,2 +1,238 @@
-[?9001h[?1004h[?25l[2J[m[2;1H> @mutualzz/mobile@2.0.0 typecheck C:\Users\matem\Desktop\Mutualzz\apps\mobile
-> tsc --noEmit[5;1H]0;C:\WINDOWS\system32\cmd.exe[?25h[?9001l[?1004l
+[?9001h[?1004h[?25l[2J[m[2;1H> @mutualzz/mobile@2.0.1 typecheck C:\Users\Azrael\Desktop\Mutualzz\apps\mobile
+> tsc --noEmit[5;1H]0;C:\WINDOWS\system32\cmd.exe[?25h[?25l[96msrc/components/ThemeSelector.tsx[m:[93m30[m:[93m21 [m- [91merror [90mTS2345: [mArgument of type 'import("C:/Users/Azrael/Desktop/Mutualzz/apps/mobile/src/stores/objects/Theme").Theme' is not assignable to parameter of type 'import("C:/Users/Azrael/Desktop/Mutualzz/node_modules/@emotion/react/dist/declarations/src/theming").Theme'.
+  Type 'Theme' is missing the following properties from type 'Theme': breakpoints, spacing, shadows, zIndex[7m[9;1H30[27m         changeTheme(changeTo);[7m
+  [27m[21X[91m[21C~~~~~~~~
+[?25h[m
+[96msrc/components/ThemeSelector.tsx[m:[93m105[m:[93m37 [m- [91merror [90mTS2345: [mArgument of type 'Theme[]' is not assignable to parameter of type 'MzTheme[]'.
+  Type 'Theme' is not assignable to type 'MzTheme'.
+    Type 'Theme' is missing the following properties from type 'Theme': breakpoints, spacing, shadows, zIndex
+
+[7m105[27m                         {sortThemes(themes).map((theme) => ([K
+[7m   [27m[37X[91m[37C~~~~~~[K[m
+
+[96msrc/components/ThemeSelector.tsx[m:[93m108[m:[93m40 [m- [91merror [90mTS2551: [mProperty 'createdBy' does not exist on type 'MzTheme'. Did you mean 'created'?[K
+
+[7m108[27m                                 {theme.createdBy ? ` (by You)` : ""}[K
+[7m   [27m[40X[91m[40C~~~~~~~~~[K[m
+
+  [96m../../packages/types/dist/index.d.ts[m:[93m117[m:[93m5[K[m
+    [7m117[27m     created: Date;[K
+    [7m   [27m     [96m~~~~~~~[K[m
+    'created' is declared here.
+
+[96msrc/contexts/AppTheme.context.tsx[m:[93m31[m:[93m49 [m- [91merror [90mTS2339: [mProperty 'defaultThemesLoaded' does not exist on type 'ThemeStore'.[K
+
+[7m31[27m                 defaultThemesLoaded: themeStore.defaultThemesLoaded,[K
+[7m  [27m[49X[91m[49C~~~~~~~~~~~~~~~~~~~[K[m
+
+[96msrc/contexts/AppTheme.context.tsx[m:[93m32[m:[93m46 [m- [91merror [90mTS2339: [mProperty 'userThemesLoaded' does not exist on type 'ThemeStore'.[K
+
+[7m32[27m                 userThemesLoaded: themeStore.userThemesLoaded,[K
+[7m  [27m[46X[91m[46C~~~~~~~~~~~~~~~~[K[m
+
+[96msrc/contexts/AppTheme.context.tsx[m:[93m57[m:[93m47 [m- [91merror [90mTS2339: [mProperty 'find' does not exist on type 'ObservableMap<string, Theme>'.[K
+
+[7m57[27m                             themeStore.themes.find([K
+[7m  [27m[47X[91m[47C~~~~[K[m
+
+[96msrc/contexts/AppTheme.context.tsx[m:[93m58[m:[93m34 [m- [91merror [90mTS7006: [mParameter 't' implicitly has an 'any' type.[K
+
+[7m58[27m                                 (t) =>[K
+[7m  [27m[34X[91m[34C~[K[m
+
+[96msrc/contexts/AppTheme.context.tsx[m:[93m63[m:[93m43 [m- [91merror [90mTS2339: [mProperty 'find' does not exist on type 'ObservableMap<string, Theme>'.[K
+
+[7m63[27m                         themeStore.themes.find([K
+[7m  [27m[43X[91m[43C~~~~[K[m
+
+[96msrc/contexts/AppTheme.context.tsx[m:[93m64[m:[93m30 [m- [91merror [90mTS7006: [mParameter 't' implicitly has an 'any' type.[K
+
+[7m64[27m                             (t) => t.type === type && t.style === style,[K
+[7m  [27m[30X[91m[30C~[K[m
+
+[96msrc/contexts/AppTheme.context.tsx[m:[93m66[m:[93m43 [m- [91merror [90mTS2339: [mProperty 'find' does not exist on type 'ObservableMap<string, Theme>'.[K
+
+[7m66[27m                         themeStore.themes.find([K
+[7m  [27m[43X[91m[43C~~~~[K[m
+
+[96msrc/contexts/AppTheme.context.tsx[m:[93m67[m:[93m30 [m- [91merror [90mTS7006: [mParameter 't' implicitly has an 'any' type.[K
+
+[7m67[27m                             (t) => t.type === type && t.style === "normal",[K
+[7m  [27m[30X[91m[30C~[K[m
+
+[96msrc/contexts/AppTheme.context.tsx[m:[93m70[m:[93m74 [m- [91merror [90mTS2339: [mProperty 'id' does not exist on type 'string'.[K
+
+[7m70[27m                     selectedTheme = pick(theme) || pick(userThemeRemote?.id);[K
+[7m  [27m[74X[91m[74C~~[K[m
+
+[96msrc/contexts/AppTheme.context.tsx[m:[93m73[m:[93m43 [m- [91merror [90mTS2339: [mProperty 'find' does not exist on type 'ObservableMap<string, Theme>'.[K
+
+[7m73[27m                         themeStore.themes.find([K
+[7m  [27m[43X[91m[43C~~~~[K[m
+
+[96msrc/contexts/AppTheme.context.tsx[m:[93m74[m:[93m30 [m- [91merror [90mTS7006: [mParameter 't' implicitly has an 'any' type.[K
+
+[7m74[27m                             (t) => t.type === type && t.style === style,[K
+[7m  [27m[30X[91m[30C~[K[m
+
+[96msrc/contexts/AppTheme.context.tsx[m:[93m76[m:[93m43 [m- [91merror [90mTS2339: [mProperty 'find' does not exist on type 'ObservableMap<string, Theme>'.[K
+
+[7m76[27m                         themeStore.themes.find([K
+[7m  [27m[43X[91m[43C~~~~[K[m
+
+[96msrc/contexts/AppTheme.context.tsx[m:[93m77[m:[93m30 [m- [91merror [90mTS7006: [mParameter 't' implicitly has an 'any' type.[K
+
+[7m77[27m                             (t) => t.type === type && t.style === "normal",[K
+[7m  [27m[30X[91m[30C~[K[m
+
+[96msrc/stores/Account.store.ts[m:[93m38[m:[93m9 [m- [91merror [90mTS2322: [mType 'string' is not assignable to type '`#${string}`'.[K
+
+[7m38[27m         this.accentColor = user.accentColor;[K
+[7m  [27m[9X[91m[9C~~~~~~~~~~~~~~~~[K[m
+
+[96msrc/stores/Account.store.ts[m:[93m42[m:[93m30 [m- [91merror [90mTS2339: [mProperty 'settings' does not exist on type 'APIPrivateUser'.[K
+
+[7m42[27m         this.settings = user.settings;[K
+[7m  [27m[30X[91m[30C~~~~~~~~[K[m
+
+[96msrc/stores/Account.store.ts[m:[93m43[m:[93m31 [m- [91merror [90mTS2551: [mProperty 'createdAt' does not exist on type 'APIPrivateUser'. Did you mean 'created'?[K
+
+[7m43[27m         this.createdAt = user.createdAt;[K
+[7m  [27m[31X[91m[31C~~~~~~~~~[K[m
+
+  [96m../../packages/types/dist/index.d.ts[m:[93m65[m:[93m5[K[m
+    [7m65[27m     created: Date;[K
+    [7m  [27m     [96m~~~~~~~[K[m
+    'created' is declared here.
+
+[96msrc/stores/Account.store.ts[m:[93m44[m:[93m38 [m- [91merror [90mTS2339: [mProperty 'createdTimestamp' does not exist on type 'APIPrivateUser'.[K
+
+[7m44[27m         this.createdTimestamp = user.createdTimestamp;[K
+[7m  [27m[38X[91m[38C~~~~~~~~~~~~~~~~[K[m
+
+[96msrc/stores/App.store.ts[m:[93m47[m:[93m26 [m- [91merror [90mTS2339: [mProperty 'settings' does not exist on type 'APIPrivateUser'.[K
+
+[7m47[27m         this.mode = user.settings.preferredMode;[K
+[7m  [27m[26X[91m[26C~~~~~~~~[K[m
+
+[96msrc/stores/objects/Space.ts[m:[93m25[m:[93m32 [m- [91merror [90mTS2551: [mProperty 'createdAt' does not exist on type 'APISpace'. Did you mean 'created'?[K
+
+[7m25[27m         this.createdAt = space.createdAt;[K
+[7m  [27m[32X[91m[32C~~~~~~~~~[K[m
+
+  [96m../../packages/types/dist/index.d.ts[m:[93m75[m:[93m5[K[m
+    [7m75[27m     created: Date;[K
+    [7m  [27m     [96m~~~~~~~[K[m
+    'created' is declared here.
+
+[96msrc/stores/objects/Space.ts[m:[93m26[m:[93m39 [m- [91merror [90mTS2339: [mProperty 'createdTimestamp' does not exist on type 'APISpace'.[K
+
+[7m26[27m         this.createdTimestamp = space.createdTimestamp;[K
+[7m  [27m[39X[91m[39C~~~~~~~~~~~~~~~~[K[m
+
+[96msrc/stores/objects/Space.ts[m:[93m27[m:[93m32 [m- [91merror [90mTS2551: [mProperty 'updatedAt' does not exist on type 'APISpace'. Did you mean 'updated'?[K
+
+[7m27[27m         this.updatedAt = space.updatedAt;[K
+[7m  [27m[32X[91m[32C~~~~~~~~~[K[m
+
+  [96m../../packages/types/dist/index.d.ts[m:[93m76[m:[93m5[K[m
+    [7m76[27m     updated: Date;[K
+    [7m  [27m     [96m~~~~~~~[K[m
+    'updated' is declared here.
+
+[96msrc/stores/objects/Space.ts[m:[93m28[m:[93m39 [m- [91merror [90mTS2339: [mProperty 'updatedTimestamp' does not exist on type 'APISpace'.[K
+
+[7m28[27m         this.updatedTimestamp = space.updatedTimestamp;[K
+[7m  [27m[39X[91m[39C~~~~~~~~~~~~~~~~[K[m
+
+[96msrc/stores/objects/Theme.ts[m:[93m59[m:[93m9 [m- [91merror [90mTS2322: [mType '{ common: { white: string; black: string; }; primary: string; neutral: string; background: string; surface: string; danger: string; warning: string; inf
+[10;207Hfo: string; success: string; }' is not assignable to type '{ common: { white: `#${string}`; black: `#${string}`; }; primary: `#${string}`; neutral: `#${string}`; background: ColorLike; surface: ColorLike; dan
+[10;207Hnger: `#${string}`; warning: `#${string}`; info: `#${string}`; success: `#${string}`; }'.
+  The types of 'common.white' are incompatible between these types.
+    Type 'string' is not assignable to type '`#${string}`'.
+
+[7m59[27m         this.colors = theme.colors;[K
+[7m  [27m[9X[91m[9C~~~~~~~~~~~[K[m
+
+[96msrc/stores/objects/Theme.ts[m:[93m60[m:[93m9 [m- [91merror [90mTS2322: [mType '{ colors: { primary: string; secondary: string; accent: string; muted: string; }; }' is not assignable to type '{ colors: { primary: `#${string}`; secon
+[10;207Hndary: `#${string}`; accent: `#${string}`; muted: `#${string}`; }; }'.
+  The types of 'colors.primary' are incompatible between these types.
+    Type 'string' is not assignable to type '`#${string}`'.
+
+[7m60[27m         this.typography = theme.typography;[K
+[7m  [27m[9X[91m[9C~~~~~~~~~~~~~~~[K[m
+
+[96msrc/stores/objects/Theme.ts[m:[93m62[m:[93m32 [m- [91merror [90mTS2551: [mProperty 'createdAt' does not exist on type 'APITheme'. Did you mean 'created'?[K
+
+[7m62[27m         this.createdAt = theme.createdAt;[K
+[7m  [27m[32X[91m[32C~~~~~~~~~[K[m
+
+  [96m../../packages/types/dist/index.d.ts[m:[93m117[m:[93m5[K[m
+    [7m117[27m     created: Date;[K
+    [7m   [27m     [96m~~~~~~~[K[m
+    'created' is declared here.
+
+[96msrc/stores/objects/Theme.ts[m:[93m63[m:[93m39 [m- [91merror [90mTS2339: [mProperty 'createdTimestamp' does not exist on type 'APITheme'.[K
+
+[7m63[27m         this.createdTimestamp = theme.createdTimestamp;[K
+[7m  [27m[39X[91m[39C~~~~~~~~~~~~~~~~[K[m
+
+[96msrc/stores/objects/Theme.ts[m:[93m64[m:[93m32 [m- [91merror [90mTS2551: [mProperty 'updatedAt' does not exist on type 'APITheme'. Did you mean 'updated'?[K
+
+[7m64[27m         this.updatedAt = theme.updatedAt;[K
+[7m  [27m[32X[91m[32C~~~~~~~~~[K[m
+
+  [96m../../packages/types/dist/index.d.ts[m:[93m118[m:[93m5[K[m
+    [7m118[27m     updated: Date;[K
+    [7m   [27m     [96m~~~~~~~[K[m
+    'updated' is declared here.
+
+[96msrc/stores/objects/Theme.ts[m:[93m65[m:[93m39 [m- [91merror [90mTS2339: [mProperty 'updatedTimestamp' does not exist on type 'APITheme'.[K
+
+[7m65[27m         this.updatedTimestamp = theme.updatedTimestamp;[K
+[7m  [27m[39X[91m[39C~~~~~~~~~~~~~~~~[K[m
+
+[96msrc/stores/objects/User.ts[m:[93m33[m:[93m9 [m- [91merror [90mTS2322: [mType 'string' is not assignable to type '`#${string}`'.[K
+
+[7m33[27m         this.accentColor = user.accentColor;[K
+[7m  [27m[9X[91m[9C~~~~~~~~~~~~~~~~[K[m
+
+[96msrc/stores/objects/User.ts[m:[93m34[m:[93m31 [m- [91merror [90mTS2551: [mProperty 'createdAt' does not exist on type 'APIUser'. Did you mean 'created'?[K
+
+[7m34[27m         this.createdAt = user.createdAt;[K
+[7m  [27m[31X[91m[31C~~~~~~~~~[K[m
+
+[96msrc/stores/objects/User.ts[m:[93m35[m:[93m38 [m- [91merror [90mTS2339: [mProperty 'createdTimestamp' does not exist on type 'APIUser'.[K
+
+[7m35[27m         this.createdTimestamp = user.createdTimestamp;[K
+[7m  [27m[38X[91m[38C~~~~~~~~~~~~~~~~[K[m
+
+[96msrc/stores/objects/User.ts[m:[93m36[m:[93m31 [m- [91merror [90mTS2551: [mProperty 'updatedAt' does not exist on type 'APIUser'. Did you mean 'updated'?[K
+
+[7m36[27m         this.updatedAt = user.updatedAt;[K
+[7m  [27m[31X[91m[31C~~~~~~~~~[K[m
+
+[96msrc/stores/objects/User.ts[m:[93m37[m:[93m38 [m- [91merror [90mTS2339: [mProperty 'updatedTimestamp' does not exist on type 'APIUser'.[K
+
+[7m37[27m         this.updatedTimestamp = user.updatedTimestamp;[K
+[7m  [27m[38X[91m[38C~~~~~~~~~~~~~~~~[K[m
+
+[96msrc/stores/Theme.store.ts[m:[93m72[m:[93m53 [m- [91merror [90mTS2345: [mArgument of type '{}' is not assignable to parameter of type 'string'.[K
+
+[7m72[27m             newTheme.createdBy = this.app.users.get(theme.createdBy) ?? null;[K
+[7m  [27m[53X[91m[53C~~~~~~~~~~~~~~~[K[m
+
+
+Found 37 errors in 8 files.
+
+Errors  Files
+     3  src/components/ThemeSelector.tsx[90m:30[K[m
+    13  src/contexts/AppTheme.context.tsx[90m:31[K[m
+     4  src/stores/Account.store.ts[90m:38[K[m
+     1  src/stores/App.store.ts[90m:47[K[m
+     4  src/stores/objects/Space.ts[90m:25[K[m
+     6  src/stores/objects/Theme.ts[90m:59[K[m
+     5  src/stores/objects/User.ts[90m:33[K[m
+     1  src/stores/Theme.store.ts[90m:72[K[m
+[30m[41m ELIFECYCLE [m [31mCommand failed with exit code 2.[m
+[?9001l[?1004l

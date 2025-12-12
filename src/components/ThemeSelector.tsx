@@ -9,17 +9,18 @@ import {
     Select,
     useTheme,
 } from "@mutualzz/ui-native";
+import { Theme } from "@stores/objects/Theme";
 import { sortThemes } from "@utils/index";
 import { observer } from "mobx-react";
 import { View } from "react-native";
 
 export const ThemeSelector = observer(() => {
-    const { theme: themeStore } = useAppStore();
+    const app = useAppStore();
 
     const { type, theme, style, changeTheme, changeType, changeStyle } =
         useTheme();
 
-    const themes = Array.from(themeStore.themes.values())
+    const themes = Array.from(app.themes.all)
         .filter((theme) => theme.type === type)
         .filter((theme) => theme.style === style);
 
@@ -27,7 +28,7 @@ export const ThemeSelector = observer(() => {
         const changeTo = themes.find((theme) => theme.id === themeId);
         if (!changeTo) return;
 
-        changeTheme(changeTo);
+        changeTheme(Theme.toEmotionTheme(changeTo));
     };
 
     return (
@@ -105,7 +106,7 @@ export const ThemeSelector = observer(() => {
                         {sortThemes(themes).map((theme) => (
                             <Option key={theme.id} value={theme.id}>
                                 {theme.name}
-                                {theme.createdBy ? ` (by You)` : ""}
+                                {theme.author ? ` (by You)` : ""}
                             </Option>
                         ))}
                     </Select>

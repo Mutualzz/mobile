@@ -3,7 +3,7 @@ import { TabBar } from "@components/TabBar/TabBar";
 import { AppTheme } from "@contexts/AppTheme.context";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useAppStore } from "@hooks/useStores";
-import { Logger } from "@logger";
+import { Logger } from "@mutualzz/logger";
 import { IconButton, NativeBaseline } from "@mutualzz/ui-native";
 import * as Font from "expo-font";
 import { TabList, Tabs, TabSlot, TabTrigger } from "expo-router/ui";

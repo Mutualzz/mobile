@@ -1,4 +1,4 @@
-import { Logger } from "@logger";
+import { Logger } from "@mutualzz/logger";
 import { Platform } from "react-native";
 
 let isTauri = false;

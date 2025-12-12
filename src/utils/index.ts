@@ -1,6 +1,6 @@
-import { MzTheme } from "@app-types/theme";
+import { Theme } from "@stores/objects/Theme";
 
-export const sortThemes = (themes: MzTheme[]): MzTheme[] => {
+export const sortThemes = (themes: Theme[]): Theme[] => {
     const priorityOrder: string[] = ["baseDark", "baseLight"];
 
     const priorityThemes = themes.filter((theme) =>
