@@ -18,8 +18,7 @@
                 "dark": "./assets/icon.png",
                 "light": "./assets/icon.png",
                 "tinted": "./assets/adaptive-icon.png"
-            },
-            "buildNumber": "2"
+            }
         },
         "android": {
             "package": "com.mutualzz.app",
@@ -27,9 +26,7 @@
                 "foregroundImage": "./assets/adaptive-icon.png",
                 "backgroundColor": "#ffffff"
             },
-            "edgeToEdgeEnabled": true,
-            "softwareKeyboardLayoutMode": "resize",
-            "versionCode": 2
+            "softwareKeyboardLayoutMode": "resize"
         },
         "experiments": {
             "typedRoutes": true,
