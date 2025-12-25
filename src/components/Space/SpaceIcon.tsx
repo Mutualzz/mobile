@@ -1,0 +1,59 @@
+import { Paper } from "@components/Paper";
+import { useAppStore } from "@hooks/useStores";
+import type { APISpacePartial } from "@mutualzz/types";
+import { Avatar, type AvatarProps, Typography } from "@mutualzz/ui-native";
+import { Space } from "@stores/objects/Space";
+import { asAcronym } from "@utils/index";
+import { observer } from "mobx-react-lite";
+
+interface Props extends AvatarProps {
+    space: Space | APISpacePartial;
+    selected?: boolean;
+}
+
+export const SpaceIcon = observer(({ space, selected, ...props }: Props) => {
+    const app = useAppStore();
+
+    const iconUrl = space
+        ? Space.constructIconUrl(
+              space.id,
+              space.icon?.startsWith("a_"),
+              space.icon,
+          )
+        : null;
+
+    if (iconUrl)
+        return (
+            <Avatar
+                size={36}
+                src={iconUrl}
+                variant="plain"
+                color="primary"
+                elevation={5}
+                shape={selected ? 10 : 15}
+                {...props}
+            >
+                <Typography level="body-sm">{asAcronym(space.name)}</Typography>
+            </Avatar>
+        );
+
+    return (
+        <Paper
+            style={{
+                borderRadius: selected ? 10 : 17.5,
+            }}
+            elevation={app.preferEmbossed ? 5 : 1}
+            transparency={25}
+        >
+            <Avatar
+                size={36}
+                variant="plain"
+                color="primary"
+                shape={selected ? 10 : 15}
+                {...props}
+            >
+                <Typography level="body-sm">{asAcronym(space.name)}</Typography>
+            </Avatar>
+        </Paper>
+    );
+});
