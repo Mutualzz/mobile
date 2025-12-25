@@ -14,11 +14,7 @@
             "config": {
                 "usesNonExemptEncryption": false
             },
-            "icon": {
-                "dark": "./assets/icon.png",
-                "light": "./assets/icon.png",
-                "tinted": "./assets/adaptive-icon.png"
-            }
+            "icon": "./assets/ios.icon"
         },
         "android": {
             "package": "com.mutualzz.app",
