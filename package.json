@@ -49,7 +49,7 @@
         "@types/react": "19.1.17",
         "typescript": "~5.9.3"
     },
-    "main": "index.ts",
+    "main": "expo-router/entry",
     "name": "@mutualzz/mobile",
     "private": true,
     "scripts": {
