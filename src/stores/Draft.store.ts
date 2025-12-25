@@ -1,19 +1,28 @@
 import type { ThemeDraft } from "@app-types/theme";
 import { Logger } from "@mutualzz/logger";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, observable, type IObservableArray } from "mobx";
 import { makePersistable } from "mobx-persist-store";
 import { type CanvasPath } from "react-sketch-canvas";
+
+type AvatarDraft = {
+    image: string;
+    paths: CanvasPath[];
+};
 
 export class DraftStore {
     private readonly logger = new Logger({
         tag: "DraftStore",
     });
-    themes: ThemeDraft[] = [];
-    avatars: { image: string; paths: CanvasPath[] }[] = [];
+
+    themes: IObservableArray<ThemeDraft>;
+    avatars: IObservableArray<AvatarDraft>;
 
     constructor() {
         makeAutoObservable(this);
+
+        this.themes = observable.array([]);
+        this.avatars = observable.array([]);
 
         makePersistable(this, {
             name: "DraftStore",
@@ -45,6 +54,12 @@ export class DraftStore {
     }
 
     deleteThemeDraft(theme: ThemeDraft) {
-        this.themes = this.themes.filter((t) => t.name !== theme.name);
+        const index = this.themes.findIndex((t) => t.name === theme.name);
+        if (index === -1) {
+            this.logger.warn("Theme draft does not exist");
+            return;
+        }
+
+        this.themes.splice(index, 1);
     }
 }

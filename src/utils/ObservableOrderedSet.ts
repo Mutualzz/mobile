@@ -105,6 +105,11 @@ export class ObservableOrderedSet<T> {
         this.bump();
     }
 
+    replace(items: Iterable<T>) {
+        this.clear();
+        for (const v of items) this.addLast(v);
+    }
+
     clear() {
         this.head = this.tail = null;
         this.index.clear();

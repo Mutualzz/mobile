@@ -1,23 +1,23 @@
 {
     "expo": {
         "name": "Mutualzz",
-        "slug": "app",
-        "version": "1.0.0",
+        "slug": "mutualzz",
+        "version": "2.0.0",
         "orientation": "portrait",
         "icon": "./assets/icon.png",
         "scheme": "com.mutualzz.app",
         "userInterfaceStyle": "automatic",
         "newArchEnabled": true,
-        "splash": {
-            "image": "./assets/splash-icon.png",
-            "resizeMode": "contain",
-            "backgroundColor": "#ffffff"
-        },
         "ios": {
             "bundleIdentifier": "com.mutualzz.app",
             "supportsTablet": true,
             "config": {
                 "usesNonExemptEncryption": false
+            },
+            "icon": {
+                "dark": "./assets/icon.png",
+                "light": "./assets/icon.png",
+                "tinted": "./assets/adaptive-icon.png"
             }
         },
         "android": {
@@ -27,10 +27,10 @@
                 "backgroundColor": "#ffffff"
             },
             "edgeToEdgeEnabled": true,
-            "predictiveBackGestureEnabled": false
+            "softwareKeyboardLayoutMode": "resize"
         },
         "experiments": {
-            "reactCanary": true
+            "typedRoutes": true
         },
         "plugins": [
             "expo-router",
@@ -40,6 +40,17 @@
                 {
                     "configureAndroidBackup": true,
                     "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
+                }
+            ],
+            [
+                "expo-splash-screen",
+                {
+                    "backgroundColor": "#FBF7FB",
+                    "image": "./assets/splash-icon.png",
+                    "dark": {
+                        "backgroundColor": "#0D0710",
+                        "image": "./assets/splash-icon.png"
+                    }
                 }
             ]
         ],

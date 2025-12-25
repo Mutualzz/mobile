@@ -1,84 +1,80 @@
-import { NavigationWithTheme } from "@components/NavigationWithTheme";
-import { TabBar } from "@components/TabBar/TabBar";
-import { AppTheme } from "@contexts/AppTheme.context";
+import { HomeContextual } from "@components/HomeContextual";
+import { ModeSwitcher } from "@components/ModeSwitcher";
+import TabBar from "@components/TabBar/TabBar";
+import TabButton from "@components/TabButton";
+import { UserAvatar } from "@components/User/UserAvatar";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useAppStore } from "@hooks/useStores";
-import { Logger } from "@mutualzz/logger";
-import { IconButton, NativeBaseline } from "@mutualzz/ui-native";
-import * as Font from "expo-font";
+import { Box, useTheme } from "@mutualzz/ui-native";
+import { Redirect } from "expo-router";
 import { TabList, Tabs, TabSlot, TabTrigger } from "expo-router/ui";
-import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { observer } from "mobx-react-lite";
 
-SplashScreen.preventAutoHideAsync();
-
-const RootLayout = () => {
+const AppLayout = () => {
     const app = useAppStore();
-    const logger = new Logger({
-        tag: "App",
-    });
+    const { theme } = useTheme();
 
-    const insets = useSafeAreaInsets();
-
-    useEffect(() => {
-        async function loadFonts() {
-            try {
-                await Font.loadAsync({
-                    ...MaterialIcons.font,
-                });
-            } catch (err) {
-                logger.warn("Error loading fonts", err);
-            }
-        }
-
-        loadFonts();
-        app.loadSettings();
-
-        logger.debug("Loading complete");
-        app.setAppLoading(false);
-        SplashScreen.hide();
-    }, []);
+    if (!app.token) return <Redirect href="/login" />;
 
     return (
-        <AppTheme>
-            <NavigationWithTheme>
-                <NativeBaseline>
-                    <Tabs
-                        options={{
-                            backBehavior: "none",
-                        }}
-                    >
-                        <TabSlot style={{ flex: 1, marginTop: insets.top }} />
-                        <TabList asChild>
-                            <TabBar>
-                                <TabTrigger asChild name="index" href="/">
-                                    <IconButton
-                                        color="neutral"
-                                        variant="plain"
-                                        aria-label="Home"
-                                        size="lg"
-                                    >
-                                        <MaterialIcons name="home" size={24} />
-                                    </IconButton>
-                                </TabTrigger>
-                                <TabTrigger asChild name="login" href="/login">
-                                    <IconButton
-                                        color="neutral"
-                                        variant="plain"
-                                        aria-label="Login"
-                                        size="lg"
-                                    >
-                                        <MaterialIcons name="login" size={24} />
-                                    </IconButton>
-                                </TabTrigger>
-                            </TabBar>
-                        </TabList>
-                    </Tabs>
-                </NativeBaseline>
-            </NavigationWithTheme>
-        </AppTheme>
+        <Tabs>
+            <TabSlot style={{ flex: 1 }} />
+
+            <TabList
+                style={{
+                    position: "absolute",
+                    width: 0,
+                    height: 0,
+                    opacity: 0,
+                }}
+            >
+                <TabTrigger name="spaces" href="/spaces" />
+                <TabTrigger name="feed" href="/feed" />
+                <TabTrigger name="@me" href="/@me" />
+            </TabList>
+
+            <TabBar>
+                <HomeContextual />
+                <Box
+                    style={{
+                        flex: 1,
+                        flexDirection: "column",
+                    }}
+                >
+                    <TabTrigger asChild name="@me" href="/@me">
+                        <TabButton
+                            startDecorator={
+                                <MaterialIcons
+                                    size={30}
+                                    color={theme.colors.neutral}
+                                    name="people"
+                                />
+                            }
+                        >
+                            Mutuals
+                        </TabButton>
+                    </TabTrigger>
+                </Box>
+                <Box
+                    style={{
+                        flex: 1,
+                        flexDirection: "column",
+                    }}
+                >
+                    <TabTrigger asChild name="profile">
+                        <TabButton
+                            startDecorator={
+                                <UserAvatar size={36} user={app.account} />
+                            }
+                        >
+                            You
+                        </TabButton>
+                    </TabTrigger>
+                </Box>
+                {!app.hideSwitcher && <ModeSwitcher />}
+            </TabBar>
+        </Tabs>
     );
 };
 
-export default RootLayout;
+export default observer(AppLayout);

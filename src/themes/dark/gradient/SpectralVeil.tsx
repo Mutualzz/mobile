@@ -14,9 +14,9 @@ export const spectralVeilTheme: Theme = {
         primary: "#6E9EF0",
         neutral: "#A5B4C2",
         background:
-            "linear-gradient(90deg,#07080A 0%,#0D1116 45%,#0F1726 70%,#2B3B57 88%,#6E9EF0 100%)",
+            "linear-gradient(180deg,#07080A 0%,#0D1116 45%,#0F1726 70%,#2B3B57 88%,#6E9EF0 100%)",
         surface:
-            "linear-gradient(90deg,#161822 0%,#202633 45%,#2A3A4B 72%,#3F5B80 90%,#6E9EF0 100%)",
+            "linear-gradient(180deg,#161822 0%,#202633 45%,#2A3A4B 72%,#3F5B80 90%,#6E9EF0 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",

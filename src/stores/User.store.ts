@@ -12,6 +12,9 @@ export class UserStore {
     }
 
     add(user: APIUser): User {
+        const exists = this.users.get(user.id);
+        if (exists) return exists;
+
         const newUser = new User(user);
         this.users.set(user.id, newUser);
         return newUser;

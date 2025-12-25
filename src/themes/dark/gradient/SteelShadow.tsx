@@ -14,9 +14,9 @@ export const steelShadowTheme: Theme = {
         primary: "#98A0D6",
         neutral: "#B0B0B8",
         background:
-            "linear-gradient(90deg,#07080A 0%,#0F1115 45%,#111423 70%,#354A66 88%,#98A0D6 100%)",
+            "linear-gradient(180deg,#07080A 0%,#0F1115 45%,#111423 70%,#354A66 88%,#98A0D6 100%)",
         surface:
-            "linear-gradient(90deg,#1C2232 0%,#23283A 45%,#2E3350 72%,#445273 90%,#98A0D6 100%)",
+            "linear-gradient(180deg,#1C2232 0%,#23283A 45%,#2E3350 72%,#445273 90%,#98A0D6 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",

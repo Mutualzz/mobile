@@ -14,9 +14,9 @@ export const obsidianRequiemTheme: Theme = {
         primary: "#8365E2",
         neutral: "#9AA0AE",
         background:
-            "linear-gradient(90deg,#070608 0%,#0C0B10 45%,#16121F 65%,#2B2540 80%,#8365E2 100%)",
+            "linear-gradient(180deg,#070608 0%,#0C0B10 45%,#16121F 65%,#2B2540 80%,#8365E2 100%)",
         surface:
-            "linear-gradient(90deg,#16141A 0%,#23232C 45%,#2C2A38 72%,#4A3962 90%,#8365E2 100%)",
+            "linear-gradient(180deg,#16141A 0%,#23232C 45%,#2C2A38 72%,#4A3962 90%,#8365E2 100%)",
         danger: "#E04B5A",
         warning: "#D1A24A",
         success: "#4FAF7A",

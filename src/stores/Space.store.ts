@@ -1,34 +1,55 @@
-import type { APISpace } from "@mutualzz/types";
+import type { APISpace, Snowflake } from "@mutualzz/types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { makeAutoObservable, observable, type ObservableMap } from "mobx";
+import { makePersistable } from "mobx-persist-store";
 import type { AppStore } from "./App.store";
 import { Space } from "./objects/Space";
 
-// TODO: Fix a bug with sorting upon adding a space without having any,
-// Which means if a user doesnt have any spaces and then adds one after another, it gets sorted backwards
-// Could be an issue of "positioned" getter returning the default "this.all" before the spacePositions are updated
 export class SpaceStore {
     private readonly spaces: ObservableMap<string, Space>;
 
-    active: Space | null = null;
-    activeId?: string;
+    active?: Space | null;
+    activeId?: Snowflake;
+
+    mostRecentSpaceId?: string | null;
 
     constructor(private readonly app: AppStore) {
         this.spaces = observable.map();
         makeAutoObservable(this);
+
+        makePersistable(this, {
+            name: "SpaceStore",
+            properties: ["mostRecentSpaceId"],
+            storage: AsyncStorage,
+        });
     }
 
     setActive(id?: string) {
-        this.activeId = id;
-
         this.active = (id ? this.get(id) : null) ?? null;
+        this.activeId = this.active?.id;
+
+        this.app.channels.setPreferredActive();
     }
 
-    get mostRecentSpaceId(): string | undefined {
-        return this.positioned.at(0)?.id ?? this.all.at(0)?.id ?? undefined;
+    setPreferredActive() {
+        const preferred = this.mostRecentSpace ?? this.all[0];
+        this.setActive(preferred?.id);
+        return preferred;
+    }
+
+    setMostRecentSpace(id?: string | null) {
+        this.mostRecentSpaceId = id;
+    }
+
+    get mostRecentSpace(): Space | undefined {
+        return this.spaces.get(this.mostRecentSpaceId ?? "");
     }
 
     add(space: APISpace): Space {
-        const newSpace = new Space(space);
+        const exists = this.spaces.get(space.id);
+        if (exists) return exists;
+
+        const newSpace = new Space(this.app, space);
         this.spaces.set(space.id, newSpace);
         return newSpace;
     }
@@ -45,7 +66,7 @@ export class SpaceStore {
         return this.spaces.get(id);
     }
 
-    remove(id: string) {
+    remove(id: Snowflake) {
         this.spaces.delete(id);
     }
 
@@ -78,7 +99,7 @@ export class SpaceStore {
         return this.spaces.has(id);
     }
 
-    async resolve(id: string, force = false) {
+    async resolve(id: Snowflake, force = false) {
         if (this.has(id) && !force) return this.get(id);
         const space = await this.app.rest.get<APISpace>(`/spaces/${id}`);
         if (!space) return undefined;

@@ -1,4 +1,8 @@
+import { AppMode } from "@mutualzz/types";
+import { AppStore } from "@stores/App.store";
+import { Channel } from "@stores/objects/Channel";
 import { Theme } from "@stores/objects/Theme";
+import { useRouter } from "expo-router";
 
 export const sortThemes = (themes: Theme[]): Theme[] => {
     const priorityOrder: string[] = ["baseDark", "baseLight"];
@@ -12,3 +16,41 @@ export const sortThemes = (themes: Theme[]): Theme[] => {
 
     return [...priorityThemes, ...otherThemes];
 };
+
+export const asAcronym = (str: string) =>
+    str
+        .split(" ")
+        .map((str) => str[0])
+        .join("");
+
+export const compareChannels = (a: Channel, b: Channel): number => {
+    return (a.position ?? -1) - (b.position ?? -1);
+};
+
+export const switchMode = (
+    app: AppStore,
+    router?: ReturnType<typeof useRouter>,
+    targetMode?: AppMode | null,
+) => {
+    if (!router) return;
+
+    const target =
+        targetMode ||
+        (app.mode === "feed"
+            ? "/spaces"
+            : app.mode === "spaces"
+              ? "/feed"
+              : app.account
+                ? app.settings?.preferredMode === "feed"
+                    ? "/feed"
+                    : "/spaces"
+                : null);
+
+    if (!target) return;
+
+    router.replace(`/${target}`);
+};
+
+export * from "./emojis";
+export * from "./i18n";
+export * from "./ObservableOrderedSet";

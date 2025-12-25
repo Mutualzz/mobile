@@ -1,13 +1,19 @@
 import type { Theme as MzTheme } from "@emotion/react";
-import type { APITheme, ThemeStyle, ThemeType } from "@mutualzz/types";
+import type {
+    APITheme,
+    Snowflake,
+    ThemeStyle,
+    ThemeType,
+} from "@mutualzz/types";
 import { baseDarkTheme, baseLightTheme } from "@mutualzz/ui-core";
+import type { AppStore } from "@stores/App.store";
+import type { User } from "@stores/objects/User";
 import { makeAutoObservable } from "mobx";
-import type { User } from "./User";
 
 export class Theme {
-    id: string;
+    id: Snowflake;
     name: string;
-    description: string;
+    description?: string | null;
     adaptive: boolean;
     type: ThemeType;
     style: ThemeStyle;
@@ -33,14 +39,18 @@ export class Theme {
             muted: string;
         };
     };
-    created: Date;
-    updated: Date;
+    createdAt: Date;
+    updatedAt: Date;
 
     raw: APITheme;
 
-    private _author: User | null = null;
+    authorId?: Snowflake | null;
+    author?: User | null;
 
-    constructor(theme: APITheme | MzTheme) {
+    constructor(
+        private readonly app: AppStore,
+        theme: APITheme | MzTheme,
+    ) {
         theme = Theme.normalizeTheme(theme);
 
         this.id = theme.id;
@@ -52,20 +62,15 @@ export class Theme {
         this.colors = theme.colors;
         this.typography = theme.typography;
 
-        this.created = new Date(theme.created);
-        this.updated = new Date(theme.updated);
+        this.createdAt = new Date(theme.createdAt);
+        this.updatedAt = new Date(theme.updatedAt);
 
         this.raw = theme;
 
+        this.authorId = theme.authorId;
+        if (theme.author) this.author = this.app.users.add(theme.author);
+
         makeAutoObservable(this);
-    }
-
-    get author() {
-        return this._author;
-    }
-
-    set author(user: User | null) {
-        this._author = user;
     }
 
     static normalizeTheme(theme: APITheme | MzTheme): APITheme {

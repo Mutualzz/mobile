@@ -1,3 +1,4 @@
+import type { Snowflake } from "@mutualzz/types";
 import {
     BitField,
     CDNRoutes,
@@ -5,7 +6,6 @@ import {
     userFlags,
     type APIUser,
     type AvatarFormat,
-    type DefaultAvatar,
     type Sizes,
     type UserFlags,
 } from "@mutualzz/types";
@@ -13,14 +13,17 @@ import { REST } from "@stores/REST.store";
 import { makeAutoObservable } from "mobx";
 
 export class User {
-    id: string;
+    id: Snowflake;
     username: string;
-    defaultAvatar: DefaultAvatar;
+    defaultAvatar: {
+        type: number;
+        color?: string | null;
+    };
     avatar?: string | null = null;
     globalName?: string | null = null;
     accentColor: string;
-    created: Date;
-    updated: Date;
+    createdAt: Date;
+    updatedAt: Date;
     flags: BitField<UserFlags>;
 
     raw: APIUser;
@@ -32,8 +35,8 @@ export class User {
         this.avatar = user.avatar ?? null;
         this.globalName = user.globalName ?? null;
         this.accentColor = user.accentColor;
-        this.created = new Date(user.created);
-        this.updated = new Date(user.updated);
+        this.createdAt = new Date(user.createdAt);
+        this.updatedAt = new Date(user.updatedAt);
         this.flags = BitField.fromString(userFlags, user.flags.toString());
 
         this.raw = user;
@@ -49,15 +52,25 @@ export class User {
         return this.constructAvatarUrl(true);
     }
 
+    get displayName() {
+        return this.globalName || this.username;
+    }
+
     constructAvatarUrl(
         animated = false,
+        version: "dark" | "light" = "light",
         size: Sizes = 128,
         format: AvatarFormat = ImageFormat.WebP,
         hash?: string,
     ) {
         if (!this.avatar)
             return REST.makeCDNUrl(
-                CDNRoutes.defaultUserAvatar(this.defaultAvatar),
+                CDNRoutes.defaultUserAvatar(
+                    this.defaultAvatar.type,
+                    version,
+                    size,
+                    format,
+                ),
             );
 
         return REST.makeCDNUrl(

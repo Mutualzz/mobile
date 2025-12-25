@@ -14,9 +14,9 @@ export const tranquilDepthsTheme: Theme = {
         primary: "#2F8B72",
         neutral: "#4A5555",
         background:
-            "linear-gradient(90deg,#F5FAF9 0%,#EAF4F2 40%,#CFE9E5 68%,#67B49B 88%,#2F8B72 100%)",
+            "linear-gradient(180deg,#F5FAF9 0%,#EAF4F2 40%,#CFE9E5 68%,#67B49B 88%,#2F8B72 100%)",
         surface:
-            "linear-gradient(90deg,#E9F4F1 0%,#D3ECE7 45%,#B2E0D6 75%,#6FB99F 90%,#2F8B72 100%)",
+            "linear-gradient(180deg,#E9F4F1 0%,#D3ECE7 45%,#B2E0D6 75%,#6FB99F 90%,#2F8B72 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",

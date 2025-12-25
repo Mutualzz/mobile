@@ -14,9 +14,9 @@ export const violetNocturneTheme: Theme = {
         primary: "#5C6FE6",
         neutral: "#4A4F63",
         background:
-            "linear-gradient(90deg,#F2F4FB 0%,#E9ECFB 40%,#D0D5F8 68%,#827BEF 88%,#5C6FE6 100%)",
+            "linear-gradient(180deg,#F2F4FB 0%,#E9ECFB 40%,#D0D5F8 68%,#827BEF 88%,#5C6FE6 100%)",
         surface:
-            "linear-gradient(90deg,#E9EAF7 0%,#D6D9F6 45%,#B7BFF3 75%,#7E78F0 90%,#5C6FE6 100%)",
+            "linear-gradient(180deg,#E9EAF7 0%,#D6D9F6 45%,#B7BFF3 75%,#7E78F0 90%,#5C6FE6 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",

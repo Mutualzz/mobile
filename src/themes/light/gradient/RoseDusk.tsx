@@ -14,9 +14,9 @@ export const roseDuskTheme: Theme = {
         primary: "#C14A63",
         neutral: "#5A4652",
         background:
-            "linear-gradient(90deg,#F9F6F7 0%,#F3EDF0 40%,#F0D6DE 68%,#E37586 88%,#C14A63 100%)",
+            "linear-gradient(180deg,#F9F6F7 0%,#F3EDF0 40%,#F0D6DE 68%,#E37586 88%,#C14A63 100%)",
         surface:
-            "linear-gradient(90deg,#F2EBEE 0%,#EAD7DB 45%,#DFB7C2 75%,#D36A7D 90%,#C14A63 100%)",
+            "linear-gradient(180deg,#F2EBEE 0%,#EAD7DB 45%,#DFB7C2 75%,#D36A7D 90%,#C14A63 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",

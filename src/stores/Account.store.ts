@@ -1,10 +1,10 @@
 import { Logger } from "@mutualzz/logger";
+import type { Snowflake } from "@mutualzz/types";
 import {
     CDNRoutes,
     ImageFormat,
     type APIPrivateUser,
     type AvatarFormat,
-    type DefaultAvatar,
     type Sizes,
 } from "@mutualzz/types";
 import { makeAutoObservable } from "mobx";
@@ -14,15 +14,18 @@ export class AccountStore {
     private readonly logger = new Logger({
         tag: "AccountStore",
     });
-    id: string;
+    id: Snowflake;
     username: string;
-    defaultAvatar: DefaultAvatar;
+    defaultAvatar: {
+        type: number;
+        color?: string | null;
+    };
     previousAvatars: string[] = [];
     avatar?: string | null = null;
     globalName?: string | null = null;
     email?: string | null = null;
     accentColor: string;
-    created: Date;
+    createdAt: Date;
 
     raw: APIPrivateUser;
 
@@ -35,7 +38,7 @@ export class AccountStore {
         this.previousAvatars = user.previousAvatars ?? [];
         this.globalName = user.globalName ?? null;
         this.email = user.email ?? null;
-        this.created = new Date(user.created);
+        this.createdAt = new Date(user.createdAt);
 
         this.raw = user;
 
@@ -48,13 +51,19 @@ export class AccountStore {
 
     constructAvatarUrl(
         animated = false,
+        version: "dark" | "light" = "light",
         size: Sizes = 128,
         format: AvatarFormat = ImageFormat.WebP,
         hash?: string,
     ) {
         if (!this.avatar)
             return REST.makeCDNUrl(
-                CDNRoutes.defaultUserAvatar(this.defaultAvatar),
+                CDNRoutes.defaultUserAvatar(
+                    this.defaultAvatar.type,
+                    version,
+                    size,
+                    format,
+                ),
             );
 
         return REST.makeCDNUrl(
@@ -66,6 +75,10 @@ export class AccountStore {
                 animated,
             ),
         );
+    }
+
+    get displayName() {
+        return this.globalName || this.username;
     }
 
     removePreviousAvatar(avatar: string) {
@@ -91,6 +104,8 @@ export class AccountStore {
     }
 
     get defaultAvatarUrl() {
-        return REST.makeCDNUrl(CDNRoutes.defaultUserAvatar(this.defaultAvatar));
+        return REST.makeCDNUrl(
+            CDNRoutes.defaultUserAvatar(this.defaultAvatar.type),
+        );
     }
 }

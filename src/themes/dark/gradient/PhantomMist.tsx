@@ -14,9 +14,9 @@ export const phantomMistTheme: Theme = {
         primary: "#4BB7D9",
         neutral: "#A5B4C2",
         background:
-            "linear-gradient(90deg,#070709 0%,#0D1113 45%,#0E1C21 70%,#255A71 88%,#4BB7D9 100%)",
+            "linear-gradient(180deg,#070709 0%,#0D1113 45%,#0E1C21 70%,#255A71 88%,#4BB7D9 100%)",
         surface:
-            "linear-gradient(90deg,#15181B 0%,#20272A 45%,#2B3638 72%,#3F5560 90%,#4BB7D9 100%)",
+            "linear-gradient(180deg,#15181B 0%,#20272A 45%,#2B3638 72%,#3F5560 90%,#4BB7D9 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",

@@ -1,12 +1,15 @@
 import { Logger } from "@mutualzz/logger";
+import type { APIMessage, GatewayReadyPayload } from "@mutualzz/types";
 import {
     GatewayCloseCodes,
     GatewayDispatchEvents,
     GatewayOpcodes,
+    type APIChannel,
+    type APIInvite,
     type APIPrivateUser,
     type APISpace,
     type APIUser,
-    type GatewayReadyDispatchPayload,
+    type APIUserSettings,
 } from "@mutualzz/types";
 import { createCodec, type Codec, type Encoding } from "@utils/codec";
 import {
@@ -14,6 +17,7 @@ import {
     type Compression,
     type Compressor,
 } from "@utils/compressor";
+import { fixConnectionUrl } from "@utils/urls";
 import { makeAutoObservable } from "mobx";
 import type { AppStore } from "./App.store";
 
@@ -29,6 +33,8 @@ export const GatewayStatus = {
 
 export type GatewayStatus = (typeof GatewayStatus)[keyof typeof GatewayStatus];
 
+type Timer = ReturnType<typeof setTimeout>;
+
 const RECONNECT_TIMEOUT = 5000;
 
 export class GatewayStore {
@@ -42,13 +48,13 @@ export class GatewayStore {
     private sequence = 0;
 
     private heartbeatInterval: number | null = null;
-    private heartbeater: NodeJS.Timeout | null = null;
-    private initialHeartbeatTimeout: NodeJS.Timeout | null = null;
+    private heartbeater: Timer | null = null;
+    private initialHeartbeatTimeout: Timer | null = null;
     private heartbeatAck = true;
     private url?: string;
 
     private encoding: Encoding = "json";
-    private compress: Compression = "zlib-stream";
+    private compress: Compression = "none";
 
     private codec!: Codec;
     private compressor!: Compressor;
@@ -66,13 +72,22 @@ export class GatewayStore {
         (...args: any[]) => any
     >();
 
+    private lazyRequestChannels = new Map<string, string[]>(); // spaceId -> channelIds
+
     constructor(private readonly app: AppStore) {
         makeAutoObservable(this);
     }
 
-    async connect(
-        url: string = process.env.EXPO_WS_URL || "wss://gateway.mutualzz.com",
-    ) {
+    async connect(_url?: string) {
+        let url = fixConnectionUrl(
+            _url || process.env.EXPO_PUBLIC_WS_URL || "",
+        );
+
+        if (!url) {
+            this.logger.error("Websocket URL is not defined");
+            return;
+        }
+
         if (!this.url) {
             const newUrl = new URL(url);
             newUrl.searchParams.set("encoding", this.encoding);
@@ -120,17 +135,88 @@ export class GatewayStore {
     }
 
     private setupDispatchHandlers() {
+        // Connection
         this.dispatchHandlers.set(GatewayDispatchEvents.Ready, this.onReady);
         this.dispatchHandlers.set(GatewayDispatchEvents.Resume, this.onResume);
 
+        // User
         this.dispatchHandlers.set(
             GatewayDispatchEvents.UserUpdate,
             this.onUserUpdate,
         );
-
         this.dispatchHandlers.set(
-            GatewayDispatchEvents.SpaceAdded,
-            this.onSpaceAdded,
+            GatewayDispatchEvents.UserSettingsUpdate,
+            this.onUserSettingsUpdate,
+        );
+
+        // Spaces
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.SpaceCreate,
+            this.onSpaceCreate,
+        );
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.SpaceDelete,
+            this.onSpaceDelete,
+        );
+
+        // Channels
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.ChannelCreate,
+            this.onChannelCreate,
+        );
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.ChannelUpdate,
+            this.onChannelUpdate,
+        );
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.BulkChannelUpdate,
+            this.onBulkChannelUpdate,
+        );
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.BulkChannelDelete,
+            this.onBulkChannelDelete,
+        );
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.ChannelDelete,
+            this.onChannelDelete,
+        );
+
+        // Messages
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.MessageCreate,
+            this.onMessageCreate,
+        );
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.MessageDelete,
+            this.onMessageDelete,
+        );
+
+        // Invites
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.InviteCreate,
+            this.onInviteCreate,
+        );
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.InviteDelete,
+            this.onInviteDelete,
+        );
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.InviteUpdate,
+            this.onInviteUpdate,
+        );
+
+        // Members
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.SpaceMemberAdd,
+            this.onSpaceMemberAdd,
+        );
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.SpaceMemberRemove,
+            this.onSpaceMemberRemove,
+        );
+        this.dispatchHandlers.set(
+            GatewayDispatchEvents.SpaceMemberListUpdate,
+            this.onSpaceMemberListUpdate,
         );
     }
 
@@ -154,17 +240,24 @@ export class GatewayStore {
         try {
             let bytes: Uint8Array;
 
-            if (typeof e.data === "string")
+            if (typeof e.data === "string") {
                 bytes = new TextEncoder().encode(e.data);
-            else if (e.data instanceof ArrayBuffer)
+            } else if (e.data instanceof ArrayBuffer) {
                 bytes = new Uint8Array(e.data);
-            else if (e.data instanceof Blob) {
+            } else if (e.data instanceof Blob) {
                 const ab = await e.data.arrayBuffer();
                 bytes = new Uint8Array(ab);
             } else {
                 this.logger.error("Unknown message data type");
                 return;
             }
+
+            if (this.compress !== "none")
+                bytes = this.compressor.decompress(bytes);
+
+            const data = this.codec.decode(bytes);
+
+            this.handlePayload(data);
         } catch (err) {
             this.logger.error("Failed to decompress message", err);
         }
@@ -206,6 +299,7 @@ export class GatewayStore {
 
     private onClose = (e: CloseEvent) => {
         this.readyState = GatewayStatus.CLOSED;
+        console.log(e.code, e.reason);
         this.handleClose(e.code);
     };
 
@@ -214,6 +308,7 @@ export class GatewayStore {
             this.logger.error("Socket is not open");
             return;
         }
+
         if (this.socket.readyState !== WebSocket.OPEN) {
             this.logger.error(
                 `Socket is not open; readyState: ${this.socket.readyState}`,
@@ -221,7 +316,7 @@ export class GatewayStore {
             return;
         }
 
-        const raw = this.codec.encode(payload);
+        const raw: any = this.codec.encode(payload);
 
         const out =
             this.compress !== "none"
@@ -278,6 +373,8 @@ export class GatewayStore {
     private handleResume() {
         if (!this.app.token || !this.sessionId) {
             this.logger.error("Cannot resume, token or sessionId is not set");
+            this.reset();
+            this.app.logout();
             return;
         }
 
@@ -407,6 +504,7 @@ export class GatewayStore {
         const { d, t, s } = data;
         this.logger.debug(`[Gateway] -> ${t}`);
         this.sequence = s;
+
         const handler = this.dispatchHandlers.get(t);
         if (!handler) {
             this.logger.debug(`No handler for dispatch event ${t}`);
@@ -420,9 +518,9 @@ export class GatewayStore {
         this.logger.debug("[Resume] Session");
     };
 
-    private onReady = (payload: GatewayReadyDispatchPayload) => {
+    private onReady = async (payload: GatewayReadyPayload) => {
         this.logger.info(
-            `[Ready] took ${Date.now() - this.identifyStartTime!}ms`,
+            `[Ready] took ${Date.now() - (this.identifyStartTime ?? 0)}ms`,
         );
 
         const { sessionId, user, themes, spaces, settings } = payload;
@@ -436,11 +534,124 @@ export class GatewayStore {
 
         this.reconnectTimeout = 0;
         this.app.setGatewayReady(true);
+
+        const space =
+            this.app.spaces.mostRecentSpace || this.app.spaces.positioned[0];
+
+        if (space) this.app.spaces.setActive(space.id);
+
+        this.app.channels.setPreferredActive();
     };
 
-    private onSpaceAdded = (payload: APISpace) => {
-        this.app.spaces.add(payload);
-        this.app.settings?.addPoistion(payload.id);
+    onChannelOpen = (spaceId: string, channelId: string) => {
+        const spaceChannels = this.lazyRequestChannels.get(spaceId) || [];
+
+        if (spaceChannels.includes(channelId)) return;
+
+        const payload = {
+            spaceId,
+            channels: {
+                [channelId]: [[0, 99]],
+            },
+        };
+        this.lazyRequestChannels.set(spaceId, [channelId]);
+
+        this.send({
+            op: GatewayOpcodes.LazyRequest,
+            d: payload,
+        });
+    };
+
+    // Dispatcher Handlers start here
+    private onSpaceCreate = (payload: APISpace) => {
+        const space = this.app.spaces.add(payload);
+        space.members.addAll(payload.members ?? []);
+        for (const channel of payload.channels ?? []) {
+            space.addChannel(channel);
+        }
+
+        this.app.spaces.setActive(space.id);
+        this.app.channels.setPreferredActive();
+    };
+
+    private onSpaceDelete = (payload: APISpace) => {
+        const space = this.app.spaces.get(payload.id);
+        if (!space) return;
+
+        for (const channel of space.channels) {
+            channel.messages.clear();
+            space.removeChannel(channel.id);
+        }
+
+        this.app.spaces.remove(payload.id);
+        this.lazyRequestChannels.delete(space.id);
+        this.app.spaces.setPreferredActive();
+        this.app.channels.setPreferredActive();
+    };
+
+    private onChannelCreate = (payload: APIChannel) => {
+        if (!payload.spaceId) return;
+        const space = this.app.spaces.get(payload.spaceId);
+        if (!space) return;
+
+        const channel = space.addChannel(payload);
+        if (!channel) {
+            this.logger.error("Failed to add channel to space");
+            return;
+        }
+        this.app.channels.setActive(channel.id);
+    };
+
+    private onChannelUpdate = (payload: APIChannel) => {
+        if (!payload.spaceId) return;
+        const space = this.app.spaces.get(payload.spaceId);
+        if (!space) return;
+
+        space.updateChannel(payload);
+    };
+
+    private onBulkChannelUpdate = (payload: APIChannel[]) => {
+        for (const channel of payload) {
+            if (!channel.spaceId) continue;
+            const space = this.app.spaces.get(channel.spaceId);
+            if (!space) continue;
+            space.updateChannel(channel);
+        }
+    };
+
+    private onChannelDelete = (payload: APIChannel) => {
+        if (!payload.spaceId) return;
+        const space = this.app.spaces.get(payload.spaceId);
+        if (!space) return;
+
+        space.removeChannel(payload.id);
+        this.app.channels.setPreferredActive();
+    };
+
+    private onBulkChannelDelete = (payload: APIChannel[]) => {
+        for (const channel of payload) {
+            if (!channel.spaceId) continue;
+            const space = this.app.spaces.get(channel.spaceId);
+            if (!space) continue;
+            space.removeChannel(channel.id);
+        }
+
+        this.app.channels.setPreferredActive();
+    };
+
+    private onMessageCreate = (payload: APIMessage) => {
+        const channel = this.app.channels.get(payload.channelId);
+        if (!channel) return;
+
+        channel.messages.add(payload);
+        this.app.queue.handleIncomingMessage(payload);
+    };
+
+    private onMessageDelete = (payload: APIMessage) => {
+        const channel = this.app.channels.get(payload.channelId);
+        if (!channel) return;
+
+        channel.messages.remove(payload.id);
     };
 
     private onUserUpdate = (payload: APIUser | APIPrivateUser) => {
@@ -449,5 +660,65 @@ export class GatewayStore {
         if (payload.id === this.app.account?.id) {
             this.app.setUser(payload as APIPrivateUser);
         }
+    };
+
+    private onUserSettingsUpdate = (payload: APIUserSettings) => {
+        this.app.settings?.update(payload);
+    };
+
+    private onInviteCreate = (payload: APIInvite) => {
+        if (!payload.spaceId || !payload.channelId) return;
+
+        const space = this.app.spaces.get(payload.spaceId);
+        if (!space) return;
+
+        space.addInvite(payload);
+    };
+
+    private onInviteUpdate = (payload: APIInvite) => {
+        if (!payload.spaceId || !payload.channelId) return;
+
+        const space = this.app.spaces.get(payload.spaceId);
+        if (!space) return;
+
+        space.updateInvite(payload);
+    };
+
+    private onInviteDelete = (payload: {
+        spaceId: string;
+        channelId: string;
+        code: string;
+    }) => {
+        const space = this.app.spaces.get(payload.spaceId);
+        if (!space) return;
+
+        space.removeInvite(payload.code);
+    };
+
+    private onSpaceMemberAdd = (payload: any) => {
+        const space = this.app.spaces.get(payload.spaceId);
+        if (!space) return;
+
+        space.members.add(payload);
+    };
+
+    private onSpaceMemberRemove = (payload: {
+        spaceId: string;
+        userId: string;
+    }) => {
+        const space = this.app.spaces.get(payload.spaceId);
+        if (!space) return;
+
+        space.members.remove(payload.userId);
+    };
+
+    // TODO: Add a type later
+    private onSpaceMemberListUpdate = (data: any) => {
+        const { spaceId } = data;
+        const space = this.app.spaces.get(spaceId);
+
+        if (!space) return;
+
+        space.updateMemberList(data);
     };
 }
