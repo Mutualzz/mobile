@@ -61,5 +61,5 @@
         "web": "expo start --web",
         "typecheck": "tsc --noEmit"
     },
-    "version": "2.0.1"
+    "version": "2.0.0"
 }
