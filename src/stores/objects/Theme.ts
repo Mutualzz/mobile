@@ -5,12 +5,18 @@ import type {
     ThemeStyle,
     ThemeType,
 } from "@mutualzz/types";
-import { baseDarkTheme, baseLightTheme } from "@mutualzz/ui-core";
+import {
+    baseDarkTheme,
+    baseLightTheme,
+    type ColorLike,
+    type TypographyLevel,
+    type TypographyLevelObj,
+} from "@mutualzz/ui-core";
 import type { AppStore } from "@stores/App.store";
 import type { User } from "@stores/objects/User";
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, toJS } from "mobx";
 
-export class Theme {
+export class Theme implements Partial<MzTheme> {
     id: Snowflake;
     name: string;
     description?: string | null;
@@ -19,28 +25,30 @@ export class Theme {
     style: ThemeStyle;
     colors: {
         common: {
-            white: string;
-            black: string;
+            white: ColorLike;
+            black: ColorLike;
         };
-        primary: string;
-        neutral: string;
-        background: string;
-        surface: string;
-        danger: string;
-        warning: string;
-        info: string;
-        success: string;
+        primary: ColorLike;
+        neutral: ColorLike;
+        background: ColorLike;
+        surface: ColorLike;
+        danger: ColorLike;
+        warning: ColorLike;
+        info: ColorLike;
+        success: ColorLike;
     };
     typography: {
+        fontFamily: string;
         colors: {
-            primary: string;
-            secondary: string;
-            accent: string;
-            muted: string;
+            primary: ColorLike;
+            secondary: ColorLike;
+            accent: ColorLike;
+            muted: ColorLike;
         };
+        levels: Record<TypographyLevel, TypographyLevelObj>;
     };
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 
     raw: APITheme;
 
@@ -49,10 +57,8 @@ export class Theme {
 
     constructor(
         private readonly app: AppStore,
-        theme: APITheme | MzTheme,
+        theme: APITheme,
     ) {
-        theme = Theme.normalizeTheme(theme);
-
         this.id = theme.id;
         this.name = theme.name;
         this.description = theme.description;
@@ -62,8 +68,8 @@ export class Theme {
         this.colors = theme.colors;
         this.typography = theme.typography;
 
-        this.createdAt = new Date(theme.createdAt);
-        this.updatedAt = new Date(theme.updatedAt);
+        if (theme.createdAt) this.createdAt = new Date(theme.createdAt);
+        if (theme.updatedAt) this.updatedAt = new Date(theme.updatedAt);
 
         this.raw = theme;
 
@@ -73,37 +79,34 @@ export class Theme {
         makeAutoObservable(this);
     }
 
-    static normalizeTheme(theme: APITheme | MzTheme): APITheme {
-        return {
-            ...theme,
-            createdAt: "createdAt" in theme ? theme.createdAt : new Date(0),
-            createdTimestamp:
-                "createdTimestamp" in theme ? theme.createdTimestamp : 0,
-            updatedAt: "updatedAt" in theme ? theme.updatedAt : new Date(0),
-            updatedTimestamp:
-                "updatedTimestamp" in theme ? theme.updatedTimestamp : 0,
-            createdBy: "createdBy" in theme ? theme.createdBy : undefined,
-        } as unknown as APITheme;
-    }
-
-    static toEmotionTheme(theme: Theme | MzTheme): MzTheme {
+    static toEmotionTheme(theme: APITheme | MzTheme | Theme): MzTheme {
         const toMergeWith =
             theme.type === "dark" ? baseDarkTheme : baseLightTheme;
 
+        const themeToUse = toJS(theme);
+
         const newTheme = {
             ...toMergeWith,
-            ...theme,
+            ...themeToUse,
+            colors: {
+                ...toMergeWith.colors,
+                ...themeToUse.colors,
+            },
             typography: {
                 ...toMergeWith.typography,
-                ...theme.typography,
+                ...themeToUse.typography,
                 colors: {
                     ...toMergeWith.typography.colors,
-                    ...theme.typography?.colors,
+                    ...themeToUse.typography?.colors,
                 },
             },
         };
 
-        return { ...toMergeWith, ...newTheme } as MzTheme;
+        return newTheme;
+    }
+
+    static toThemeObject(theme: APITheme, app: AppStore): Theme {
+        return new Theme(app, theme);
     }
 
     update(theme: APITheme) {
