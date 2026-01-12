@@ -39,6 +39,7 @@ export const SidebarPill = ({ type }: Props) => {
                 left: 0,
                 width: 8,
                 height: 48,
+                pointerEvents: "none",
             }}
         >
             <Pill type={type} />

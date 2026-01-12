@@ -14,7 +14,7 @@ export const velvetDreamTheme: Theme = {
         primary: "#B25574",
         neutral: "#5A4652",
         background:
-            "linear-gradient(180deg,#F7F5F7 0%,#F1EDF3 38%,#E3D2E2 65%,#C26B89 88%,#B25574 100%)",
+            "linear-gradient(180deg,#F7F5F7 0%,#F1EDF3 38%,#E3D2E2 65%,#C26B89 100%,#B25574 100%)",
         surface:
             "linear-gradient(180deg,#F0E9EE 0%,#E6DAE4 45%,#D0B2C5 75%,#B86F88 92%,#B25574 100%)",
         danger: "#B3261E",

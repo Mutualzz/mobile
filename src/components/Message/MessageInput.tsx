@@ -73,10 +73,9 @@ export const MessageInput = observer(({ channel }: Props) => {
                 flexGrow: 0,
                 flexDirection: "row",
                 alignItems: "center",
-
                 paddingLeft: 16,
                 paddingRight: 16,
-                paddingBottom: insets.bottom,
+                paddingBottom: insets.bottom + 12,
                 paddingTop: 12,
             }}
         >
@@ -98,21 +97,20 @@ export const MessageInput = observer(({ channel }: Props) => {
                     flex: 1,
                     marginLeft: 8,
                     marginRight: 8,
+                    borderRadius: 999,
                 }}
             />
-            {content.length > 0 && (
-                <IconButton
-                    padding={8}
-                    style={{
-                        borderRadius: 999,
-                    }}
-                    size="lg"
-                    color="primary"
-                    onPress={() => sendMessage()}
-                >
-                    <MaterialIcons name="send" />
-                </IconButton>
-            )}
+            <IconButton
+                padding={8}
+                style={{
+                    borderRadius: 999,
+                }}
+                color="primary"
+                onPress={() => sendMessage()}
+                disabled={content.length === 0}
+            >
+                <MaterialIcons name="send" />
+            </IconButton>
         </Paper>
     );
 });

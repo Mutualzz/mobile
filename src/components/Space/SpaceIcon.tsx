@@ -30,7 +30,7 @@ export const SpaceIcon = observer(({ space, selected, ...props }: Props) => {
                 variant="plain"
                 color="primary"
                 elevation={5}
-                shape={selected ? 10 : 15}
+                shape={selected ? 15 : 10}
                 {...props}
             >
                 <Typography level="body-sm">{asAcronym(space.name)}</Typography>
@@ -40,7 +40,10 @@ export const SpaceIcon = observer(({ space, selected, ...props }: Props) => {
     return (
         <Paper
             style={{
-                borderRadius: selected ? 10 : 17.5,
+                borderRadius: selected ? 15 : 10,
+                width: 36,
+                height: 36,
+                boxShadow: "none",
             }}
             elevation={app.preferEmbossed ? 5 : 1}
             transparency={25}
@@ -49,7 +52,7 @@ export const SpaceIcon = observer(({ space, selected, ...props }: Props) => {
                 size={36}
                 variant="plain"
                 color="primary"
-                shape={selected ? 10 : 15}
+                shape={selected ? 15 : 10}
                 {...props}
             >
                 <Typography level="body-sm">{asAcronym(space.name)}</Typography>

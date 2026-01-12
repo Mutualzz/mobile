@@ -14,9 +14,9 @@ export const abyssalNocturneTheme: Theme = {
         primary: "#2EA8D8",
         neutral: "#A5B4C2",
         background:
-            "linear-gradient(180deg,#07080A 0%,#0D1115 45%,#081F2B 70%,#135269 88%,#2EA8D8 100%)",
+            "linear-gradient(180deg,#07080A 0%,#0D1115 45%,#081F2B 75%,#135269 100%,#2EA8D8 100%)",
         surface:
-            "linear-gradient(180deg,#15171A 0%,#23232A 45%,#2B3942 72%,#2E5160 90%,#2EA8D8 100%)",
+            "linear-gradient(180deg,#15171A 0%,#23232A 45%,#2B3942 75%,#2E5160 100%,#2EA8D8 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",

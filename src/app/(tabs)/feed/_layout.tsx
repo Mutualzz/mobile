@@ -7,6 +7,10 @@ const FeedLayout = () => {
 
     useFocusEffect(() => {
         if (app.mode !== "feed") app.setMode("feed");
+
+        return () => {
+            if (app.mode === "feed") app.resetMode();
+        };
     });
 
     return <Slot />;

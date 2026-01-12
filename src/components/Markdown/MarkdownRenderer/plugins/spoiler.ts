@@ -17,7 +17,6 @@ export const spoilerPlugin = (md: MarkdownIt) => {
                         const content = token.content;
 
                         while ((match = regex.exec(content))) {
-                            // Add text before spoiler
                             if (match.index > lastIndex) {
                                 const textToken = new Token("text", "", 0);
                                 textToken.content = content.slice(
@@ -27,7 +26,7 @@ export const spoilerPlugin = (md: MarkdownIt) => {
                                 textToken.level = token.level;
                                 newTokens.push(textToken);
                             }
-                            // Add spoiler token
+
                             const spoilerToken = new Token("spoiler", "", 0);
                             spoilerToken.content = match[1];
                             spoilerToken.level = token.level;
@@ -36,7 +35,6 @@ export const spoilerPlugin = (md: MarkdownIt) => {
                             lastIndex = match.index + match[0].length;
                         }
 
-                        // Add remaining text (including standalone ||)
                         if (lastIndex < content.length) {
                             const textToken = new Token("text", "", 0);
                             textToken.content = content.slice(lastIndex);

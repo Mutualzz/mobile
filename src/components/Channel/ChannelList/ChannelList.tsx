@@ -16,13 +16,12 @@ function flattenChannels(channels: Channel[]) {
             const children = channels.filter(
                 (c) => c.parent?.id === channel.id,
             );
-            // Sort children by position
+
             children.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
             result.push(...children);
         }
     }
 
-    // Remove duplicates (children already included)
     return Array.from(new Set(result));
 }
 
@@ -53,22 +52,23 @@ export const ChannelList = observer(() => {
 
     return (
         <Paper
-            elevation={app.preferEmbossed ? 2 : 0}
             style={{
                 flexDirection: "column",
                 width: "100%",
                 flex: 1,
-                paddingTop: insets.top,
             }}
+            elevation={app.preferEmbossed ? 2 : 0}
         >
-            <Box
+            <Paper
                 style={{
+                    paddingTop: insets.top,
                     paddingHorizontal: 16,
                     paddingBottom: 8,
                     boxShadow: "none",
                     flexDirection: "row",
                     justifyContent: "space-between",
                 }}
+                elevation={app.preferEmbossed ? 3 : 0}
             >
                 <Typography level="body-lg">{space.name}</Typography>
                 <Box
@@ -92,15 +92,14 @@ export const ChannelList = observer(() => {
                         </IconButton>
                     </ButtonGroup>
                 </Box>
-            </Box>
-            <Paper
+            </Paper>
+            <Box
                 style={{
                     flex: 1,
                     paddingTop: 48,
                     flexDirection: "column",
                     gap: 4,
                 }}
-                elevation={app.preferEmbossed ? 3 : 0}
             >
                 {flatChannels.map((channel) => (
                     <ChannelListItem
@@ -120,7 +119,7 @@ export const ChannelList = observer(() => {
                         }
                     />
                 ))}
-            </Paper>
+            </Box>
         </Paper>
     );
 });

@@ -1,7 +1,7 @@
 import { HomeContextual } from "@components/HomeContextual";
 import { ModeSwitcher } from "@components/ModeSwitcher";
-import TabBar from "@components/TabBar/TabBar";
-import TabButton from "@components/TabButton";
+import TabBar from "@components/Tabs/TabBar";
+import TabButton from "@components/Tabs/TabButton";
 import { UserAvatar } from "@components/User/UserAvatar";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useAppStore } from "@hooks/useStores";
@@ -31,6 +31,7 @@ const AppLayout = () => {
                 <TabTrigger name="spaces" href="/spaces" />
                 <TabTrigger name="feed" href="/feed" />
                 <TabTrigger name="@me" href="/@me" />
+                <TabTrigger name="settings" href="/settings" />
             </TabList>
 
             <TabBar>
@@ -43,7 +44,7 @@ const AppLayout = () => {
                 >
                     <TabTrigger asChild name="@me" href="/@me">
                         <TabButton
-                            startDecorator={
+                            icon={
                                 <MaterialIcons
                                     size={30}
                                     color={theme.colors.neutral}
@@ -61,11 +62,9 @@ const AppLayout = () => {
                         flexDirection: "column",
                     }}
                 >
-                    <TabTrigger asChild name="profile">
+                    <TabTrigger asChild name="settings">
                         <TabButton
-                            startDecorator={
-                                <UserAvatar size={36} user={app.account} />
-                            }
+                            icon={<UserAvatar size={36} user={app.account} />}
                         >
                             You
                         </TabButton>

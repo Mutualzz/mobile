@@ -1,34 +1,55 @@
 import { SpacesSidebar } from "@components/Space/SpacesSidebar";
 import { useAppStore } from "@hooks/useStores";
 import { Box } from "@mutualzz/ui-native";
-import { Stack, useRouter, useSegments } from "expo-router";
+import {
+    Slot,
+    useGlobalSearchParams,
+    useRouter,
+    useSegments,
+} from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 
+// TODO: Fix clicking on space in sidebar not updating the view correctly and channels as well
 const SpacesLayout = () => {
     const app = useAppStore();
-    const segments: string[] = useSegments();
+    const segments = useSegments();
     const router = useRouter();
-    const inChannel = segments[1] === "spaces" && segments.length >= 4;
-    const inSpace = segments[1] === "spaces" && segments.length >= 3;
+    const { spaceId, channelId } = useGlobalSearchParams<{
+        spaceId?: string;
+        channelId?: string;
+    }>();
+    const inChannel = Boolean(channelId);
 
     useEffect(() => {
         if (app.mode !== "spaces") app.setMode("spaces");
+
+        return () => {
+            if (app.mode === "spaces") app.resetMode();
+        };
     }, []);
 
     useEffect(() => {
-        if (inSpace) return;
+        const atSpacesRoot = segments.length === 2 && segments[1] === "spaces";
 
-        const space = app.spaces.setPreferredActive();
-        if (!space) return;
+        if (!spaceId) {
+            if (!atSpacesRoot) return;
 
-        router.replace(`/spaces/${space.id}`);
-    }, [inSpace]);
+            const recentSpace = app.spaces.setPreferredActive();
+            router.replace(`/spaces/${recentSpace.id}`);
+
+            return;
+        }
+
+        if (spaceId !== app.spaces.activeId) app.spaces.setActive(spaceId);
+    }, [spaceId, segments.join("/")]);
+
+    console.log(app.spaces.active?.name);
 
     return (
-        <Box style={{ flexDirection: "row", width: "100%", height: "100%" }}>
+        <Box style={{ flex: 1, flexDirection: "row" }}>
             {!inChannel && <SpacesSidebar />}
-            <Stack screenOptions={{ headerShown: false }} />
+            <Slot />
         </Box>
     );
 };

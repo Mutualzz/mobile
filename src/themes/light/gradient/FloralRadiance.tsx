@@ -14,9 +14,9 @@ export const floralRadianceTheme: Theme = {
         primary: "#C08A2A",
         neutral: "#5A5842",
         background:
-            "linear-gradient(180deg,#FBFCF9 0%,#F4F7F2 40%,#EEF5EA 68%,#F0D27A 88%,#C08A2A 100%)",
+            "linear-gradient(180deg,#FBFCF9 0%,#F4F7F2 45%,#EEF5EA 75%,#F0D27A 100%,#C08A2A 100%)",
         surface:
-            "linear-gradient(180deg,#F6F7EE 0%,#EAEFD9 45%,#E0D8B4 75%,#D6B56A 90%,#C08A2A 100%)",
+            "linear-gradient(180deg,#F6F7EE 0%,#EAEFD9 45%,#E0D8B4 75%,#D6B56A 100%,#C08A2A 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",

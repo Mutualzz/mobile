@@ -49,20 +49,21 @@ const SpaceChannelIndex = () => {
             <Paper
                 style={{
                     flex: 1,
+
                     flexDirection: "column",
-                    boxShadow: "none",
                 }}
                 elevation={app.preferEmbossed ? 2 : 0}
             >
                 <Paper
                     style={{
-                        paddingTop: insets.top,
                         flexDirection: "row",
+                        paddingTop: insets.top,
                         paddingHorizontal: insets.left + 16,
                         paddingBottom: 8,
                         alignItems: "center",
                         gap: 8,
                         boxShadow: "none",
+                        zIndex: 1,
                     }}
                     elevation={app.preferEmbossed ? 3 : 0}
                 >

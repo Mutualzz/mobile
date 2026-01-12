@@ -1,5 +1,6 @@
 import { Paper } from "@components/Paper";
 import { SpaceIcon } from "@components/Space/SpaceIcon";
+import { useKeyboardOffset } from "@hooks/useKeyboardOffset";
 import { useAppStore } from "@hooks/useStores";
 import { HttpException } from "@mutualzz/types";
 import {
@@ -14,10 +15,15 @@ import {
 import { emailRegex } from "@mutualzz/validators";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
-import { Redirect } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
-import { View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import {
+    Animated,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+} from "react-native";
 
 const InputWithLabel = ({
     label,
@@ -32,7 +38,7 @@ const InputWithLabel = ({
         type?: string;
     }) => (
     <Box style={{ width: "100%", flexDirection: "column", gap: 8 }}>
-        <Typography level="body-sm" style={{ fontWeight: 500 }}>
+        <Typography level="body-sm" weight={500}>
             {label}{" "}
             {props.required && (
                 <Typography variant="plain" color="danger">
@@ -43,7 +49,7 @@ const InputWithLabel = ({
         {type === "password" ? (
             <InputPassword {...props} fullWidth />
         ) : (
-            <InputDefault {...props} fullWidth />
+            <InputDefault {...props} fullWidth autoCapitalize="none" />
         )}
         {apiError && (
             <Typography variant="plain" color="danger" level="body-sm">
@@ -56,8 +62,23 @@ const InputWithLabel = ({
 const Login = () => {
     const app = useAppStore();
     const [error, setError] = useState<string | null>(null);
+    const keyboardHeight = useKeyboardOffset();
+    const translateY = useRef(new Animated.Value(0)).current;
+    const router = useRouter();
 
-    const mutation = useMutation({
+    useEffect(() => {
+        if (Platform.OS !== "android") return;
+
+        const height = keyboardHeight === 0 ? 0 : -keyboardHeight;
+
+        Animated.timing(translateY, {
+            toValue: height,
+            duration: 150,
+            useNativeDriver: true,
+        }).start();
+    }, [keyboardHeight, translateY]);
+
+    const { mutate: login, isPending } = useMutation({
         mutationFn: async (values: any) => {
             const requestBody: Record<string, string | undefined> = {
                 password: values.password,
@@ -86,118 +107,144 @@ const Login = () => {
             password: "",
         },
         onSubmit: ({ value }) => {
-            mutation.mutate(value);
+            login(value);
         },
     });
 
-    if (app.token)
-        return (
-            <Redirect href={`/${app.settings?.preferredMode ?? "spaces"}`} />
-        );
+    if (app.token) return <Redirect href="/" />;
 
     const space = app.joiningSpace;
 
     return (
-        <View
-            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        <KeyboardAvoidingView
+            style={{
+                flexDirection: "row",
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                paddingHorizontal: 24,
+            }}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-            <Paper
+            <Animated.View
                 style={{
-                    flexDirection: "column",
-                    padding: 20,
-                    borderRadius: 12,
-                    gap: 32,
-                    width: "90%",
+                    width: "100%",
+                    transform: [{ translateY }],
                 }}
             >
-                <Box
+                <Paper
                     style={{
-                        flexDirection: "column",
+                        paddingVertical: 20,
+                        paddingHorizontal: 24,
+                        borderRadius: 12,
                         gap: 16,
-                        width: "100%",
+                        justifyContent: "center",
                         alignItems: "center",
                     }}
                 >
-                    <Typography level="body-lg" weight="bold">
-                        Login to an account
-                    </Typography>
-                    {space && (
-                        <Box
-                            style={{
-                                flexDirection: "row",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                gap: 12,
-                            }}
-                        >
-                            <Typography
-                                level="body-sm"
-                                color="primary"
-                                style={{ textAlign: "center" }}
-                            >
-                                You are logging in to accept an invite to join a
-                                space:{" "}
-                            </Typography>
+                    <Box
+                        style={{
+                            gap: 16,
+                            alignItems: "center",
+                        }}
+                    >
+                        <Typography level="body-lg" weight="bold">
+                            Login to an account
+                        </Typography>
+                        {space && (
                             <Box
                                 style={{
                                     flexDirection: "row",
+                                    justifyContent: "center",
                                     alignItems: "center",
-                                    gap: 8,
+                                    gap: 12,
                                 }}
                             >
-                                <SpaceIcon size={36} space={space} />
                                 <Typography
                                     level="body-sm"
+                                    color="primary"
+                                    style={{ textAlign: "center" }}
+                                >
+                                    You are logging in to accept an invite to
+                                    join a space:{" "}
+                                </Typography>
+                                <Box
                                     style={{
-                                        textAlign: "center",
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        gap: 8,
                                     }}
                                 >
-                                    {space.name}
-                                </Typography>
+                                    <SpaceIcon size={36} space={space} />
+                                    <Typography
+                                        level="body-sm"
+                                        style={{
+                                            textAlign: "center",
+                                        }}
+                                    >
+                                        {space.name}
+                                    </Typography>
+                                </Box>
                             </Box>
-                        </Box>
-                    )}
-                </Box>
-                <Box
-                    style={{ flexDirection: "column", gap: 32, width: "100%" }}
-                >
-                    <Form.Field
-                        name="usernameOrEmail"
-                        children={(field) => (
-                            <InputWithLabel
-                                label="Username or Email"
-                                onChangeText={field.handleChange}
-                                onBlur={field.handleBlur}
-                                value={field.state.value}
-                                required
-                            />
                         )}
-                    />
-                    <Form.Field
-                        name="password"
-                        children={(field) => (
-                            <InputWithLabel
-                                label="Password"
-                                type="password"
-                                onChangeText={field.handleChange}
-                                onBlur={field.handleBlur}
-                                value={field.state.value}
-                                required
-                                apiError={error}
-                            />
-                        )}
-                    />
-                    <Form.Subscribe
-                        selector={(state) => [state.isSubmitting]}
-                        children={([isSubmitting]) => (
-                            <Button onPress={Form.handleSubmit}>
-                                {isSubmitting ? "..." : "Login"}
-                            </Button>
-                        )}
-                    />
-                </Box>
-            </Paper>
-        </View>
+                    </Box>
+                    <Box
+                        style={{
+                            flexDirection: "column",
+                            gap: 32,
+                            width: "100%",
+                        }}
+                    >
+                        <Form.Field
+                            name="usernameOrEmail"
+                            children={(field) => (
+                                <InputWithLabel
+                                    label="Username or Email"
+                                    onChangeText={field.handleChange}
+                                    onBlur={field.handleBlur}
+                                    value={field.state.value}
+                                    required
+                                />
+                            )}
+                        />
+                        <Form.Field
+                            name="password"
+                            children={(field) => (
+                                <InputWithLabel
+                                    label="Password"
+                                    type="password"
+                                    onChangeText={field.handleChange}
+                                    onBlur={field.handleBlur}
+                                    value={field.state.value}
+                                    required
+                                    apiError={error}
+                                />
+                            )}
+                        />
+                        <Form.Subscribe
+                            selector={(state) => [state.isSubmitting]}
+                            children={([isSubmitting]) => (
+                                <Button
+                                    fullWidth
+                                    disabled={isSubmitting || isPending}
+                                    onPress={Form.handleSubmit}
+                                >
+                                    {isSubmitting ? "..." : "Login"}
+                                </Button>
+                            )}
+                        />
+                    </Box>
+                    <Pressable onPress={() => router.replace("/register")}>
+                        <Typography>
+                            Don't have an account?{" "}
+                            <Typography color="info" variant="plain">
+                                Register
+                            </Typography>
+                        </Typography>
+                    </Pressable>
+                </Paper>
+            </Animated.View>
+        </KeyboardAvoidingView>
     );
 };
 

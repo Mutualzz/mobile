@@ -70,7 +70,6 @@ export const Time = ({
     }, [mode, calendarText, absoluteText, formattedText, relativeText]);
 
     const a11yLabel = useMemo(() => {
-        // Always give SR users a stable, explicit readout
         const relLong = d.fromNow();
         return `${accessibilityLabelPrefix}: ${calendarText}. (${relLong}).`;
     }, [accessibilityLabelPrefix, calendarText, d]);

@@ -26,7 +26,6 @@
         },
         "experiments": {
             "typedRoutes": true,
-            "reactCompiler": true,
             "autolinkingModuleResolution": true
         },
         "plugins": [
@@ -49,7 +48,9 @@
                         "image": "./assets/splash-icon.png"
                     }
                 }
-            ]
+            ],
+            "expo-asset",
+            "@react-native-community/datetimepicker"
         ],
         "extra": {
             "router": {},

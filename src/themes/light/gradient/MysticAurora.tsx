@@ -14,9 +14,9 @@ export const mysticAuroraTheme: Theme = {
         primary: "#2B9E84",
         neutral: "#5A4A3A",
         background:
-            "linear-gradient(180deg,#FBF8F6 0%,#F5F2EE 40%,#E9F4EA 68%,#7FD1B9 88%,#2B9E84 100%)",
+            "linear-gradient(180deg,#FBF8F6 0%,#F5F2EE 45%,#E9F4EA 75%,#7FD1B9 100%,#2B9E84 100%)",
         surface:
-            "linear-gradient(180deg,#F2EEE9 0%,#E6EFE9 45%,#CFEAE0 75%,#85CDB6 90%,#2B9E84 100%)",
+            "linear-gradient(180deg,#F2EEE9 0%,#E6EFE9 45%,#CFEAE0 75%,#85CDB6 100%,#2B9E84 100%)",
         danger: "#B3261E",
         warning: "#8F6500",
         success: "#1F6E34",

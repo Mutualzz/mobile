@@ -10,7 +10,6 @@ export const underlinePlugin = (md: MarkdownIt) => {
                 for (let j = 0; j < children.length; j++) {
                     const token = children[j];
                     if (token.type === "text" && token.content.includes("__")) {
-                        // Use regex to match __text__ but not standalone __
                         const newTokens: Token[] = [];
                         let lastIndex = 0;
                         const regex = /__([^_]+?)__/g;
@@ -18,7 +17,6 @@ export const underlinePlugin = (md: MarkdownIt) => {
                         let content = token.content;
 
                         while ((match = regex.exec(content))) {
-                            // Add text before underline
                             if (match.index > lastIndex) {
                                 const textToken = new Token("text", "", 0);
                                 textToken.content = content.slice(
@@ -28,7 +26,6 @@ export const underlinePlugin = (md: MarkdownIt) => {
                                 textToken.level = token.level;
                                 newTokens.push(textToken);
                             }
-                            // Add underline token
                             const underlineToken = new Token(
                                 "underline",
                                 "",
@@ -41,7 +38,6 @@ export const underlinePlugin = (md: MarkdownIt) => {
                             lastIndex = match.index + match[0].length;
                         }
 
-                        // Add remaining text (including standalone __)
                         if (lastIndex < content.length) {
                             const textToken = new Token("text", "", 0);
                             textToken.content = content.slice(lastIndex);
@@ -49,7 +45,6 @@ export const underlinePlugin = (md: MarkdownIt) => {
                             newTokens.push(textToken);
                         }
 
-                        // Only replace if we found underline matches
                         if (newTokens.length > 0) {
                             children.splice(j, 1, ...newTokens);
                             j += newTokens.length - 1;

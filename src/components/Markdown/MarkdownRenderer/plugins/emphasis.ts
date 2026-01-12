@@ -9,7 +9,7 @@ export const emphasisPlugin = (md: MarkdownIt) => {
             if (tokens[i].type === "inline" && children) {
                 for (let j = 0; j < children.length; j++) {
                     const token = children[j];
-                    // Bold: **text**
+
                     if (token.type === "text" && token.content.includes("**")) {
                         const regex = /\*\*([^*]+?)\*\*/g;
                         let lastIndex = 0;
@@ -44,9 +44,7 @@ export const emphasisPlugin = (md: MarkdownIt) => {
                             children.splice(j, 1, ...newTokens);
                             j += newTokens.length - 1;
                         }
-                    }
-                    // Italic: *text*
-                    else if (
+                    } else if (
                         token.type === "text" &&
                         token.content.includes("*")
                     ) {
@@ -83,13 +81,10 @@ export const emphasisPlugin = (md: MarkdownIt) => {
                             children.splice(j, 1, ...newTokens);
                             j += newTokens.length - 1;
                         }
-                    }
-                    // Italic: _text_
-                    else if (
+                    } else if (
                         token.type === "text" &&
                         token.content.includes("_")
                     ) {
-                        // Only match _text_ (not __text__)
                         const regex = /_([^_]+?)_/g;
                         let lastIndex = 0;
                         let match;
@@ -97,7 +92,6 @@ export const emphasisPlugin = (md: MarkdownIt) => {
                         const content = token.content;
 
                         while ((match = regex.exec(content))) {
-                            // Add text before italic
                             if (match.index > lastIndex) {
                                 const textToken = new Token("text", "", 0);
                                 textToken.content = content.slice(
@@ -107,7 +101,7 @@ export const emphasisPlugin = (md: MarkdownIt) => {
                                 textToken.level = token.level;
                                 newTokens.push(textToken);
                             }
-                            // Add italic token
+
                             const italicToken = new Token("em", "", 0);
                             italicToken.content = match[1];
                             italicToken.level = token.level;
@@ -115,7 +109,7 @@ export const emphasisPlugin = (md: MarkdownIt) => {
 
                             lastIndex = match.index + match[0].length;
                         }
-                        // Add remaining text (including standalone _)
+                      
                         if (lastIndex < content.length) {
                             const textToken = new Token("text", "", 0);
                             textToken.content = content.slice(lastIndex);

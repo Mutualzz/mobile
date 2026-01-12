@@ -1,4 +1,5 @@
 import { Paper } from "@components/Paper";
+import { FontAwesome } from "@expo/vector-icons";
 import { Sizes } from "@mutualzz/types";
 import {
     createColor,
@@ -16,7 +17,6 @@ import type { AccountStore } from "@stores/Account.store";
 import type { User } from "@stores/objects/User";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
-import { FaUser } from "react-icons/fa";
 
 interface UserAvatarProps extends AvatarProps {
     user?: AccountStore | User | null;
@@ -57,7 +57,7 @@ export const UserAvatar = observer(({ user, ...props }: UserAvatarProps) => {
                 size={size}
                 {...props}
             >
-                <FaUser />
+                <FontAwesome name="user" />
             </MAvatar>
         );
 
@@ -79,6 +79,7 @@ export const UserAvatar = observer(({ user, ...props }: UserAvatarProps) => {
                 height: size,
                 flexDirection: "column",
                 borderRadius: 9999,
+                boxShadow: "none",
             }}
             color={(user.defaultAvatar.color as Hex) || "neutral"}
         >

@@ -299,7 +299,6 @@ export class GatewayStore {
 
     private onClose = (e: CloseEvent) => {
         this.readyState = GatewayStatus.CLOSED;
-        console.log(e.code, e.reason);
         this.handleClose(e.code);
     };
 

@@ -14,9 +14,9 @@ export const arcaneMidnightTheme: Theme = {
         primary: "#B884F0",
         neutral: "#C2B5E8",
         background:
-            "linear-gradient(180deg,#070608 0%,#0D0D10 45%,#18142A 70%,#4D3A66 88%,#B884F0 100%)",
+            "linear-gradient(180deg,#070608 0%,#0D0D10 45%,#18142A 75%,#4D3A66 100%,#B884F0 100%)",
         surface:
-            "linear-gradient(180deg,#19162A 0%,#23203A 45%,#312A52 72%,#56407A 90%,#B884F0 100%)",
+            "linear-gradient(180deg,#19162A 0%,#23203A 45%,#312A52 75%,#56407A 100%,#B884F0 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",

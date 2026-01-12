@@ -14,9 +14,9 @@ export const noirElegyTheme: Theme = {
         primary: "#B884F0",
         neutral: "#C2B5D8",
         background:
-            "linear-gradient(180deg,#070609 0%,#0D0D10 45%,#1B1426 70%,#6B3F7A 88%,#B884F0 100%)",
+            "linear-gradient(180deg,#070609 0%,#0D0D10 45%,#1B1426 75%,#6B3F7A 100%,#B884F0 100%)",
         surface:
-            "linear-gradient(180deg,#16141B 0%,#23232A 45%,#2E2738 72%,#4A3A5A 90%,#B884F0 100%)",
+            "linear-gradient(180deg,#16141B 0%,#23232A 45%,#2E2738 75%,#4A3A5A 100%,#B884F0 100%)",
         danger: "#FF6B6B",
         warning: "#F3CE72",
         success: "#5CC8A6",

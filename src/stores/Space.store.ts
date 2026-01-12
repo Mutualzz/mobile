@@ -27,12 +27,13 @@ export class SpaceStore {
     setActive(id?: string) {
         this.active = (id ? this.get(id) : null) ?? null;
         this.activeId = this.active?.id;
+        this.mostRecentSpaceId = this.active?.id;
 
         this.app.channels.setPreferredActive();
     }
 
     setPreferredActive() {
-        const preferred = this.mostRecentSpace ?? this.all[0];
+        const preferred = this.mostRecentSpace ?? this.positioned[0];
         this.setActive(preferred?.id);
         return preferred;
     }

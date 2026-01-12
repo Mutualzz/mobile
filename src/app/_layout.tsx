@@ -1,5 +1,7 @@
 import { NavigationWithTheme } from "@components/NavigationWithTheme";
 import { AppTheme } from "@contexts/AppTheme.context";
+import { ModalProvider } from "@contexts/Modal.context";
+import { FontAwesome } from "@expo/vector-icons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useAppStore } from "@hooks/useStores";
 import { Logger } from "@mutualzz/logger";
@@ -13,7 +15,7 @@ import calendar from "dayjs/plugin/calendar";
 import duration from "dayjs/plugin/duration";
 import relativeTime from "dayjs/plugin/relativeTime";
 import * as Font from "expo-font";
-import { Stack } from "expo-router";
+import { Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
@@ -22,6 +24,8 @@ import { useEffect } from "react";
 dayjs.extend(relativeTime);
 dayjs.extend(calendar, calendarStrings);
 dayjs.extend(duration);
+
+SplashScreen.preventAutoHideAsync();
 
 const Root = () => {
     const app = useAppStore();
@@ -34,6 +38,7 @@ const Root = () => {
             try {
                 await Font.loadAsync({
                     ...MaterialIcons.font,
+                    ...FontAwesome.font,
                 });
 
                 await app.loadSettings();
@@ -79,7 +84,9 @@ const Root = () => {
             <AppTheme>
                 <NavigationWithTheme>
                     <NativeBaseline>
-                        <Stack screenOptions={{ headerShown: false }} />
+                        <ModalProvider>
+                            <Slot />
+                        </ModalProvider>
                     </NativeBaseline>
                 </NavigationWithTheme>
             </AppTheme>

@@ -35,7 +35,6 @@ export const MessageList = observer(({ channel }: Props) => {
             queryKey: ["messages", channel?.id],
             queryFn: async ({ pageParam }: any) => {
                 if (!pageParam) {
-                    // first page: fetch latest messages
                     const count = await channel?.getMessages(true);
 
                     const lastGroup =

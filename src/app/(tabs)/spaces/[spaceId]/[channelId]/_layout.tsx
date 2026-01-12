@@ -1,32 +1,27 @@
 import { useDebouncedEffect } from "@hooks/useDebouncedEffect";
 import { useAppStore } from "@hooks/useStores";
-import { Slot, useLocalSearchParams } from "expo-router";
+import { Slot, useGlobalSearchParams } from "expo-router";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 
-// TODO: Fix wrong navigation when opening a different channel first time
 const SpaceChannelLayout = () => {
     const app = useAppStore();
-    const { channelId } = useLocalSearchParams();
+    const { spaceId, channelId } = useGlobalSearchParams<{
+        spaceId: string;
+        channelId: string;
+    }>();
 
     useEffect(() => {
-        if (Array.isArray(channelId)) return;
-
-        app.channels.setActive(channelId);
+        if (channelId && app.channels.activeId !== channelId)
+            app.channels.setActive(channelId);
     }, [channelId]);
 
     useDebouncedEffect(
         () => {
-            const spaceActiveId = app.spaces.activeId;
-            const channelActiveId = app.channels.activeId;
-            if (!spaceActiveId || !channelActiveId) return;
-
-            runInAction(() =>
-                app.gateway.onChannelOpen(spaceActiveId, channelActiveId),
-            );
+            runInAction(() => app.gateway.onChannelOpen(spaceId, channelId));
         },
-        [app.channels.activeId, app.spaces.activeId],
+        [spaceId, channelId],
         2000,
     );
 
