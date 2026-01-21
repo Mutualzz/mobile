@@ -44,8 +44,6 @@ const SpacesLayout = () => {
         if (spaceId !== app.spaces.activeId) app.spaces.setActive(spaceId);
     }, [spaceId, segments.join("/")]);
 
-    console.log(app.spaces.active?.name);
-
     return (
         <Box style={{ flex: 1, flexDirection: "row" }}>
             {!inChannel && <SpacesSidebar />}

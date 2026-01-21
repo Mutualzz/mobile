@@ -2,6 +2,7 @@
   "fill" : "automatic",
   "groups" : [
     {
+      "blur-material" : null,
       "layers" : [
         {
           "blend-mode-specializations" : [
@@ -16,24 +17,47 @@
               "value" : "automatic"
             }
           ],
-          "glass" : true,
+          "glass-specializations" : [
+            {
+              "value" : true
+            },
+            {
+              "appearance" : "dark",
+              "value" : true
+            }
+          ],
           "hidden" : false,
           "image-name" : "icon.png",
           "name" : "icon",
-          "position" : {
-            "scale" : 1,
-            "translation-in-points" : [
-              0,
-              0
-            ]
-          }
+          "position-specializations" : [
+            {
+              "value" : {
+                "scale" : 1.5,
+                "translation-in-points" : [
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "idiom" : "square",
+              "value" : {
+                "scale" : 1.25,
+                "translation-in-points" : [
+                  0,
+                  0
+                ]
+              }
+            }
+          ]
         }
       ],
-      "lighting" : "individual",
+      "lighting" : "combined",
       "shadow" : {
         "kind" : "neutral",
         "opacity" : 0.5
       },
+      "specular" : true,
       "translucency" : {
         "enabled" : true,
         "value" : 0.5
