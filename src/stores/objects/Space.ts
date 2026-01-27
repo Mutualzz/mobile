@@ -14,7 +14,7 @@ import {
 } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
 import { SpaceMemberListStore } from "@stores/objects/SpaceMemberListStore";
-import type { User } from "@stores/objects/User.ts";
+import type { User } from "@stores/objects/User";
 import { REST } from "@stores/REST.store";
 import { SpaceMemberStore } from "@stores/SpaceMember.store";
 import { asAcronym, compareChannels } from "@utils/index";
