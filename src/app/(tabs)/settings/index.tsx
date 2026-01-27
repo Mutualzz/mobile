@@ -54,7 +54,7 @@ const SettingsIndex = () => {
                 paddingVertical: 16,
                 gap: 16,
             }}
-            elevation={app.preferEmbossed ? 2 : 0}
+            elevation={app.settings?.preferEmbossed ? 2 : 0}
         >
             {categories.map(([category, pages], index) => (
                 <Fragment
@@ -68,7 +68,7 @@ const SettingsIndex = () => {
                             borderRadius: 12,
                             flexDirection: "column",
                         }}
-                        elevation={app.preferEmbossed ? 3 : 0}
+                        elevation={app.settings?.preferEmbossed ? 3 : 0}
                     >
                         <Typography level="body-sm" textColor="muted">
                             {startCase(category)}
@@ -105,7 +105,7 @@ const SettingsIndex = () => {
             ))}
 
             <Paper
-                elevation={app.preferEmbossed ? 3 : 0}
+                elevation={app.settings?.preferEmbossed ? 3 : 0}
                 style={{
                     marginHorizontal: 12,
                     boxShadow: "none",

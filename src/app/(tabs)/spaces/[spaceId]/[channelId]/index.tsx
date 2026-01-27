@@ -52,7 +52,7 @@ const SpaceChannelIndex = () => {
 
                     flexDirection: "column",
                 }}
-                elevation={app.preferEmbossed ? 2 : 0}
+                elevation={app.settings?.preferEmbossed ? 2 : 0}
             >
                 <Paper
                     style={{
@@ -65,7 +65,7 @@ const SpaceChannelIndex = () => {
                         boxShadow: "none",
                         zIndex: 1,
                     }}
-                    elevation={app.preferEmbossed ? 3 : 0}
+                    elevation={app.settings?.preferEmbossed ? 3 : 0}
                 >
                     <Pressable hitSlop={8} onPress={() => router.back()}>
                         <FontAwesome

@@ -45,7 +45,7 @@ export const SpaceIcon = observer(({ space, selected, ...props }: Props) => {
                 height: 36,
                 boxShadow: "none",
             }}
-            elevation={app.preferEmbossed ? 5 : 1}
+            elevation={app.settings?.preferEmbossed ? 5 : 1}
             transparency={25}
         >
             <Avatar

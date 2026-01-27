@@ -64,7 +64,7 @@ export const SpacesSidebar = observer(() => {
                 borderBottomWidth: 0,
                 borderLeftWidth: 0,
             }}
-            elevation={app.preferEmbossed ? 1 : 0}
+            elevation={app.settings?.preferEmbossed ? 1 : 0}
         >
             {app.spaces.positioned.map((space) => (
                 <SidebarSpace

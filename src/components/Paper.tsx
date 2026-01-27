@@ -10,9 +10,13 @@ const PaperComponent = forwardRef<View, PaperProps>(
 
         return (
             <MPaper
-                variant={app.preferEmbossed ? "elevation" : "outlined"}
+                variant={
+                    app.settings?.preferEmbossed ? "elevation" : "outlined"
+                }
                 elevation={props.variant === "soft" ? 0 : props.elevation}
-                transparency={app.preferEmbossed ? 90 : props.transparency}
+                transparency={
+                    app.settings?.preferEmbossed ? 90 : props.transparency
+                }
                 color={color}
                 {...props}
                 ref={ref}

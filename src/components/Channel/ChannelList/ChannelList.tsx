@@ -57,7 +57,7 @@ export const ChannelList = observer(() => {
                 width: "100%",
                 flex: 1,
             }}
-            elevation={app.preferEmbossed ? 2 : 0}
+            elevation={app.settings?.preferEmbossed ? 2 : 0}
         >
             <Paper
                 style={{
@@ -68,7 +68,7 @@ export const ChannelList = observer(() => {
                     flexDirection: "row",
                     justifyContent: "space-between",
                 }}
-                elevation={app.preferEmbossed ? 3 : 0}
+                elevation={app.settings?.preferEmbossed ? 3 : 0}
             >
                 <Typography level="body-lg">{space.name}</Typography>
                 <Box

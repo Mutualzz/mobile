@@ -32,7 +32,7 @@ const TabBar = ({ children, ...props }: Props) => {
                 paddingBottom: Math.max(insets.bottom, 10),
                 display: inChannel ? "none" : "flex",
             }}
-            elevation={app.preferEmbossed ? 1 : 0}
+            elevation={app.settings?.preferEmbossed ? 1 : 0}
             {...props}
         >
             {children}
