@@ -1,7 +1,7 @@
 import { getEmoji } from "@utils/emojis";
 import { TWEMOJI_URL } from "@utils/urls";
 import shortcodeRegex from "emojibase-regex/shortcode";
-import MarkdownIt from "markdown-it";
+import type MarkdownIt from "markdown-it";
 import Token from "markdown-it/lib/token.mjs";
 
 const emojiRegex = new RegExp(shortcodeRegex.source, "g");
@@ -10,9 +10,9 @@ export const emojiPlugin = (md: MarkdownIt) => {
     md.core.ruler.after("inline", "emoji", (state) => {
         const tokens = state.tokens;
 
-        for (let i = 0; i < tokens.length; i++) {
-            if (tokens[i].type === "inline") {
-                const content = tokens[i].content;
+        for (const token of tokens) {
+            if (token.type === "inline") {
+                const content = token.content;
                 const newTokens: Token[] = [];
                 let lastIndex = 0;
                 let match;
@@ -30,7 +30,7 @@ export const emojiPlugin = (md: MarkdownIt) => {
                                 lastIndex,
                                 match.index,
                             );
-                            textToken.level = tokens[i].level;
+                            textToken.level = token.level;
                             newTokens.push(textToken);
                         }
 
@@ -45,7 +45,7 @@ export const emojiPlugin = (md: MarkdownIt) => {
                             `${TWEMOJI_URL}/${emojiData.hexcode.toLowerCase()}.svg`,
                         );
                         emojiToken.attrSet("unicode", emojiData.emoji);
-                        emojiToken.level = tokens[i].level;
+                        emojiToken.level = token.level;
                         newTokens.push(emojiToken);
 
                         lastIndex = match.index + match[0].length;
@@ -55,7 +55,7 @@ export const emojiPlugin = (md: MarkdownIt) => {
                 if (lastIndex < content.length) {
                     const textToken = new Token("text", "", 0);
                     textToken.content = content.slice(lastIndex);
-                    textToken.level = tokens[i].level;
+                    textToken.level = token.level;
                     newTokens.push(textToken);
                 }
 
@@ -63,7 +63,7 @@ export const emojiPlugin = (md: MarkdownIt) => {
                     newTokens.length &&
                     newTokens.some((t) => t.type === "emoji")
                 ) {
-                    tokens[i].children = newTokens;
+                    token.children = newTokens;
                 }
             }
         }
