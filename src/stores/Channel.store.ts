@@ -1,10 +1,10 @@
 import type { Snowflake } from "@mutualzz/types";
 import { ChannelType, type APIChannel } from "@mutualzz/types";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { makeAutoObservable, observable, ObservableMap } from "mobx";
+import { makeAutoObservable, observable, type ObservableMap } from "mobx";
 import { makePersistable } from "mobx-persist-store";
 import type { AppStore } from "./App.store";
 import { Channel } from "./objects/Channel";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export class ChannelStore {
     private readonly channels: ObservableMap<string, Channel>;
@@ -86,7 +86,7 @@ export class ChannelStore {
         const exists = this.channels.get(channel.id);
         if (exists) return exists;
 
-        let newChannel = new Channel(this.app, channel);
+        const newChannel = new Channel(this.app, channel);
         this.channels.set(channel.id, newChannel);
         return newChannel;
     }
@@ -161,6 +161,9 @@ export class ChannelStore {
         });
     }
 
+    compareChannels = (a: Channel, b: Channel): number =>
+        (a.position ?? -1) - (b.position ?? -1);
+
     getLastPositionInCategory(
         categoryId: string | null,
         channels: Channel[],
@@ -197,7 +200,6 @@ export class ChannelStore {
             }
 
             this.channels.set(channel.id, channel);
-
             return channel;
         });
 

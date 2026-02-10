@@ -11,15 +11,16 @@ import {
     type APIUser,
     type APIUserSettings,
 } from "@mutualzz/types";
+import { invoke } from "@tauri-apps/api/core";
 import { createCodec, type Codec, type Encoding } from "@utils/codec";
 import {
     createCompressor,
     type Compression,
     type Compressor,
 } from "@utils/compressor";
-import { fixConnectionUrl } from "@utils/urls";
 import { makeAutoObservable } from "mobx";
 import type { AppStore } from "./App.store";
+import { fixConnectionUrl } from "@utils/urls";
 
 // We have to create our own GatewayStatus "enum" to avoid issues with SSR
 // since WebSocket is not available in the server environment.
@@ -33,9 +34,9 @@ export const GatewayStatus = {
 
 export type GatewayStatus = (typeof GatewayStatus)[keyof typeof GatewayStatus];
 
-type Timer = ReturnType<typeof setTimeout>;
-
 const RECONNECT_TIMEOUT = 5000;
+
+type Timer = ReturnType<typeof setTimeout>;
 
 export class GatewayStore {
     socket: WebSocket | null = null;
@@ -54,7 +55,7 @@ export class GatewayStore {
     private url?: string;
 
     private encoding: Encoding = "json";
-    private compress: Compression = "none";
+    private compress: Compression = "zlib-stream";
 
     private codec!: Codec;
     private compressor!: Compressor;
@@ -79,7 +80,7 @@ export class GatewayStore {
     }
 
     async connect(_url?: string) {
-        let url = fixConnectionUrl(
+        const url = fixConnectionUrl(
             _url || process.env.EXPO_PUBLIC_WS_URL || "",
         );
 
@@ -255,7 +256,13 @@ export class GatewayStore {
             if (this.compress !== "none")
                 bytes = this.compressor.decompress(bytes);
 
-            const data = this.codec.decode(bytes);
+            const data =
+                this.encoding === "etf"
+                    ? await invoke("gateway_decode", {
+                          payload: Array.from(bytes),
+                          encoding: this.encoding,
+                      })
+                    : this.codec.decode(bytes);
 
             this.handlePayload(data);
         } catch (err) {
@@ -307,7 +314,6 @@ export class GatewayStore {
             this.logger.error("Socket is not open");
             return;
         }
-
         if (this.socket.readyState !== WebSocket.OPEN) {
             this.logger.error(
                 `Socket is not open; readyState: ${this.socket.readyState}`,
@@ -315,7 +321,13 @@ export class GatewayStore {
             return;
         }
 
-        const raw: any = this.codec.encode(payload);
+        const raw: any =
+            this.encoding === "etf"
+                ? await invoke("gateway_encode", {
+                      payload,
+                      encoding: this.encoding,
+                  })
+                : this.codec.encode(payload);
 
         const out =
             this.compress !== "none"

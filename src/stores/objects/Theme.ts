@@ -1,10 +1,5 @@
 import type { Theme as MzTheme } from "@emotion/react";
-import type {
-    APITheme,
-    Snowflake,
-    ThemeStyle,
-    ThemeType,
-} from "@mutualzz/types";
+import type { APITheme, Snowflake, ThemeStyle, ThemeType, } from "@mutualzz/types";
 import {
     baseDarkTheme,
     baseLightTheme,
@@ -79,13 +74,13 @@ export class Theme implements Partial<MzTheme> {
         makeAutoObservable(this);
     }
 
-    static toEmotionTheme(theme: APITheme | MzTheme | Theme): MzTheme {
+    static toEmotion(theme: APITheme | MzTheme | Theme): MzTheme {
         const toMergeWith =
             theme.type === "dark" ? baseDarkTheme : baseLightTheme;
 
         const themeToUse = toJS(theme);
 
-        const newTheme = {
+        return {
             ...toMergeWith,
             ...themeToUse,
             colors: {
@@ -101,15 +96,25 @@ export class Theme implements Partial<MzTheme> {
                 },
             },
         };
-
-        return newTheme;
     }
 
-    static toThemeObject(theme: APITheme, app: AppStore): Theme {
-        return new Theme(app, theme);
+    static serialize(theme: Theme | APITheme): APITheme {
+        return {
+            id: theme.id,
+            name: theme.name,
+            description: theme.description,
+            adaptive: theme.adaptive,
+            type: theme.type,
+            style: theme.style,
+            colors: theme.colors,
+            typography: theme.typography,
+            createdAt: theme.createdAt,
+            updatedAt: theme.updatedAt,
+            authorId: theme.authorId,
+        };
     }
 
     update(theme: APITheme) {
-        Object.assign(this, theme);
+        return Object.assign(this, theme);
     }
 }

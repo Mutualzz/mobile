@@ -6,7 +6,7 @@ import {
     type AvatarFormat,
     BitField,
     CDNRoutes,
-    ChannelType,
+    type ChannelType,
     ImageFormat,
     type Sizes,
     spaceFlags,
@@ -17,12 +17,12 @@ import { SpaceMemberListStore } from "@stores/objects/SpaceMemberListStore";
 import type { User } from "@stores/objects/User";
 import { REST } from "@stores/REST.store";
 import { SpaceMemberStore } from "@stores/SpaceMember.store";
-import { asAcronym, compareChannels } from "@utils/index";
+import { asAcronym } from "@utils/index";
 import {
     makeAutoObservable,
     observable,
     ObservableMap,
-    ObservableSet,
+    type ObservableSet,
 } from "mobx";
 import type { Channel } from "./Channel";
 import { Invite } from "./Invite";
@@ -46,8 +46,7 @@ export class Space {
     ownerId: Snowflake;
     owner?: User | null;
 
-    memberLists: ObservableMap<string, SpaceMemberListStore> =
-        new ObservableMap();
+    memberLists = new ObservableMap<string, SpaceMemberListStore>();
 
     raw: APISpace;
 
@@ -124,14 +123,14 @@ export class Space {
         );
 
         return topLevelChannels
-            .sort(compareChannels)
+            .sort(this.app.channels.compareChannels)
             .flatMap((topLevelChannel) => [
                 topLevelChannel,
                 ...spaceChannels
                     .filter(
                         (channel) => channel.parent?.id === topLevelChannel.id,
                     )
-                    .sort(compareChannels),
+                    .sort(this.app.channels.compareChannels),
             ]);
     }
 

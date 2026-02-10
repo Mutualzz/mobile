@@ -28,7 +28,7 @@ export const AppTheme = observer(({ children }: PropsWithChildren) => {
                 const pick = (id?: string | null) => {
                     const pickenTheme = themes.find((t) => t.id === id);
                     if (!pickenTheme) return undefined;
-                    return Theme.toEmotionTheme(pickenTheme);
+                    return Theme.toEmotion(pickenTheme);
                 };
 
                 const selectedTheme =

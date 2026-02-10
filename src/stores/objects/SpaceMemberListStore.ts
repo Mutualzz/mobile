@@ -3,6 +3,7 @@ import type { Snowflake } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
 import type { Space } from "@stores/objects/Space";
 import { SpaceMember } from "@stores/objects/SpaceMember";
+import capitalize from "lodash/capitalize";
 import { makeAutoObservable } from "mobx";
 
 // TODO: Add types for this store
@@ -58,7 +59,7 @@ export class SpaceMemberListStore {
                     for (const item of items) {
                         if ("group" in item) {
                             listData.push({
-                                title: `${item.group.id.toUpperCase()}`,
+                                title: `${capitalize(item.group.id)}`,
                                 data: [],
                             });
                         } else {

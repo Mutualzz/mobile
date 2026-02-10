@@ -73,13 +73,15 @@ export class User {
                 ),
             );
 
+        const isAnimated = animated && this.avatar?.startsWith("a_");
+
         return REST.makeCDNUrl(
             CDNRoutes.userAvatar(
                 this.id,
                 hash ?? this.avatar,
                 format,
                 size,
-                animated,
+                animated || isAnimated,
             ),
         );
     }

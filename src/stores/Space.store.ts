@@ -1,9 +1,9 @@
 import type { APISpace, Snowflake } from "@mutualzz/types";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { makeAutoObservable, observable, type ObservableMap } from "mobx";
 import { makePersistable } from "mobx-persist-store";
 import type { AppStore } from "./App.store";
 import { Space } from "./objects/Space";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export class SpaceStore {
     private readonly spaces: ObservableMap<string, Space>;
@@ -27,13 +27,12 @@ export class SpaceStore {
     setActive(id?: string) {
         this.active = (id ? this.get(id) : null) ?? null;
         this.activeId = this.active?.id;
-        this.mostRecentSpaceId = this.active?.id;
 
         this.app.channels.setPreferredActive();
     }
 
     setPreferredActive() {
-        const preferred = this.mostRecentSpace ?? this.positioned[0];
+        const preferred = this.mostRecentSpace ?? this.all[0];
         this.setActive(preferred?.id);
         return preferred;
     }

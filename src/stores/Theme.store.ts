@@ -1,13 +1,13 @@
 import type { Theme as MzTheme } from "@emotion/react";
 import type { APITheme, ThemeType } from "@mutualzz/types";
-import { makeAutoObservable, observable, ObservableMap } from "mobx";
+import { makeAutoObservable, observable, type ObservableMap } from "mobx";
 import { makePersistable } from "mobx-persist-store";
 import type { AppStore } from "./App.store";
 import { Theme } from "./objects/Theme";
 
 import { baseDarkTheme } from "@mutualzz/ui-core";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { themes as baseThemes } from "@themes/index";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export class ThemeStore {
     readonly themes: ObservableMap<string, Theme>;
@@ -55,7 +55,9 @@ export class ThemeStore {
     }
 
     add(theme: APITheme | MzTheme) {
-        this.themes.set(theme.id, new Theme(this.app, theme));
+        const newTheme = new Theme(this.app, theme);
+        this.themes.set(theme.id, newTheme);
+        return newTheme;
     }
 
     update(theme: APITheme) {

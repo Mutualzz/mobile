@@ -1,7 +1,7 @@
 import type { MessageType, Snowflake } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
 import type { MessageLikeData } from "./Message";
-import { User } from "./User";
+import type { User } from "./User";
 
 export class MessageBase {
     protected app: AppStore;

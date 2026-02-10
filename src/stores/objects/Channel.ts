@@ -10,7 +10,7 @@ import {
 } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
 import { MessageStore } from "@stores/Message.store";
-import { Message } from "@stores/objects/Message";
+import { type Message } from "@stores/objects/Message";
 import type { Space } from "@stores/objects/Space";
 import { makeAutoObservable } from "mobx";
 import type { QueuedMessage } from "./QueuedMessage";
@@ -174,7 +174,7 @@ export class Channel {
     }
 
     get listId() {
-        let listId = "everyone";
+        const listId = "everyone";
 
         // TODO: implement this when permission system is implemented
         // const perms: string[] = [];

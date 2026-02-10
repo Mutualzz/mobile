@@ -7,7 +7,7 @@ export enum QueuedMessageStatus {
     Failed = "failed",
 }
 
-export type QueuedMessageData = {
+export interface QueuedMessageData {
     id: Snowflake;
     channelId: Snowflake;
     spaceId?: Snowflake | null;
@@ -16,7 +16,7 @@ export type QueuedMessageData = {
     createdAt: string;
     authorId: Snowflake;
     author?: APIUser;
-};
+}
 
 export class QueuedMessage extends MessageBase {
     channelId: Snowflake;
