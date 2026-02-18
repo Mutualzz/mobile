@@ -1,23 +1,19 @@
 import { Logger } from "@mutualzz/logger";
 import type { APIMessage, GatewayReadyPayload } from "@mutualzz/types";
 import {
-    GatewayCloseCodes,
-    GatewayDispatchEvents,
-    GatewayOpcodes,
     type APIChannel,
     type APIInvite,
     type APIPrivateUser,
     type APISpace,
     type APIUser,
     type APIUserSettings,
+    GatewayCloseCodes,
+    GatewayDispatchEvents,
+    GatewayOpcodes,
 } from "@mutualzz/types";
 import { invoke } from "@tauri-apps/api/core";
-import { createCodec, type Codec, type Encoding } from "@utils/codec";
-import {
-    createCompressor,
-    type Compression,
-    type Compressor,
-} from "@utils/compressor";
+import { type Codec, createCodec, type Encoding } from "@utils/codec";
+import { type Compression, type Compressor, createCompressor, } from "@utils/compressor";
 import { makeAutoObservable } from "mobx";
 import type { AppStore } from "./App.store";
 import { fixConnectionUrl } from "@utils/urls";
@@ -40,34 +36,26 @@ type Timer = ReturnType<typeof setTimeout>;
 
 export class GatewayStore {
     socket: WebSocket | null = null;
+    public readyState: GatewayStatus = GatewayStatus.CLOSED;
+    public events: { t: string; d: any; s: number }[] = [];
     private readonly logger = new Logger({
         tag: "GatewayStore",
     });
-
-    public readyState: GatewayStatus = GatewayStatus.CLOSED;
     private sessionId: string | null = null;
     private sequence = 0;
-
     private heartbeatInterval: number | null = null;
     private heartbeater: Timer | null = null;
     private initialHeartbeatTimeout: Timer | null = null;
     private heartbeatAck = true;
     private url?: string;
-
     private encoding: Encoding = "json";
     private compress: Compression = "zlib-stream";
-
     private codec!: Codec;
     private compressor!: Compressor;
-
     private connectionStartTime?: number;
     private identifyStartTime?: number;
     private reconnectTimeout = 0;
-
     private reconnecting = false;
-
-    public events: { t: string; d: any; s: number }[] = [];
-
     private readonly dispatchHandlers = new Map<
         string,
         (...args: any[]) => any
@@ -127,6 +115,25 @@ export class GatewayStore {
             this.connect(this.url);
         }, this.reconnectTimeout);
     }
+
+    onChannelOpen = (spaceId: string, channelId: string) => {
+        const spaceChannels = this.lazyRequestChannels.get(spaceId) || [];
+
+        if (spaceChannels.includes(channelId)) return;
+
+        const payload = {
+            spaceId,
+            channels: {
+                [channelId]: [[0, 99]],
+            },
+        };
+        this.lazyRequestChannels.set(spaceId, [channelId]);
+
+        this.send({
+            op: GatewayOpcodes.LazyRequest,
+            d: payload,
+        });
+    };
 
     private setupListeners() {
         this.socket!.onopen = this.onOpen;
@@ -552,25 +559,8 @@ export class GatewayStore {
         if (space) this.app.spaces.setActive(space.id);
 
         this.app.channels.setPreferredActive();
-    };
 
-    onChannelOpen = (spaceId: string, channelId: string) => {
-        const spaceChannels = this.lazyRequestChannels.get(spaceId) || [];
-
-        if (spaceChannels.includes(channelId)) return;
-
-        const payload = {
-            spaceId,
-            channels: {
-                [channelId]: [[0, 99]],
-            },
-        };
-        this.lazyRequestChannels.set(spaceId, [channelId]);
-
-        this.send({
-            op: GatewayOpcodes.LazyRequest,
-            d: payload,
-        });
+        console.log(this.app.spaces.all);
     };
 
     // Dispatcher Handlers start here

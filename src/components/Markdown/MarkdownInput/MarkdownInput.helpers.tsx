@@ -30,7 +30,6 @@ export const renderToken = (theme: Theme, t: Token, key: number) => {
 
                 ...(f.code
                     ? {
-                          // small chip-ish feel; adjust later with your theme
                           backgroundColor: "rgba(255,255,255,0.10)",
                       }
                     : null),

@@ -174,25 +174,12 @@ export class Channel {
     }
 
     get listId() {
-        const listId = "everyone";
+        let listId = "everyone";
 
-        // TODO: implement this when permission system is implemented
-        // const perms: string[] = [];
-        //
-        // for (const overwrite of this.permissionOverwrites) {
-        //     const { id, allow, deny } = overwrite;
-        //
-        //     if (allow.toBigInt() & Permissions.FLAGS.VIEW_CHANNEL)
-        //         perms.push(`allow:${id}`);
-        //     else if (deny.toBigInt() & Permissions.FLAGS.VIEW_CHANNEL)
-        //         perms.push(`deny:${id}`);
-        // }
-        //
-        // if (perms.length) {
-        //     listId = murmur(perms.sort().join(",")).toString();
-        // }
+        const perms: string[] = [];
 
-        return listId;
+        for (const ow of this.over) {
+        }
     }
 
     get hasChildren(): boolean {

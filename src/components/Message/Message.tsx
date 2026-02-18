@@ -24,8 +24,6 @@ export const Message = observer(({ message, header }: Props) => {
     const app = useAppStore();
     const space = message.spaceId ? app.spaces.get(message.spaceId) : null;
 
-    // const isSent = message instanceof MessageType;
-
     return (
         <MessageBase header={header}>
             <MessageInfo>
