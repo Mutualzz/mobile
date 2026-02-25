@@ -13,10 +13,14 @@ import {
 } from "@mutualzz/types";
 import { invoke } from "@tauri-apps/api/core";
 import { type Codec, createCodec, type Encoding } from "@utils/codec";
-import { type Compression, type Compressor, createCompressor, } from "@utils/compressor";
+import {
+    type Compression,
+    type Compressor,
+    createCompressor,
+} from "@utils/compressor";
 import { makeAutoObservable } from "mobx";
 import type { AppStore } from "./App.store";
-import { fixConnectionUrl } from "@utils/urls";
+import { fixConnectionUrl } from "@utils/urls"; // We have to create our own GatewayStatus "enum" to avoid issues with SSR
 
 // We have to create our own GatewayStatus "enum" to avoid issues with SSR
 // since WebSocket is not available in the server environment.
@@ -559,8 +563,6 @@ export class GatewayStore {
         if (space) this.app.spaces.setActive(space.id);
 
         this.app.channels.setPreferredActive();
-
-        console.log(this.app.spaces.all);
     };
 
     // Dispatcher Handlers start here
