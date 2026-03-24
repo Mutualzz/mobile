@@ -29,6 +29,7 @@ const regex =
 export const SpaceJoin = observer(({ setCreating }: Props) => {
     const app = useAppStore();
     const [inviteLink, setInviteLink] = useState("");
+    const [invite, setInvite] = useState<APIInvite | null>(null);
     const [error, setError] = useState<string | null>(null);
     const { closeAllModals } = useModal();
 
@@ -60,6 +61,7 @@ export const SpaceJoin = observer(({ setCreating }: Props) => {
         onSuccess: (invite) => {
             if (!invite) return;
 
+            setInvite(invite);
             joinSpace(invite);
         },
     });
