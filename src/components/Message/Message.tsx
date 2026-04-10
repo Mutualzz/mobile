@@ -6,13 +6,7 @@ import { type MessageLike } from "@stores/objects/Message";
 import { QueuedMessageStatus } from "@stores/objects/QueuedMessage";
 import { observer } from "mobx-react-lite";
 import { MessageAuthor } from "./MessageAuthor";
-import {
-    MessageBase,
-    MessageContent,
-    MessageContentText,
-    MessageDetails,
-    MessageInfo,
-} from "./MessageBase";
+import { MessageBase, MessageContent, MessageContentText, MessageDetails, MessageInfo, } from "./MessageBase";
 import { MessageEmbed } from "./MessageEmbed";
 
 interface Props {

@@ -1,16 +1,14 @@
 import type { Snowflake } from "@mutualzz/types";
 import {
-    BitField,
-    CDNRoutes,
-    ImageFormat,
-    userFlags,
     type APIUser,
     type AvatarFormat,
+    CDNRoutes,
+    ImageFormat,
     type Sizes,
-    type UserFlags,
 } from "@mutualzz/types";
 import { REST } from "@stores/REST.store";
 import { makeAutoObservable } from "mobx";
+import { BitField, userFlags, UserFlags } from "@mutualzz/permissions";
 
 export class User {
     id: Snowflake;
@@ -44,16 +42,16 @@ export class User {
         makeAutoObservable(this);
     }
 
-    update(user: APIUser) {
-        Object.assign(this, user);
-    }
-
     get avatarUrl() {
         return this.constructAvatarUrl(true);
     }
 
     get displayName() {
         return this.globalName || this.username;
+    }
+
+    update(user: APIUser) {
+        Object.assign(this, user);
     }
 
     constructAvatarUrl(

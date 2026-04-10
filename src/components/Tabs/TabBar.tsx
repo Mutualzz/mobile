@@ -4,9 +4,8 @@ import { PaperProps, useTheme } from "@mutualzz/ui-native";
 import { useSegments } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BottomTabsProps } from "react-native-screens";
 
-type Props = PaperProps & BottomTabsProps;
+type Props = PaperProps;
 
 const TabBar = ({ children, ...props }: Props) => {
     const insets = useSafeAreaInsets();

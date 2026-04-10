@@ -22,6 +22,9 @@ export class Message extends MessageBase {
     space?: Space | null;
     channel?: Channel | null;
 
+    // This is tracked per message so up arrow can work and other things as well
+    editing = false;
+
     constructor(app: AppStore, data: APIMessage) {
         super(app, data);
 
@@ -45,6 +48,10 @@ export class Message extends MessageBase {
         if (data.space) this.space = this.app.spaces.add(data.space);
 
         makeObservable(this);
+    }
+
+    setEditing(value: boolean) {
+        this.editing = value;
     }
 
     update(message: APIMessage) {

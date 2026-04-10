@@ -2,7 +2,7 @@ import { Logger } from "@mutualzz/logger";
 import { HttpStatusCode } from "@mutualzz/types";
 import { normalizeJSON } from "@utils/JSON";
 import { fixConnectionUrl } from "@utils/urls";
-import EventEmitter from "events";
+import { EventEmitter } from "events";
 import { Platform } from "react-native";
 
 const os = Platform.OS;
@@ -29,14 +29,6 @@ export class REST extends EventEmitter {
     constructor() {
         super();
         this.headers = DEFAULT_HEADERS;
-    }
-
-    public setToken(token: string | null) {
-        if (token) {
-            this.headers.Authorization = `Bearer ${token}`;
-        } else {
-            delete this.headers.Authorization;
-        }
     }
 
     public static makeAPIUrl(
@@ -71,6 +63,14 @@ export class REST extends EventEmitter {
             url.searchParams.append(key, value);
         });
         return url.toString();
+    }
+
+    public setToken(token: string | null) {
+        if (token) {
+            this.headers.Authorization = `Bearer ${token}`;
+        } else {
+            delete this.headers.Authorization;
+        }
     }
 
     public async get<Data>(

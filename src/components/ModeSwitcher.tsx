@@ -70,7 +70,7 @@ export const ModeSwitcher = observer(({ withTrigger = true }: Props) => {
     );
 
     return withTrigger ? (
-        <TabTrigger asChild name={targetMode} reset="always">
+        <TabTrigger asChild name={targetMode}>
             {button}
         </TabTrigger>
     ) : (

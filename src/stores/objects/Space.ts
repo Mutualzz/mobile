@@ -4,13 +4,10 @@ import {
     type APIInvite,
     type APISpace,
     type AvatarFormat,
-    BitField,
     CDNRoutes,
     type ChannelType,
     ImageFormat,
     type Sizes,
-    spaceFlags,
-    type SpaceFlags,
 } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
 import { SpaceMemberListStore } from "@stores/objects/SpaceMemberListStore";
@@ -26,6 +23,7 @@ import {
 } from "mobx";
 import type { Channel } from "./Channel";
 import { Invite } from "./Invite";
+import { BitField, spaceFlags, SpaceFlags } from "@mutualzz/permissions";
 
 export class Space {
     id: Snowflake;
@@ -38,17 +36,12 @@ export class Space {
     flags: BitField<SpaceFlags>;
 
     invites = observable.map<string, Invite>();
-
-    private readonly _channels: ObservableSet<string>;
-
     members: SpaceMemberStore;
-
     ownerId: Snowflake;
     owner?: User | null;
-
     memberLists = new ObservableMap<string, SpaceMemberListStore>();
-
     raw: APISpace;
+    private readonly _channels: ObservableSet<string>;
 
     constructor(
         private readonly app: AppStore,
@@ -87,30 +80,8 @@ export class Space {
         makeAutoObservable(this);
     }
 
-    updateMemberList(data: any) {
-        const store = this.memberLists.get(data.id);
-        if (store) {
-            store.update(data);
-        } else {
-            this.memberLists.set(
-                data.id,
-                new SpaceMemberListStore(this.app, this, data),
-            );
-        }
-    }
-
-    getMemberList(id: string): SpaceMemberListStore | undefined {
-        return this.memberLists.get(id);
-    }
-
     get acronym() {
         return asAcronym(this.name);
-    }
-
-    leave() {
-        return this.app.rest.delete<APISpaceMember>(
-            `/spaces/${this.id}/members/@me`,
-        );
     }
 
     get channels(): Channel[] {
@@ -138,10 +109,6 @@ export class Space {
         return this.channels.find((channel) => channel.isTextChannel);
     }
 
-    update(space: APISpace) {
-        Object.assign(this, space);
-    }
-
     get iconUrl() {
         if (!this.icon) return null;
         return Space.constructIconUrl(
@@ -149,6 +116,45 @@ export class Space {
             this.icon.startsWith("a_"),
             this.icon,
         );
+    }
+
+    static constructIconUrl(
+        spaceId: Snowflake,
+        animated = false,
+        hash?: string | null,
+        size: Sizes = 128,
+        format: AvatarFormat = ImageFormat.WebP,
+    ) {
+        if (!hash) return null;
+        return REST.makeCDNUrl(
+            CDNRoutes.spaceIcon(spaceId, hash, format, size, animated),
+        );
+    }
+
+    updateMemberList(data: any) {
+        const store = this.memberLists.get(data.id);
+        if (store) {
+            store.update(data);
+        } else {
+            this.memberLists.set(
+                data.id,
+                new SpaceMemberListStore(this.app, this, data),
+            );
+        }
+    }
+
+    getMemberList(id: string): SpaceMemberListStore | undefined {
+        return this.memberLists.get(id);
+    }
+
+    leave() {
+        return this.app.rest.delete<APISpaceMember>(
+            `/spaces/${this.id}/members/@me`,
+        );
+    }
+
+    update(space: APISpace) {
+        Object.assign(this, space);
     }
 
     createInvite(channelId?: string | null) {
@@ -209,18 +215,5 @@ export class Space {
 
     updateChannel(channel: APIChannel) {
         this.app.channels.update(channel);
-    }
-
-    static constructIconUrl(
-        spaceId: Snowflake,
-        animated = false,
-        hash?: string | null,
-        size: Sizes = 128,
-        format: AvatarFormat = ImageFormat.WebP,
-    ) {
-        if (!hash) return null;
-        return REST.makeCDNUrl(
-            CDNRoutes.spaceIcon(spaceId, hash, format, size, animated),
-        );
     }
 }

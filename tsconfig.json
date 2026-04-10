@@ -1,54 +1,27 @@
 {
-  "extends": "expo/tsconfig.base",
-  "compilerOptions": {
-    "baseUrl": "./src",
-    "strict": true,
-    "paths": {
-      "@hooks/*": [
-        "hooks/*"
-      ],
-      "@contexts/*": [
-        "contexts/*"
-      ],
-      "@components/*": [
-        "components/*"
-      ],
-      "@editor/*": [
-        "editor/*"
-      ],
-      "@utils/*": [
-        "utils/*"
-      ],
-      "@themes/*": [
-        "themes/*"
-      ],
-      "@themes": [
-        "themes/index.ts"
-      ],
-      "@stores/*": [
-        "stores/*"
-      ],
-      "@app-types/*": [
-        "types/*"
-      ],
-      "@app-types": [
-        "types/index.d.ts"
-      ],
-      "@css/*": [
-        "css/*"
-      ],
-      "@logger": [
-        "Logger.ts"
-      ],
-      "@seo": [
-        "seo.ts"
-      ]
-    }
-  },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-  ]
+    "extends": "expo/tsconfig.base",
+    "compilerOptions": {
+        "rootDir": "./src",
+        "strict": true,
+        "paths": {
+            "@hooks/*": ["./src/hooks/*"],
+            "@contexts/*": ["./src/contexts/*"],
+            "@components/*": ["./src/components/*"],
+            "@utils/*": ["./src/utils/*"],
+            "@themes/*": ["./src/themes/*"],
+            "@themes": ["./src/themes/index.ts"],
+            "@stores/*": ["./src/stores/*"],
+            "@app-types/*": ["./src/types/*"],
+            "@app-types": ["./src/types/index.d.ts"],
+            "@logger": ["./src/Logger.ts"],
+            "@seo": ["./src/seo.ts"]
+        }
+    },
+    "include": [
+        "./src/**/*.ts",
+        "./src/**/*.tsx",
+        ".expo/types/**/*.ts",
+        "expo-env.d.ts"
+    ],
+    "exclude": ["dist", "dist/**", "**/dist/**"]
 }

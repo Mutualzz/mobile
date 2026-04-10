@@ -1,52 +1,35 @@
 import { Logger } from "@mutualzz/logger";
 import type { Snowflake } from "@mutualzz/types";
-import {
-    BitField,
-    channelFlags,
-    ChannelType,
-    type APIChannel,
-    type APIMessage,
-    type ChannelFlags,
-} from "@mutualzz/types";
+import { type APIChannel, type APIMessage, ChannelType } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
 import { MessageStore } from "@stores/Message.store";
 import { type Message } from "@stores/objects/Message";
 import type { Space } from "@stores/objects/Space";
 import { makeAutoObservable } from "mobx";
 import type { QueuedMessage } from "./QueuedMessage";
+import { BitField, channelFlags, ChannelFlags } from "@mutualzz/permissions";
 
 export class Channel {
-    private readonly logger = new Logger({
-        tag: "Channel",
-    });
-
     id: Snowflake;
     type: ChannelType;
-
     name?: string | null;
     topic?: string | null;
     position: number;
-
     nsfw: boolean;
-
     createdAt: Date;
     updatedAt: Date;
-
     flags: BitField<ChannelFlags>;
-
     messages: MessageStore;
-
     parentId?: Snowflake | null;
     parent?: Channel | null;
-
     spaceId?: Snowflake | null;
     space?: Space | null;
-
     raw: APIChannel;
-
     lastMessageId?: Snowflake | null;
     lastMessage?: Message | null;
-
+    private readonly logger = new Logger({
+        tag: "Channel",
+    });
     private hasFetchedInitialMessages = false;
 
     constructor(
@@ -91,6 +74,40 @@ export class Channel {
             this.lastMessage = this.messages.add(channel.lastMessage);
 
         makeAutoObservable(this);
+    }
+
+    get listId() {
+        let listId = "everyone";
+
+        // const perms: string[] = [];
+
+        return listId;
+    }
+
+    get hasChildren(): boolean {
+        return this.app.channels.all.some((ch) => ch.parent?.id === this.id);
+    }
+
+    get hasParent(): boolean {
+        return !!this.raw.parentId;
+    }
+
+    get isDM() {
+        return (
+            this.type === ChannelType.DM || this.type === ChannelType.GroupDM
+        );
+    }
+
+    get isTextChannel() {
+        return this.type === ChannelType.Text;
+    }
+
+    get isVoiceChannel() {
+        return this.type === ChannelType.Voice;
+    }
+
+    get isCategory() {
+        return this.type === ChannelType.Category;
     }
 
     update(channel: APIChannel) {
@@ -171,41 +188,6 @@ export class Channel {
                 this.logger.error(err);
                 throw err;
             });
-    }
-
-    get listId() {
-        let listId = "everyone";
-
-        const perms: string[] = [];
-
-        for (const ow of this.over) {
-        }
-    }
-
-    get hasChildren(): boolean {
-        return this.app.channels.all.some((ch) => ch.parent?.id === this.id);
-    }
-
-    get hasParent(): boolean {
-        return !!this.raw.parentId;
-    }
-
-    get isDM() {
-        return (
-            this.type === ChannelType.DM || this.type === ChannelType.GroupDM
-        );
-    }
-
-    get isTextChannel() {
-        return this.type === ChannelType.Text;
-    }
-
-    get isVoiceChannel() {
-        return this.type === ChannelType.Voice;
-    }
-
-    get isCategory() {
-        return this.type === ChannelType.Category;
     }
 
     delete(parentOnly: boolean) {
