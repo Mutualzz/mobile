@@ -41,7 +41,7 @@ export class REST extends EventEmitter {
 
         envUrl = fixConnectionUrl(envUrl);
         const normalizedPath = path.replace(/\/{2,}/g, "/").replace(/^\/+/, "");
-        const url = new URL(`${envUrl}/v1/${normalizedPath}`);
+        const url = new URL(`${envUrl}/${normalizedPath}`);
         Object.entries(queryParams).forEach(([key, value]) => {
             url.searchParams.append(key, value);
         });
