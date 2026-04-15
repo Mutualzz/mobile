@@ -8,7 +8,7 @@ import {
 } from "@mutualzz/types";
 import { REST } from "@stores/REST.store";
 import { makeAutoObservable } from "mobx";
-import { BitField, userFlags, UserFlags } from "@mutualzz/permissions";
+import { BitField, userFlags, UserFlags } from "@mutualzz/bitfield";
 
 export class User {
     id: Snowflake;

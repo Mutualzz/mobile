@@ -23,7 +23,7 @@ import {
 } from "mobx";
 import type { Channel } from "./Channel";
 import { Invite } from "./Invite";
-import { BitField, spaceFlags, SpaceFlags } from "@mutualzz/permissions";
+import { BitField, spaceFlags, SpaceFlags } from "@mutualzz/bitfield";
 
 export class Space {
     id: Snowflake;

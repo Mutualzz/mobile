@@ -7,7 +7,7 @@ import { type Message } from "@stores/objects/Message";
 import type { Space } from "@stores/objects/Space";
 import { makeAutoObservable } from "mobx";
 import type { QueuedMessage } from "./QueuedMessage";
-import { BitField, channelFlags, ChannelFlags } from "@mutualzz/permissions";
+import { BitField, channelFlags, ChannelFlags } from "@mutualzz/bitfield";
 
 export class Channel {
     id: Snowflake;

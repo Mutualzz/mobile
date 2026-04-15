@@ -7,7 +7,7 @@
         "@expo/metro-runtime": "^55.0.9",
         "@expo/vector-icons": "^15.1.1",
         "@mutualzz/logger": "workspace:*",
-        "@mutualzz/permissions": "workspace:*",
+        "@mutualzz/bitfield": "workspace:*",
         "@mutualzz/ui-core": "workspace:*",
         "@mutualzz/ui-native": "workspace:*",
         "@mutualzz/validators": "workspace:*",
