@@ -36,6 +36,6 @@ export class SpaceMember {
     }
 
     get displayName() {
-        return this.nickname ?? this.user?.displayName ?? "Unknown User";
+        return this.nickname ?? this.user?.displayName ?? "Deleted User";
     }
 }
