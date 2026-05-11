@@ -54,8 +54,7 @@
         "@mutualzz/types": "workspace:*",
         "@svgr/cli": "^8.1.0",
         "@types/events": "^3.0.3",
-        "@types/react": "~19.2.14",
-        "typescript": "~5.9.3"
+        "@types/react": "19.2.10"
     },
     "main": "expo-router/entry",
     "name": "@mutualzz/mobile",
@@ -67,7 +66,6 @@
         "ios": "expo run:ios",
         "lint": "eslint .",
         "start": "expo start",
-        "typecheck": "tsc --noEmit",
         "web": "expo start --web"
     },
     "version": "2.0.0"
