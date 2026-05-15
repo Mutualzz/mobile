@@ -11,7 +11,6 @@ import {
     GatewayDispatchEvents,
     GatewayOpcodes,
 } from "@mutualzz/types";
-import { invoke } from "@tauri-apps/api/core";
 import { type Codec, createCodec, type Encoding } from "@utils/codec";
 import {
     type Compression,
