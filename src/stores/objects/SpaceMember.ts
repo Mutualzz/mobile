@@ -31,11 +31,11 @@ export class SpaceMember {
         makeAutoObservable(this);
     }
 
-    update(member: APISpaceMember) {
-        Object.assign(this, member);
-    }
-
     get displayName() {
         return this.nickname ?? this.user?.displayName ?? "Deleted User";
+    }
+
+    update(member: APISpaceMember) {
+        Object.assign(this, member);
     }
 }

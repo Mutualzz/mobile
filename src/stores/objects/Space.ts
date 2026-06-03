@@ -47,8 +47,6 @@ export class Space {
         private readonly app: AppStore,
         space: APISpace,
     ) {
-        this.app = app;
-
         this.id = space.id;
         this.name = space.name;
         this.description = space.description;
