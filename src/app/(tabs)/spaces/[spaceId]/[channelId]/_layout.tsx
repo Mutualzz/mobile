@@ -1,31 +1,28 @@
-import { useDebouncedEffect } from "@hooks/useDebouncedEffect";
 import { useAppStore } from "@hooks/useStores";
 import { Slot, useGlobalSearchParams } from "expo-router";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 
 const SpaceChannelLayout = () => {
-    const app = useAppStore();
-    const { spaceId, channelId } = useGlobalSearchParams<{
-        spaceId: string;
-        channelId: string;
-    }>();
+  const app = useAppStore();
+  const { spaceId, channelId } = useGlobalSearchParams<{
+    spaceId: string;
+    channelId: string;
+  }>();
 
-    useEffect(() => {
-        if (channelId && app.channels.activeId !== channelId)
-            app.channels.setActive(channelId);
-    }, [channelId]);
+  useLayoutEffect(() => {
+    if (!channelId) return;
 
-    useDebouncedEffect(
-        () => {
-            runInAction(() => app.gateway.onChannelOpen(spaceId, channelId));
-        },
-        [spaceId, channelId],
-        2000,
-    );
+    app.channels.setActive(channelId);
+    if (spaceId) app.channels.setMostRecentChannelForSpace(spaceId, channelId);
+  }, [channelId, spaceId, app.channels]);
 
-    return <Slot />;
+  useLayoutEffect(() => {
+    runInAction(() => app.gateway.onChannelOpen(spaceId, channelId));
+  }, [spaceId, channelId]);
+
+  return <Slot key={channelId} />;
 };
 
 export default observer(SpaceChannelLayout);

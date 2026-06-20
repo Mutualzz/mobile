@@ -22,6 +22,11 @@ import { ThemeStore } from "./Theme.store";
 import { UserStore } from "./User.store";
 import { ThemeCreatorStore } from "@stores/ThemeCreator.store";
 import { NavigationStore } from "@stores/Navigation.store";
+import { ExpressionsStore } from "@stores/Expressions.store";
+import { ReadStateStore } from "@stores/ReadState.store";
+import { RelationshipStore } from "@stores/Relationship.store";
+import { ProfileStore } from "@stores/Profile.store";
+import { TypingStore } from "@stores/Typing.store";
 
 export class AppStore {
     isGatewayReady = false;
@@ -39,6 +44,11 @@ export class AppStore {
     themeCreator = new ThemeCreatorStore();
     rest = new REST();
     users = new UserStore(this);
+    expressions = new ExpressionsStore(this);
+    readStates = new ReadStateStore(this);
+    relationships = new RelationshipStore(this);
+    profiles = new ProfileStore(this);
+    typing = new TypingStore(this);
     settings: AccountSettingsStore | null = null;
     version: string | null = null;
     mode: AppMode | null = null;
@@ -108,7 +118,11 @@ export class AppStore {
     }
 
     setUser(user: APIPrivateUser, settings?: APIUserSettings) {
-        this.account = new AccountStore(user);
+        if (this.account?.id === user.id) {
+            this.account.update(user);
+        } else {
+            this.account = new AccountStore(user);
+        }
         if (settings) this.settings = new AccountSettingsStore(this, settings);
     }
 
@@ -144,6 +158,9 @@ export class AppStore {
         this.settings = null;
         this.rest.setToken(null);
         this.themes.reset();
+        this.expressions.clear();
+        this.readStates.clear();
+        this.relationships.clear();
         secureStorageAdapter.clear();
     }
 

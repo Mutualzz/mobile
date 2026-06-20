@@ -1,65 +1,72 @@
 {
-    "fill": "automatic",
-    "groups": [
+  "fill" : {
+    "solid" : "display-p3:0.49805,0.28247,0.58447,1.00000"
+  },
+  "groups" : [
+    {
+      "blur-material" : null,
+      "hidden" : false,
+      "layers" : [
         {
-            "blur-material": null,
-            "layers": [
-                {
-                    "blend-mode-specializations": [
-                        {
-                            "appearance": "dark",
-                            "value": "normal"
-                        }
-                    ],
-                    "fill-specializations": [
-                        {
-                            "appearance": "dark",
-                            "value": "automatic"
-                        }
-                    ],
-                    "glass-specializations": [
-                        {
-                            "value": true
-                        },
-                        {
-                            "appearance": "dark",
-                            "value": true
-                        }
-                    ],
-                    "hidden": false,
-                    "image-name": "icon.png",
-                    "name": "icon",
-                    "position-specializations": [
-                        {
-                            "value": {
-                                "scale": 1.5,
-                                "translation-in-points": [0, 0]
-                            }
-                        },
-                        {
-                            "idiom": "square",
-                            "value": {
-                                "scale": 1.35,
-                                "translation-in-points": [0, 0]
-                            }
-                        }
-                    ]
-                }
-            ],
-            "lighting": "combined",
-            "shadow": {
-                "kind": "neutral",
-                "opacity": 0.5
-            },
-            "specular": true,
-            "translucency": {
-                "enabled": true,
-                "value": 0.5
+          "blend-mode-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : "normal"
             }
+          ],
+          "fill-specializations" : [
+            {
+              "value" : "automatic"
+            },
+            {
+              "appearance" : "dark",
+              "value" : "automatic"
+            }
+          ],
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "icon.png",
+          "name" : "icon",
+          "position-specializations" : [
+            {
+              "value" : {
+                "scale" : 2,
+                "translation-in-points" : [
+                  0,
+                  0
+                ]
+              }
+            },
+            {
+              "idiom" : "square",
+              "value" : {
+                "scale" : 1.85,
+                "translation-in-points" : [
+                  0,
+                  0
+                ]
+              }
+            }
+          ]
         }
-    ],
-    "supported-platforms": {
-        "circles": ["watchOS"],
-        "squares": "shared"
+      ],
+      "lighting" : "individual",
+      "opacity" : 1,
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
     }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
 }

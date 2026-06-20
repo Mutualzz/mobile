@@ -1,50 +1,38 @@
-import styled from "@emotion/native";
-import { Image, Platform, View } from "react-native";
+import { Box } from "@mutualzz/ui-native";
+import { Image } from "react-native";
 import { SvgUri } from "react-native-svg";
 
-interface EmojiProps extends Omit<any, "type" | "children"> {
+interface EmojiProps {
     url: string;
     isEmojiOnly: boolean;
-    adjust?: boolean;
+    name?: string;
+    unicode?: string;
 }
 
-// TODO: Fix weird text margining top issues when emoji is combined with text
-const EmojiWrapper = styled(View)<{ isEmojiOnly: boolean; adjust?: boolean }>(({
-    isEmojiOnly,
-    adjust,
-}) => {
-    const defaultShouldAdjust = !(Platform.OS === "android" && isEmojiOnly);
-    const shouldAdjust = adjust ?? defaultShouldAdjust;
-    return {
-        width: isEmojiOnly ? 36 : 22,
-        height: isEmojiOnly ? 36 : 22,
+export const Emoji = ({ isEmojiOnly, url }: EmojiProps) => {
+    const size = isEmojiOnly ? 36 : 22;
 
-        transform: [{ translateY: shouldAdjust ? 5 : 0 }],
-        justifyContent: "center",
-        alignItems: "center",
-    };
-});
-
-export const Emoji = ({ isEmojiOnly, adjust, url }: EmojiProps) => {
-    const toRender = url.endsWith(".svg") ? (
-        <SvgUri
-            uri={url}
-            style={{
-                width: "100%",
-                height: "100%",
-            }}
-        />
+    const image = url.endsWith(".svg") ? (
+        <SvgUri uri={url} width={size} height={size} />
     ) : (
         <Image
             source={{ uri: url }}
-            style={{ width: "100%", height: "100%" }}
+            style={{ width: size, height: size }}
             resizeMode="contain"
         />
     );
 
     return (
-        <EmojiWrapper adjust={adjust} isEmojiOnly={isEmojiOnly}>
-            {toRender}
-        </EmojiWrapper>
+        <Box
+            style={{
+                width: size,
+                height: size,
+                justifyContent: "center",
+                alignItems: "center",
+                overflow: "visible",
+            }}
+        >
+            {image}
+        </Box>
     );
 };

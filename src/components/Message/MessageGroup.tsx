@@ -2,6 +2,7 @@ import { MessageType } from "@mutualzz/types";
 import type { MessageGroup as MessageGroupType } from "@stores/Message.store";
 import { observer } from "mobx-react-lite";
 import { Message } from "./Message";
+import { SystemMessage } from "./SystemMessage";
 
 interface Props {
     group: MessageGroupType;
@@ -13,7 +14,6 @@ export const MessageGroup = observer(({ group }: Props) => {
     return (
         <>
             {messages.map((message, index) => {
-                if (!message.content) return <></>;
                 if (
                     message.type === MessageType.Default ||
                     message.type === MessageType.Reply
@@ -27,7 +27,7 @@ export const MessageGroup = observer(({ group }: Props) => {
                     );
                 }
 
-                return <></>;
+                return <SystemMessage key={message.id} message={message} />;
             })}
         </>
     );

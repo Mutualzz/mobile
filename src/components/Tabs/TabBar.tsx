@@ -1,42 +1,65 @@
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
-import { PaperProps, useTheme } from "@mutualzz/ui-native";
-import { useSegments } from "expo-router";
+import {
+  FLOATING_USER_BAR_HEIGHT,
+  useIsTabBarHidden,
+} from "@utils/layout";
 import { observer } from "mobx-react-lite";
+import type { ReactNode } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type Props = PaperProps;
+interface Props {
+  children: ReactNode;
+}
 
-const TabBar = ({ children, ...props }: Props) => {
-    const insets = useSafeAreaInsets();
-    const app = useAppStore();
-    const { theme } = useTheme();
-    const segments: string[] = useSegments();
+const TabBar = ({ children }: Props) => {
+  const app = useAppStore();
+  const insets = useSafeAreaInsets();
+  const hideBar = useIsTabBarHidden();
 
-    const inChannel = segments[1] === "spaces" && segments.length >= 4;
+  if (hideBar) return null;
 
-    return (
-        <Paper
-            style={{
-                position: "relative",
-                width: "100%",
-                flexDirection: "row",
-                zIndex: theme.zIndex.appBar,
-                justifyContent: "space-around",
-                alignItems: "center",
-                paddingLeft: insets.left + 16,
-                overflow: "visible",
-                paddingRight: insets.right + 16,
-                paddingTop: 10,
-                paddingBottom: Math.max(insets.bottom, 10),
-                display: inChannel ? "none" : "flex",
-            }}
-            elevation={app.settings?.preferEmbossed ? 1 : 0}
-            {...props}
-        >
-            {children}
-        </Paper>
-    );
+  return (
+    <Paper
+      color="neutral"
+      elevation={0}
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        alignItems: "center",
+        justifyContent: "flex-end",
+        paddingLeft: insets.left + 16,
+        paddingRight: insets.right + 16,
+        paddingBottom: Math.max(insets.bottom, 12),
+        paddingTop: 8,
+        borderRadius: 0,
+        borderLeftWidth: 0,
+        borderRightWidth: 0,
+        borderTopWidth: 0,
+        borderBottomWidth: 0,
+      }}
+    >
+      <Paper
+        elevation={app.settings?.preferEmbossed ? 5 : 2}
+        color="neutral"
+        style={{
+          width: "100%",
+          maxWidth: 420,
+          minHeight: FLOATING_USER_BAR_HEIGHT,
+          borderRadius: 16,
+          justifyContent: "center",
+          borderLeftWidth: 0,
+          borderRightWidth: 0,
+          borderTopWidth: 0,
+          borderBottomWidth: 0,
+        }}
+      >
+        {children}
+      </Paper>
+    </Paper>
+  );
 };
 
 export default observer(TabBar);

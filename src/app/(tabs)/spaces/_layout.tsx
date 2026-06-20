@@ -1,55 +1,60 @@
 import { SpacesSidebar } from "@components/Space/SpacesSidebar";
 import { useAppStore } from "@hooks/useStores";
 import { Box } from "@mutualzz/ui-native";
+import { useHideSpacesSidebar } from "@utils/layout";
 import {
-    Slot,
-    useGlobalSearchParams,
-    useRouter,
-    useSegments,
+  Slot,
+  useGlobalSearchParams,
+  useRouter,
+  useSegments,
 } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 
-// TODO: Fix clicking on space in sidebar not updating the view correctly and channels as well
 const SpacesLayout = () => {
-    const app = useAppStore();
-    const segments = useSegments();
-    const router = useRouter();
-    const { spaceId, channelId } = useGlobalSearchParams<{
-        spaceId?: string;
-        channelId?: string;
-    }>();
-    const inChannel = Boolean(channelId);
+  const app = useAppStore();
+  const segments = useSegments();
+  const router = useRouter();
+  const { spaceId } = useGlobalSearchParams<{
+    spaceId?: string;
+  }>();
 
-    useEffect(() => {
-        if (app.mode !== "spaces") app.setMode("spaces");
+  const hideSidebar = useHideSpacesSidebar();
 
-        return () => {
-            if (app.mode === "spaces") app.resetMode();
-        };
-    }, []);
+  useEffect(() => {
+    if (app.mode !== "spaces") app.setMode("spaces");
 
-    useEffect(() => {
-        const atSpacesRoot = segments.length === 2 && segments[1] === "spaces";
+    return () => {
+      if (app.mode === "spaces") app.resetMode();
+    };
+  }, []);
 
-        if (!spaceId) {
-            if (!atSpacesRoot) return;
+  useEffect(() => {
+    const atSpacesRoot = segments.length === 2 && segments[1] === "spaces";
 
-            const recentSpace = app.spaces.setPreferredActive();
-            router.replace(`/spaces/${recentSpace.id}`);
+    if (!spaceId) {
+      if (!atSpacesRoot) return;
 
-            return;
-        }
+      const recentSpace = app.spaces.setPreferredActive();
+      if (!recentSpace) return;
 
-        if (spaceId !== app.spaces.activeId) app.spaces.setActive(spaceId);
-    }, [spaceId, segments.join("/")]);
+      router.replace(`/spaces/${recentSpace.id}`);
 
-    return (
-        <Box style={{ flex: 1, flexDirection: "row" }}>
-            {!inChannel && <SpacesSidebar />}
-            <Slot />
-        </Box>
-    );
+      return;
+    }
+
+    if (spaceId !== app.spaces.activeId) {
+      app.spaces.setActive(spaceId);
+      app.spaces.setMostRecentSpace(spaceId);
+    }
+  }, [spaceId, segments.join("/")]);
+
+  return (
+    <Box style={{ flex: 1, flexDirection: "row" }}>
+      {!hideSidebar && <SpacesSidebar />}
+      <Slot key={spaceId ?? "spaces-root"} />
+    </Box>
+  );
 };
 
 export default observer(SpacesLayout);

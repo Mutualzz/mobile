@@ -1,15 +1,24 @@
 import { Blockquote } from "@components/Markdown/components/Blockquote";
+import { CustomEmoji } from "@components/Markdown/components/CustomEmoji";
 import { Emoji } from "@components/Markdown/components/Emoji";
+import { DefaultMention } from "@components/Markdown/components/mention/DefaultMention";
+import { RoleMention } from "@components/Markdown/components/mention/RoleMention";
+import { UserMention } from "@components/Markdown/components/mention/UserMention";
 import { Spoiler } from "@components/Markdown/components/Spoiler";
 import { Theme } from "@emotion/react";
-import { Typography } from "@mutualzz/ui-native";
+import type { TypographyColor } from "@mutualzz/ui-core";
+import type { ColorLike } from "@mutualzz/ui-core";
+import type { Snowflake } from "@mutualzz/types";
+import { Box, Typography } from "@mutualzz/ui-native";
 import { ReactNode } from "react";
-import { Linking, Text } from "react-native";
+import { Linking } from "react-native";
 
 export const renderBlocks = (
     theme: Theme,
     tokens: any[],
     isEmojiOnly: boolean,
+    spaceId?: Snowflake | null,
+    textColor: TypographyColor | ColorLike | "inherit" = "primary",
 ) => {
     const out: ReactNode[] = [];
     const stack: any[] = [];
@@ -30,13 +39,19 @@ export const renderBlocks = (
         }
 
         if (t.type === "inline") {
-            const inline = renderInline(t.children ?? [], isEmojiOnly);
+            const inline = renderInline(
+                theme,
+                t.children ?? [],
+                isEmojiOnly,
+                spaceId,
+                textColor,
+            );
             if (stack.length) stack[stack.length - 1].children.push(inline);
             else out.push(inline);
             continue;
         }
 
-        const leaf = renderInline([t], isEmojiOnly);
+        const leaf = renderInline(theme, [t], isEmojiOnly, spaceId, textColor);
         if (stack.length) stack[stack.length - 1].children.push(leaf);
         else out.push(leaf);
     }
@@ -53,45 +68,72 @@ export const renderBlockNode = (
     switch (openToken.type) {
         case "paragraph_open":
             return (
-                <Typography key={key} style={{ flexWrap: "wrap" }}>
+                <Box key={key} style={{ flexShrink: 1, alignSelf: "stretch" }}>
                     {children}
-                </Typography>
+                </Box>
             );
 
         case "heading_open": {
-            const level = openToken.tag || "h3";
             return (
-                <Typography level={level} key={key}>
+                <Box
+                    key={key}
+                    style={{
+                        flexDirection: "row",
+                        flexWrap: "wrap",
+                        alignItems: "center",
+                    }}
+                >
                     {children}
-                </Typography>
+                </Box>
             );
         }
 
         case "blockquote_open":
             return (
                 <Blockquote key={key}>
-                    <Typography>{children}</Typography>
+                    <Box
+                        style={{
+                            flexDirection: "row",
+                            flexWrap: "wrap",
+                            alignItems: "center",
+                        }}
+                    >
+                        {children}
+                    </Box>
                 </Blockquote>
             );
 
         default:
             return (
-                <Typography
+                <Box
                     key={key}
                     style={{
-                        includeFontPadding: false,
+                        flexDirection: "row",
                         flexWrap: "wrap",
+                        alignItems: "center",
                     }}
                 >
                     {children}
-                </Typography>
+                </Box>
             );
     }
 };
 
-export const renderInline = (tokens: any[], isEmojiOnly: boolean) => {
+export const renderInline = (
+    theme: Theme,
+    tokens: any[],
+    isEmojiOnly: boolean,
+    spaceId?: Snowflake | null,
+    textColor: TypographyColor | ColorLike | "inherit" = "primary",
+) => {
     const out: ReactNode[] = [];
     const stack: { type: string; attrs?: any; children: ReactNode[] }[] = [];
+
+    const textProps = {
+        level: "body-sm" as const,
+        textColor,
+        style: { flexShrink: 1 },
+    };
 
     const pushNode = (node: ReactNode) => {
         if (stack.length) stack[stack.length - 1].children.push(node);
@@ -114,13 +156,83 @@ export const renderInline = (tokens: any[], isEmojiOnly: boolean) => {
             continue;
         }
 
+        if (token.type === "customEmoji") {
+            pushNode(
+                <CustomEmoji
+                    key={`custom-emoji-${i}`}
+                    raw={token.content}
+                    isEmojiOnly={isEmojiOnly}
+                />,
+            );
+            continue;
+        }
+
+        if (token.type === "mention") {
+            const type = token.attrGet?.("type");
+            const id = token.attrGet?.("id") ?? "";
+
+            if (type === "user") {
+                pushNode(
+                    <UserMention
+                        key={`mention-user-${i}`}
+                        userId={id}
+                        spaceId={spaceId}
+                    />,
+                );
+            } else if (type === "role") {
+                pushNode(
+                    <RoleMention
+                        key={`mention-role-${i}`}
+                        roleId={id}
+                        spaceId={spaceId}
+                    />,
+                );
+            } else if (type === "everyone" || type === "here") {
+                pushNode(
+                    <DefaultMention
+                        key={`mention-default-${i}`}
+                        mentionId={id}
+                    />,
+                );
+            } else {
+                pushNode(
+                    <Typography key={`mention-fallback-${i}`} {...textProps}>
+                        {token.content}
+                    </Typography>,
+                );
+            }
+            continue;
+        }
+
+        if (token.type === "link") {
+            const href = token.attrGet?.("href") ?? token.content;
+            pushNode(
+                <Typography
+                    key={`link-${i}`}
+                    level="body-sm"
+                    style={{
+                        color: theme.colors.info,
+                        textDecorationLine: "underline",
+                    }}
+                    onPress={() => href && Linking.openURL(href)}
+                >
+                    {token.content}
+                </Typography>,
+            );
+            continue;
+        }
+
         if (token.type === "spoiler") {
             pushNode(<Spoiler key={`spoiler-${i}`}>{token.content}</Spoiler>);
             continue;
         }
 
         if (token.type === "text") {
-            pushNode(<Text key={`text-${i}`}>{token.content}</Text>);
+            pushNode(
+                <Typography key={`text-${i}`} {...textProps}>
+                    {token.content}
+                </Typography>,
+            );
             continue;
         }
 
@@ -139,8 +251,11 @@ export const renderInline = (tokens: any[], isEmojiOnly: boolean) => {
             pushNode(
                 <Typography
                     key={`a-${i}`}
-                    style={{ textDecorationLine: "underline" }}
-                    textColor="primary"
+                    level="body-sm"
+                    style={{
+                        color: theme.colors.info,
+                        textDecorationLine: "underline",
+                    }}
                     onPress={() => href && Linking.openURL(href)}
                 >
                     {node.children}
@@ -151,30 +266,42 @@ export const renderInline = (tokens: any[], isEmojiOnly: boolean) => {
 
         if (token.type === "strong") {
             pushNode(
-                <Text key={`strong-${i}`} style={{ fontWeight: "700" }}>
+                <Typography
+                    key={`strong-${i}`}
+                    {...textProps}
+                    weight="bold"
+                >
                     {token.content}
-                </Text>,
+                </Typography>,
             );
             continue;
         }
 
         if (token.type === "em") {
             pushNode(
-                <Text key={`em-${i}`} style={{ fontStyle: "italic" }}>
+                <Typography
+                    key={`em-${i}`}
+                    {...textProps}
+                    style={{ ...textProps.style, fontStyle: "italic" }}
+                >
                     {token.content}
-                </Text>,
+                </Typography>,
             );
             continue;
         }
 
         if (token.type === "underline") {
             pushNode(
-                <Text
+                <Typography
                     key={`u-${i}`}
-                    style={{ textDecorationLine: "underline" }}
+                    {...textProps}
+                    style={{
+                        ...textProps.style,
+                        textDecorationLine: "underline",
+                    }}
                 >
                     {token.content}
-                </Text>,
+                </Typography>,
             );
             continue;
         }
@@ -186,12 +313,16 @@ export const renderInline = (tokens: any[], isEmojiOnly: boolean) => {
         if (token.type === "s_close") {
             const node = stack.pop()!;
             pushNode(
-                <Text
+                <Typography
                     key={`del-${i}`}
-                    style={{ textDecorationLine: "line-through" }}
+                    {...textProps}
+                    style={{
+                        ...textProps.style,
+                        textDecorationLine: "line-through",
+                    }}
                 >
                     {node.children}
-                </Text>,
+                </Typography>,
             );
             continue;
         }
@@ -199,8 +330,25 @@ export const renderInline = (tokens: any[], isEmojiOnly: boolean) => {
 
     while (stack.length) {
         const node = stack.pop()!;
-        out.push(<Text key={`unclosed-${stack.length}`}>{node.children}</Text>);
+        out.push(
+            <Typography key={`unclosed-${stack.length}`} {...textProps}>
+                {node.children}
+            </Typography>,
+        );
     }
 
-    return <Typography key={`inline-${Math.random()}`}>{out}</Typography>;
+    return (
+        <Box
+            key={`inline-${out.length}`}
+            style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                alignItems: "center",
+                flexShrink: 1,
+                alignSelf: "stretch",
+            }}
+        >
+            {out}
+        </Box>
+    );
 };

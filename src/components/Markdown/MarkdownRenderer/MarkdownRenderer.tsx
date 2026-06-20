@@ -1,20 +1,19 @@
 import { renderBlocks } from "@components/Markdown/MarkdownRenderer/MarkdownRenderer.helpers";
 import { MarkdownRendererProps } from "@components/Markdown/MarkdownRenderer/MarkdownRenderer.types";
+import { customEmojiPlugin } from "@components/Markdown/MarkdownRenderer/plugins/customEmoji";
 import { emojiPlugin } from "@components/Markdown/MarkdownRenderer/plugins/emoji";
 import { emphasisPlugin } from "@components/Markdown/MarkdownRenderer/plugins/emphasis";
+import { linkPlugin } from "@components/Markdown/MarkdownRenderer/plugins/links";
+import { mentionPlugin } from "@components/Markdown/MarkdownRenderer/plugins/mention";
 import { spoilerPlugin } from "@components/Markdown/MarkdownRenderer/plugins/spoiler";
 import { strikethroughPlugin } from "@components/Markdown/MarkdownRenderer/plugins/strikethrough";
 import { underlinePlugin } from "@components/Markdown/MarkdownRenderer/plugins/underline";
 import { Paper } from "@components/Paper";
 import { useTheme } from "@mutualzz/ui-native";
-import emojiRegexOrig from "emojibase-regex";
-import shortcodeRegexOrig from "emojibase-regex/shortcode";
+import { isEmojiOnlyMessage } from "@utils/emojis/isEmojiOnlyMessage";
 import MarkdownIt from "markdown-it";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
-
-const shortcodeRegex = new RegExp(shortcodeRegexOrig.source, "g");
-const emojiRegex = new RegExp(emojiRegexOrig.source, "gu");
 
 export const MarkdownRenderer = observer(
     ({
@@ -22,27 +21,21 @@ export const MarkdownRenderer = observer(
         textColor = "primary",
         variant = "plain",
         enlargeEmojiOnly = true,
+        spaceId,
         value,
         ...props
     }: MarkdownRendererProps) => {
         const { theme } = useTheme();
 
-        const isEmojiOnly = useMemo(() => {
-            if (!value || !enlargeEmojiOnly) return false;
-
-            const textWithoutEmojis = value
-                .replace(shortcodeRegex, "")
-                .replace(emojiRegex, "");
-
-            return (
-                textWithoutEmojis.trim().length === 0 && value.trim().length > 0
-            );
-        }, [value, enlargeEmojiOnly]);
+        const isEmojiOnly = useMemo(
+            () => isEmojiOnlyMessage(value, enlargeEmojiOnly),
+            [value, enlargeEmojiOnly],
+        );
 
         const md = useMemo(() => {
             const instance = new MarkdownIt("default", {
                 html: false,
-                linkify: true,
+                linkify: false,
                 typographer: true,
                 breaks: true,
             });
@@ -53,14 +46,13 @@ export const MarkdownRenderer = observer(
             instance.disable("escape");
 
             instance.use(emojiPlugin);
+            instance.use(customEmojiPlugin);
+            instance.use(mentionPlugin);
             instance.use(strikethroughPlugin);
             instance.use(emphasisPlugin);
             instance.use(underlinePlugin);
             instance.use(spoilerPlugin);
-
-            instance.linkify.set({
-                fuzzyLink: false,
-            });
+            instance.use(linkPlugin);
 
             return instance;
         }, []);
@@ -76,7 +68,13 @@ export const MarkdownRenderer = observer(
                 }}
                 {...props}
             >
-                {renderBlocks(theme, tokens, isEmojiOnly)}
+                {renderBlocks(
+                    theme,
+                    tokens,
+                    isEmojiOnly,
+                    spaceId,
+                    textColor,
+                )}
             </Paper>
         );
     },

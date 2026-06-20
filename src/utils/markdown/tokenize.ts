@@ -15,6 +15,52 @@ const tokenDefs = [
 type TokenType = (typeof tokenDefs)[number]["type"];
 
 const re = new RegExp(emojiRegex.source, "g");
+const customEmojiRegex = /<a?:[^:]+:\d+>/g;
+
+function splitCustomEmojiTokens(t: Token): Token[] {
+    if (t.kind !== "text") return [t];
+
+    const parts: Token[] = [];
+    let last = 0;
+    let m: RegExpExecArray | null;
+
+    customEmojiRegex.lastIndex = 0;
+
+    while ((m = customEmojiRegex.exec(t.text))) {
+        const start = m.index;
+        const match = m[0];
+        const end = start + match.length;
+
+        if (start > last) {
+            parts.push({
+                kind: "text",
+                text: t.text.slice(last, start),
+                flags: t.flags,
+                lineKind: t.lineKind,
+            });
+        }
+
+        parts.push({
+            kind: "customEmoji",
+            raw: match,
+            flags: t.flags,
+            lineKind: t.lineKind,
+        });
+
+        last = end;
+    }
+
+    if (last < t.text.length) {
+        parts.push({
+            kind: "text",
+            text: t.text.slice(last),
+            flags: t.flags,
+            lineKind: t.lineKind,
+        });
+    }
+
+    return parts.length > 0 ? parts : [t];
+}
 
 function splitEmojiTokens(t: Token): Token[] {
     if (t.kind !== "text") return [t];
@@ -169,7 +215,11 @@ export function tokenizeMarkdown(markdown: string): Token[] {
 
         const lineTokens = tokenizeMarkdownLine(line, lineKind, prefixLen);
 
-        for (const t of lineTokens) out.push(...splitEmojiTokens(t));
+        for (const t of lineTokens) {
+            for (const customToken of splitCustomEmojiTokens(t)) {
+                out.push(...splitEmojiTokens(customToken));
+            }
+        }
 
         if (li !== lines.length - 1) out.push({ kind: "newline" });
     }

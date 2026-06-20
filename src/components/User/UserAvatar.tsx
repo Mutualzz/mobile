@@ -1,5 +1,5 @@
 import { Paper } from "@components/Paper";
-import { FontAwesome } from "@expo/vector-icons";
+import { UserIcon } from "phosphor-react-native";
 import { Sizes } from "@mutualzz/types";
 import {
     createColor,
@@ -57,7 +57,7 @@ export const UserAvatar = observer(({ user, ...props }: UserAvatarProps) => {
                 size={size}
                 {...props}
             >
-                <FontAwesome name="user" />
+                <UserIcon />
             </MAvatar>
         );
 
@@ -79,7 +79,6 @@ export const UserAvatar = observer(({ user, ...props }: UserAvatarProps) => {
                 height: size,
                 flexDirection: "column",
                 borderRadius: 9999,
-                boxShadow: "none",
             }}
             color={(user.defaultAvatar.color as Hex) || "neutral"}
         >

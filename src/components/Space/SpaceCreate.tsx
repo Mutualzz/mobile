@@ -1,4 +1,4 @@
-import { FontAwesome } from "@expo/vector-icons";
+import { CameraIcon } from "phosphor-react-native";
 import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
 import type { APISpace, HttpException } from "@mutualzz/types";
@@ -186,10 +186,10 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
                                 gap: 4,
                             }}
                         >
-                            <FontAwesome
+                            <CameraIcon
                                 color={theme.typography.colors.primary}
-                                name="camera"
                                 size={16}
+                                weight="fill"
                             />
                             <Typography weight="bold" level="body-xs">
                                 Upload

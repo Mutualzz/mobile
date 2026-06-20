@@ -1,3 +1,4 @@
+import type { APITheme } from "@mutualzz/types";
 import {
     baseDarkTheme,
     baseLightTheme,
@@ -145,6 +146,23 @@ export const adaptColors = ({
                 accent: typographyAccent,
                 muted: typographyMuted,
             },
+        },
+    };
+};
+
+export const applyAdaptiveThemeValues = (values: APITheme): APITheme => {
+    const adapted = adaptColors({
+        baseColor: values.colors.background,
+        primaryColor: values.colors.primary,
+        primaryText: values.typography.colors.primary,
+    });
+
+    return {
+        ...values,
+        colors: adapted.colors as APITheme["colors"],
+        typography: {
+            ...values.typography,
+            colors: adapted.typography.colors as APITheme["typography"]["colors"],
         },
     };
 };

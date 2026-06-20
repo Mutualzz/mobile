@@ -25,10 +25,22 @@ export class SpaceStore {
     }
 
     setActive(id?: string) {
+        if (id === "@me") {
+            this.active = null;
+            this.activeId = "@me";
+            this.app.channels.setPreferredActive();
+            return;
+        }
+
         this.active = (id ? this.get(id) : null) ?? null;
         this.activeId = this.active?.id;
 
         this.app.channels.setPreferredActive();
+    }
+
+    unsetActive() {
+        this.active = null;
+        this.activeId = undefined;
     }
 
     setPreferredActive() {

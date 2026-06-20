@@ -1,97 +1,102 @@
 import { ChannelIcon } from "@components/Channel/ChannelIcon";
+import { MemberListModal } from "@components/MemberList/MemberListModal";
 import { MessageInput } from "@components/Message/MessageInput";
 import { MessageList } from "@components/Message/MessageList";
-import { Paper } from "@components/Paper";
-import { FontAwesome } from "@expo/vector-icons";
+import { TypingIndicator } from "@components/TypingIndicator";
+import { Screen, ScreenHeader } from "@components/Screen/Screen";
+import { ArrowLeftIcon, UsersIcon } from "phosphor-react-native";
 import { useKeyboardOffset } from "@hooks/useKeyboardOffset";
 import { useAppStore } from "@hooks/useStores";
 import { Typography, useTheme } from "@mutualzz/ui-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-    Animated,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SpaceChannelIndex = () => {
-    const app = useAppStore();
-    const insets = useSafeAreaInsets();
-    const router = useRouter();
-    const { theme } = useTheme();
-    const keyboardHeight = useKeyboardOffset();
-    const translateY = useRef(new Animated.Value(0)).current;
+  const app = useAppStore();
+  const { channelId } = useLocalSearchParams<{ channelId: string }>();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { theme } = useTheme();
+  const keyboardHeight = useKeyboardOffset();
+  const translateY = useRef(new Animated.Value(0)).current;
+  const [memberListOpen, setMemberListOpen] = useState(false);
 
-    useEffect(() => {
-        if (Platform.OS !== "android") return;
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
 
-        const height =
-            keyboardHeight === 0 ? 0 : -keyboardHeight - insets.bottom;
+    const height = keyboardHeight === 0 ? 0 : -keyboardHeight - insets.bottom;
 
-        Animated.timing(translateY, {
-            toValue: height,
-            duration: 150,
-            useNativeDriver: true,
-        }).start();
-    }, [keyboardHeight, translateY]);
+    Animated.timing(translateY, {
+      toValue: height,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  }, [keyboardHeight, translateY, insets.bottom]);
 
-    const channel = app.channels.active;
-    if (!channel) return null;
+  const channel = channelId ? app.channels.get(channelId) : null;
+  if (!channel) return null;
 
-    return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={0}
+    >
+      <Screen
+        style={{
+          flexDirection: "column",
+          borderTopWidth: 0,
+          borderLeftWidth: 0,
+          borderRightWidth: 0,
+          borderBottomWidth: 0,
+        }}
+      >
+        <ScreenHeader
+          style={{
+            zIndex: 1,
+            borderTopWidth: 0,
+            borderLeftWidth: 0,
+            borderRightWidth: 0,
+          }}
         >
-            <Paper
-                style={{
-                    flex: 1,
+          <Pressable hitSlop={8} onPress={() => router.back()}>
+            <ArrowLeftIcon color={theme.typography.colors.primary} />
+          </Pressable>
+          <ChannelIcon type={channel.type} />
+          <Typography style={{ flex: 1 }}>{channel.name}</Typography>
+          <Pressable hitSlop={8} onPress={() => setMemberListOpen(true)}>
+            <UsersIcon color={theme.typography.colors.primary} weight="fill" />
+          </Pressable>
+        </ScreenHeader>
+        <Animated.View
+          style={{
+            flexDirection: "column",
+            flex: 1,
+            minHeight: 0,
+            transform: [{ translateY }],
+          }}
+        >
+          <MessageList key={channel.id} channel={channel} />
+          <TypingIndicator channelId={channel.id} />
+          <MessageInput channel={channel} />
+        </Animated.View>
+      </Screen>
 
-                    flexDirection: "column",
-                }}
-                elevation={app.settings?.preferEmbossed ? 2 : 0}
-            >
-                <Paper
-                    style={{
-                        flexDirection: "row",
-                        paddingTop: insets.top,
-                        paddingHorizontal: insets.left + 16,
-                        paddingBottom: 8,
-                        alignItems: "center",
-                        gap: 8,
-                        boxShadow: "none",
-                        zIndex: 1,
-                    }}
-                    elevation={app.settings?.preferEmbossed ? 3 : 0}
-                >
-                    <Pressable hitSlop={8} onPress={() => router.back()}>
-                        <FontAwesome
-                            style={{
-                                marginRight: 8,
-                            }}
-                            name="arrow-left"
-                            color={theme.colors.neutral}
-                        />
-                    </Pressable>
-                    <ChannelIcon type={channel.type} />
-                    <Typography>{channel.name}</Typography>
-                </Paper>
-                <Animated.View
-                    style={{
-                        flexDirection: "column",
-                        flex: 1,
-                        transform: [{ translateY }],
-                    }}
-                >
-                    <MessageList channel={channel} />
-                    <MessageInput channel={channel} />
-                </Animated.View>
-            </Paper>
-        </KeyboardAvoidingView>
-    );
+      <MemberListModal
+        channel={channel}
+        visible={memberListOpen}
+        onClose={() => setMemberListOpen(false)}
+      />
+    </KeyboardAvoidingView>
+  );
 };
 
 export default observer(SpaceChannelIndex);

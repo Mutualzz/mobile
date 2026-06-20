@@ -1,39 +1,31 @@
 import TabButton from "@components/Tabs/TabButton";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { HouseIcon } from "phosphor-react-native";
 import { useAppStore } from "@hooks/useStores";
 import { Box, useTheme } from "@mutualzz/ui-native";
 import { TabTrigger } from "expo-router/ui";
-import { useMemo } from "react";
 
 export const HomeContextual = () => {
-    const app = useAppStore();
-    const { theme } = useTheme();
+  const app = useAppStore();
+  const { theme } = useTheme();
 
-    const determineContext = useMemo(
-        () => (!app.mode ? app.settings?.preferredMode || "spaces" : "unknown"),
-        [app.mode, app.settings?.preferredMode],
-    );
+  const determineContext = app.mode ?? app.settings?.preferredMode ?? "spaces";
 
-    return (
-        <Box
-            style={{
-                flex: 1,
-                flexDirection: "column",
-            }}
+  return (
+    <Box
+      style={{
+        flex: 1,
+        flexDirection: "column",
+      }}
+    >
+      <TabTrigger asChild name={determineContext}>
+        <TabButton
+          icon={
+            <HouseIcon size={30} color={theme.colors.neutral} weight="fill" />
+          }
         >
-            <TabTrigger asChild name={determineContext}>
-                <TabButton
-                    icon={
-                        <MaterialIcons
-                            size={30}
-                            color={theme.colors.neutral}
-                            name="home"
-                        />
-                    }
-                >
-                    Home
-                </TabButton>
-            </TabTrigger>
-        </Box>
-    );
+          Home
+        </TabButton>
+      </TabTrigger>
+    </Box>
+  );
 };

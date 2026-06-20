@@ -1,9 +1,8 @@
-import { extractColors, isValidGradient } from "@mutualzz/ui-core";
 import { useTheme } from "@mutualzz/ui-native";
 import {
     ThemeProvider as NavigationThemeProvider,
     Theme,
-} from "@react-navigation/native";
+} from "expo-router/react-navigation";
 import { StatusBar } from "expo-status-bar";
 import { observer } from "mobx-react-lite";
 import { PropsWithChildren, useMemo } from "react";
@@ -45,25 +44,9 @@ export const NavigationWithTheme = observer(
             [theme],
         );
 
-        const barBg = useMemo(() => {
-            const surface = theme.colors.surface;
-            if (!isValidGradient(surface)) return surface;
-
-            try {
-                const extracted = extractColors(surface);
-                if (!extracted || extracted.length === 0) return surface;
-                const lastIndex = extracted.length - 1;
-                return extracted[lastIndex];
-            } catch {
-                return surface;
-            }
-        }, [theme]);
-
         return (
             <NavigationThemeProvider value={navTheme}>
                 <StatusBar
-                    backgroundColor={barBg}
-                    translucent={false}
                     style={theme.type === "dark" ? "light" : "dark"}
                     animated
                 />

@@ -4,6 +4,7 @@ import { type IObservableArray, makeAutoObservable, observable } from "mobx";
 import type { AppStore } from "./App.store";
 import { Message, type MessageLike } from "./objects/Message";
 import type { User } from "./objects/User";
+import { omitBooleanRelations } from "@utils/apiRelations";
 
 export interface MessageGroup {
     author: User;
@@ -31,10 +32,15 @@ export class MessageStore {
     }
 
     add(message: APIMessage) {
-        const existing = this.get(message.id);
+        const data = omitBooleanRelations(message, [
+            "author",
+            "channel",
+            "space",
+        ]);
+        const existing = this.get(data.id);
         if (existing) return existing;
 
-        const newMessage = new Message(this.app, message);
+        const newMessage = new Message(this.app, data);
         this.messages.push(newMessage);
         return newMessage;
     }
@@ -58,13 +64,18 @@ export class MessageStore {
     }
 
     update(message: APIMessage) {
-        const oldMessage = this.get(message.id);
+        const data = omitBooleanRelations(message, [
+            "author",
+            "channel",
+            "space",
+        ]);
+        const oldMessage = this.get(data.id);
         if (!oldMessage) return;
 
-        this.messages[this.messages.indexOf(oldMessage)] = new Message(
-            this.app,
-            message,
-        );
+        const nextMessage = new Message(this.app, data);
+        nextMessage.setEditing(oldMessage.editing);
+
+        this.messages[this.messages.indexOf(oldMessage)] = nextMessage;
     }
 
     get count() {

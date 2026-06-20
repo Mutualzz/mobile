@@ -1,3 +1,4 @@
+import { UserProfileTrigger } from "@components/Profile/UserProfileTrigger";
 import { Typography } from "@mutualzz/ui-native";
 import type { MessageLike } from "@stores/objects/Message";
 import type { Space } from "@stores/objects/Space";
@@ -8,6 +9,18 @@ interface Props {
     space?: Space | null;
 }
 
-export const MessageAuthor = observer(({ message, space: _ }: Props) => {
-    return <Typography>{message.author?.displayName}</Typography>;
+export const MessageAuthor = observer(({ message, space }: Props) => {
+    const author = message.author;
+    if (!author) {
+        return <Typography>Unknown</Typography>;
+    }
+
+    const member =
+        space && author.id ? space.members.get(author.id) : undefined;
+
+    return (
+        <UserProfileTrigger user={author} member={member}>
+            <Typography>{author.displayName}</Typography>
+        </UserProfileTrigger>
+    );
 });

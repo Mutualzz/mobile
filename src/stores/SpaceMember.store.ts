@@ -21,7 +21,7 @@ export class SpaceMemberStore {
     add(member: APISpaceMember) {
         const exists = this.members.get(member.userId);
         if (exists) return exists;
-        const m = new SpaceMember(this.app, this.space, member);
+        const m = new SpaceMember(this.app, member);
         this.members.set(member.userId, m);
         return m;
     }
@@ -38,7 +38,7 @@ export class SpaceMemberStore {
         if (!member.userId) {
             throw new Error("Member does not have a user");
         }
-        this.members.get(member.userId)?.update(member);
+        return this.members.get(member.userId)?.update(member);
     }
 
     get(id: string) {

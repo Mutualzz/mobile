@@ -33,10 +33,10 @@ const TabButtonComponent = forwardRef<View, Props>(
         return (
             <Pressable
                 ref={ref}
-                style={({ pressed, hovered }) => {
+                style={({ pressed }) => {
                     const resolvedStyle =
                         typeof style === "function"
-                            ? style({ pressed, hovered })
+                            ? style({ pressed })
                             : style;
 
                     const containerVariant = resolveButtonContainerStyles(

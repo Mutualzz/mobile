@@ -12,7 +12,6 @@ interface Props extends PropsWithChildren, ViewProps {
 
 export const MessageBase = styled(Box)<Props>(({ header }) => ({
     flexDirection: "row",
-    overflow: "hidden",
     paddingTop: 2,
     paddingBottom: 2,
 

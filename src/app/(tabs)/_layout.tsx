@@ -1,24 +1,27 @@
-import { HomeContextual } from "@components/HomeContextual";
 import { ModeSwitcher } from "@components/ModeSwitcher";
 import TabBar from "@components/Tabs/TabBar";
-import TabButton from "@components/Tabs/TabButton";
-import { UserAvatar } from "@components/User/UserAvatar";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { UserBar } from "@components/User/UserBar";
 import { useAppStore } from "@hooks/useStores";
-import { Box, useTheme } from "@mutualzz/ui-native";
+import { Box } from "@mutualzz/ui-native";
+import { getFloatingTabBarInset, useIsTabBarHidden } from "@utils/layout";
 import { Redirect } from "expo-router";
 import { TabList, Tabs, TabSlot, TabTrigger } from "expo-router/ui";
 import { observer } from "mobx-react-lite";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const AppLayout = () => {
     const app = useAppStore();
-    const { theme } = useTheme();
+    const insets = useSafeAreaInsets();
+    const hideTabBar = useIsTabBarHidden();
+    const tabBarInset = hideTabBar ? 0 : getFloatingTabBarInset(insets);
 
     if (!app.token) return <Redirect href="/login" />;
 
     return (
         <Tabs>
-            <TabSlot style={{ flex: 1 }} />
+            <Box style={{ flex: 1, paddingBottom: tabBarInset }}>
+                <TabSlot style={{ flex: 1 }} />
+            </Box>
 
             <TabList
                 style={{
@@ -35,43 +38,9 @@ const AppLayout = () => {
             </TabList>
 
             <TabBar>
-                <HomeContextual />
-                <Box
-                    style={{
-                        flex: 1,
-                        flexDirection: "column",
-                    }}
-                >
-                    <TabTrigger asChild name="@me" href="/@me">
-                        <TabButton
-                            icon={
-                                <MaterialIcons
-                                    size={30}
-                                    color={theme.colors.neutral}
-                                    name="people"
-                                />
-                            }
-                        >
-                            Mutuals
-                        </TabButton>
-                    </TabTrigger>
-                </Box>
-                <Box
-                    style={{
-                        flex: 1,
-                        flexDirection: "column",
-                    }}
-                >
-                    <TabTrigger asChild name="settings">
-                        <TabButton
-                            icon={<UserAvatar size={36} user={app.account} />}
-                        >
-                            You
-                        </TabButton>
-                    </TabTrigger>
-                </Box>
-                {!app.hideSwitcher && <ModeSwitcher />}
+                <UserBar />
             </TabBar>
+            {!app.hideSwitcher && !hideTabBar && <ModeSwitcher />}
         </Tabs>
     );
 };

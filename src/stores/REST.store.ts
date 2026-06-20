@@ -20,6 +20,11 @@ const DEFAULT_HEADERS = {
     ...clientMeta,
 };
 
+async function parseResponse<Data>(res: Response): Promise<Data> {
+    const text = await res.text();
+    return text ? normalizeJSON<Data>(JSON.parse(text)) : (null as Data);
+}
+
 export class REST extends EventEmitter {
     private readonly logger = new Logger({
         tag: "REST",
@@ -92,7 +97,7 @@ export class REST extends EventEmitter {
                         this.emit("rateLimited");
                     }
 
-                    const data = normalizeJSON<Data>(await res.json());
+                    const data = await parseResponse<Data>(res);
 
                     if (!res.ok) return reject(data);
 
@@ -127,7 +132,7 @@ export class REST extends EventEmitter {
                         this.emit("rateLimited");
                     }
 
-                    const data = normalizeJSON<Data>(await res.json());
+                    const data = await parseResponse<Data>(res);
 
                     if (!res.ok) return reject(data);
 
@@ -162,7 +167,7 @@ export class REST extends EventEmitter {
                         this.emit("rateLimited");
                     }
 
-                    const data = normalizeJSON<Data>(await res.json());
+                    const data = await parseResponse<Data>(res);
 
                     if (!res.ok) return reject(data);
 
@@ -202,7 +207,9 @@ export class REST extends EventEmitter {
                     this.emit("rateLimited");
                 }
 
-                const data = JSON.parse(normalizeJSON(xhr.response));
+                const data = xhr.responseText
+                    ? JSON.parse(normalizeJSON(xhr.responseText))
+                    : null;
 
                 // if success, resolve text or json
                 if (xhr.status >= 200 && xhr.status < 300) return resolve(data);
@@ -245,7 +252,7 @@ export class REST extends EventEmitter {
                         this.emit("rateLimited");
                     }
 
-                    const data = normalizeJSON<Data>(await res.json());
+                    const data = await parseResponse<Data>(res);
 
                     if (!res.ok) return reject(data);
 
@@ -284,7 +291,9 @@ export class REST extends EventEmitter {
                     this.emit("rateLimited");
                 }
 
-                const data = JSON.parse(normalizeJSON(xhr.response));
+                const data = xhr.responseText
+                    ? JSON.parse(normalizeJSON(xhr.responseText))
+                    : null;
 
                 // if success, resolve text or json
                 if (xhr.status >= 200 && xhr.status < 300) return resolve(data);
@@ -331,7 +340,9 @@ export class REST extends EventEmitter {
                     this.emit("rateLimited");
                 }
 
-                const data = JSON.parse(normalizeJSON(xhr.response));
+                const data = xhr.responseText
+                    ? JSON.parse(normalizeJSON(xhr.responseText))
+                    : null;
 
                 // if success, resolve text or json
                 if (xhr.status >= 200 && xhr.status < 300) return resolve(data);
@@ -352,17 +363,20 @@ export class REST extends EventEmitter {
     public async delete<Data>(
         path: string,
         queryParams: Record<string, any> = {},
+        body?: unknown,
         headers: Record<string, string> = {},
     ): Promise<Data> {
         return new Promise((resolve, reject) => {
             const url = REST.makeAPIUrl(path, queryParams);
-            this.logger.debug(`DELETE ${url}`);
+            this.logger.debug(`DELETE ${url}; payload:`, body);
             return fetch(url, {
                 method: "DELETE",
                 headers: {
+                    ...(body ? { "Content-Type": "application/json" } : {}),
                     ...headers,
                     ...this.headers,
                 },
+                body: body ? JSON.stringify(body) : undefined,
                 mode: "cors",
             })
                 .then(async (res) => {
@@ -371,7 +385,7 @@ export class REST extends EventEmitter {
                         this.emit("rateLimited");
                     }
 
-                    const data = normalizeJSON<Data>(await res.json());
+                    const data = await parseResponse<Data>(res);
 
                     if (!res.ok) return reject(data);
 

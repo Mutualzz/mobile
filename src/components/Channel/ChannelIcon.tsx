@@ -1,8 +1,12 @@
-import { FontAwesome } from "@expo/vector-icons";
 import { ChannelType } from "@mutualzz/types";
 import { useTheme } from "@mutualzz/ui-native";
+import {
+    HashIcon,
+    SpeakerSimpleHighIcon,
+    type IconProps,
+} from "phosphor-react-native";
 
-interface Props extends Omit<any, "type"> {
+interface Props extends Omit<IconProps, "type"> {
     type: ChannelType;
 }
 
@@ -12,19 +16,18 @@ export const ChannelIcon = ({ type, ...props }: Props) => {
     switch (type) {
         case ChannelType.Text:
             return (
-                <FontAwesome
-                    color={theme.colors.neutral}
-                    name="hashtag"
+                <HashIcon
+                    color={theme.typography.colors.secondary}
                     size={14}
                     {...props}
                 />
             );
         case ChannelType.Voice:
             return (
-                <FontAwesome
-                    color={theme.colors.neutral}
-                    name="volume-up"
+                <SpeakerSimpleHighIcon
+                    color={theme.typography.colors.secondary}
                     size={14}
+                    weight="fill"
                     {...props}
                 />
             );

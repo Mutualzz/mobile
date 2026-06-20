@@ -1,8 +1,6 @@
 import { NavigationWithTheme } from "@components/NavigationWithTheme";
 import { AppTheme } from "@contexts/AppTheme.context";
 import { ModalProvider } from "@contexts/Modal.context";
-import { FontAwesome } from "@expo/vector-icons";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useAppStore } from "@hooks/useStores";
 import { Logger } from "@mutualzz/logger";
 import { GatewayCloseCodes } from "@mutualzz/types";
@@ -14,7 +12,6 @@ import dayjs from "dayjs";
 import calendar from "dayjs/plugin/calendar";
 import duration from "dayjs/plugin/duration";
 import relativeTime from "dayjs/plugin/relativeTime";
-import * as Font from "expo-font";
 import { Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { reaction } from "mobx";
@@ -36,11 +33,6 @@ const Root = () => {
     useEffect(() => {
         (async () => {
             try {
-                await Font.loadAsync({
-                    ...MaterialIcons.font,
-                    ...FontAwesome.font,
-                });
-
                 await app.loadSettings();
             } finally {
                 app.setAppLoading(false);

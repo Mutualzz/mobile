@@ -1,133 +1,153 @@
+import { Screen } from "@components/Screen/Screen";
 import { Paper } from "@components/Paper";
+import { SettingsHeader } from "@components/UserSettings/SettingsHeader";
+import { useSettingsIconColor } from "@components/UserSettings/settingsTheme";
 import {
-    UserSettingsSidebarCategories,
-    UserSettingsSidebarPage,
+  type UserSettingsSidebarCategories,
+  type UserSettingsSidebarPage,
 } from "@contexts/UserSettingsSidebar.context";
-import { FontAwesome } from "@expo/vector-icons";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import {
+  MicrophoneIcon,
+  PaletteIcon,
+  PaintBrushIcon,
+  SignOutIcon,
+  SmileyIcon,
+  UserGearIcon,
+} from "phosphor-react-native";
 import { useAppStore } from "@hooks/useStores";
+import { useAppNavigation } from "@hooks/useAppNavigation";
 import { Button, ButtonGroup, Divider, Typography } from "@mutualzz/ui-native";
 import startCase from "lodash-es/startCase";
 import { observer } from "mobx-react-lite";
-import { Fragment, JSX } from "react";
+import { Fragment, type ComponentType } from "react";
+import type { IconProps } from "phosphor-react-native";
 
 type SettingsPages = Record<UserSettingsSidebarCategories, Pages[]>;
 
 interface Pages {
-    label: UserSettingsSidebarPage;
-    icon: JSX.Element;
+  label: UserSettingsSidebarPage;
+  Icon: ComponentType<IconProps>;
 }
 
 const settingsPages: SettingsPages = {
-    "user-settings": [
-        {
-            label: "my-account",
-            icon: <FontAwesome name="cog" />,
-        },
-        {
-            label: "profile",
-            icon: <FontAwesome name="paint-brush" />,
-        },
-    ],
-    "app-settings": [
-        {
-            label: "appearance",
-            icon: <FontAwesome name="paint-brush" />,
-        },
-    ],
+  "user-settings": [
+    { label: "my-account", Icon: UserGearIcon },
+    { label: "profile", Icon: PaintBrushIcon },
+    { label: "expressions", Icon: SmileyIcon },
+  ],
+  "app-settings": [
+    { label: "appearance", Icon: PaletteIcon },
+    { label: "voice_and_video", Icon: MicrophoneIcon },
+  ],
 };
 
 const SettingsIndex = () => {
-    const app = useAppStore();
+  const app = useAppStore();
+  const { navigate } = useAppNavigation();
+  const navIconColor = useSettingsIconColor("info");
+  const dangerIconColor = useSettingsIconColor("danger");
 
-    if (!app.account) return;
+  if (!app.account) return;
 
-    const categories = Object.entries(settingsPages);
+  const categories = Object.entries(settingsPages);
 
-    return (
-        <Paper
+  return (
+    <Screen
+      style={{
+        flexDirection: "column",
+        justifyContent: "flex-start",
+        alignItems: "stretch",
+        paddingVertical: 16,
+        gap: 16,
+        borderTopWidth: 0,
+        borderBottomWidth: 0,
+        borderLeftWidth: 0,
+        borderRightWidth: 0,
+      }}
+    >
+      <SettingsHeader title="Settings" />
+      {categories.map(([category, pages], index) => (
+        <Fragment key={`settings-sidebar-category-fragment-${category}`}>
+          <Paper
             style={{
-                flex: 1,
-                flexDirection: "column",
-                justifyContent: "flex-start",
-                alignItems: "stretch",
-                paddingVertical: 16,
-                gap: 16,
+              marginHorizontal: 12,
+              padding: 12,
+              borderRadius: 12,
+              flexDirection: "column",
+              minWidth: 0,
             }}
-            elevation={app.settings?.preferEmbossed ? 2 : 0}
-        >
-            {categories.map(([category, pages], index) => (
-                <Fragment
-                    key={`settings-sidebar-category-fragment-${category}`}
-                >
-                    <Paper
-                        style={{
-                            marginHorizontal: 12,
-                            padding: 12,
-                            boxShadow: "none",
-                            borderRadius: 12,
-                            flexDirection: "column",
-                        }}
-                        elevation={app.settings?.preferEmbossed ? 3 : 0}
-                    >
-                        <Typography level="body-sm" textColor="muted">
-                            {startCase(category)}
-                        </Typography>
-                        <ButtonGroup
-                            color="neutral"
-                            orientation="vertical"
-                            variant="plain"
-                            spacing={1.25}
-                            horizontalAlign="left"
-                            fullWidth
-                        >
-                            {pages.map((page) => (
-                                <Button
-                                    startDecorator={page.icon}
-                                    key={`user-settings-sidebar-${page.label}`}
-                                    padding={5}
-                                >
-                                    {startCase(page.label)}
-                                </Button>
-                            ))}
-                        </ButtonGroup>
-                    </Paper>
-                    {index < categories.length - 1 && (
-                        <Divider
-                            style={{
-                                paddingInline: 16,
-                                filter: "opacity(0.5)",
-                            }}
-                            lineColor="muted"
-                        />
-                    )}
-                </Fragment>
-            ))}
-
-            <Paper
-                elevation={app.settings?.preferEmbossed ? 3 : 0}
-                style={{
-                    marginHorizontal: 12,
-                    boxShadow: "none",
-                    borderRadius: 12,
-                    flexDirection: "column",
-                }}
+            elevation={app.settings?.preferEmbossed ? 3 : 0}
+          >
+            <Typography level="body-sm" textColor="muted">
+              {startCase(category)}
+            </Typography>
+            <ButtonGroup
+              color="info"
+              orientation="vertical"
+              variant="plain"
+              spacing={1.25}
+              horizontalAlign="left"
+              fullWidth
             >
+              {pages.map((page) => (
                 <Button
-                    variant="plain"
-                    color="danger"
-                    fullWidth
-                    padding={12}
-                    horizontalAlign="left"
-                    style={{ borderRadius: 12 }}
-                    startDecorator={<MaterialIcons name="logout" />}
-                    onPress={() => app.logout()}
+                  startDecorator={
+                    <page.Icon
+                      weight="fill"
+                      size={20}
+                      color={navIconColor}
+                    />
+                  }
+                  key={`user-settings-sidebar-${page.label}`}
+                  padding={5}
+                  style={{ minWidth: 0 }}
+                  onPress={() => navigate(`/(tabs)/settings/${page.label}`)}
                 >
-                    Log Out
+                  {page.label === "voice_and_video"
+                    ? "Voice & Video"
+                    : startCase(page.label)}
                 </Button>
-            </Paper>
-        </Paper>
-    );
+              ))}
+            </ButtonGroup>
+          </Paper>
+          {index < categories.length - 1 && (
+            <Divider
+              style={{
+                paddingInline: 16,
+                filter: "opacity(0.5)",
+              }}
+              lineColor="muted"
+            />
+          )}
+        </Fragment>
+      ))}
+
+      <Paper
+        elevation={app.settings?.preferEmbossed ? 3 : 0}
+        style={{
+          marginHorizontal: 12,
+          borderRadius: 12,
+          flexDirection: "column",
+          minWidth: 0,
+        }}
+      >
+        <Button
+          variant="plain"
+          color="danger"
+          fullWidth
+          padding={12}
+          horizontalAlign="left"
+          style={{ borderRadius: 12, minWidth: 0 }}
+          startDecorator={
+            <SignOutIcon weight="fill" size={20} color={dangerIconColor} />
+          }
+          onPress={() => app.logout()}
+        >
+          Log Out
+        </Button>
+      </Paper>
+    </Screen>
+  );
 };
 
 export default observer(SettingsIndex);

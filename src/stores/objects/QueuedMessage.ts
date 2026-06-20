@@ -1,6 +1,8 @@
-import type { APIUser, MessageType, Snowflake } from "@mutualzz/types";
+import type { APIExpression, APIUser, MessageType, Snowflake } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
-import { MessageBase } from "./MessageBase";
+import { action, makeObservable, observable } from "mobx";
+import { Expression } from "./Expression";
+import { MessageBase, messageBaseMobxAnnotations } from "./MessageBase";
 
 export enum QueuedMessageStatus {
     Sending = "sending",
@@ -16,23 +18,47 @@ export interface QueuedMessageData {
     createdAt: string;
     authorId: Snowflake;
     author?: APIUser;
+    expressionIds?: Snowflake[];
+    expressions?: APIExpression[];
 }
 
 export class QueuedMessage extends MessageBase {
-    channelId: Snowflake;
-    spaceId?: Snowflake | null;
     progress = 0;
     status: QueuedMessageStatus;
     error?: string;
+    expressions = observable.array<Expression>();
 
     abortCallback?: () => void;
 
     constructor(app: AppStore, data: QueuedMessageData) {
         super(app, data);
+
+        this._author = this._author ?? null;
+        this._space = this._space ?? null;
+        this._channel = this._channel ?? null;
+
         this.id = data.id;
         this.channelId = data.channelId;
         this.spaceId = data.spaceId ?? null;
         this.status = QueuedMessageStatus.Sending;
+        this.error = undefined;
+        this.abortCallback = undefined;
+        this.expressions = observable.array<Expression>(
+            data.expressions ? app.expressions.addAll(data.expressions) : [],
+        );
+
+        makeObservable<QueuedMessage, "_author" | "_space" | "_channel">(this, {
+            ...messageBaseMobxAnnotations,
+            progress: observable,
+            status: observable,
+            error: observable,
+            expressions: observable,
+            abortCallback: observable.ref,
+            updateProgress: action.bound,
+            setAbortCallback: action.bound,
+            abort: action.bound,
+            fail: action.bound,
+        });
     }
 
     updateProgress(e: ProgressEvent) {
@@ -52,5 +78,10 @@ export class QueuedMessage extends MessageBase {
     fail(error: string) {
         this.error = error;
         this.status = QueuedMessageStatus.Failed;
+    }
+
+    delete() {
+        this.app.queue.remove(this.id);
+        return null;
     }
 }

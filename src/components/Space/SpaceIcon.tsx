@@ -43,7 +43,6 @@ export const SpaceIcon = observer(({ space, selected, ...props }: Props) => {
                 borderRadius: selected ? 15 : 10,
                 width: 36,
                 height: 36,
-                boxShadow: "none",
             }}
             transparency={25}
         >

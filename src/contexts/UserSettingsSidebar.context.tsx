@@ -5,7 +5,12 @@ import {
     type PropsWithChildren,
 } from "react";
 
-export type UserSettingsSidebarPage = "my-account" | "profile" | "appearance";
+export type UserSettingsSidebarPage =
+    | "my-account"
+    | "profile"
+    | "expressions"
+    | "appearance"
+    | "voice_and_video";
 export type UserSettingsSidebarCategories = "user-settings" | "app-settings";
 
 interface UserSettingsSidebarContextProps {

@@ -101,4 +101,16 @@ export class AccountStore {
 
         this.previousAvatars = this.previousAvatars.filter((a) => a !== avatar);
     }
+
+    update(user: APIPrivateUser) {
+        this.username = user.username;
+        this.defaultAvatar = user.defaultAvatar;
+        this.avatar = user.avatar ?? null;
+        this.accentColor = user.accentColor;
+        this.previousAvatars = user.previousAvatars ?? [];
+        this.globalName = user.globalName ?? null;
+        this.email = user.email ?? null;
+        this.createdAt = new Date(user.createdAt);
+        this.raw = user;
+    }
 }

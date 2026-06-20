@@ -1,6 +1,6 @@
 import type { APIUserSettings, AppMode, Snowflake } from "@mutualzz/types";
 import { ObservableOrderedSet } from "@utils/ObservableOrderedSet";
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, observable } from "mobx";
 import type { AppStore } from "./App.store";
 import { makePersistable } from "mobx-persist-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -13,6 +13,8 @@ export class AccountSettingsStore {
     preferredMode: AppMode;
     preferEmbossed = false;
     spacePositions: ObservableOrderedSet<string>;
+    favoriteEmojis = observable.array<string>([]);
+    favoriteGifs = observable.array<string>([]);
     updatedAt: Date;
 
     private lastSyncedHash: string;
@@ -29,6 +31,8 @@ export class AccountSettingsStore {
             settings.spacePositions.map(String),
         );
         this.preferEmbossed = settings.preferEmbossed;
+        this.favoriteEmojis = observable.array(settings.favoriteEmojis ?? []);
+        this.favoriteGifs = observable.array(settings.favoriteGifs ?? []);
         this.updatedAt = new Date(settings.updatedAt);
 
         this.lastSyncedHash = this.computeHash(this.getSyncPayload());
@@ -42,6 +46,18 @@ export class AccountSettingsStore {
                 "currentIcon",
                 "preferredMode",
                 "preferEmbossed",
+                {
+                    key: "favoriteEmojis",
+                    serialize: (v: unknown) => (Array.isArray(v) ? [...v] : []),
+                    deserialize: (v: unknown) =>
+                        observable.array(Array.isArray(v) ? v : []),
+                },
+                {
+                    key: "favoriteGifs",
+                    serialize: (v: unknown) => (Array.isArray(v) ? [...v] : []),
+                    deserialize: (v: unknown) =>
+                        observable.array(Array.isArray(v) ? v : []),
+                },
                 {
                     key: "spacePositions",
                     serialize: (v: unknown) => {
@@ -79,6 +95,11 @@ export class AccountSettingsStore {
             preferEmbossed: this.preferEmbossed,
             currentTheme: this.currentTheme,
             currentIcon: this.currentIcon,
+            preferredSelfMute: false,
+            preferredSelfDeaf: false,
+            favoriteEmojis: [...this.favoriteEmojis],
+            favoriteGifs: [...this.favoriteGifs],
+            favoriteStickers: [],
         };
     }
 
@@ -96,6 +117,21 @@ export class AccountSettingsStore {
 
     togglePreferEmbossed() {
         this.preferEmbossed = !this.preferEmbossed;
+    }
+
+    toggleFavoriteGif(entry: string) {
+        const url = entry.split("|")[0];
+        const idx = this.favoriteGifs.findIndex((f) => f.split("|")[0] === url);
+        if (idx === -1) {
+            this.favoriteGifs.push(entry);
+        } else {
+            this.favoriteGifs.splice(idx, 1);
+        }
+    }
+
+    isFavoriteGif(url: string) {
+        const bare = url.split("|")[0];
+        return this.favoriteGifs.some((f) => f.split("|")[0] === bare);
     }
 
     setCurrentTheme(theme: string | null) {
@@ -122,6 +158,12 @@ export class AccountSettingsStore {
 
         if (settings.preferredMode != undefined)
             this.preferredMode = settings.preferredMode;
+
+        if (settings.favoriteEmojis != undefined)
+            this.favoriteEmojis = observable.array(settings.favoriteEmojis);
+
+        if (settings.favoriteGifs != undefined)
+            this.favoriteGifs = observable.array(settings.favoriteGifs);
 
         if (settings.updatedAt != undefined)
             this.updatedAt = new Date(settings.updatedAt);

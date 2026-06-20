@@ -19,6 +19,26 @@ const shortcodes = [
 
 const emojis = joinShortcodes(emojiData, shortcodes);
 
+export function searchShortcodeEmojis(query: string, limit = 7): Emoji[] {
+    const lowerQuery = query.toLowerCase();
+    if (lowerQuery.length < 2) return [];
+
+    const results: Emoji[] = [];
+
+    for (const emoji of emojis) {
+        if (results.length >= limit) break;
+
+        const match = emoji.shortcodes?.find((shortcode) =>
+            shortcode.includes(lowerQuery),
+        );
+        if (!match) continue;
+
+        results.push(emoji);
+    }
+
+    return results;
+}
+
 export function getEmoji(
     shortcodeOrUnicodeOrEmoticon: string,
 ): Emoji | undefined {

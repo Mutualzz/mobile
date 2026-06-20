@@ -27,4 +27,10 @@ export type Token =
           flags: InlineFlags;
           lineKind: LineKind;
       }
+    | {
+          kind: "customEmoji";
+          raw: string;
+          flags: InlineFlags;
+          lineKind: LineKind;
+      }
     | { kind: "newline" };

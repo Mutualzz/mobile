@@ -1,70 +1,203 @@
-import type { APIMessage, APIMessageEmbed, Snowflake } from "@mutualzz/types";
+import type {
+    APIMessage,
+    APIMessageEmbed,
+    APIMessageReaction,
+    APIMessageReactionEmoji,
+    APIMessageReactionEvent,
+    APIMessageReactionRemoveAllEvent,
+    APIMessageReactionRemoveEmojiEvent,
+    APIMessageReactionRemoveEvent,
+    Snowflake,
+} from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
-import type { Space } from "@stores/objects/Space";
-import { makeObservable } from "mobx";
-import type { Channel } from "./Channel";
-import { MessageBase } from "./MessageBase";
+import { isLoadedRelation } from "@utils/apiRelations";
+import { action, makeObservable, observable } from "mobx";
+import { Expression } from "./Expression";
+import { MessageBase, messageBaseMobxAnnotations } from "./MessageBase";
 import type { QueuedMessage, QueuedMessageData } from "./QueuedMessage";
+import {
+    applyReactionAdd,
+    applyReactionRemove,
+    applyReactionRemoveEmoji,
+    reactionEmojiToBody,
+    reactionEmojisMatch,
+} from "@utils/reactions";
 
 export type MessageLike = Message | QueuedMessage;
 export type MessageLikeData = APIMessage | QueuedMessageData;
 
 export class Message extends MessageBase {
-    channelId: Snowflake;
     updatedAt?: Date | null;
 
     nonce?: Snowflake | null;
-    spaceId?: Snowflake | null;
     embeds: APIMessageEmbed[];
+    expressions = observable.array<Expression>();
+    reactions: APIMessageReaction[] = [];
 
     edited: boolean;
 
-    space?: Space | null;
-    channel?: Channel | null;
-
-    // This is tracked per message so up arrow can work and other things as well
     editing = false;
 
     constructor(app: AppStore, data: APIMessage) {
         super(app, data);
 
-        this.id = data.id;
+        this._author = this._author ?? null;
+        this._space = this._space ?? null;
+        this._channel = this._channel ?? null;
 
-        this.channelId = data.channelId;
-        if (data.channel) this.channel = this.app.channels.add(data.channel);
-
-        this.channel = this.app.channels.get(this.channelId);
-
-        this.content = data.content;
-        this.createdAt = new Date(data.createdAt);
         this.updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
         this.nonce = data.nonce;
         this.edited = data.edited ?? false;
-        this.channelId = data.channelId;
+        this.embeds = data.embeds ?? [];
+        this.expressions = observable.array<Expression>(
+            this.app.expressions.addAll(data.expressions ?? []),
+        );
+        this.reactions = data.reactions ?? [];
 
-        this.embeds = data.embeds;
+        makeObservable<Message, "_author" | "_space" | "_channel">(this, {
+            ...messageBaseMobxAnnotations,
+            updatedAt: observable,
+            nonce: observable,
+            embeds: observable.shallow,
+            expressions: observable,
+            reactions: observable.shallow,
+            edited: observable,
+            editing: observable,
+            update: action.bound,
+            setEditing: action.bound,
+            setReactions: action.bound,
+            handleReactionAdd: action.bound,
+            handleReactionRemove: action.bound,
+            handleReactionRemoveEmoji: action.bound,
+            handleReactionRemoveAll: action.bound,
+            toggleReaction: action.bound,
+        });
+    }
 
-        this.spaceId = data.spaceId;
-        if (data.space) this.space = this.app.spaces.add(data.space);
+    update(message: APIMessage) {
+        this.id = message.id;
+        this.channelId = message.channelId;
 
-        makeObservable(this);
+        if (isLoadedRelation(message.channel)) {
+            this._channel = this.app.channels.add(message.channel);
+        }
+
+        this.spaceId = message.spaceId ?? null;
+        if (isLoadedRelation(message.space)) {
+            this._space = this.app.spaces.add(message.space);
+        }
+
+        this.content = message.content;
+        this.nonce = message.nonce ?? null;
+        this.embeds = message.embeds ?? this.embeds ?? [];
+        this.expressions = observable.array<Expression>(
+            this.app.expressions.addAll(
+                message.expressions ??
+                    this.expressions.map((exp) => exp.toJSON()) ??
+                    [],
+            ),
+        );
+        this.reactions = message.reactions ?? this.reactions;
+
+        this.createdAt = new Date(message.createdAt);
+        this.updatedAt = message.updatedAt ? new Date(message.updatedAt) : null;
+
+        this.edited = message.edited ?? this.edited;
     }
 
     setEditing(value: boolean) {
         this.editing = value;
     }
 
-    update(message: APIMessage) {
-        Object.assign(this, message);
+    setReactions(reactions: APIMessageReaction[]) {
+        this.reactions = reactions;
+    }
 
-        this.createdAt = new Date(message.createdAt);
-        this.updatedAt = message.updatedAt ? new Date(message.updatedAt) : null;
-        this.edited = message.edited ?? this.edited;
+    handleReactionAdd(payload: APIMessageReactionEvent) {
+        this.setReactions(
+            applyReactionAdd(this.reactions, payload, this.app.account?.id),
+        );
+    }
+
+    handleReactionRemove(payload: APIMessageReactionRemoveEvent) {
+        this.setReactions(
+            applyReactionRemove(this.reactions, payload, this.app.account?.id),
+        );
+    }
+
+    handleReactionRemoveEmoji(payload: APIMessageReactionRemoveEmojiEvent) {
+        this.setReactions(applyReactionRemoveEmoji(this.reactions, payload));
+    }
+
+    handleReactionRemoveAll(_payload: APIMessageReactionRemoveAllEvent) {
+        this.setReactions([]);
+    }
+
+    async toggleReaction(emoji: APIMessageReactionEmoji) {
+        const path = `/channels/${this.channelId}/messages/${this.id}/reactions/@me`;
+        const body = reactionEmojiToBody(emoji);
+        const existing = this.reactions.find((reaction) =>
+            reactionEmojisMatch(reaction.emoji, emoji),
+        );
+        const previous = this.reactions;
+
+        if (existing?.me) {
+            this.handleReactionRemove({
+                channelId: this.channelId,
+                messageId: this.id,
+                userId: this.app.account!.id,
+                emoji,
+            });
+
+            try {
+                await this.app.rest.delete(path, {}, body);
+            } catch {
+                this.setReactions(previous);
+                throw new Error("Failed to remove reaction");
+            }
+
+            return;
+        }
+
+        this.handleReactionAdd({
+            channelId: this.channelId,
+            messageId: this.id,
+            userId: this.app.account!.id,
+            emoji,
+        });
+
+        try {
+            await this.app.rest.put(path, body);
+        } catch {
+            this.setReactions(previous);
+            throw new Error("Failed to add reaction");
+        }
+    }
+
+    async edit(content: string) {
+        const updated = await this.app.rest.patch<APIMessage, { content: string }>(
+            `/channels/${this.channelId}/messages/${this.id}`,
+            { content },
+        );
+
+        if (!content.trim()) {
+            this.channel?.messages.remove(this.id);
+            this.setEditing(false);
+            return updated;
+        }
+
+        this.update(updated);
+        this.setEditing(false);
+        return updated;
     }
 
     async delete() {
         return this.app.rest.delete(
             `/channels/${this.channelId}/messages/${this.id}`,
         );
+    }
+
+    dismiss() {
+        this.channel?.messages.remove(this.id);
     }
 }

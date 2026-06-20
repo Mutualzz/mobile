@@ -1,10 +1,12 @@
 import { Paper } from "@components/Paper";
 import { UserAvatar } from "@components/User/UserAvatar";
+import { useAppStore } from "@hooks/useStores";
 import type { APIMessageEmbed } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
-import { Image, Linking, Pressable, StyleSheet, View } from "react-native";
+import { Image, Linking, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import WebView from "react-native-webview";
+import { MessageGifEmbed } from "./MessageGifEmbed";
 
 function openUrl(url?: string | null) {
     if (!url) return;
@@ -13,11 +15,15 @@ function openUrl(url?: string | null) {
 
 export const MessageEmbed = observer(
     ({ embed }: { embed: APIMessageEmbed }) => {
+        const app = useAppStore();
         const { theme } = useTheme();
+        const { width } = useWindowDimensions();
+        const maxEmbedWidth = Math.min(width - 80, 560);
+        const youtubeHeight = Math.round(maxEmbedWidth * (9 / 16));
 
         if (embed.spotify) {
             return (
-                <View style={styles.webviewWrap}>
+                <View style={[styles.webviewWrap, { width: maxEmbedWidth, height: 80 }]}>
                     <WebView
                         testID="embed-webview"
                         source={{ uri: embed.spotify.embedUrl }}
@@ -34,7 +40,13 @@ export const MessageEmbed = observer(
 
         if (embed.youtube) {
             return (
-                <View style={[styles.webviewWrap, styles.youtubeWrap]}>
+                <View
+                    style={[
+                        styles.webviewWrap,
+                        styles.youtubeWrap,
+                        { width: maxEmbedWidth, height: youtubeHeight },
+                    ]}
+                >
                     <WebView
                         testID="embed-webview"
                         source={{ uri: embed.youtube.embedUrl }}
@@ -47,10 +59,39 @@ export const MessageEmbed = observer(
             );
         }
 
+        if (embed.type === "gifv") {
+            const mediaUrl = embed.media || embed.image || embed.url || "";
+            const gifUrl = embed.url ?? "";
+            const isFavorited =
+                app.settings?.favoriteGifs?.some((f) =>
+                    f.startsWith(gifUrl),
+                ) ?? false;
+
+            const handleToggleFavorite = () => {
+                if (!gifUrl) return;
+                const preview = embed.image ?? embed.media ?? "";
+                const entry = preview ? `${gifUrl}|${preview}` : gifUrl;
+                app.settings?.toggleFavoriteGif(entry);
+            };
+
+            if (mediaUrl) {
+                return (
+                    <MessageGifEmbed
+                        mediaUrl={mediaUrl}
+                        imageUrl={embed.image}
+                        pageUrl={embed.url}
+                        isFavorited={isFavorited}
+                        onToggleFavorite={handleToggleFavorite}
+                    />
+                );
+            }
+        }
+
         return (
             <Paper
                 style={{
                     width: "100%",
+                    maxWidth: maxEmbedWidth,
                     flexDirection: "column",
                     borderRadius: 8,
                     padding: 8,
@@ -110,16 +151,11 @@ const styles = StyleSheet.create({
     },
 
     webviewWrap: {
-        width: 400,
-        height: 80,
         borderRadius: 8,
         overflow: "hidden",
     },
 
-    youtubeWrap: {
-        width: 560,
-        height: 315,
-    },
+    youtubeWrap: {},
 
     webview: {
         flex: 1,

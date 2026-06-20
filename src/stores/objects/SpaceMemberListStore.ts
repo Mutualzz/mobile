@@ -6,7 +6,6 @@ import { SpaceMember } from "@stores/objects/SpaceMember";
 import capitalize from "lodash/capitalize";
 import { makeAutoObservable } from "mobx";
 
-// TODO: Add types for this store
 export class SpaceMemberListStore {
     private readonly logger = new Logger({
         tag: "SpaceMemberListStore",
@@ -34,7 +33,7 @@ export class SpaceMemberListStore {
         this.memberCount = memberCount;
         this.computeListData(ops);
 
-        makeAutoObservable(this);
+        makeAutoObservable(this, {}, { autoBind: true });
     }
 
     update(data: any) {
@@ -46,140 +45,132 @@ export class SpaceMemberListStore {
         this.computeListData(ops);
     }
 
-    private computeListData(ops: any) {
-        for (const i of ops) {
-            const { op, items, range, item, index } = i;
-            switch (op) {
-                case "SYNC": {
-                    let listData: {
-                        title: string;
-                        data: { member: SpaceMember; index: number }[];
-                    }[] = [];
+    private getGroupName(group: any) {
+        if (group.id === "online") return "Online";
+        if (group.id === "offline") return "Offline";
+        return group.name;
+    }
 
-                    for (const item of items) {
-                        if ("group" in item) {
-                            listData.push({
-                                title: `${capitalize(item.group.id)}`,
-                                data: [],
-                            });
+    private computeListData(ops: any) {
+        const syncItems: any[] = [];
+        const otherOps: any[] = [];
+
+        for (const op of ops ?? []) {
+            if (op.op === "SYNC") syncItems.push(...(op.items ?? []));
+            else otherOps.push(op);
+        }
+
+        if (syncItems.length > 0) {
+            this.applySyncItems(syncItems);
+        }
+
+        for (const i of otherOps) {
+            const { op, items, range, item, index } = i;
+
+            switch (op) {
+                case "DELETE": {
+                    const groupIndex = range?.[0];
+                    const memberIndex = range?.[1];
+
+                    if (typeof groupIndex !== "number" || !this.list[groupIndex]) {
+                        break;
+                    }
+
+                    const entry = (items ?? [])[0];
+                    if (!entry) break;
+
+                    if ("group" in entry) {
+                        this.list.splice(groupIndex, 1);
+                        break;
+                    }
+
+                    if (typeof memberIndex !== "number") break;
+
+                    this.list[groupIndex].items.splice(memberIndex, 1);
+                    break;
+                }
+                case "UPDATE": {
+                    const groupIndex = range?.[0];
+                    const memberIndex = range?.[1];
+
+                    if (typeof groupIndex !== "number" || !this.list[groupIndex]) {
+                        break;
+                    }
+
+                    const first = (items ?? [])[0];
+                    if (!first) break;
+
+                    if ("group" in first) {
+                        this.list[groupIndex].name = first.group.id;
+                        break;
+                    }
+
+                    const memberKey = first.member?.userId;
+                    if (!memberKey) break;
+
+                    const storeMember = this.space.members.get(memberKey);
+                    storeMember?.update(first.member);
+
+                    if (typeof memberIndex === "number") {
+                        const visibleMember =
+                            this.list[groupIndex].items[memberIndex];
+
+                        if (visibleMember && visibleMember.userId === memberKey) {
+                            visibleMember.update(first.member);
                         } else {
-                            const member = this.space.members.get(
-                                item.member.id,
+                            const idx = this.list[groupIndex].items.findIndex(
+                                (member) => member.userId === memberKey,
                             );
-                            if (member) {
-                                listData[listData.length - 1].data.push({
-                                    member,
-                                    index: item.member.index,
-                                });
-                            } else {
-                                const member = this.space.members.add(
-                                    item.member,
+                            if (idx !== -1) {
+                                this.list[groupIndex].items[idx].update(
+                                    first.member,
                                 );
-                                if (member)
-                                    listData[listData.length - 1].data.push({
-                                        member,
-                                        index: item.member.index,
-                                    });
                             }
                         }
                     }
 
-                    // remove empty groups
-                    listData = listData.filter((i) => i.data.length > 0);
-
-                    // add the number of members in each group to the group name
-                    listData = listData.map((i) => ({
-                        ...i,
-                        title: `${i.title} - ${i.data.length}`,
-                    }));
-
-                    // hide offline group if it has more than 100 members
-                    listData = listData.filter(
-                        (i) =>
-                            !(
-                                i.title.toLowerCase().startsWith("offline") &&
-                                i.data.length >= 100
-                            ),
-                    );
-
-                    this.list = listData.map((i) => ({
-                        name: i.title,
-                        items: i.data
-                            .sort((a, b) => {
-                                const ua = a.member.user?.username;
-                                const ub = b.member.user?.username;
-                                if (ua && ub) {
-                                    return ua.toLowerCase() > ub.toLowerCase()
-                                        ? 1
-                                        : -1;
-                                }
-
-                                return 0;
-                            })
-                            .map((i) => i.member),
-                    }));
-
-                    break;
-                }
-                case "DELETE": {
-                    this.logger.warn("Unimplemented OP DELETE", item);
-                    for (const item of items) {
-                        if ("group" in item) {
-                            this.logger.debug(
-                                `Delete group ${item.group.id} from ${this.id}`,
-                                i,
-                            );
-                            this.list.splice(range[0], 1);
-                        } else {
-                            this.list[range[0]].items.splice(range[1], 1);
-                            this.logger.debug(
-                                `Delete member ${item.member.user.username} from ${this.id}`,
-                                i,
-                            );
-                        }
-                    }
-                    break;
-                }
-                case "UPDATE": {
-                    this.logger.warn("Unimplemented OP UPDATE", item);
-                    for (const item of items) {
-                        if ("group" in item) {
-                            this.list[range[0]].name = item.group.id;
-                            this.logger.debug(
-                                `Update group ${item.group.id} from ${this.id}`,
-                                i,
-                            );
-                        } else {
-                            //   this.listData[range[0]].data[range[1]] = item.member;
-                            this.logger.debug(
-                                `Update member ${item.member.user.username} from ${this.id}`,
-                                i,
-                            );
-                        }
-                    }
                     break;
                 }
                 case "INSERT": {
                     if ("group" in item) {
-                        this.list.splice(index, 0, item.group.id);
-                    } else {
-                        // try to get the existing member
-                        if (item.member.user?.id) {
-                            const member = this.space.members.get(
-                                item.member.user.id,
-                            );
-                            if (member) {
-                                this.list[index].items.push(member);
-                                return;
-                            }
-                        }
+                        const at =
+                            typeof index === "number"
+                                ? index
+                                : (range?.[0] ?? this.list.length);
 
-                        this.list[index].items.splice(
-                            index,
+                        this.list.splice(at, 0, {
+                            name: `${capitalize(item.group.id)}`,
+                            items: [],
+                        });
+                        break;
+                    }
+
+                    const groupIndex = range?.[0] ?? index;
+                    const memberIndex = range?.[1] ?? 0;
+
+                    if (typeof groupIndex !== "number" || !this.list[groupIndex]) {
+                        break;
+                    }
+
+                    const memberKey = item.member?.userId;
+                    let memberObj = memberKey
+                        ? this.space.members.get(memberKey)
+                        : undefined;
+
+                    if (memberObj) {
+                        memberObj.update(item.member);
+                    } else {
+                        memberObj = this.space.members.add(item.member);
+                    }
+
+                    if (memberObj) {
+                        this.list[groupIndex].items.splice(
+                            memberIndex,
                             0,
-                            new SpaceMember(this.app, this.space, item.member),
+                            memberObj,
                         );
                     }
+
                     break;
                 }
                 default: {
@@ -188,5 +179,76 @@ export class SpaceMemberListStore {
                 }
             }
         }
+    }
+
+    private applySyncItems(items: any[]) {
+        let listData: {
+            id: string;
+            title: string;
+            data: { member: SpaceMember; index: number }[];
+        }[] = [];
+
+        for (const entry of items) {
+            if ("group" in entry) {
+                listData.push({
+                    id: entry.group.id,
+                    title: this.getGroupName(entry.group),
+                    data: [],
+                });
+                continue;
+            }
+
+            if (listData.length === 0) {
+                this.logger.warn("SYNC: member without group header", entry);
+                continue;
+            }
+
+            const memberPayload = entry.member;
+            const memberKey = memberPayload?.userId;
+            if (!memberKey) continue;
+
+            let member = this.space.members.get(memberKey);
+            if (member) {
+                member.update(memberPayload);
+            } else {
+                member = this.space.members.add(memberPayload);
+            }
+
+            if (!member) continue;
+
+            listData[listData.length - 1].data.push({
+                member,
+                index: entry.index,
+            });
+        }
+
+        listData = listData.filter((group) => group.data.length > 0);
+
+        listData = listData.map((group) => ({
+            ...group,
+            title: `${group.title} - ${group.data.length}`,
+        }));
+
+        listData = listData.filter(
+            (group) =>
+                !(
+                    group.id.toLowerCase().startsWith("offline") &&
+                    group.data.length >= 100
+                ),
+        );
+
+        this.list = listData.map((group) => ({
+            name: group.title,
+            items: group.data
+                .slice()
+                .sort((a, b) => {
+                    const ua = a.member.displayName ?? "";
+                    const ub = b.member.displayName ?? "";
+                    return ua.localeCompare(ub, undefined, {
+                        sensitivity: "base",
+                    });
+                })
+                .map((entry) => entry.member),
+        }));
     }
 }

@@ -1,3 +1,4 @@
+import { CustomEmoji } from "@components/Markdown/components/CustomEmoji";
 import { Emoji } from "@components/Markdown/components/Emoji";
 import { Theme } from "@emotion/react";
 import { Token } from "@utils/markdown/types";
@@ -11,7 +12,11 @@ export const renderToken = (theme: Theme, t: Token, key: number) => {
 
     if (t.kind === "emoji") {
         const url = `${TWEMOJI_URL}/${t.hexCode}.svg`;
-        return <Emoji adjust={false} url={url} isEmojiOnly={false} key={key} />;
+        return <Emoji url={url} isEmojiOnly={false} key={key} />;
+    }
+
+    if (t.kind === "customEmoji") {
+        return <CustomEmoji raw={t.raw} isEmojiOnly={false} key={key} />;
     }
 
     return (

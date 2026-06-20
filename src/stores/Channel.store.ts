@@ -4,6 +4,7 @@ import { makeAutoObservable, observable, type ObservableMap } from "mobx";
 import { makePersistable } from "mobx-persist-store";
 import type { AppStore } from "./App.store";
 import { Channel } from "./objects/Channel";
+import { omitBooleanRelations } from "@utils/apiRelations";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export class ChannelStore {
@@ -42,16 +43,40 @@ export class ChannelStore {
                         return map;
                     },
                 },
-                "mostRecentBySpace",
+                {
+                    key: "mostRecentBySpace",
+                    serialize: (map: ObservableMap<string, Snowflake | null>) => {
+                        const obj: Record<string, Snowflake | null> = {};
+                        map.forEach((value, key) => {
+                            obj[key] = value;
+                        });
+                        return obj;
+                    },
+                    deserialize: (obj: Record<string, Snowflake | null>) => {
+                        const map = observable.map<string, Snowflake | null>();
+                        Object.entries(obj || {}).forEach(([key, value]) => {
+                            map.set(key, value);
+                        });
+                        return map;
+                    },
+                },
             ],
             storage: AsyncStorage,
         });
     }
 
     get preferredChannel() {
+        const spaceId = this.app.spaces.activeId ?? "@me";
+
+        if (spaceId === "@me" || this.app.mode === "@me") {
+            return (
+                this.getMostRecentChannelForSpace("@me") ?? this.dms[0]
+            );
+        }
+
         return (
-            this.getMostRecentChannelForSpace(this.app.spaces.activeId ?? "") ??
-            this.getFirstNavigableChannel(this.app.spaces.activeId ?? "")
+            this.getMostRecentChannelForSpace(spaceId) ??
+            this.getFirstNavigableChannel(spaceId, [ChannelType.Text])
         );
     }
 
@@ -83,11 +108,12 @@ export class ChannelStore {
     }
 
     add(channel: APIChannel): Channel {
-        const exists = this.channels.get(channel.id);
+        const data = omitBooleanRelations(channel, ["space", "parent"]);
+        const exists = this.channels.get(data.id);
         if (exists) return exists;
 
-        const newChannel = new Channel(this.app, channel);
-        this.channels.set(channel.id, newChannel);
+        const newChannel = new Channel(this.app, data);
+        this.channels.set(data.id, newChannel);
         return newChannel;
     }
 
@@ -96,7 +122,9 @@ export class ChannelStore {
     }
 
     update(channel: APIChannel) {
-        this.channels.get(channel.id)?.update(channel);
+        this.channels
+            .get(channel.id)
+            ?.update(omitBooleanRelations(channel, ["space", "parent"]));
     }
 
     get(id: Snowflake) {
@@ -113,6 +141,65 @@ export class ChannelStore {
 
     get count() {
         return this.channels.size;
+    }
+
+    get dms() {
+        const dms = this.all.filter(
+            (ch) => ch.type === ChannelType.DM || ch.type === ChannelType.GroupDM,
+        );
+
+        return dms.slice().sort((a, b) => {
+            const aMentions = this.app.readStates.get(a.id)?.mentionCount ?? 0;
+            const bMentions = this.app.readStates.get(b.id)?.mentionCount ?? 0;
+            if (aMentions > 0 !== bMentions > 0) return bMentions > 0 ? 1 : -1;
+
+            const aUnread = this.app.readStates.get(a.id)?.isUnread ? 1 : 0;
+            const bUnread = this.app.readStates.get(b.id)?.isUnread ? 1 : 0;
+            if (aUnread !== bUnread) return bUnread - aUnread;
+
+            const aTime =
+                a.lastMessage?.createdAt?.getTime() ?? a.createdAt.getTime();
+            const bTime =
+                b.lastMessage?.createdAt?.getTime() ?? b.createdAt.getTime();
+            return bTime - aTime;
+        });
+    }
+
+    getDMChannel(userOne: Snowflake, userTwo: Snowflake) {
+        return this.all
+            .filter((ch) => ch.type === ChannelType.DM)
+            .find(
+                (ch) =>
+                    ch.recipientIds?.includes(userOne) &&
+                    ch.recipientIds?.includes(userTwo),
+            );
+    }
+
+    async openDM(recipientId: Snowflake): Promise<Channel> {
+        const meId = this.app.account!.id;
+        const existing = this.getDMChannel(meId, recipientId);
+        if (existing) {
+            this.setActive(existing.id);
+            this.setMostRecentChannelForSpace("@me", existing.id);
+            return existing;
+        }
+
+        const data = await this.app.rest.post<
+            APIChannel,
+            { recipientId: Snowflake }
+        >(`/channels/@me`, { recipientId });
+
+        const channel = this.add(data);
+        this.setActive(channel.id);
+        this.setMostRecentChannelForSpace("@me", channel.id);
+        return channel;
+    }
+
+    clear() {
+        this.active = null;
+        this.activeId = undefined;
+        this.mostRecentBySpace.clear();
+        this.channels.clear();
     }
 
     has(id: string) {
@@ -140,25 +227,40 @@ export class ChannelStore {
         const space = this.app.spaces.get(spaceId);
         if (!space) return [];
 
-        const allChannels = space.channels;
-        const collapsedCategories =
-            this.collapsedCategories.get(spaceId) || new Set();
+        const me = space.members.me;
+        if (!me) return [];
 
-        return allChannels.filter((channel, currentIndex) => {
-            if (channel.type === ChannelType.Category) return true;
+        const all = space.channels;
+        const collapsed =
+            this.collapsedCategories.get(spaceId) || new Set<string>();
 
-            if (types && types.length > 0 && !types.includes(channel.type))
-                return false;
-
-            const parentCategoryId = this.findParentCategoryId(
-                allChannels,
-                currentIndex,
-            );
-
-            if (!parentCategoryId) return true;
-
-            return !collapsedCategories.has(parentCategoryId);
+        const viewableNonCats = all.filter((ch) => {
+            if (ch.type === ChannelType.Category) return false;
+            if (types && types.length && !types.includes(ch.type)) return false;
+            return me.canViewChannel(ch);
         });
+
+        const categoryIdsToShow = new Set(
+            viewableNonCats
+                .map((c) => c.parentId)
+                .filter((id): id is string => Boolean(id)),
+        );
+
+        const visibleNonCats = viewableNonCats.filter((ch) => {
+            const parentId = ch.parentId ?? null;
+            return !(parentId && collapsed.has(parentId));
+        });
+
+        const visibleCategories = all.filter((ch) => {
+            if (ch.type !== ChannelType.Category) return false;
+
+            const hasVisibleChildren = categoryIdsToShow.has(ch.id);
+            if (hasVisibleChildren) return true;
+
+            return me.canViewChannel(ch);
+        });
+
+        return this.sortPosition([...visibleCategories, ...visibleNonCats]);
     }
 
     compareChannels = (a: Channel, b: Channel): number =>
@@ -175,13 +277,13 @@ export class ChannelStore {
 
     getFirstNavigableChannel(
         spaceId: string,
-        types?: ChannelType[],
+        types: ChannelType[] = [ChannelType.Text],
     ): Channel | undefined {
-        const visibleChannels = this.getSpaceVisibleChannels(spaceId);
+        const visibleChannels = this.getSpaceVisibleChannels(spaceId, types);
 
         return visibleChannels.find((channel) => {
             if (channel.type === ChannelType.Category) return false;
-            if (types && types.length > 0) return types.includes(channel.type);
+            if (types.length > 0) return types.includes(channel.type);
             return true;
         });
     }

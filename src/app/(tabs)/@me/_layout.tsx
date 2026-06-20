@@ -1,35 +1,27 @@
-import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
-import { Box, Typography } from "@mutualzz/ui-native";
-import { Slot } from "expo-router";
+import { Stack } from "expo-router";
+import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MeLayout = () => {
     const app = useAppStore();
-    const insets = useSafeAreaInsets();
 
     useEffect(() => {
-        if (app.mode === "spaces" || app.mode === "feed") app.resetMode();
+        app.setMode("@me");
+
+        return () => {
+            if (app.mode === "@me") app.resetMode();
+        };
     }, []);
 
     return (
-        <Box style={{ flexDirection: "column", flex: 1 }}>
-            <Paper
-                style={{
-                    flexDirection: "row",
-                    paddingTop: insets.top,
-                    paddingLeft: insets.left + 12,
-                    paddingBottom: 8,
-                }}
-            >
-                <Typography level="h4" weight="condensedBold">
-                    Mutuals
-                </Typography>
-            </Paper>
-            <Slot />
-        </Box>
+        <Stack
+            screenOptions={{
+                headerShown: false,
+                animation: "slide_from_right",
+            }}
+        />
     );
 };
 
-export default MeLayout;
+export default observer(MeLayout);

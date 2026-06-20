@@ -27,6 +27,8 @@ export const compareChannels = (a: Channel, b: Channel): number => {
     return (a.position ?? -1) - (b.position ?? -1);
 };
 
+const modeToPath = (mode: AppMode) => `/${mode}` as const;
+
 export const switchMode = (
     app: AppStore,
     router?: ReturnType<typeof useRouter>,
@@ -35,22 +37,26 @@ export const switchMode = (
     if (!router) return;
 
     const target =
-        targetMode ||
-        (app.mode === "feed"
-            ? "/spaces"
-            : app.mode === "spaces"
-              ? "/feed"
-              : app.account
-                ? app.settings?.preferredMode === "feed"
-                    ? "/feed"
-                    : "/spaces"
-                : null);
+        targetMode != null
+            ? modeToPath(targetMode)
+            : app.mode === "feed"
+              ? "/spaces"
+              : app.mode === "spaces"
+                ? "/feed"
+                : app.account
+                  ? modeToPath(
+                        app.settings?.preferredMode === "feed"
+                            ? "feed"
+                            : "spaces",
+                    )
+                  : null;
 
     if (!target) return;
 
-    router.replace(`/${target}`);
+    router.replace(target);
 };
 
 export * from "./emojis";
 export * from "./i18n";
 export * from "./ObservableOrderedSet";
+export * from "./navigation";
