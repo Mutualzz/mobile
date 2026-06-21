@@ -27,6 +27,11 @@ import { ReadStateStore } from "@stores/ReadState.store";
 import { RelationshipStore } from "@stores/Relationship.store";
 import { ProfileStore } from "@stores/Profile.store";
 import { TypingStore } from "@stores/Typing.store";
+import { PresenceStore } from "@stores/Presence.store";
+import { CustomStatusStore } from "@stores/CustomStatus.store";
+import { VoiceStore } from "@stores/Voice.store";
+import { VoiceStatesStore } from "@stores/VoiceStates.store";
+import type { User } from "@stores/objects/User";
 
 export class AppStore {
     isGatewayReady = false;
@@ -34,6 +39,10 @@ export class AppStore {
     hideSwitcher = false;
     token: string | null = null;
     account: AccountStore | null = null;
+    presence = new PresenceStore();
+    customStatus = new CustomStatusStore();
+    voice = new VoiceStore(this);
+    voiceStates = new VoiceStatesStore(this);
     channels = new ChannelStore(this);
     gateway = new GatewayStore(this);
     drafts = new DraftStore();
@@ -90,6 +99,36 @@ export class AppStore {
 
     get isReady() {
         return !this.isAppLoading && this.isGatewayReady;
+    }
+
+    getSuggestedGroupDMRecipients(): User[] {
+        const relationships = new Set(
+            this.relationships.all
+                .map((rel) => rel.otherUser)
+                .filter((user): user is User => !!user),
+        );
+
+        const otherUsers = new Set(
+            this.channels.dms.flatMap(
+                (dm) =>
+                    dm.recipients?.filter(
+                        (rcp) => rcp.id !== this.account?.id,
+                    ) ?? [],
+            ),
+        );
+
+        const mutualSpaceUsers = new Set(
+            this.spaces.all.flatMap((space) =>
+                space.members.all
+                    .map((member) => member.user)
+                    .filter((user): user is User => !!user)
+                    .filter((user) => user.id !== this.account?.id),
+            ),
+        );
+
+        return Array.from(
+            new Set([...relationships, ...otherUsers, ...mutualSpaceUsers]),
+        );
     }
 
     setDontShowLinkWarning(val: boolean) {
@@ -161,6 +200,9 @@ export class AppStore {
         this.expressions.clear();
         this.readStates.clear();
         this.relationships.clear();
+        this.presence.clear();
+        this.customStatus.clear();
+        this.voiceStates.clear();
         secureStorageAdapter.clear();
     }
 

@@ -9,6 +9,7 @@ import {
   SmileyIcon,
   XIcon,
 } from "phosphor-react-native";
+import { useKeyboardVisible } from "@hooks/useKeyboardOffset";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType, MessageType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
@@ -23,6 +24,9 @@ import type { Selection } from "@utils/markdown/types";
 import type { PickerEmoji, SkinTone } from "@utils/emojis/emojiPickerData";
 import { unifiedToEmoji } from "@utils/emojis/unified";
 import Snowflake from "@utils/Snowflake";
+import { createSystemMessage } from "@utils/index";
+import { messageFlags } from "@mutualzz/bitfield";
+import { HttpException, HttpStatusCode } from "@mutualzz/types";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Image } from "react-native";
@@ -38,6 +42,7 @@ export const MessageInput = observer(({ channel }: Props) => {
   const app = useAppStore();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const keyboardVisible = useKeyboardVisible();
   const [content, setContent] = useState("");
   const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
   const [stickers, setStickers] = useState<Expression[]>([]);
@@ -59,6 +64,8 @@ export const MessageInput = observer(({ channel }: Props) => {
   const meId = app.account?.id;
   const iBlockedThem =
     !!relationship?.isBlocked && relationship.userId === meId;
+  const theyBlockedMe =
+    !!relationship?.isBlocked && relationship.userId !== meId;
 
   const space =
     app.spaces.get(channel.spaceId ?? "") ?? app.spaces.active ?? null;
@@ -91,7 +98,7 @@ export const MessageInput = observer(({ channel }: Props) => {
     if (editingMessage || denySendingMessages) return;
 
     if (!typingCooldownRef.current) {
-      void app.rest.post(`/channels/${channel.id}/typing`).catch(() => {});
+      void app.rest.post(`/channels/${channel.id}/typing`);
     }
 
     if (typingCooldownRef.current) {
@@ -182,9 +189,12 @@ export const MessageInput = observer(({ channel }: Props) => {
       };
 
       try {
-        setContent("");
-        setSelection({ start: 0, end: 0 });
-        setStickers([]);
+        if (isDM && theyBlockedMe) {
+          throw new HttpException(
+            HttpStatusCode.Forbidden,
+            "You cannot message this person",
+          );
+        }
 
         await channel.sendMessage(body, msg);
       } catch (e) {
@@ -196,9 +206,17 @@ export const MessageInput = observer(({ channel }: Props) => {
               : "Unknown error";
 
         msg.fail(error);
+
+        const sysMessage = await createSystemMessage(
+          app,
+          channel.id,
+          error,
+          messageFlags.Ephemeral,
+        );
+        if (sysMessage) channel.messages.add(sysMessage);
       }
     },
-    [app.account, app.queue, channel],
+    [app.account, app.queue, channel, isDM, theyBlockedMe],
   );
 
   const sendMessage = useCallback(async () => {
@@ -208,7 +226,15 @@ export const MessageInput = observer(({ channel }: Props) => {
     }
 
     if (!canSubmit()) return;
-    await sendContent(content, stickers);
+
+    const text = content;
+    const stickerList = stickers;
+
+    setContent("");
+    setSelection({ start: 0, end: 0 });
+    setStickers([]);
+
+    await sendContent(text, stickerList);
   }, [canSubmit, content, editingMessage, saveEdit, sendContent, stickers]);
 
   const handleSelectEmoji = useCallback(
@@ -231,6 +257,9 @@ export const MessageInput = observer(({ channel }: Props) => {
   const handleSelectGif = useCallback(
     (gif: GifResult) => {
       if (denySendingMessages || editingMessage) return;
+      setContent("");
+      setSelection({ start: 0, end: 0 });
+      setStickers([]);
       void sendContent(resolveGifSendUrl(gif));
     },
     [denySendingMessages, editingMessage, sendContent],
@@ -283,9 +312,14 @@ export const MessageInput = observer(({ channel }: Props) => {
         flexShrink: 0,
         flexGrow: 0,
         paddingHorizontal: 12,
-        paddingBottom: insets.bottom + 12,
+        paddingBottom: keyboardVisible
+          ? insets.bottom + 36
+          : insets.bottom + 12,
         paddingTop: editingMessage ? 0 : 12,
-        borderTopWidth: 0,
+        borderTopWidth: keyboardVisible ? 1 : 0,
+        borderTopColor: keyboardVisible
+          ? `${theme.colors.neutral}33`
+          : "transparent",
         borderLeftWidth: 0,
         borderRightWidth: 0,
         borderBottomWidth: 0,
@@ -383,6 +417,7 @@ export const MessageInput = observer(({ channel }: Props) => {
         <MarkdownInput
           value={content}
           onChange={handleContentChange}
+          onSubmit={() => void sendMessage()}
           selection={selection}
           onChangeSelection={setSelection}
           channelId={channel.id}

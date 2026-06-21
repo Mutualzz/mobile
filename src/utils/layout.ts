@@ -12,21 +12,14 @@ export const getFloatingTabBarInset = (insets: EdgeInsets) =>
 export function useIsTabBarHidden() {
     const segments: string[] = useSegments();
 
-    const spacesIndex = segments.indexOf("spaces");
-    const meIndex = segments.indexOf("@me");
-
     const inSpaceChannel =
-        spacesIndex !== -1 && segments.length > spacesIndex + 2;
+        segments.includes("spaces") && segments.includes("channel");
 
+    const inSpaceSettings =
+        segments.includes("spaces") && segments.includes("settings");
+
+    const meIndex = segments.indexOf("@me");
     const inDMChannel = meIndex !== -1 && segments.length > meIndex + 1;
 
-    return inSpaceChannel || inDMChannel;
-}
-
-export function useHideSpacesSidebar() {
-    const segments: string[] = useSegments();
-
-    const spacesIndex = segments.indexOf("spaces");
-
-    return spacesIndex !== -1 && segments.length > spacesIndex + 2;
+    return inSpaceChannel || inDMChannel || inSpaceSettings;
 }

@@ -34,15 +34,11 @@ const SpaceSettingsIndex = () => {
         <Screen
             style={{
                 flexDirection: "column",
-                paddingVertical: 16,
                 gap: 16,
+                paddingBottom: 16,
             }}
         >
-            <SpaceSettingsHeader
-                title="Space Settings"
-                showBack
-                onClose={() => navigate(`/(tabs)/spaces/${spaceId}`)}
-            />
+            <SpaceSettingsHeader title="Space Settings" showBack />
 
             <Paper
                 style={{

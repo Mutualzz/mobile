@@ -24,6 +24,11 @@ import {
   GatewayOpcodes,
   ChannelType,
   type Snowflake,
+  type PresenceActivityEmoji,
+  type PresenceStatus,
+  type CustomStatusSchedule,
+  type PresenceSchedule,
+  type PresencePayload,
 } from "@mutualzz/types";
 import { type Codec, createCodec, type Encoding } from "@utils/codec";
 import {
@@ -52,6 +57,12 @@ export type GatewayStatus = (typeof GatewayStatus)[keyof typeof GatewayStatus];
 const RECONNECT_TIMEOUT = 5000;
 
 type Timer = ReturnType<typeof setTimeout>;
+
+interface PresenceUpdateDraft {
+  status: PresenceStatus;
+  device: "mobile" | "web" | "desktop";
+  activities?: PresencePayload["activities"];
+}
 
 export class GatewayStore {
   socket: WebSocket | null = null;
@@ -88,9 +99,15 @@ export class GatewayStore {
     Promise<Channel | undefined>
   >();
   private subscribedUserIds = new Set<string>();
+  private presenceLoopInterval: Timer | null = null;
+  private lastPresenceHash: string | null = null;
 
   constructor(private readonly app: AppStore) {
     makeAutoObservable(this);
+    this.app.customStatus.onScheduledCustomStatusExpire =
+      this.handleScheduledCustomStatusExpired;
+    this.app.presence.onScheduledStatusExpire =
+      this.handleScheduledStatusExpired;
   }
 
   requestMemberListRange(spaceId: string, channelId: string, pageSize = 50) {
@@ -108,7 +125,7 @@ export class GatewayStore {
 
       if (listStore)
         loadedCount = listStore.list.reduce(
-          (acc: number, g) => acc + (g.items?.length ?? 0),
+          (acc: number, g: any) => acc + (g.items?.length ?? 0),
           0,
         );
       else {
@@ -266,6 +283,84 @@ export class GatewayStore {
         d: { userId },
       });
     }
+  }
+
+  sendPresenceUpdate(
+    presence: PresenceUpdateDraft,
+    opts?: { persist?: boolean },
+  ) {
+    this.send({
+      op: GatewayOpcodes.PresenceUpdate,
+      d: { presence, persist: !!opts?.persist },
+    });
+  }
+
+  setCustomStatus(
+    text: string,
+    opts?: { persist?: boolean; emoji?: PresenceActivityEmoji | null },
+  ) {
+    this.app.customStatus.set(text, opts?.emoji);
+    this.pushCustomStatusPresenceUpdate({ persist: Boolean(opts?.persist) });
+  }
+
+  clearCustomStatus() {
+    this.app.customStatus.clear();
+    this.pushCustomStatusPresenceUpdate();
+  }
+
+  scheduleCustomStatus(opts: {
+    text: string;
+    emoji?: PresenceActivityEmoji | null;
+    durationMs: number;
+  }) {
+    this.send({
+      op: GatewayOpcodes.CustomStatusScheduleSet,
+      d: {
+        text: opts.text,
+        emoji: opts.emoji ?? null,
+        durationMs: opts.durationMs,
+      },
+    });
+  }
+
+  clearScheduledCustomStatus() {
+    this.send({
+      op: GatewayOpcodes.CustomStatusScheduleClear,
+      d: {},
+    });
+  }
+
+  private pushCustomStatusPresenceUpdate(opts?: { persist?: boolean }) {
+    const userId = this.app.account?.id;
+    if (!userId) return;
+
+    const customActivity = this.app.customStatus.activity;
+    const status = this.getEffectiveStatus();
+    const prev = this.app.presence.get(userId);
+
+    const draft: PresenceUpdateDraft = {
+      status,
+      device: "mobile",
+      activities: customActivity
+        ? [
+            customActivity,
+            ...(prev?.activities?.filter((a) => a.type !== "custom") ?? []),
+          ]
+        : (prev?.activities?.filter((a) => a.type !== "custom") ?? []),
+    };
+
+    this.lastPresenceHash = null;
+    this.sendPresenceUpdate(draft, opts);
+  }
+
+  private getEffectiveStatus(): PresenceStatus {
+    const userId = this.app.account?.id;
+    if (!userId) return "online";
+
+    const scheduled = this.app.presence.scheduledStatus;
+    if (scheduled && scheduled.until > Date.now()) return scheduled.status;
+
+    return this.app.presence.get(userId)?.status ?? "online";
   }
 
   private setupListeners() {
@@ -449,6 +544,27 @@ export class GatewayStore {
     this.dispatchHandlers.set(
       GatewayDispatchEvents.TypingStart,
       this.onTypingStart,
+    );
+
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.PresenceUpdate,
+      this.onPresenceUpdate,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.PresenceScheduleUpdate,
+      this.onPresenceScheduleUpdate,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.CustomStatusScheduleUpdate,
+      this.onCustomStatusScheduleUpdate,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.VoiceStateSync,
+      this.onVoiceStateSync,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.VoiceStateUpdate,
+      this.onVoiceStateUpdate,
     );
   }
 
@@ -653,6 +769,7 @@ export class GatewayStore {
     this.sessionId = null;
     this.sequence = 0;
     this.readyState = GatewayStatus.CLOSED;
+    this.stopPresenceLoop();
   };
 
   private startHeartbeater = () => {
@@ -760,6 +877,7 @@ export class GatewayStore {
       settings,
       expressions,
       readStates,
+      mergedPresences,
     } = payload;
 
     this.sessionId = sessionId;
@@ -773,9 +891,22 @@ export class GatewayStore {
     this.app.expressions.addAll(expressions);
     this.app.readStates.addAll(readStates);
 
+    if (mergedPresences) {
+      for (const [userId, presence] of Object.entries(mergedPresences)) {
+        this.app.presence.upsert(userId, presence);
+      }
+    }
+
     this.reconnectTimeout = 0;
     this.resubscribeUsers();
     this.app.setGatewayReady(true);
+    this.startPresenceLoop();
+
+    const selfUserId = this.app.account?.id;
+    if (selfUserId) {
+      this.app.presence.rearmScheduledStatusTimer();
+      this.app.customStatus.rearmScheduledCustomStatusTimer();
+    }
 
     const space =
       this.app.spaces.mostRecentSpace || this.app.spaces.positioned[0];
@@ -1202,5 +1333,116 @@ export class GatewayStore {
     userId: Snowflake;
   }) => {
     this.app.typing.startedTyping(payload.channelId, payload.userId);
+  };
+
+  private onPresenceUpdate = (payload: any) => {
+    if (payload?.userId && payload?.presence) {
+      this.app.presence.upsert(payload.userId, payload.presence);
+      return;
+    }
+
+    const list = payload?.presences;
+    if (Array.isArray(list)) {
+      for (const item of list) {
+        if (!item?.userId || !item?.presence) continue;
+        this.app.presence.upsert(item.userId, item.presence);
+      }
+    }
+  };
+
+  private onPresenceScheduleUpdate = (payload: any) => {
+    const userId = payload?.userId;
+    const schedule: PresenceSchedule | null = payload?.schedule ?? null;
+    const selfId = this.app.account?.id;
+    if (!selfId || !userId || String(userId) !== String(selfId)) return;
+    this.app.presence.setScheduledStatus(schedule);
+  };
+
+  private onCustomStatusScheduleUpdate = (payload: any) => {
+    const userId = payload?.userId;
+    const schedule: CustomStatusSchedule | null = payload?.schedule ?? null;
+    const selfId = this.app.account?.id;
+    if (!selfId || !userId || String(userId) !== String(selfId)) return;
+    this.app.customStatus.setScheduledCustomStatus(schedule);
+    this.lastPresenceHash = null;
+  };
+
+  private handleScheduledCustomStatusExpired = (
+    schedule: CustomStatusSchedule,
+  ) => {
+    const revertTo = schedule.revertTo;
+    if (revertTo) this.app.customStatus.setSnapshot(revertTo);
+    else this.app.customStatus.clear();
+
+    this.lastPresenceHash = null;
+    this.clearScheduledCustomStatus();
+    if (!this.socket || this.readyState !== GatewayStatus.OPEN) return;
+    this.pushCustomStatusPresenceUpdate();
+  };
+
+  private handleScheduledStatusExpired = (schedule: PresenceSchedule) => {
+    const userId = this.app.account?.id;
+    if (!userId) return;
+
+    const revertTo = schedule.revertTo ?? "online";
+    const prev = this.app.presence.get(userId);
+
+    this.app.presence.upsert(userId, {
+      ...(prev ?? { activities: [] }),
+      status: revertTo,
+      device: "mobile",
+      updatedAt: Date.now(),
+    });
+
+    this.lastPresenceHash = null;
+    this.sendPresenceUpdate({
+      status: revertTo,
+      device: "mobile",
+      activities: prev?.activities ?? [],
+    });
+  };
+
+  private startPresenceLoop() {
+    if (this.presenceLoopInterval) return;
+
+    const tick = () => {
+      if (!this.socket || this.readyState !== GatewayStatus.OPEN) return;
+      if (!this.app.account?.id) return;
+
+      const draft: PresenceUpdateDraft = {
+        status: this.getEffectiveStatus(),
+        device: "mobile",
+        activities: this.app.customStatus.activity
+          ? [this.app.customStatus.activity]
+          : [],
+      };
+
+      const draftHash = JSON.stringify(draft);
+      if (this.lastPresenceHash === draftHash) return;
+      this.lastPresenceHash = draftHash;
+      this.sendPresenceUpdate(draft);
+    };
+
+    this.presenceLoopInterval = setInterval(tick, 15_000);
+    tick();
+  }
+
+  private stopPresenceLoop() {
+    if (this.presenceLoopInterval) {
+      clearInterval(this.presenceLoopInterval);
+      this.presenceLoopInterval = null;
+    }
+    this.lastPresenceHash = null;
+  }
+
+  private onVoiceStateSync = (payload: {
+    channelId: Snowflake;
+    states: any[];
+  }) => {
+    this.app.voice.onVoiceStateSync(payload);
+  };
+
+  private onVoiceStateUpdate = (payload: any) => {
+    this.app.voice.onVoiceStateUpdate(payload);
   };
 }

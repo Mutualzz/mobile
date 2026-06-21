@@ -1,6 +1,7 @@
 import { NavigationWithTheme } from "@components/NavigationWithTheme";
 import { AppTheme } from "@contexts/AppTheme.context";
 import { ModalProvider } from "@contexts/Modal.context";
+import { usePushNotifications } from "@hooks/usePushNotifications";
 import { useAppStore } from "@hooks/useStores";
 import { Logger } from "@mutualzz/logger";
 import { GatewayCloseCodes } from "@mutualzz/types";
@@ -29,6 +30,8 @@ const Root = () => {
     const logger = new Logger({
         tag: "App",
     });
+
+    usePushNotifications(!!app.token);
 
     useEffect(() => {
         (async () => {

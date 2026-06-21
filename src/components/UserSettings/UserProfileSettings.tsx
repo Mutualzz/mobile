@@ -228,7 +228,14 @@ export const UserProfileSettings = observer(() => {
                     const Icon = card.icon;
 
                     return (
-                        <Pressable key={card.method} onPress={uploadAvatar}>
+                        <Pressable
+                            key={card.method}
+                            onPress={() =>
+                                card.method === "upload"
+                                    ? uploadAvatar()
+                                    : navigate("/(tabs)/settings/avatar-editor")
+                            }
+                        >
                             <Paper
                                 variant="soft"
                                 style={{

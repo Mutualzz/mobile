@@ -1,17 +1,25 @@
 import { Logger } from "@mutualzz/logger";
-import type { Snowflake } from "@mutualzz/types";
-import { type APIChannel, type APIMessage, ChannelType } from "@mutualzz/types";
+import {
+  type APIChannel,
+  type APIMessage,
+  CDNRoutes,
+  type ChannelIconFormat,
+  ChannelType,
+  ImageFormat,
+  type Sizes,
+  type Snowflake,
+} from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
 import { MessageStore } from "@stores/Message.store";
-import { type Message } from "@stores/objects/Message";
 import type { Space } from "@stores/objects/Space";
-import type { User } from "@stores/objects/User";
-import { isLoadedRelation, omitBooleanRelations } from "@utils/apiRelations";
-import { action, computed, makeObservable, observable } from "mobx";
+import { makeAutoObservable, observable } from "mobx";
 import type { QueuedMessage } from "./QueuedMessage";
 import { ChannelPermissionOverwrite } from "./ChannelPermissionOverwrite";
 import { BitField, channelFlags, type ChannelFlags } from "@mutualzz/bitfield";
+import { REST } from "@stores/REST.store";
+import type { User } from "./User";
 import { murmur } from "@utils/hash";
+import type { Message } from "./Message";
 
 function getOverwriteKey(ow: ChannelPermissionOverwrite): string {
   if (ow.roleId != null) return `r:${ow.roleId}`;
@@ -21,29 +29,31 @@ function getOverwriteKey(ow: ChannelPermissionOverwrite): string {
 }
 
 export class Channel {
-  static readonly DEFAULT_LIST_ID = "everyone";
   id: Snowflake;
   type: ChannelType;
+
+  icon?: string | null;
   name?: string | null;
   topic?: string | null;
   position: number;
   nsfw: boolean;
+
   createdAt: Date;
   updatedAt: Date;
+
   flags: BitField<ChannelFlags>;
+
   messages: MessageStore;
+
+  lastMessageId?: Snowflake | null;
+
   parentId?: Snowflake | null;
   spaceId?: Snowflake | null;
-  raw: APIChannel;
-  lastMessageId?: Snowflake | null;
-  overwrites = observable.array<ChannelPermissionOverwrite>();
   recipientIds?: Snowflake[] | null;
 
-  _parent!: Channel | null;
-  _space!: Space | null;
-  _lastMessage!: Message | null;
-  _recipients = observable.array<User>();
-
+  ownerId?: Snowflake | null;
+  raw: APIChannel;
+  overwrites = observable.array<ChannelPermissionOverwrite>();
   private readonly logger = new Logger({
     tag: "Channel",
   });
@@ -53,10 +63,6 @@ export class Channel {
     private readonly app: AppStore,
     channel: APIChannel,
   ) {
-    this._parent = null;
-    this._space = null;
-    this._lastMessage = null;
-
     this.id = channel.id;
     this.type = channel.type;
 
@@ -64,33 +70,42 @@ export class Channel {
     this.topic = channel.topic;
 
     this.parentId = channel.parentId;
-    if (isLoadedRelation(channel.parent)) {
-      this._parent = this.app.channels.add(channel.parent);
-    }
+    if (channel.parent) this._parent = this.app.channels.add(channel.parent);
 
     this.spaceId = channel.spaceId;
-    if (isLoadedRelation(channel.space)) {
-      this._space = this.app.spaces.add(channel.space);
-    }
+
+    if (channel.space) this._space = this.app.spaces.add(channel.space);
+
+    this.lastMessageId = channel.lastMessageId;
 
     this.position = channel.position;
+
     this.nsfw = channel.nsfw;
 
     this.flags = BitField.fromString(channelFlags, channel.flags.toString());
 
+    this.icon = channel.icon;
+
     this.createdAt = new Date(channel.createdAt);
     this.updatedAt = new Date(channel.updatedAt);
 
-    this.raw = omitBooleanRelations(channel, ["space", "parent"]);
+    this.raw = channel;
 
     this.messages = new MessageStore(this.app, this.id);
 
     if (channel.messages) this.messages.addAll(channel.messages);
 
-    this.lastMessageId = channel.lastMessageId;
-    if (channel.lastMessage) {
+    if (channel.lastMessage)
       this._lastMessage = this.messages.add(channel.lastMessage);
-    }
+
+    this.recipientIds = channel.recipientIds ?? this.recipientIds ?? null;
+    if (channel.recipients)
+      this._recipients = observable.array(
+        this.app.users.addAll(channel.recipients),
+      );
+
+    this.ownerId = channel.ownerId;
+    if (channel.owner) this._owner = this.app.users.add(channel.owner);
 
     this.overwrites = observable.array(
       (channel.overwrites || []).map(
@@ -98,66 +113,18 @@ export class Channel {
       ),
     );
 
-    this.recipientIds = channel.recipientIds ?? null;
-    if (channel.recipients) {
-      this._recipients.replace(this.app.users.addAll(channel.recipients));
-    }
-
-    makeObservable<this, "_parent" | "_space" | "_lastMessage">(this, {
-      id: observable,
-      type: observable,
-      name: observable,
-      topic: observable,
-      position: observable,
-      nsfw: observable,
-      flags: observable.ref,
-      parentId: observable,
-      spaceId: observable,
-      raw: observable.ref,
-      lastMessageId: observable,
-      overwrites: observable,
-      _parent: observable.ref,
-      _space: observable.ref,
-      _lastMessage: observable.ref,
-      parent: computed,
-      space: computed,
-      lastMessage: computed,
-      listId: computed,
-      hasChildren: computed,
-      hasParent: computed,
-      isDM: computed,
-      isGroupDM: computed,
-      dmRecipient: computed,
-      dmRecipientsList: computed,
-      isTextChannel: computed,
-      isVoiceChannel: computed,
-      isCategory: computed,
-      update: action.bound,
-      setParent: action.bound,
-      getMessages: action.bound,
-      sendMessage: action.bound,
-      delete: action.bound,
-      addRecipient: action.bound,
-      removeRecipient: action.bound,
-      updateLastMessage: action.bound,
-    });
+    makeAutoObservable(this, {}, { autoBind: true });
   }
 
-  get parent(): Channel | null | undefined {
-    if (!this.parentId) return null;
+  _owner?: User | null;
 
-    return (
-      this.app.channels.get(this.parentId) ||
-      this.space?.channels.find((ch) => ch.id === this.parentId) ||
-      this._parent
-    );
+  get owner() {
+    if (!this.ownerId) return null;
+
+    return this.app.users.get(this.ownerId) || this._owner || null;
   }
 
-  get space() {
-    if (!this.spaceId) return null;
-
-    return this.app.spaces.get(this.spaceId) || this._space;
-  }
+  _lastMessage?: Message | null;
 
   get lastMessage() {
     if (this._lastMessage) return this._lastMessage;
@@ -179,9 +146,37 @@ export class Channel {
     }
   }
 
+  _parent?: Channel | null;
+
+  get parent(): Channel | null | undefined {
+    if (!this.parentId) return null;
+
+    return (
+      this.app.channels.get(this.parentId) ||
+      this.space?.channels.find((ch) => ch.id === this.parentId) ||
+      this._parent
+    );
+  }
+
+  _space?: Space | null;
+
+  get space() {
+    if (!this.spaceId) return null;
+
+    return this.app.spaces.get(this.spaceId) || this._space;
+  }
+
+  _recipients = observable.array<User>();
+
+  get recipients() {
+    return this._recipients;
+  }
+
   get listId() {
     const parts: string[] = [];
 
+    // p = parent
+    // c = channel
     const add = (
       prefix: "p" | "c",
       overwrites?: ChannelPermissionOverwrite[] | null,
@@ -200,13 +195,22 @@ export class Channel {
     add("c", this.overwrites);
 
     const sorted = Array.from(new Set(parts)).sort();
-    if (!sorted.length) return Channel.DEFAULT_LIST_ID;
+    if (!sorted.length) return "everyone";
 
     return murmur(sorted.join(","));
   }
 
+  get iconUrl() {
+    if (!this.icon) return null;
+    return Channel.constructIconUrl(
+      this.id,
+      this.icon.startsWith("a_"),
+      this.icon,
+    );
+  }
+
   get hasChildren(): boolean {
-    return this.app.channels.all.some((ch) => ch.parent?.id === this.id);
+    return this.app.channels.all.some((ch) => ch.parentId === this.id);
   }
 
   get hasParent(): boolean {
@@ -214,40 +218,11 @@ export class Channel {
   }
 
   get isDM() {
-    return this.type === ChannelType.DM || this.type === ChannelType.GroupDM;
+    return this.type === ChannelType.DM;
   }
 
   get isGroupDM() {
     return this.type === ChannelType.GroupDM;
-  }
-
-  get dmRecipientsList() {
-    const meId = this.app.account?.id;
-    if (!meId) return this._recipients.slice();
-
-    return this._recipients.filter((user) => user.id !== meId);
-  }
-
-  get dmRecipient() {
-    return this.type === ChannelType.DM ? this.dmRecipientsList[0] : undefined;
-  }
-
-  addRecipient(user: User) {
-    if (!this.recipientIds?.includes(user.id)) {
-      this.recipientIds = [...(this.recipientIds ?? []), user.id];
-    }
-    if (!this._recipients.some((recipient) => recipient.id === user.id)) {
-      this._recipients.push(user);
-    }
-  }
-
-  removeRecipient(userId: Snowflake) {
-    const index = this._recipients.findIndex(
-      (recipient) => recipient.id === userId,
-    );
-    if (index !== -1) this._recipients.splice(index, 1);
-    this.recipientIds =
-      this.recipientIds?.filter((id) => id !== userId) ?? null;
   }
 
   get isTextChannel() {
@@ -262,6 +237,77 @@ export class Channel {
     return this.type === ChannelType.Category;
   }
 
+  get dmRecipients() {
+    const ids = this.recipientIds ?? [];
+    if (!ids.length) return [];
+
+    const meId = this.app.account?.id;
+
+    const filteredIds = ids.filter((id) => id !== meId);
+
+    const fromStore = filteredIds
+      .map((id) => this.app.users.get(id))
+      .filter((u): u is NonNullable<typeof u> => !!u);
+
+    if (fromStore.length) return fromStore;
+
+    return this._recipients.filter((u) => u.id !== meId);
+  }
+
+  get dmRecipientsList() {
+    const ids = this.recipientIds ?? [];
+    if (!ids.length) return [];
+
+    const fromStore = ids
+      .map((id) => this.app.users.get(id))
+      .filter((u) => !!u);
+
+    if (fromStore.length) return fromStore;
+
+    return this._recipients;
+  }
+
+  get dmRecipient() {
+    return this.type === ChannelType.DM ? this.dmRecipients[0] : undefined;
+  }
+
+  get canRedirect() {
+    return !this.isCategory;
+  }
+
+  get voiceStates() {
+    return this.app.voiceStates.getAllByChannel(this.id);
+  }
+
+  static constructIconUrl(
+    channelId: Snowflake,
+    animated = false,
+    hash?: string | null,
+    size: Sizes = 128,
+    format: ChannelIconFormat = ImageFormat.WebP,
+  ) {
+    if (!hash) return null;
+    return REST.makeCDNUrl(
+      CDNRoutes.channelIcon(channelId, hash, format, size, animated),
+    );
+  }
+
+  addRecipient(user: User) {
+    if (!this._recipients.some((r) => r.id === user.id))
+      this._recipients.push(user);
+  }
+
+  removeRecipient(userId: Snowflake) {
+    const idx = this._recipients.findIndex((r) => r.id === userId);
+    if (idx !== -1) this._recipients.splice(idx, 1);
+    this.recipientIds =
+      this.recipientIds?.filter((id) => id !== userId) ?? null;
+  }
+
+  close() {
+    return this.app.channels.closeDM(this.id);
+  }
+
   update(channel: APIChannel) {
     this.type = channel.type;
     this.name = channel.name;
@@ -270,19 +316,20 @@ export class Channel {
     this.nsfw = channel.nsfw;
 
     this.parentId = channel.parentId ?? null;
-    this._parent = isLoadedRelation(channel.parent)
+    this._parent = channel.parent
       ? this.app.channels.add(channel.parent)
       : null;
 
     this.spaceId = channel.spaceId ?? null;
-    this._space = isLoadedRelation(channel.space)
+    this._space = channel.space
       ? this.app.spaces.add(channel.space)
-      : null;
+      : (this.space ?? null);
 
-    this.flags = BitField.fromString(channelFlags, channel.flags.toString());
+    this.icon = channel.icon ?? null;
 
-    this.createdAt = new Date(channel.createdAt);
-    this.updatedAt = new Date(channel.updatedAt);
+    this.recipientIds = channel.recipientIds ?? this.recipientIds ?? null;
+    if (channel.recipients)
+      this._recipients.replace(this.app.users.addAll(channel.recipients));
 
     this.overwrites = observable.array(
       (channel.overwrites || []).map(
@@ -290,16 +337,16 @@ export class Channel {
       ),
     );
 
-    this.raw = omitBooleanRelations(channel, ["space", "parent"]);
+    this.flags = BitField.fromString(channelFlags, channel.flags.toString());
 
-    this.recipientIds = channel.recipientIds ?? this.recipientIds ?? null;
-    if (channel.recipients) {
-      this._recipients.replace(this.app.users.addAll(channel.recipients));
-    }
+    this.createdAt = new Date(channel.createdAt);
+    this.updatedAt = new Date(channel.updatedAt);
 
-    if (channel.lastMessage) {
-      this._lastMessage = this.messages.add(channel.lastMessage);
-    }
+    this.raw = channel;
+
+    this._lastMessage = channel.lastMessage
+      ? this.messages.add(channel.lastMessage)
+      : null;
 
     this.space?.members.me?.invalidateChannelPermCache?.();
   }
@@ -329,7 +376,10 @@ export class Channel {
     around?: string,
   ): Promise<number> {
     return new Promise((resolve, reject) => {
-      if (isInitial && this.hasFetchedInitialMessages) return;
+      if (isInitial && this.hasFetchedInitialMessages) {
+        resolve(Math.min(this.messages.count, limit ?? 50));
+        return;
+      }
 
       let opts: Record<string, any> = {
         limit: limit || 50,
@@ -399,5 +449,9 @@ export class Channel {
       parentOnly,
       spaceId: this.raw.spaceId ?? undefined,
     });
+  }
+
+  toJSON() {
+    return this.raw;
   }
 }

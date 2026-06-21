@@ -1,29 +1,25 @@
 import type {
-  APISpaceMember,
+  APIExpression,
   APISpaceBan,
+  APISpaceMember,
   Snowflake,
+  SpaceIconFormat,
 } from "@mutualzz/types";
 import {
   type APIChannel,
-  type APIExpression,
   type APIInvite,
   type APISpace,
-  type AvatarFormat,
   CDNRoutes,
-  ChannelType,
   ImageFormat,
+  ReadStateType,
   type Sizes,
 } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
-import { SpaceMemberListStore } from "@stores/objects/SpaceMemberListStore";
 import type { User } from "@stores/objects/User";
 import { REST } from "@stores/REST.store";
 import { SpaceMemberStore } from "@stores/SpaceMember.store";
-import { SpaceRoleStore } from "@stores/SpaceRole.store";
 import { asAcronym } from "@utils/index";
-import { isLoadedRelation } from "@utils/apiRelations";
 import {
-  computed,
   makeAutoObservable,
   observable,
   ObservableMap,
@@ -31,9 +27,11 @@ import {
 } from "mobx";
 import type { Channel } from "./Channel";
 import { Invite } from "./Invite";
-import { Expression } from "./Expression";
-import { SpaceBan } from "./SpaceBan";
-import { BitField, spaceFlags, type SpaceFlags } from "@mutualzz/bitfield";
+import { SpaceRoleStore } from "@stores/SpaceRole.store";
+import { BitField, type SpaceFlags, spaceFlags } from "@mutualzz/bitfield";
+import { Expression } from "@stores/objects/Expression";
+import { SpaceBan } from "@stores/objects/SpaceBan";
+import { SpaceMemberListStore } from "@stores/SpaceMemberList.store";
 
 export class Space {
   id: Snowflake;
@@ -45,28 +43,25 @@ export class Space {
 
   flags: BitField<SpaceFlags>;
 
-  invites = observable.map<string, Invite>();
+  invites = observable.map<Snowflake, Invite>();
   bans = observable.map<Snowflake, SpaceBan>();
-  bansLoaded = false;
-  bansLoading = false;
-  invitesLoaded = false;
-  invitesLoading = false;
+
   members: SpaceMemberStore;
   roles: SpaceRoleStore;
   ownerId: Snowflake;
   memberLists = new ObservableMap<string, SpaceMemberListStore>();
-  expressions = observable.map<Snowflake, Expression>();
   raw: APISpace;
+  expressions = observable.map<Snowflake, Expression>();
+  bansLoaded = false;
+  bansLoading = false;
+  invitesLoaded = false;
+  invitesLoading = false;
   private readonly _channels: ObservableSet<string>;
-
-  _owner!: User | null;
 
   constructor(
     private readonly app: AppStore,
     space: APISpace,
   ) {
-    this._owner = null;
-
     this.id = space.id;
     this.name = space.name;
     this.description = space.description;
@@ -77,9 +72,7 @@ export class Space {
     this.invites = observable.map();
 
     this.ownerId = space.ownerId;
-    if (isLoadedRelation(space.owner)) {
-      this._owner = this.app.users.add(space.owner);
-    }
+    if (space.owner) this._owner = this.app.users.add(space.owner);
 
     this.createdAt = new Date(space.createdAt);
     this.updatedAt = new Date(space.updatedAt);
@@ -93,17 +86,16 @@ export class Space {
       space.channels.forEach((channel) => this._channels.add(channel.id));
     }
 
-    if ("roles" in space && space.roles) this.roles.addAll(space.roles);
-
     if ("members" in space && space.members) this.members.addAll(space.members);
+
+    if ("roles" in space && space.roles) this.roles.addAll(space.roles);
 
     this.raw = space;
 
-    makeAutoObservable(this, {
-      _owner: observable.ref,
-      owner: computed,
-    });
+    makeAutoObservable(this, {}, { autoBind: true });
   }
+
+  private _owner?: User | null;
 
   get owner() {
     return this.app.users.get(this.ownerId) || this._owner;
@@ -115,10 +107,6 @@ export class Space {
 
   get banList() {
     return Array.from(this.bans.values());
-  }
-
-  get inviteList() {
-    return Array.from(this.invites.values());
   }
 
   get channels(): Channel[] {
@@ -139,9 +127,7 @@ export class Space {
   }
 
   get firstNavigableChannel() {
-    return this.app.channels.getFirstNavigableChannel(this.id, [
-      ChannelType.Text,
-    ]);
+    return this.channels.find((channel) => channel.isTextChannel);
   }
 
   get visibleChannels() {
@@ -157,12 +143,16 @@ export class Space {
     );
   }
 
+  get inviteList() {
+    return Array.from(this.invites.values());
+  }
+
   static constructIconUrl(
     spaceId: Snowflake,
     animated = false,
     hash?: string | null,
     size: Sizes = 128,
-    format: AvatarFormat = ImageFormat.WebP,
+    format: SpaceIconFormat = ImageFormat.WebP,
   ) {
     if (!hash) return null;
     return REST.makeCDNUrl(
@@ -170,26 +160,34 @@ export class Space {
     );
   }
 
-  updateMemberList(data: any) {
-    const store = this.memberLists.get(data.id);
-    if (store) {
-      store.update(data);
-    } else {
-      this.memberLists.set(
-        data.id,
-        new SpaceMemberListStore(this.app, this, data),
-      );
+  async markAsRead() {
+    const payload = this.channels
+      .map((channel) => {
+        const lastMessage = channel.lastMessage;
+        if (!lastMessage || "status" in lastMessage) return null;
+
+        return {
+          channelId: channel.id,
+          lastMessageId: lastMessage.id,
+          type: ReadStateType.Messages,
+        };
+      })
+      .filter((p) => !!p);
+
+    if (!payload.length) return;
+
+    for (const { channelId, lastMessageId } of payload) {
+      this.app.readStates.updateLocal(channelId, lastMessageId);
     }
+
+    await this.app.readStates.ackBulk(payload);
   }
 
-  getMemberList(id: string): SpaceMemberListStore | undefined {
-    return this.memberLists.get(id);
-  }
-
-  leave() {
-    return this.app.rest.delete<APISpaceMember>(
-      `/spaces/${this.id}/members/@me`,
-    );
+  hasUnread() {
+    return this.channels.some((channel) => {
+      const state = this.app.readStates.get(channel.id);
+      return state?.isUnread;
+    });
   }
 
   async fetchBans(force = false) {
@@ -244,6 +242,32 @@ export class Space {
     return this.bans.has(userId);
   }
 
+  updateMemberList(data: any) {
+    const store = this.memberLists.get(data.id);
+    if (store) {
+      store.update(data);
+    } else {
+      this.memberLists.set(
+        data.id,
+        new SpaceMemberListStore(this.app, this, data),
+      );
+    }
+  }
+
+  getMemberList(id: string): SpaceMemberListStore | undefined {
+    return this.memberLists.get(id);
+  }
+
+  leave() {
+    return this.app.rest.delete<APISpaceMember>(
+      `/spaces/${this.id}/members/@me`,
+    );
+  }
+
+  sortPosition(channels: Channel[]) {
+    return channels.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  }
+
   update(space: APISpace) {
     this.id = space.id;
     this.name = space.name;
@@ -251,9 +275,7 @@ export class Space {
     this.icon = space.icon;
 
     this.ownerId = space.ownerId;
-    if (isLoadedRelation(space.owner)) {
-      this._owner = this.app.users.add(space.owner);
-    }
+    if (space.owner) this._owner = this.app.users.add(space.owner);
 
     this.createdAt = new Date(space.createdAt);
     this.updatedAt = new Date(space.updatedAt);
@@ -293,20 +315,16 @@ export class Space {
     return this.app.rest.delete<{ id: string }>(`/spaces/${this.id}`);
   }
 
-  createChannel(name: string, type: ChannelType, parentId?: string) {
-    return this.app.rest.post<APIChannel>("/channels", {
-      name,
-      type,
-      spaceId: this.id,
-      parentId,
-    });
-  }
-
-  addInvite(invite: APIInvite) {
+  addInvite(invite: APIInvite | Invite) {
     // this.app.invites.add(invite); // TODO: Add to global store? idk yet
-    const newInvite = new Invite(this.app, invite);
+    const newInvite =
+      invite instanceof Invite ? invite : new Invite(this.app, invite);
     this.invites.set(invite.code, newInvite);
     return newInvite;
+  }
+
+  addInvites(invites: (APIInvite | Invite)[]) {
+    invites.forEach((invite) => this.addInvite(invite));
   }
 
   addExpression(expression: APIExpression) {

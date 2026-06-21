@@ -22,8 +22,15 @@ import { type Selection } from "@utils/markdown/types";
 import type { Emoji } from "emojibase";
 import { observer } from "mobx-react-lite";
 import { useCallback, useMemo, useRef, type ReactNode } from "react";
-import { Platform, TextInput, View } from "react-native";
+import { Platform, Pressable, TextInput, View } from "react-native";
 import { renderToken } from "./MarkdownInput.helpers";
+
+const addedSingleNewline = (prev: string, next: string) => {
+    if (next.length !== prev.length + 1) return false;
+    const index = next.indexOf("\n");
+    if (index === -1) return false;
+    return next.slice(0, index) + next.slice(index + 1) === prev;
+};
 
 interface Props extends Omit<PaperProps, "onChange"> {
     value: string;
@@ -45,6 +52,7 @@ interface Props extends Omit<PaperProps, "onChange"> {
     placeholder?: string;
     editable?: boolean;
     endAdornment?: ReactNode;
+    onSubmit?: () => void;
 }
 
 export const MarkdownInput = observer(
@@ -60,6 +68,7 @@ export const MarkdownInput = observer(
         placeholder,
         editable = true,
         endAdornment,
+        onSubmit,
 
         paddingLeft,
         paddingRight,
@@ -71,6 +80,19 @@ export const MarkdownInput = observer(
         const app = useAppStore();
         const { theme } = useTheme();
         const inputRef = useRef<TextInput>(null);
+        const submitLockRef = useRef(false);
+        const ignoreChangeRef = useRef(false);
+
+        const submit = useCallback(() => {
+            if (!onSubmit || submitLockRef.current) return;
+            submitLockRef.current = true;
+            ignoreChangeRef.current = true;
+            onSubmit();
+            setTimeout(() => {
+                submitLockRef.current = false;
+                ignoreChangeRef.current = false;
+            }, 100);
+        }, [onSubmit]);
 
         const channel = channelId ? app.channels.get(channelId) : null;
 
@@ -213,70 +235,106 @@ export const MarkdownInput = observer(
                     />
                 ) : null}
 
-                <View
-                    pointerEvents="none"
-                    style={{
-                        position: "absolute",
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                    }}
+                <Pressable
+                    disabled={!editable}
+                    onPress={() => inputRef.current?.focus()}
+                    style={{ flexGrow: 1, alignSelf: "stretch" }}
                 >
-                    <Typography
-                        allowFontScaling={false}
-                        style={metrics}
-                        textColor={showPlaceholder ? "muted" : undefined}
+                    <View
+                        pointerEvents="none"
+                        style={{
+                            position: "absolute",
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                        }}
                     >
-                        {showPlaceholder
-                            ? placeholder
-                            : tokens.map((t, idx) => renderToken(theme, t, idx))}
-                    </Typography>
-                </View>
+                        <Typography
+                            allowFontScaling={false}
+                            style={metrics}
+                            textColor={showPlaceholder ? "muted" : undefined}
+                        >
+                            {showPlaceholder
+                                ? placeholder
+                                : tokens.map((t, idx) =>
+                                      renderToken(theme, t, idx),
+                                  )}
+                        </Typography>
+                    </View>
 
-                <TextInput
-                    ref={inputRef}
-                    multiline
-                    value={value}
-                    onChangeText={(next) => {
-                        let nextText = next;
-                        let nextSel = selectionRef.current;
+                    <TextInput
+                        ref={inputRef}
+                        multiline
+                        value={value}
+                        returnKeyType="send"
+                        enablesReturnKeyAutomatically
+                        onChangeText={(next) => {
+                            if (ignoreChangeRef.current) return;
 
-                        const delta = nextText.length - value.length;
+                            const prevValue = value;
 
-                        if (nextSel.start === nextSel.end && delta > 0) {
-                            const caret = nextSel.start;
-                            nextSel = { start: caret + delta, end: caret + delta };
-
-                            const out = applyEmojiTransforms(nextText, nextSel, {
-                                enableEmoticons,
-                                resolveCustomEmojiByName,
-                            });
-
-                            if (out.didTransform) {
-                                nextText = out.text;
-                                nextSel = out.selection;
-                                onChangeSelection(nextSel);
+                            if (onSubmit && addedSingleNewline(prevValue, next)) {
+                                submit();
+                                return;
                             }
-                        }
 
-                        onChange(nextText);
-                    }}
-                    selection={selection}
-                    onSelectionChange={(e) => {
-                        const { start, end } = e.nativeEvent.selection;
-                        onChangeSelection({ start, end });
-                    }}
-                    style={{
-                        ...(Platform.OS === "ios"
-                            ? { color: "transparent" }
-                            : { opacity: 0.01 }),
+                            let nextText = next;
+                            let nextSel = selectionRef.current;
 
-                        ...metrics,
-                    }}
-                    placeholder=""
-                    autoCorrect
-                    editable={editable}
-                />
+                            const delta = nextText.length - value.length;
+
+                            if (nextSel.start === nextSel.end && delta > 0) {
+                                const caret = nextSel.start;
+                                nextSel = {
+                                    start: caret + delta,
+                                    end: caret + delta,
+                                };
+
+                                const out = applyEmojiTransforms(
+                                    nextText,
+                                    nextSel,
+                                    {
+                                        enableEmoticons,
+                                        resolveCustomEmojiByName,
+                                    },
+                                );
+
+                                if (out.didTransform) {
+                                    nextText = out.text;
+                                    nextSel = out.selection;
+                                    onChangeSelection(nextSel);
+                                }
+                            }
+
+                            onChange(nextText);
+                        }}
+                        onKeyPress={(event) => {
+                            if (event.nativeEvent.key === "Enter") {
+                                submit();
+                            }
+                        }}
+                        selection={selection}
+                        onSelectionChange={(e) => {
+                            const { start, end } = e.nativeEvent.selection;
+                            onChangeSelection({ start, end });
+                        }}
+                        style={{
+                            flexGrow: 1,
+                            alignSelf: "stretch",
+                            width: "100%",
+
+                            ...(Platform.OS === "ios"
+                                ? { color: "transparent" }
+                                : { opacity: 0.01 }),
+
+                            ...metrics,
+                        }}
+                        placeholder=""
+                        autoCorrect
+                        editable={editable}
+                    />
+                </Pressable>
 
                 {endAdornment ? (
                     <View

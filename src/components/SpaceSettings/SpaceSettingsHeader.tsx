@@ -19,9 +19,11 @@ export const SpaceSettingsHeader = observer(
 
         return (
             <ScreenHeader
-                safeTop={false}
+                safeTop
+                safeTopExtra={0}
                 safeHorizontal={false}
                 style={{
+                    paddingTop: 8,
                     paddingHorizontal: 12,
                     gap: 10,
                     borderTopWidth: 0,

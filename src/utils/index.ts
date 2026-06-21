@@ -1,7 +1,8 @@
-import { AppMode } from "@mutualzz/types";
+import { AppMode, type APIMessage, MessageType } from "@mutualzz/types";
 import { AppStore } from "@stores/App.store";
 import { Channel } from "@stores/objects/Channel";
 import { Theme } from "@stores/objects/Theme";
+import Snowflake from "@utils/Snowflake";
 import { useRouter } from "expo-router";
 
 export const sortThemes = (themes: Theme[]): Theme[] => {
@@ -54,6 +55,32 @@ export const switchMode = (
     if (!target) return;
 
     router.replace(target);
+};
+
+export const createSystemMessage = async (
+    app: AppStore,
+    channelId: string,
+    content: string,
+    flags?: bigint,
+): Promise<APIMessage | null> => {
+    const systemUser = await app.users.resolveSystem();
+    if (!systemUser) return null;
+
+    return {
+        author: systemUser.toJSON(),
+        authorId: systemUser.id,
+        channelId,
+        embeds: [],
+        content,
+        edited: false,
+        id: Snowflake.generate(),
+        nonce: null,
+        spaceId: null,
+        type: MessageType.System,
+        flags: flags || 0n,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    };
 };
 
 export * from "./emojis";

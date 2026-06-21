@@ -12,6 +12,13 @@ export function useSpaceFromRoute() {
     const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
     const space = spaceId ? app.spaces.get(spaceId) : null;
 
+    useEffect(() => {
+        if (!spaceId || spaceId === app.spaces.activeId) return;
+
+        app.spaces.setActive(spaceId);
+        app.spaces.setMostRecentSpace(spaceId);
+    }, [app.spaces, spaceId]);
+
     return { spaceId, space };
 }
 

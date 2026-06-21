@@ -1,5 +1,6 @@
 import { MessageType } from "@mutualzz/types";
 import type { MessageGroup as MessageGroupType } from "@stores/Message.store";
+import { Box } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { Message } from "./Message";
 import { SystemMessage } from "./SystemMessage";
@@ -12,7 +13,7 @@ export const MessageGroup = observer(({ group }: Props) => {
     const { messages } = group;
 
     return (
-        <>
+        <Box style={{ flexDirection: "column-reverse" }}>
             {messages.map((message, index) => {
                 if (
                     message.type === MessageType.Default ||
@@ -29,6 +30,6 @@ export const MessageGroup = observer(({ group }: Props) => {
 
                 return <SystemMessage key={message.id} message={message} />;
             })}
-        </>
+        </Box>
     );
 });

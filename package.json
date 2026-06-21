@@ -24,10 +24,12 @@
     "expo-clipboard": "~8.0.8",
     "expo-constants": "~56.0.18",
     "expo-dev-client": "~56.0.20",
+    "expo-device": "~56.0.4",
     "expo-font": "~56.0.7",
     "expo-image-picker": "~56.0.18",
     "expo-linking": "~56.0.14",
     "expo-navigation-bar": "~56.0.3",
+    "expo-notifications": "~56.0.18",
     "expo-router": "~56.2.11",
     "expo-secure-store": "~56.0.4",
     "expo-splash-screen": "~56.0.10",
@@ -49,6 +51,7 @@
     "react-native-safe-area-context": "catalog:",
     "react-native-screens": "~4.25.2",
     "react-native-svg": "catalog:",
+    "react-native-webrtc": "^124.0.6",
     "react-native-webview": "13.16.1",
     "react-native-worklets": "catalog:"
   },
@@ -70,7 +73,8 @@
     "ios": "expo run:ios",
     "lint": "eslint .",
     "start": "expo start",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit"
   },
-  "version": "2.0.0"
+  "version": "2.1.0"
 }

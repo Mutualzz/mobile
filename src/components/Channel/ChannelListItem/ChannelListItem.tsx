@@ -4,6 +4,7 @@ import { Paper } from "@components/Paper";
 import { CaretRightIcon, PlusIcon } from "phosphor-react-native";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
+import { ChannelType } from "@mutualzz/types";
 import {
   Box,
   type PaperProps,
@@ -22,6 +23,9 @@ interface Props extends PaperProps {
   active: boolean;
   isCollapsed?: boolean;
   onToggleCollapse?: (channelId: string) => void;
+  onCreateInCategory?: () => void;
+  onLongPress?: () => void;
+  canManageChannels?: boolean;
 }
 
 export const ChannelListItem = observer(
@@ -32,14 +36,14 @@ export const ChannelListItem = observer(
     isCollapsed,
     space,
     onToggleCollapse,
+    onCreateInCategory,
+    onLongPress,
+    canManageChannels = false,
     ...props
   }: Props) => {
     const { theme } = useTheme();
     const { navigate } = useAppNavigation();
     const app = useAppStore();
-
-    const canModifyChannel =
-      app.account && space.owner && space.owner.id === app.account.id;
 
     const readState = app.readStates.get(channel.id);
     const isUnread = readState?.isUnread ?? false;
@@ -51,15 +55,21 @@ export const ChannelListItem = observer(
         return;
       }
 
-      if (!channel.isTextChannel) return;
-
       app.channels.setActive(channel.id);
       app.channels.setMostRecentChannelForSpace(space.id, channel.id);
-      navigate(`/spaces/${space.id}/${channel.id}`);
+
+      if (channel.isTextChannel) {
+        navigate(`/spaces/channel/${channel.id}`);
+        return;
+      }
+
+      if (channel.type === ChannelType.Voice) {
+        navigate(`/spaces/channel/${channel.id}`);
+      }
     };
 
     return (
-      <Pressable onPress={handlePress}>
+      <Pressable onPress={handlePress} onLongPress={onLongPress}>
         <Paper
           style={{
             marginLeft: isCategory ? 0 : channel.parent ? 12 : 8,
@@ -158,7 +168,7 @@ export const ChannelListItem = observer(
               )}
             </Box>
           )}
-          {isCategory && canModifyChannel && (
+          {isCategory && canManageChannels && (
             <IconButton
               size={14}
               variant="plain"
@@ -166,6 +176,7 @@ export const ChannelListItem = observer(
               style={{
                 borderRadius: 9999,
               }}
+              onPress={() => onCreateInCategory?.()}
             >
               <PlusIcon size={12} weight="bold" />
             </IconButton>

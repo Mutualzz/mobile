@@ -1,0 +1,144 @@
+import { ChannelIcon } from "@components/Channel/ChannelIcon";
+import { Paper } from "@components/Paper";
+import { useAppNavigation } from "@hooks/useAppNavigation";
+import { useAppStore } from "@hooks/useStores";
+import {
+    type APIChannel,
+    ChannelType,
+    type HttpException,
+} from "@mutualzz/types";
+import {
+    Box,
+    Button,
+    ButtonGroup,
+    InputDefault,
+    Typography,
+} from "@mutualzz/ui-native";
+import type { Channel } from "@stores/objects/Channel";
+import type { Space } from "@stores/objects/Space";
+import { useMutation } from "@tanstack/react-query";
+import { observer } from "mobx-react-lite";
+import { useState } from "react";
+import { Modal, ScrollView } from "react-native";
+
+interface Props {
+    visible: boolean;
+    onClose: () => void;
+    space: Space;
+    parent?: Channel;
+}
+
+export const ChannelCreateSheet = observer(
+    ({ visible, onClose, space, parent }: Props) => {
+        const app = useAppStore();
+        const { navigate } = useAppNavigation();
+        const [name, setName] = useState("");
+        const [type, setType] = useState<ChannelType>(ChannelType.Text);
+        const [error, setError] = useState<string | null>(null);
+
+        const { mutate: createChannel, isPending } = useMutation({
+            mutationKey: ["create-channel", space.id, name, type],
+            mutationFn: async () => {
+                const formData = new FormData();
+                formData.append("name", name.trim());
+                formData.append("type", String(type));
+                formData.append("spaceId", space.id);
+                if (parent) formData.append("parentId", parent.id);
+                return app.rest.postFormData<APIChannel>("channels", formData);
+            },
+            onSuccess: (newChannel) => {
+                setName("");
+                setError(null);
+                onClose();
+                if (newChannel.type === ChannelType.Text) {
+                    navigate(`/spaces/channel/${newChannel.id}`);
+                }
+            },
+            onError: (err: HttpException) => {
+                setError(err.errors?.[0]?.message ?? err.message);
+            },
+        });
+
+        return (
+            <Modal visible={visible} animationType="slide" transparent>
+                <Box
+                    style={{
+                        flex: 1,
+                        justifyContent: "flex-end",
+                        backgroundColor: "rgba(0,0,0,0.45)",
+                    }}
+                >
+                    <Paper
+                        style={{
+                            borderTopLeftRadius: 16,
+                            borderTopRightRadius: 16,
+                            padding: 20,
+                            gap: 16,
+                            maxHeight: "80%",
+                        }}
+                    >
+                        <Typography level="body-lg" weight="bold">
+                            Create Channel
+                        </Typography>
+                        <ScrollView keyboardShouldPersistTaps="handled">
+                            <Box style={{ gap: 12 }}>
+                                <InputDefault
+                                    fullWidth
+                                    placeholder="Channel name"
+                                    value={name}
+                                    onChangeText={setName}
+                                    autoFocus
+                                />
+                                <ButtonGroup orientation="vertical" spacing={8}>
+                                    {[ChannelType.Text, ChannelType.Voice].map(
+                                        (channelType) => (
+                                            <Button
+                                                key={channelType}
+                                                variant={
+                                                    type === channelType
+                                                        ? "soft"
+                                                        : "plain"
+                                                }
+                                                onPress={() => setType(channelType)}
+                                                startDecorator={
+                                                    <ChannelIcon
+                                                        type={channelType}
+                                                    />
+                                                }
+                                            >
+                                                {channelType === ChannelType.Text
+                                                    ? "Text"
+                                                    : "Voice"}
+                                            </Button>
+                                        ),
+                                    )}
+                                </ButtonGroup>
+                                {error && (
+                                    <Typography color="danger" level="body-sm">
+                                        {error}
+                                    </Typography>
+                                )}
+                            </Box>
+                        </ScrollView>
+                        <ButtonGroup spacing={8}>
+                            <Button
+                                variant="plain"
+                                color="danger"
+                                onPress={onClose}
+                                disabled={isPending}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                disabled={isPending || !name.trim()}
+                                onPress={() => createChannel()}
+                            >
+                                Create
+                            </Button>
+                        </ButtonGroup>
+                    </Paper>
+                </Box>
+            </Modal>
+        );
+    },
+);

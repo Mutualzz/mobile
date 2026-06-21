@@ -6,10 +6,9 @@ import {
   permissionFlags,
   type PermissionFlags,
   roleFlags,
-  type RoleFlags,
+  type RoleFlags
 } from "@mutualzz/bitfield";
-import { isLoadedRelation, omitBooleanRelations } from "@utils/apiRelations";
-import { computed, makeAutoObservable, observable } from "mobx";
+import { makeAutoObservable } from "mobx";
 
 export class Role {
   id: Snowflake;
@@ -26,28 +25,23 @@ export class Role {
   updatedAt: Date;
   raw: APIRole;
 
-  _space!: Space | null;
-
   constructor(
     private readonly app: AppStore,
-    data: APIRole,
+    data: APIRole
   ) {
-    this._space = null;
-
     this.id = data.id;
     this.name = data.name;
     this.spaceId = data.spaceId;
-    if (isLoadedRelation(data.space)) {
-      this._space = this.app.spaces.add(data.space);
-    }
+    if (data.space) this._space = this.app.spaces.add(data.space);
 
     this.color = data.color;
 
+    // Support both old "permissions" field and new "allow" field
     const allowVal = data.allow ?? 0n;
     this.allow = BitField.fromString(permissionFlags, allowVal.toString());
     this.deny = BitField.fromString(
       permissionFlags,
-      (data.deny ?? 0n).toString(),
+      (data.deny ?? 0n).toString()
     );
 
     this.position = data.position;
@@ -58,17 +52,12 @@ export class Role {
     this.createdAt = new Date(data.createdAt);
     this.updatedAt = new Date(data.updatedAt);
 
-    this.raw = omitBooleanRelations(data, ["space"]);
+    this.raw = data;
 
-    makeAutoObservable(
-      this,
-      {
-        _space: observable.ref,
-        space: computed,
-      },
-      { autoBind: true },
-    );
+    makeAutoObservable(this, {}, { autoBind: true });
   }
+
+  _space?: Space | null;
 
   get space() {
     return this.app.spaces.get(this.spaceId) || this._space;
@@ -80,10 +69,11 @@ export class Role {
 
   get members() {
     return this.space?.members.all.filter((member) =>
-      member.roles.has(this.id),
+      member.roles.has(this.id)
     );
   }
 
+  // Backwards-compat getter for anything still reading .permissions
   get permissions() {
     return this.allow;
   }
@@ -92,9 +82,7 @@ export class Role {
     this.id = data.id;
     this.spaceId = data.spaceId;
 
-    if (isLoadedRelation(data.space)) {
-      this._space = this.app.spaces.add(data.space);
-    }
+    if (data.space) this._space = this.app.spaces.add(data.space);
 
     this.name = data.name;
     this.color = data.color;
@@ -104,23 +92,18 @@ export class Role {
 
     const allowVal = data.allow ?? 0n;
     this.allow = BitField.fromString(permissionFlags, allowVal.toString());
-    this.deny = BitField.fromString(
-      permissionFlags,
-      (data.deny ?? 0n).toString(),
-    );
+    this.deny = BitField.fromString(permissionFlags, data.deny.toString());
 
     this.flags = BitField.fromString(roleFlags, data.flags.toString());
 
     this.createdAt = new Date(data.createdAt);
     this.updatedAt = new Date(data.updatedAt);
 
-    this.raw = omitBooleanRelations(data, ["space"]);
+    this.raw = data;
   }
 
   delete() {
-    return this.app.rest.delete(`/spaces/${this.spaceId}/roles/${this.id}`).then(() => {
-      this.space?.roles.remove(this.id);
-    });
+    return this.app.rest.delete(`/spaces/${this.spaceId}/roles/${this.id}`);
   }
 
   async addMembers(userIds: Snowflake[]) {
@@ -133,7 +116,7 @@ export class Role {
 
     const snapshot = touched.map((member) => ({
       member: member!,
-      hadRole: member!.roles.has(this.id),
+      hadRole: member!.roles.has(this.id)
     }));
 
     for (const { member, hadRole } of snapshot) {
@@ -145,7 +128,7 @@ export class Role {
     try {
       await this.app.rest.put(
         `/spaces/${this.spaceId}/members/roles/${this.id}`,
-        { userIds },
+        { userIds }
       );
     } catch (error) {
       for (const { member, hadRole } of snapshot) {

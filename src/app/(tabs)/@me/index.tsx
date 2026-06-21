@@ -1,18 +1,24 @@
+import { DMChannelCreateSheet } from "@components/DMChannel/DMChannelCreateSheet";
 import { DMChannelList } from "@components/DMChannel/DMChannelList";
 import { FriendsList } from "@components/DMChannel/FriendsList";
+import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
 import { Screen } from "@components/Screen/Screen";
+import { useTabBarContentInset } from "@hooks/useTabBarContentInset";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Button, Typography } from "@mutualzz/ui-native";
-import { useRouter, useFocusEffect } from "expo-router";
+import { PlusIcon } from "phosphor-react-native";
+import { useFocusEffect } from "expo-router";
 import { observer } from "mobx-react-lite";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 
 type Tab = "direct-messages" | "friends";
 
 const MeIndex = () => {
   const app = useAppStore();
+  const tabBarInset = useTabBarContentInset();
   const [tab, setTab] = useState<Tab>("direct-messages");
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -34,6 +40,7 @@ const MeIndex = () => {
     <Screen
       style={{
         flexDirection: "column",
+        paddingBottom: tabBarInset,
         borderTopLeftRadius: 8,
         borderRightWidth: 0,
         borderBottomWidth: 0,
@@ -49,6 +56,7 @@ const MeIndex = () => {
           borderRadius: 12,
           flexDirection: "row",
           justifyContent: "space-evenly",
+          alignItems: "center",
         }}
         elevation={app.settings?.preferEmbossed ? 3 : 0}
       >
@@ -64,6 +72,14 @@ const MeIndex = () => {
         >
           Friends
         </Button>
+        {tab === "direct-messages" && (
+          <IconButton
+            accessibilityLabel="Create group DM"
+            onPress={() => setCreateGroupOpen(true)}
+          >
+            <PlusIcon weight="bold" />
+          </IconButton>
+        )}
       </Paper>
 
       {tab === "direct-messages" ? (
@@ -73,6 +89,11 @@ const MeIndex = () => {
           <FriendsList />
         </Box>
       )}
+
+      <DMChannelCreateSheet
+        visible={createGroupOpen}
+        onClose={() => setCreateGroupOpen(false)}
+      />
     </Screen>
   );
 };

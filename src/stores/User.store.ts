@@ -54,4 +54,28 @@ export class UserStore {
         if (!user) return undefined;
         return this.add(user);
     }
+
+    async resolveByIdentifier(identifier: string, force = false) {
+        const normalized = identifier.trim().toLowerCase();
+        const cached = this.all.find(
+            (user) =>
+                user.id === normalized ||
+                user.username.toLowerCase() === normalized,
+        );
+        if (cached && !force) return cached;
+
+        const user = await this.app.rest.get<APIUser>(
+            `/users/${encodeURIComponent(normalized)}`,
+        );
+        if (!user) return undefined;
+        return this.add(user);
+    }
+
+    async resolveSystem() {
+        const id = "1";
+        if (this.has(id)) return this.get(id);
+        const user = await this.app.rest.get<APIUser>(`/users/${id}`);
+        if (!user) return undefined;
+        return this.add(user);
+    }
 }

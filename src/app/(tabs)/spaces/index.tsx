@@ -1,29 +1,20 @@
-import { Box, Typography } from "@mutualzz/ui-native";
+import { useAppStore } from "@hooks/useStores";
+import { useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
+import { useEffect } from "react";
 
 const SpacesIndex = () => {
-  return (
-    <Box
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Typography level="h5">Why are we still here?</Typography>
-      <Typography level="h6" weight="bold">
-        Just to suffer?
-      </Typography>
-      <Typography level="body-lg">Every night, I can feel my leg...</Typography>
-      <Typography level="body-md">
-        And my arm... even my fingers... The body I&apos;ve lost...
-      </Typography>
-      <Typography level="body-xs">
-        the comrades I&apos;ve lost... won&apos;t stop hurting... It&apos;s like
-        they&apos;re all still there.
-      </Typography>
-    </Box>
-  );
+    const app = useAppStore();
+    const router = useRouter();
+
+    useEffect(() => {
+        const recentSpace = app.spaces.setPreferredActive();
+        if (!recentSpace) return;
+
+        router.replace(`/spaces/${recentSpace.id}`);
+    }, [app.spaces, router]);
+
+    return null;
 };
 
 export default observer(SpacesIndex);

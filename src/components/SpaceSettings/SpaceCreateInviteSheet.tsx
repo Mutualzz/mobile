@@ -13,12 +13,14 @@ import { Pressable } from "react-native";
 interface Props {
     space: Space;
     modalId?: string;
+    onClose?: () => void;
 }
 
 export const SpaceCreateInviteSheet = observer(
-    ({ space, modalId = "space-create-invite" }: Props) => {
+    ({ space, modalId = "space-create-invite", onClose }: Props) => {
         const app = useAppStore();
         const { closeModal } = useModal();
+        const close = onClose ?? (() => closeModal(modalId));
         const [creating, setCreating] = useState(false);
         const [inviteUrl, setInviteUrl] = useState<string | null>(null);
         const [error, setError] = useState<string | null>(null);
@@ -87,7 +89,7 @@ export const SpaceCreateInviteSheet = observer(
                         <Button
                             color="neutral"
                             variant="soft"
-                            onPress={() => closeModal(modalId)}
+                            onPress={close}
                         >
                             Done
                         </Button>
@@ -116,7 +118,7 @@ export const SpaceCreateInviteSheet = observer(
                             variant="soft"
                             color="neutral"
                             disabled={creating}
-                            onPress={() => closeModal(modalId)}
+                            onPress={close}
                         >
                             Cancel
                         </Button>

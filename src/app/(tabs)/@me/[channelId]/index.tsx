@@ -4,6 +4,7 @@ import { TypingIndicator } from "@components/TypingIndicator";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
 import { ArrowLeftIcon } from "phosphor-react-native";
 import { useKeyboardOffset } from "@hooks/useKeyboardOffset";
+import { useScreenComposer } from "@hooks/useScreenComposer";
 import { useAppStore } from "@hooks/useStores";
 import { useTheme } from "@mutualzz/ui-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -25,6 +26,7 @@ const DMChannelIndex = () => {
   const { theme } = useTheme();
   const keyboardHeight = useKeyboardOffset();
   const translateY = useRef(new Animated.Value(0)).current;
+  const composerVisible = useScreenComposer();
 
   useLayoutEffect(() => {
     if (!channelId) return;
@@ -74,7 +76,7 @@ const DMChannelIndex = () => {
         >
           <MessageList key={channel.id} channel={channel} />
           <TypingIndicator channelId={channel.id} />
-          <MessageInput channel={channel} />
+          {composerVisible && <MessageInput channel={channel} />}
         </Animated.View>
       </Screen>
     </KeyboardAvoidingView>

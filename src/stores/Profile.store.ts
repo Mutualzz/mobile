@@ -73,7 +73,7 @@ export class ProfileStore {
     }
 
     uploadAsset(
-        type: "banner" | "background" | "music" | "font",
+        type: "banner" | "background" | "image" | "music" | "font",
         file: {
             uri: string;
             type: string;

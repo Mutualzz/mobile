@@ -4,11 +4,11 @@ import {
   type AvatarFormat,
   CDNRoutes,
   ImageFormat,
-  type Sizes,
+  type Sizes
 } from "@mutualzz/types";
 import { REST } from "@stores/REST.store";
 import { makeAutoObservable } from "mobx";
-import { BitField, userFlags, type UserFlags } from "@mutualzz/bitfield";
+import { BitField, type UserFlags, userFlags } from "@mutualzz/bitfield";
 
 export class User {
   id: Snowflake;
@@ -35,11 +35,12 @@ export class User {
     this.accentColor = user.accentColor;
     this.createdAt = new Date(user.createdAt);
     this.updatedAt = new Date(user.updatedAt);
+
     this.flags = BitField.fromString(userFlags, user.flags.toString());
 
     this.raw = user;
 
-    makeAutoObservable(this);
+    makeAutoObservable(this, {}, { autoBind: true });
   }
 
   get avatarUrl() {
@@ -51,7 +52,23 @@ export class User {
   }
 
   update(user: APIUser) {
-    Object.assign(this, user);
+    this.id = user.id;
+    this.username = user.username;
+
+    this.defaultAvatar = user.defaultAvatar;
+    this.avatar = user.avatar ?? null;
+    this.globalName = user.globalName ?? null;
+
+    this.accentColor = user.accentColor;
+
+    this.createdAt = new Date(user.createdAt);
+    this.updatedAt = new Date(user.updatedAt);
+
+    this.flags = BitField.fromString(userFlags, user.flags.toString());
+
+    this.raw = user;
+
+    return this;
   }
 
   constructAvatarUrl(
@@ -59,7 +76,7 @@ export class User {
     version: "dark" | "light" = "light",
     size: Sizes = 128,
     format: AvatarFormat = ImageFormat.WebP,
-    hash?: string,
+    hash?: string
   ) {
     if (!this.avatar)
       return REST.makeCDNUrl(
@@ -67,8 +84,8 @@ export class User {
           this.defaultAvatar.type,
           version,
           size,
-          format,
-        ),
+          format
+        )
       );
 
     const isAnimated = animated && this.avatar?.startsWith("a_");
@@ -79,8 +96,12 @@ export class User {
         hash ?? this.avatar,
         format,
         size,
-        animated || isAnimated,
-      ),
+        animated || isAnimated
+      )
     );
+  }
+
+  toJSON() {
+    return this.raw;
   }
 }
