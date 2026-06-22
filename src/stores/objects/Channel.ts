@@ -116,7 +116,7 @@ export class Channel {
     makeAutoObservable(this, {}, { autoBind: true });
   }
 
-  _owner?: User | null;
+  _owner: User | null = null;
 
   get owner() {
     if (!this.ownerId) return null;
@@ -124,7 +124,7 @@ export class Channel {
     return this.app.users.get(this.ownerId) || this._owner || null;
   }
 
-  _lastMessage?: Message | null;
+  _lastMessage: Message | null = null;
 
   get lastMessage() {
     if (this._lastMessage) return this._lastMessage;
@@ -146,7 +146,7 @@ export class Channel {
     }
   }
 
-  _parent?: Channel | null;
+  _parent: Channel | null = null;
 
   get parent(): Channel | null | undefined {
     if (!this.parentId) return null;
@@ -158,7 +158,7 @@ export class Channel {
     );
   }
 
-  _space?: Space | null;
+  _space: Space | null = null;
 
   get space() {
     if (!this.spaceId) return null;

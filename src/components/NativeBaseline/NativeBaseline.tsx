@@ -1,4 +1,4 @@
-import { extractGradientInfo } from "@mutualzz/ui-core";
+import { dynamicElevation, extractGradientInfo } from "@mutualzz/ui-core";
 import {
   Canvas,
   Rect,
@@ -7,10 +7,12 @@ import {
 } from "@shopify/react-native-skia";
 import { useMemo } from "react";
 import { StyleSheet, useWindowDimensions } from "react-native";
+import { observer } from "mobx-react-lite";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeBaselineProps } from "./NativeBaseline.types";
 import { useTheme, angleToSkia } from "@mutualzz/ui-native";
+import { useAppStore } from "@hooks/useStores";
 
 const styles = StyleSheet.create({
   fill: {
@@ -22,7 +24,8 @@ const styles = StyleSheet.create({
   },
 });
 
-const NativeBaseline = ({ children }: NativeBaselineProps) => {
+const NativeBaseline = observer(({ children }: NativeBaselineProps) => {
+  const app = useAppStore();
   const { theme } = useTheme();
 
   const { width, height } = useWindowDimensions();
@@ -63,7 +66,11 @@ const NativeBaseline = ({ children }: NativeBaselineProps) => {
           style={[
             styles.container,
             styles.fill,
-            { backgroundColor: theme.colors.background },
+            {
+              backgroundColor: app.settings?.preferEmbossed
+                ? dynamicElevation(theme.colors.surface, 2)
+                : theme.colors.background,
+            },
           ]}
         >
           {children}
@@ -97,7 +104,7 @@ const NativeBaseline = ({ children }: NativeBaselineProps) => {
       </SafeAreaView>
     </GestureHandlerRootView>
   );
-};
+});
 
 NativeBaseline.displayName = "NativeBaseline";
 

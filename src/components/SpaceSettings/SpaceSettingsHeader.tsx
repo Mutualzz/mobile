@@ -6,55 +6,48 @@ import { observer } from "mobx-react-lite";
 import { Pressable } from "react-native";
 
 interface Props {
-    title: string;
-    showBack?: boolean;
-    onClose?: () => void;
+  title: string;
+  showBack?: boolean;
+  onClose?: () => void;
 }
 
 export const SpaceSettingsHeader = observer(
-    ({ title, showBack = false, onClose }: Props) => {
-        const { back } = useAppNavigation();
-        const { theme } = useTheme();
-        const iconColor = theme.typography.colors.primary;
+  ({ title, showBack = false, onClose }: Props) => {
+    const { back } = useAppNavigation();
+    const { theme } = useTheme();
+    const iconColor = theme.typography.colors.primary;
 
-        return (
-            <ScreenHeader
-                safeTop
-                safeTopExtra={0}
-                safeHorizontal={false}
-                style={{
-                    paddingTop: 8,
-                    paddingHorizontal: 12,
-                    gap: 10,
-                    borderTopWidth: 0,
-                    borderBottomWidth: 0,
-                    borderLeftWidth: 0,
-                    borderRightWidth: 0,
-                }}
-            >
-                {showBack ? (
-                    <Pressable hitSlop={8} onPress={() => back()}>
-                        <ArrowLeftIcon
-                            size={22}
-                            weight="bold"
-                            color={iconColor}
-                        />
-                    </Pressable>
-                ) : null}
-                <Typography
-                    level="body-lg"
-                    weight="bold"
-                    numberOfLines={1}
-                    style={{ flex: 1 }}
-                >
-                    {title}
-                </Typography>
-                {onClose ? (
-                    <Pressable hitSlop={8} onPress={onClose}>
-                        <XIcon size={22} weight="bold" color={iconColor} />
-                    </Pressable>
-                ) : null}
-            </ScreenHeader>
-        );
-    },
+    return (
+      <ScreenHeader
+        safeHorizontal={false}
+        style={{
+          paddingHorizontal: 12,
+          gap: 10,
+          borderTopWidth: 0,
+          borderBottomWidth: 0,
+          borderLeftWidth: 0,
+          borderRightWidth: 0,
+        }}
+      >
+        {showBack ? (
+          <Pressable hitSlop={8} onPress={() => back()}>
+            <ArrowLeftIcon size={22} weight="bold" color={iconColor} />
+          </Pressable>
+        ) : null}
+        <Typography
+          level="body-lg"
+          weight="bold"
+          numberOfLines={1}
+          style={{ flex: 1 }}
+        >
+          {title}
+        </Typography>
+        {onClose ? (
+          <Pressable hitSlop={8} onPress={onClose}>
+            <XIcon size={22} weight="bold" color={iconColor} />
+          </Pressable>
+        ) : null}
+      </ScreenHeader>
+    );
+  },
 );

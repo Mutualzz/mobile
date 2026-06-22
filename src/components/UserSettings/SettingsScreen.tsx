@@ -6,19 +6,26 @@ import type { PropsWithChildren } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
 
 type Props = PropsWithChildren<{
-    title: string;
-    contentStyle?: StyleProp<ViewStyle>;
+  title: string;
+  contentStyle?: StyleProp<ViewStyle>;
 }>;
 
 export const SettingsScreen = observer(
-    ({ title, contentStyle, children }: Props) => {
-        return (
-            <Screen style={{ flexDirection: "column", minWidth: 0 }}>
-                <SettingsHeader title={title} showBack />
-                <Box style={[{ flex: 1, minWidth: 0 }, contentStyle]}>
-                    {children}
-                </Box>
-            </Screen>
-        );
-    },
+  ({ title, contentStyle, children }: Props) => {
+    return (
+      <Screen
+        style={{
+          flexDirection: "column",
+          minWidth: 0,
+          borderBottomWidth: 0,
+          borderTopWidth: 0,
+          borderLeftWidth: 0,
+          borderRightWidth: 0,
+        }}
+      >
+        <SettingsHeader title={title} showBack />
+        <Box style={[{ flex: 1, minWidth: 0 }, contentStyle]}>{children}</Box>
+      </Screen>
+    );
+  },
 );

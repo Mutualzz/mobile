@@ -143,37 +143,9 @@ export const ThemeCreatorModal = observer(() => {
       }}
       elevation={app.settings?.preferEmbossed ? 4 : 2}
     >
-      <Box
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: "rgba(127,127,127,0.2)",
-        }}
-      >
-        <Typography
-          level="body-md"
-          weight={700}
-          style={{ flex: 1, minWidth: 0 }}
-        >
-          Theme Creator
-        </Typography>
-        <Button
-          size="sm"
-          variant="plain"
-          color="neutral"
-          style={{ flexShrink: 0 }}
-          onPress={() => {
-            themeCreator.stopPreview(changeTheme);
-            closeModal("theme-creator");
-          }}
-        >
-          Close
-        </Button>
-      </Box>
+      <Typography level="body-md" weight={700} style={{ flex: 1, minWidth: 0 }}>
+        Theme Creator
+      </Typography>
 
       <ScrollView
         contentContainerStyle={{
@@ -350,7 +322,7 @@ export const ThemeCreatorModal = observer(() => {
         <Button
           color="primary"
           disabled={themeCreator.nameEmpty || saving}
-          onPress={() => void handleSave()}
+          onPress={() => handleSave()}
         >
           {saving ? "Saving..." : "Create Theme"}
         </Button>

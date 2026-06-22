@@ -1,7 +1,7 @@
 import { IconButton } from "@components/IconButton";
 import { AppLogo } from "@components/Logo/AppLogo";
 import { Screen } from "@components/Screen/Screen";
-import { PillType, SidebarPill } from "@components/SidebarPill";
+import { type PillType, SidebarPill } from "@components/SidebarPill";
 import { SpaceIcon } from "@components/Space/SpaceIcon";
 import { SpaceInviteModal } from "@components/Space/SpaceInviteModal";
 import { PlusIcon } from "phosphor-react-native";
@@ -9,7 +9,7 @@ import { useModal } from "@hooks/useModal";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { Box } from "@mutualzz/ui-native";
-import { Space } from "@stores/objects/Space";
+import type { Space } from "@stores/objects/Space";
 import { useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { Pressable } from "react-native";
@@ -74,6 +74,7 @@ export const SpacesSidebar = observer(() => {
         borderBottomWidth: 0,
         borderLeftWidth: 0,
         borderRightWidth: 0,
+        flex: 1,
       }}
       elevation={app.settings?.preferEmbossed ? 1 : 0}
     >

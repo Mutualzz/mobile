@@ -92,11 +92,7 @@ const SettingsIndex = () => {
               {pages.map((page) => (
                 <Button
                   startDecorator={
-                    <page.Icon
-                      weight="fill"
-                      size={20}
-                      color={navIconColor}
-                    />
+                    <page.Icon weight="fill" size={20} color={navIconColor} />
                   }
                   key={`user-settings-sidebar-${page.label}`}
                   padding={5}

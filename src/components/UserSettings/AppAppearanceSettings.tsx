@@ -1,4 +1,3 @@
-import { AdaptiveIconSwatch } from "@components/UserSettings/AdaptiveIconSwatch";
 import { ThemeCreatorModal } from "@components/UserSettings/ThemeCreatorModal";
 import { Paper } from "@components/Paper";
 import { IconButton } from "@components/IconButton";
@@ -249,20 +248,7 @@ export const AppAppearanceSettings = observer(() => {
     settings.setCurrentTheme(null);
     app.themes.setCurrentTheme(null);
     app.themes.setCurrentType(null);
-    void settings.sync();
   };
-
-  const handleIconChange = (iconId: string | null) => {
-    if (iconId === app.themes.currentIcon) return;
-
-    app.themes.setCurrentIcon(iconId);
-    settings.setCurrentIcon(iconId);
-    void settings.sync();
-  };
-
-  const defaultIconThemes = app.themes.all.filter((theme) => !theme.author);
-  const userIconThemes = app.themes.all.filter((theme) => theme.author);
-  const currentIconId = app.themes.currentIcon;
 
   const handleDeleteTheme = async (theme: StoreTheme) => {
     if (deletingThemeId) return;
@@ -433,7 +419,13 @@ export const AppAppearanceSettings = observer(() => {
           onSelect={handleThemeChange}
         />
       </Paper>
+    </ScrollView>
+  );
+});
 
+// TODO: Add icons later (snippet below)m
+/**
+ *
       <Paper
         style={{
           padding: 16,
@@ -501,6 +493,4 @@ export const AppAppearanceSettings = observer(() => {
           </>
         )}
       </Paper>
-    </ScrollView>
-  );
-});
+ */

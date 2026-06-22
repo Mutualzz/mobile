@@ -95,7 +95,7 @@ export class Space {
     makeAutoObservable(this, {}, { autoBind: true });
   }
 
-  private _owner?: User | null;
+  private _owner: User | null = null;
 
   get owner() {
     return this.app.users.get(this.ownerId) || this._owner;

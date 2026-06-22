@@ -3,11 +3,11 @@ import { AppAppearanceSettings } from "@components/UserSettings/AppAppearanceSet
 import { observer } from "mobx-react-lite";
 
 const AppearanceSettings = () => {
-    return (
-        <SettingsScreen title="Appearance">
-            <AppAppearanceSettings />
-        </SettingsScreen>
-    );
+  return (
+    <SettingsScreen title="Appearance">
+      <AppAppearanceSettings />
+    </SettingsScreen>
+  );
 };
 
 export default observer(AppearanceSettings);

@@ -9,7 +9,12 @@ import { Screen, ScreenHeader } from "@components/Screen/Screen";
 import { SpaceCreateInviteSheet } from "@components/SpaceSettings/SpaceCreateInviteSheet";
 import { canOpenSpaceSettings } from "@components/SpaceSettings/spaceSettingsPages";
 import { useAppNavigation } from "@hooks/useAppNavigation";
-import { CaretDownIcon, GearIcon, PlusIcon, UserPlusIcon } from "phosphor-react-native";
+import {
+  CaretDownIcon,
+  GearIcon,
+  PlusIcon,
+  UserPlusIcon,
+} from "phosphor-react-native";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
 import { Box, ButtonGroup, Typography } from "@mutualzz/ui-native";
@@ -71,9 +76,10 @@ export const ChannelList = observer(() => {
       style={{
         flexDirection: "column",
         width: "100%",
-        borderTopLeftRadius: 8,
-        borderBottomLeftRadius: 8,
+        borderTopLeftRadius: app.settings?.preferEmbossed ? 0 : 8,
+        borderBottomLeftRadius: app.settings?.preferEmbossed ? 0 : 8,
         borderRightWidth: 0,
+        flex: 1,
       }}
     >
       <ScreenHeader
@@ -103,9 +109,7 @@ export const ChannelList = observer(() => {
             {showSpaceSettings ? (
               <IconButton
                 accessibilityLabel="Space settings"
-                onPress={() =>
-                  navigate(`/(tabs)/spaces/${space.id}/settings`)
-                }
+                onPress={() => navigate(`/(tabs)/spaces/${space.id}/settings`)}
               >
                 <GearIcon weight="fill" />
               </IconButton>
@@ -218,8 +222,15 @@ export const ChannelList = observer(() => {
         onClose={() => setSpaceMenuOpen(false)}
       />
 
-      <Modal visible={inviteOpen} animationType="slide" onRequestClose={() => setInviteOpen(false)}>
-        <Screen variant="elevation" style={{ flexDirection: "column", padding: 16 }}>
+      <Modal
+        visible={inviteOpen}
+        animationType="slide"
+        onRequestClose={() => setInviteOpen(false)}
+      >
+        <Screen
+          variant="elevation"
+          style={{ flexDirection: "column", padding: 16 }}
+        >
           <SpaceCreateInviteSheet
             space={space}
             onClose={() => setInviteOpen(false)}
