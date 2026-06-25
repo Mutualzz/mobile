@@ -21,7 +21,7 @@
     "emojibase-regex": "^17.0.0",
     "expo": "~56.0.12",
     "expo-asset": "~56.0.17",
-    "expo-clipboard": "~8.0.8",
+    "expo-clipboard": "~56.0.4",
     "expo-constants": "~56.0.18",
     "expo-dev-client": "~56.0.20",
     "expo-device": "~56.0.4",
@@ -73,8 +73,8 @@
     "ios": "expo run:ios",
     "lint": "eslint .",
     "start": "expo start",
-    "web": "expo start --web",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "web": "expo start --web"
   },
   "version": "2.1.0"
 }
