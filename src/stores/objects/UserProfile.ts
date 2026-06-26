@@ -1,6 +1,6 @@
 import type {
   APIProfileBlock,
-  APIProfileIntroMusic,
+  APIProfileMusic,
   APIUserProfile,
   AvatarFormat,
   Sizes,
@@ -17,7 +17,7 @@ export class UserProfile {
   banner?: string | null;
   bio?: string | null;
   pageFontFamily?: string | null;
-  introMusic?: APIProfileIntroMusic | null;
+  profileMusic?: APIProfileMusic | null;
   blocks: APIProfileBlock[];
   updatedAt: Date;
 
@@ -29,7 +29,7 @@ export class UserProfile {
     this.banner = profile.banner ?? null;
     this.bio = profile.bio ?? null;
     this.pageFontFamily = profile.pageFontFamily ?? null;
-    this.introMusic = profile.introMusic ?? null;
+    this.profileMusic = profile.profileMusic ?? null;
     this.blocks = profile.blocks ?? [];
     this.updatedAt = new Date(profile.updatedAt);
 
@@ -43,7 +43,7 @@ export class UserProfile {
     this.banner = profile.banner ?? null;
     this.bio = profile.bio ?? null;
     this.pageFontFamily = profile.pageFontFamily ?? null;
-    this.introMusic = profile.introMusic ?? null;
+    this.profileMusic = profile.profileMusic ?? null;
     this.blocks = profile.blocks ?? [];
     this.updatedAt = new Date(profile.updatedAt);
     return this;
@@ -109,7 +109,7 @@ export class UserProfile {
     );
   }
 
-  constructIntroMusicAudioUrl(hash: string) {
+  constructProfileMusicAudioUrl(hash: string) {
     return REST.makeCDNUrl(CDNRoutes.profileMusic(this.userId, hash));
   }
 }

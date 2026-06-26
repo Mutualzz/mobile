@@ -7,7 +7,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, ScrollView } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
-import type { APIProfileIntroMusic } from "@mutualzz/types";
+import type { APIProfileMusic } from "@mutualzz/types";
 
 export const ProfileEditorScreen = observer(() => {
   const app = useAppStore();
@@ -16,7 +16,7 @@ export const ProfileEditorScreen = observer(() => {
   const [bio, setBio] = useState("");
   const [backgroundColor, setBackgroundColor] = useState("");
   const [pageFontFamily, setPageFontFamily] = useState("");
-  const [introMusic, setIntroMusic] = useState<APIProfileIntroMusic | null>(
+  const [profileMusic, setProfileMusic] = useState<APIProfileMusic | null>(
     null,
   );
   const [bannerHash, setBannerHash] = useState<string | null>(null);
@@ -41,7 +41,7 @@ export const ProfileEditorScreen = observer(() => {
     setBio(profile.bio ?? "");
     setBackgroundColor(profile.backgroundColor ?? "");
     setPageFontFamily(profile.pageFontFamily ?? "");
-    setIntroMusic(profile.introMusic ?? null);
+    setProfileMusic(profile.profileMusic ?? null);
     setBannerHash(profile.banner ?? null);
     setBannerPreview(profile.constructBannerUrl());
   }, [profile?.updatedAt, profile?.userId]);
@@ -96,7 +96,7 @@ export const ProfileEditorScreen = observer(() => {
         backgroundColor: backgroundColor.trim() || null,
         backgroundImage: profile.backgroundImage ?? null,
         pageFontFamily: pageFontFamily.trim() || null,
-        introMusic: introMusic || null,
+        profileMusic: profileMusic || null,
         blocks: profile.blocks,
       });
     } catch (e) {
@@ -248,12 +248,12 @@ export const ProfileEditorScreen = observer(() => {
             elevation={app.settings?.preferEmbossed ? 2 : 0}
           >
             <Typography level="body-md" weight={700}>
-              Intro music URL
+              Profile music URL
             </Typography>
             <Input
-              value={introMusic?.url ?? ""}
+              value={profileMusic?.url ?? ""}
               onChangeText={(value) =>
-                setIntroMusic({ ...introMusic, url: value })
+                setProfileMusic({ ...profileMusic, url: value })
               }
               placeholder="https://..."
               autoCapitalize="none"

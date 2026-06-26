@@ -354,7 +354,7 @@ export const UserProfileSettings = observer(() => {
           </Typography>
           <Typography level="body-sm" textColor="muted">
             Customize your MySpace-style page with blocks, banner, bio, and
-            intro music.
+            profile music.
           </Typography>
         </Box>
         <Button

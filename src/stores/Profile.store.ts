@@ -59,9 +59,9 @@ export class ProfileStore {
             APIUserProfile,
             "userId" | "configured" | "updatedAt"
         > & {
-            introMusicUrl?: string | null;
-            introMusicTrackId?: string | null;
-            introMusicTrackSource?: "itunes" | "deezer" | null;
+            profileMusicUrl?: string | null;
+            profileMusicTrackId?: string | null;
+            profileMusicTrackSource?: "itunes" | "deezer" | null;
         },
     ) {
         const result = await this.app.rest.put<APIUserProfile>(
