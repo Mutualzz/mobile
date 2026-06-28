@@ -8,10 +8,11 @@ import type { StyleProp, ViewStyle } from "react-native";
 type Props = PropsWithChildren<{
   title: string;
   contentStyle?: StyleProp<ViewStyle>;
+  onBack?: () => void;
 }>;
 
 export const SettingsScreen = observer(
-  ({ title, contentStyle, children }: Props) => {
+  ({ title, contentStyle, onBack, children }: Props) => {
     return (
       <Screen
         style={{
@@ -23,7 +24,7 @@ export const SettingsScreen = observer(
           borderRightWidth: 0,
         }}
       >
-        <SettingsHeader title={title} showBack />
+        <SettingsHeader title={title} showBack onBack={onBack} />
         <Box style={[{ flex: 1, minWidth: 0 }, contentStyle]}>{children}</Box>
       </Screen>
     );

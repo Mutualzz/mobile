@@ -9,9 +9,10 @@ import { Pressable } from "react-native";
 interface Props {
   title: string;
   showBack?: boolean;
+  onBack?: () => void;
 }
 
-export const SettingsHeader = observer(({ title, showBack = false }: Props) => {
+export const SettingsHeader = observer(({ title, showBack = false, onBack }: Props) => {
   const { back } = useAppNavigation();
   const closeSettings = useCloseSettings();
   const { theme } = useTheme();
@@ -32,7 +33,7 @@ export const SettingsHeader = observer(({ title, showBack = false }: Props) => {
       }}
     >
       {showBack ? (
-        <Pressable hitSlop={8} onPress={() => back()}>
+        <Pressable hitSlop={8} onPress={() => (onBack ? onBack() : back())}>
           <ArrowLeftIcon size={22} weight="bold" color={iconColor} />
         </Pressable>
       ) : null}

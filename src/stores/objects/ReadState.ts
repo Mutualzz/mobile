@@ -41,9 +41,9 @@ export class ReadState {
     const lastChannelMessageId = this.channel?.lastMessage?.id;
     if (!lastChannelMessageId) return false;
     if (!this.lastMessageId && !this.lastAckedId) return false;
-    if (!this.lastMessageId) return true;
 
-    return BigInt(lastChannelMessageId) > BigInt(this.lastMessageId);
+    const readUpTo = this.lastMessageId ?? this.lastAckedId;
+    return BigInt(lastChannelMessageId) > BigInt(readUpTo!);
   }
 
   get hasMentions(): boolean {

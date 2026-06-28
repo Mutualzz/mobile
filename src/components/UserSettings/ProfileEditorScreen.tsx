@@ -1,17 +1,19 @@
 import { SettingsScreen } from "@components/UserSettings/SettingsScreen";
 import { Paper } from "@components/Paper";
+import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Button, Input, Typography } from "@mutualzz/ui-native";
 import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, ScrollView } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Alert, BackHandler, Image, ScrollView } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
 import type { APIProfileMusic } from "@mutualzz/types";
 
 export const ProfileEditorScreen = observer(() => {
   const app = useAppStore();
   const account = app.account;
+  const { back } = useAppNavigation();
 
   const [bio, setBio] = useState("");
   const [backgroundColor, setBackgroundColor] = useState("");
@@ -34,6 +36,51 @@ export const ProfileEditorScreen = observer(() => {
   const profile = account?.id
     ? (app.profiles.get(account.id) ?? fetchedProfile)
     : undefined;
+
+  const formStateRef = useRef({ bio, backgroundColor, pageFontFamily, profileMusic, bannerHash });
+  formStateRef.current = { bio, backgroundColor, pageFontFamily, profileMusic, bannerHash };
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
+
+  const handleBack = useCallback(() => {
+    const state = formStateRef.current;
+    const p = profileRef.current;
+    const isDirty =
+      !!p &&
+      (state.bio !== (p.bio ?? "") ||
+        state.backgroundColor !== (p.backgroundColor ?? "") ||
+        state.pageFontFamily !== (p.pageFontFamily ?? "") ||
+        state.bannerHash !== (p.banner ?? null) ||
+        JSON.stringify(state.profileMusic) !==
+          JSON.stringify(p.profileMusic ?? null));
+
+    if (isDirty) {
+      Alert.alert(
+        "Leave without saving?",
+        "You have unsaved changes. If you leave now, your changes will be lost.",
+        [
+          { text: "Keep editing", style: "cancel" },
+          { text: "Leave", style: "destructive", onPress: () => back() },
+        ],
+      );
+    } else {
+      back();
+    }
+  }, [back]);
+
+  const handleBackRef = useRef(handleBack);
+  handleBackRef.current = handleBack;
+
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        handleBackRef.current();
+        return true;
+      },
+    );
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     if (!profile) return;
@@ -107,7 +154,7 @@ export const ProfileEditorScreen = observer(() => {
   };
 
   return (
-    <SettingsScreen title="Profile Editor" contentStyle={{ flex: 1 }}>
+    <SettingsScreen title="Profile Editor" onBack={handleBack} contentStyle={{ flex: 1 }}>
       {isLoading && !profile ? (
         <Box
           style={{

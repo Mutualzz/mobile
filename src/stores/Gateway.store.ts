@@ -1111,18 +1111,36 @@ export class GatewayStore {
   private onMessageAck = (payload: {
     channelId: string;
     lastMessageId: string;
+    mentionCount: number;
   }) => {
-    this.app.readStates.updateLocal(payload.channelId, payload.lastMessageId);
+    const readState = this.app.readStates.get(payload.channelId);
+    if (readState) {
+      readState.update({
+        lastMessageId: payload.lastMessageId,
+        mentionCount: payload.mentionCount ?? 0,
+      });
+    } else {
+      this.app.readStates.updateLocal(payload.channelId, payload.lastMessageId);
+    }
   };
 
   private onMessageAckBulk = (
     payload: {
       channelId: string;
       lastMessageId: string;
+      mentionCount: number;
     }[],
   ) => {
     for (const state of payload) {
-      this.app.readStates.updateLocal(state.channelId, state.lastMessageId);
+      const readState = this.app.readStates.get(state.channelId);
+      if (readState) {
+        readState.update({
+          lastMessageId: state.lastMessageId,
+          mentionCount: state.mentionCount ?? 0,
+        });
+      } else {
+        this.app.readStates.updateLocal(state.channelId, state.lastMessageId);
+      }
     }
   };
 
