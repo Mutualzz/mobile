@@ -1,9 +1,7 @@
 import { CustomStatusSheet } from "@components/UserSettings/CustomStatusSheet";
 import { AccountMenuSheet } from "@components/User/AccountMenuSheet";
-import { IconButton } from "@components/IconButton";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppStore } from "@hooks/useStores";
-import { SmileyIcon } from "phosphor-react-native";
 import { Box, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -47,7 +45,7 @@ export const UserBar = observer(() => {
           <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
             <Typography level="body-sm" numberOfLines={1}>
               {account.displayName}
-            </Typography
+            </Typography>
             <Typography level="body-xs" textColor="muted" numberOfLines={1}>
               {customStatus || `@${account.username}`}
             </Typography>
