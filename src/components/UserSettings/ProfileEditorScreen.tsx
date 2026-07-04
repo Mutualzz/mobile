@@ -1,12 +1,20 @@
+import { ProfileBlockCanvas } from "@components/Profile/canvas/ProfileBlockCanvas";
+import { Button } from "@components/Button";
 import { SettingsScreen } from "@components/UserSettings/SettingsScreen";
 import { Paper } from "@components/Paper";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
-import { Box, Button, Input, Typography } from "@mutualzz/ui-native";
+import { Box, Input, Typography } from "@mutualzz/ui-native";
 import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, BackHandler, Image, ScrollView } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  BackHandler,
+  Image,
+  ScrollView,
+} from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
 import type { APIProfileMusic } from "@mutualzz/types";
 
@@ -37,8 +45,20 @@ export const ProfileEditorScreen = observer(() => {
     ? (app.profiles.get(account.id) ?? fetchedProfile)
     : undefined;
 
-  const formStateRef = useRef({ bio, backgroundColor, pageFontFamily, profileMusic, bannerHash });
-  formStateRef.current = { bio, backgroundColor, pageFontFamily, profileMusic, bannerHash };
+  const formStateRef = useRef({
+    bio,
+    backgroundColor,
+    pageFontFamily,
+    profileMusic,
+    bannerHash,
+  });
+  formStateRef.current = {
+    bio,
+    backgroundColor,
+    pageFontFamily,
+    profileMusic,
+    bannerHash,
+  };
   const profileRef = useRef(profile);
   profileRef.current = profile;
 
@@ -154,7 +174,11 @@ export const ProfileEditorScreen = observer(() => {
   };
 
   return (
-    <SettingsScreen title="Profile Editor" onBack={handleBack} contentStyle={{ flex: 1 }}>
+    <SettingsScreen
+      title="Profile Editor"
+      onBack={handleBack}
+      contentStyle={{ flex: 1 }}
+    >
       {isLoading && !profile ? (
         <Box
           style={{
@@ -311,18 +335,26 @@ export const ProfileEditorScreen = observer(() => {
             style={{
               borderRadius: 12,
               padding: 12,
-              gap: 8,
+              gap: 12,
+              overflow: "hidden",
             }}
             elevation={app.settings?.preferEmbossed ? 2 : 0}
           >
             <Typography level="body-md" weight={700}>
               Blocks
             </Typography>
-            <Typography level="body-sm" textColor="muted">
-              {profile?.blocks.length ?? 0} block
-              {(profile?.blocks.length ?? 0) === 1 ? "" : "s"} on your page. Use
-              desktop to rearrange or add new blocks.
-            </Typography>
+            {profile && profile.blocks.length > 0 ? (
+              <>
+                <ProfileBlockCanvas profile={profile} user={account} />
+                <Typography level="body-xs" textColor="muted">
+                  Block layout can only be edited on desktop for now.
+                </Typography>
+              </>
+            ) : (
+              <Typography level="body-sm" textColor="muted">
+                No blocks yet. Use desktop to add and arrange blocks.
+              </Typography>
+            )}
           </Paper>
 
           {error && (

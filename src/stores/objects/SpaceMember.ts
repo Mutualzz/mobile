@@ -1,7 +1,7 @@
 import { type APISpaceMember, type Snowflake } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
-import { makeAutoObservable, observable, ObservableMap } from "mobx";
-import { Role } from "./Role";
+import { makeAutoObservable, observable, type ObservableMap } from "mobx";
+import { type Role } from "./Role";
 import type { Channel } from "./Channel";
 import {
   ALL_BITS,
@@ -12,7 +12,7 @@ import {
   permissionFlags,
   type PermissionFlags,
   resolveBaseBits,
-  resolveEffectiveChannelBits
+  resolveEffectiveChannelBits,
 } from "@mutualzz/bitfield";
 import type { User } from "@stores/objects/User";
 
@@ -33,7 +33,7 @@ export class SpaceMember {
 
   constructor(
     private readonly app: AppStore,
-    member: APISpaceMember
+    member: APISpaceMember,
   ) {
     this.id = member.userId;
 
@@ -120,13 +120,10 @@ export class SpaceMember {
 
     if (space.roles.all.length === 0) return 0n;
 
-    // Pass allow + deny for each role so resolveBaseBits can apply denies
     const roles = space.roles.all.map((r) => ({
       id: r.id,
       allow: r.allow.bits,
       deny: r.deny.bits,
-      // Keep permissions for backwards compat with engine RoleLike type
-      permissions: r.allow.bits
     }));
 
     return resolveBaseBits(space.id, roles, this.memberRoleIds);
@@ -250,7 +247,7 @@ export class SpaceMember {
           roleId: o.roleId ?? null,
           userId: o.userId ?? null,
           allow: o.allow.bits,
-          deny: o.deny.bits
+          deny: o.deny.bits,
         }))
       : null;
 
@@ -258,7 +255,7 @@ export class SpaceMember {
       roleId: o.roleId ?? null,
       userId: o.userId ?? null,
       allow: o.allow.bits,
-      deny: o.deny.bits
+      deny: o.deny.bits,
     }));
 
     const effectiveBits = resolveEffectiveChannelBits({
@@ -267,7 +264,7 @@ export class SpaceMember {
       everyoneRoleId: space.id,
       memberRoleIds: this.memberRoleIds,
       parentOverwrites,
-      channelOverwrites
+      channelOverwrites,
     });
 
     this.channelPermCache.set(channel.id, effectiveBits);
@@ -337,7 +334,7 @@ export class SpaceMember {
 
     try {
       return this.app.rest.put(
-        `/spaces/${this.spaceId}/members/${this.userId}/roles/${role.id}`
+        `/spaces/${this.spaceId}/members/${this.userId}/roles/${role.id}`,
       );
     } catch (e) {
       this.roles.delete(rid);
@@ -353,7 +350,7 @@ export class SpaceMember {
 
     try {
       return this.app.rest.delete(
-        `/spaces/${this.spaceId}/members/${this.userId}/roles/${role.id}`
+        `/spaces/${this.spaceId}/members/${this.userId}/roles/${role.id}`,
       );
     } catch (e) {
       this.roles.add(rid);

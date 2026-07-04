@@ -1,21 +1,16 @@
+import { Button } from "@components/Button";
 import { ReactionEmojiPicker } from "@components/Expression/ReactionEmojiPicker";
 import { Paper } from "@components/Paper";
 import {
-    CopyIcon,
-    PencilSimpleIcon,
-    SmileyIcon,
-    TrashIcon,
+  CopyIcon,
+  PencilSimpleIcon,
+  SmileyIcon,
+  TrashIcon,
 } from "phosphor-react-native";
 import { useRecentEmojis } from "@hooks/useRecentEmojis";
 import { useAppStore } from "@hooks/useStores";
 import { UnicodeEmoji } from "@components/emojis/UnicodeEmoji";
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  Divider,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { Box, ButtonGroup, Divider, useTheme } from "@mutualzz/ui-native";
 import type { Expression } from "@stores/objects/Expression";
 import type { Message } from "@stores/objects/Message";
 import {
@@ -170,7 +165,7 @@ export const MessageActionSheet = observer(
                 }}
               >
                 <Paper
-                  elevation={app.settings?.preferEmbossed ? 5 : 2}
+                  elevation={app.settings?.preferEmbossed ? 4 : 2}
                   style={{
                     borderRadius: 16,
                     padding: 12,
@@ -205,7 +200,10 @@ export const MessageActionSheet = observer(
                           backgroundColor: `${theme.colors.neutral}22`,
                         }}
                       >
-                        <SmileyIcon size={24} color={theme.typography.colors.primary} />
+                        <SmileyIcon
+                          size={24}
+                          color={theme.typography.colors.primary}
+                        />
                       </Pressable>
                     </Box>
                   )}
@@ -227,9 +225,7 @@ export const MessageActionSheet = observer(
                         <Button
                           fullWidth
                           padding={12}
-                          startDecorator={
-                            <CopyIcon size={20} />
-                          }
+                          startDecorator={<CopyIcon size={20} />}
                           onPress={() => void handleCopy()}
                         >
                           Copy Text
@@ -252,9 +248,7 @@ export const MessageActionSheet = observer(
                           fullWidth
                           padding={12}
                           color="danger"
-                          startDecorator={
-                            <TrashIcon size={20} weight="fill" />
-                          }
+                          startDecorator={<TrashIcon size={20} weight="fill" />}
                           onPress={() => void handleDelete()}
                         >
                           Delete Message
@@ -265,7 +259,7 @@ export const MessageActionSheet = observer(
                 </Paper>
 
                 <Paper
-                  elevation={app.settings?.preferEmbossed ? 5 : 2}
+                  elevation={app.settings?.preferEmbossed ? 4 : 2}
                   style={{
                     borderRadius: 16,
                   }}

@@ -1,7 +1,8 @@
+import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import { HttpException } from "@mutualzz/types";
-import { Box, Button, InputDefault, Typography } from "@mutualzz/ui-native";
+import { Box, InputDefault, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -38,6 +39,7 @@ export const EmailChangeSheet = observer(({ visible, onClose }: Props) => {
         }}
       >
         <Paper
+          elevation={app.settings?.preferEmbossed ? 4 : 2}
           style={{
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,

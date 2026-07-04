@@ -1,9 +1,10 @@
+import { Button } from "@components/Button";
 import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import type { APIRole } from "@mutualzz/types";
-import { Box, Button, Input, Stack, Typography } from "@mutualzz/ui-native";
+import { Box, Input, Stack, Typography } from "@mutualzz/ui-native";
 import type { Role } from "@stores/objects/Role";
 import type { Space } from "@stores/objects/Space";
 import { observer } from "mobx-react-lite";

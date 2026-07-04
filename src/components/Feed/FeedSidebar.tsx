@@ -30,7 +30,7 @@ export const FeedSidebar = observer(() => {
           </IconButton>
           <IconButton
             variant="plain"
-            onPress={() => navigate("/(tabs)/settings/profile-editor")}
+            onPress={() => navigate("/settings/profile-editor")}
           >
             <PaintBrushIcon size={22} weight="fill" />
           </IconButton>

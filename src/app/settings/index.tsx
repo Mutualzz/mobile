@@ -1,3 +1,4 @@
+import { Button } from "@components/Button";
 import { Screen } from "@components/Screen/Screen";
 import { Paper } from "@components/Paper";
 import { SettingsHeader } from "@components/UserSettings/SettingsHeader";
@@ -16,7 +17,7 @@ import {
 } from "phosphor-react-native";
 import { useAppStore } from "@hooks/useStores";
 import { useAppNavigation } from "@hooks/useAppNavigation";
-import { Button, ButtonGroup, Divider, Typography } from "@mutualzz/ui-native";
+import { ButtonGroup, Divider, Typography } from "@mutualzz/ui-native";
 import startCase from "lodash-es/startCase";
 import { observer } from "mobx-react-lite";
 import { Fragment, type ComponentType } from "react";
@@ -97,7 +98,7 @@ const SettingsIndex = () => {
                   key={`user-settings-sidebar-${page.label}`}
                   padding={5}
                   style={{ minWidth: 0 }}
-                  onPress={() => navigate(`/(tabs)/settings/${page.label}`)}
+                  onPress={() => navigate(`/settings/${page.label}`)}
                 >
                   {page.label === "voice_and_video"
                     ? "Voice & Video"

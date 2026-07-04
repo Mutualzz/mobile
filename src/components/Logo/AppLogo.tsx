@@ -1,6 +1,10 @@
-import { Image, Pressable, type ImageProps } from "react-native";
+import { useAppStore } from "@hooks/useStores";
+import { useTheme } from "@mutualzz/ui-native";
+import { Theme } from "@stores/objects/Theme";
+import { observer } from "mobx-react-lite";
+import { Image, Pressable, View, type ImageProps } from "react-native";
 
-const icon = require("../../../assets/icon.png");
+const mark = require("../../../assets/adaptive-icon.png");
 
 interface Props {
   size?: number;
@@ -8,19 +12,34 @@ interface Props {
   style?: ImageProps["style"];
 }
 
-export const AppLogo = ({ size = 48, onPress, style }: Props) => {
+export const AppLogo = observer(({ size = 48, onPress, style }: Props) => {
+  const app = useAppStore();
+  const { theme } = useTheme();
+
+  const themeToUse = app.themes.currentIcon
+    ? (app.themes.get(app.themes.currentIcon) ?? theme)
+    : theme;
+  const primary = Theme.toEmotion(themeToUse).colors.primary;
+
   const image = (
-    <Image
-      source={icon}
+    <View
       style={[
         {
           width: size,
           height: size,
           borderRadius: size / 2,
+          backgroundColor: primary,
+          overflow: "hidden",
         },
         style,
       ]}
-    />
+    >
+      <Image
+        source={mark}
+        style={{ width: size, height: size }}
+        resizeMode="cover"
+      />
+    </View>
   );
 
   if (!onPress) return image;
@@ -30,4 +49,4 @@ export const AppLogo = ({ size = 48, onPress, style }: Props) => {
       {image}
     </Pressable>
   );
-};
+});

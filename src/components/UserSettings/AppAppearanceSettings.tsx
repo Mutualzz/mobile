@@ -1,7 +1,6 @@
 import { ThemeCreatorModal } from "@components/UserSettings/ThemeCreatorModal";
 import { Paper } from "@components/Paper";
 import { IconButton } from "@components/IconButton";
-import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
 import {
   CheckIcon,
@@ -22,9 +21,17 @@ import { Theme } from "@stores/objects/Theme";
 import { getThemeSwatchStops, type ThemeSwatchStop } from "@utils/themeSwatch";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { useColorScheme, Pressable, ScrollView, View } from "react-native";
+import {
+  useColorScheme,
+  Image,
+  Pressable,
+  ScrollView,
+  View,
+} from "react-native";
 
 const SWATCH_SIZE = 64;
+
+const adaptiveIconMark = require("../../../assets/adaptive-icon.png");
 
 const SelectionBadge = ({
   badgeIcon = "check",
@@ -158,6 +165,71 @@ const ThemeSwatch = ({
   );
 };
 
+const AdaptiveIconSwatch = ({ primaryColor }: { primaryColor: string }) => (
+  <View
+    style={{
+      width: SWATCH_SIZE,
+      height: SWATCH_SIZE,
+      borderRadius: SWATCH_SIZE / 2,
+      overflow: "hidden",
+      backgroundColor: primaryColor,
+    }}
+  >
+    <Image
+      source={adaptiveIconMark}
+      style={{ width: SWATCH_SIZE, height: SWATCH_SIZE }}
+      resizeMode="cover"
+    />
+  </View>
+);
+
+const IconSwatch = ({
+  primaryColor,
+  selected,
+  onPress,
+  badgeIcon = "check",
+  alwaysShowBadge = false,
+}: {
+  primaryColor: string;
+  selected: boolean;
+  onPress: () => void;
+  badgeIcon?: "check" | "sync";
+  alwaysShowBadge?: boolean;
+}) => {
+  const { theme } = useTheme();
+  const showBadge = alwaysShowBadge || selected;
+  const outline = 3;
+
+  return (
+    <Pressable onPress={onPress} style={{ paddingVertical: 4 }}>
+      <View
+        style={{
+          position: "relative",
+          width: SWATCH_SIZE,
+          height: SWATCH_SIZE,
+        }}
+      >
+        {selected && (
+          <View
+            style={{
+              position: "absolute",
+              top: -outline,
+              left: -outline,
+              width: SWATCH_SIZE + outline * 2,
+              height: SWATCH_SIZE + outline * 2,
+              borderRadius: (SWATCH_SIZE + outline * 2) / 2,
+              borderWidth: outline,
+              borderColor: theme.colors.primary,
+            }}
+          />
+        )}
+        <AdaptiveIconSwatch primaryColor={primaryColor} />
+        {showBadge && <SelectionBadge badgeIcon={badgeIcon} />}
+      </View>
+    </Pressable>
+  );
+};
+
 const ThemeGrid = ({
   themes,
   isSelected,
@@ -206,10 +278,10 @@ const SectionHeader = ({ title }: { title: string }) => (
 export const AppAppearanceSettings = observer(() => {
   const app = useAppStore();
   const settings = app.settings;
-  const { openModal } = useModal();
   const { theme: currentTheme, changeTheme, type: currentType } = useTheme();
   const prefersDark = useColorScheme() === "dark";
   const [deletingThemeId, setDeletingThemeId] = useState<string | null>(null);
+  const [themeCreatorOpen, setThemeCreatorOpen] = useState(false);
 
   if (!settings) return null;
 
@@ -250,6 +322,16 @@ export const AppAppearanceSettings = observer(() => {
     app.themes.setCurrentType(null);
   };
 
+  const currentIconId = app.themes.currentIcon;
+
+  const handleIconChange = (iconId: string | null) => {
+    if (iconId === currentIconId) return;
+
+    app.themes.setCurrentIcon(iconId);
+    settings.setCurrentIcon(iconId);
+    void settings.sync();
+  };
+
   const handleDeleteTheme = async (theme: StoreTheme) => {
     if (deletingThemeId) return;
 
@@ -281,216 +363,209 @@ export const AppAppearanceSettings = observer(() => {
   );
 
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{
-        padding: 16,
-        paddingBottom: 32,
-        gap: 16,
-      }}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Paper
-        style={{
+    <>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
           padding: 16,
-          borderRadius: 12,
-          gap: 12,
-          minWidth: 0,
+          paddingBottom: 32,
+          gap: 16,
         }}
-        elevation={app.settings?.preferEmbossed ? 2 : 0}
+        keyboardShouldPersistTaps="handled"
       >
-        <Box
+        <Paper
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
+            padding: 16,
+            borderRadius: 12,
             gap: 12,
             minWidth: 0,
           }}
+          elevation={app.settings?.preferEmbossed ? 2 : 0}
         >
           <Box
             style={{
               flexDirection: "row",
               alignItems: "center",
-              gap: 8,
-              flexShrink: 1,
+              justifyContent: "space-between",
+              gap: 12,
               minWidth: 0,
             }}
           >
-            <Typography level="body-md" weight={700}>
-              Themes
-            </Typography>
-            <IconButton
-              padding={6}
-              size={16}
-              variant="soft"
-              color="neutral"
-              onPress={() =>
-                openModal("theme-creator", <ThemeCreatorModal />, {
-                  style: { padding: 16 },
-                })
-              }
-            >
-              <PaletteIcon weight="fill" />
-            </IconButton>
-          </Box>
-        </Box>
-
-        <Box
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            minWidth: 0,
-          }}
-        >
-          <Typography level="body-xs" textColor="muted" style={{ flex: 1 }}>
-            Prefer embossed
-          </Typography>
-          <Switch
-            checked={settings.preferEmbossed}
-            onChange={(value) => {
-              settings.setPreferEmbossed(value);
-              void settings.sync();
-            }}
-          />
-        </Box>
-
-        <SectionHeader title="Default Themes" />
-        <Box
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 10,
-            paddingVertical: 8,
-          }}
-        >
-          {defaultThemes.map((theme) => (
-            <ThemeSwatch
-              key={theme.id}
-              stops={getThemeSwatchStops(
-                theme.colors.background,
-                theme.colors.primary,
-              )}
-              selected={isThemeSelected(theme)}
-              onPress={() => handleThemeChange(theme)}
-            />
-          ))}
-          <ThemeSwatch
-            stops={systemStops}
-            selected={!currentType}
-            badgeIcon={currentType ? "sync" : "check"}
-            alwaysShowBadge
-            onPress={handleSyncWithSystem}
-          />
-        </Box>
-
-        {userThemes.length > 0 && (
-          <>
-            <SectionHeader title="Your Themes" />
-            <ThemeGrid
-              themes={userThemes}
-              isSelected={isThemeSelected}
-              onSelect={handleThemeChange}
-              onDelete={(theme) => void handleDeleteTheme(theme)}
-              deletingId={deletingThemeId}
-            />
-          </>
-        )}
-
-        <SectionHeader title="Color Themes" />
-
-        <Typography level="body-xs" weight={700}>
-          Normal
-        </Typography>
-        <ThemeGrid
-          themes={normalThemes}
-          isSelected={isThemeSelected}
-          onSelect={handleThemeChange}
-        />
-
-        <Typography level="body-xs" weight={700}>
-          Gradient
-        </Typography>
-        <ThemeGrid
-          themes={gradientThemes}
-          isSelected={isThemeSelected}
-          onSelect={handleThemeChange}
-        />
-      </Paper>
-    </ScrollView>
-  );
-});
-
-// TODO: Add icons later (snippet below)m
-/**
- *
-      <Paper
-        style={{
-          padding: 16,
-          borderRadius: 12,
-          gap: 12,
-          minWidth: 0,
-        }}
-        elevation={app.settings?.preferEmbossed ? 2 : 0}
-      >
-        <Typography level="body-md" weight={700}>
-          Icons
-        </Typography>
-
-        <SectionHeader title="Default Icons" />
-        <Box
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 10,
-            paddingVertical: 8,
-          }}
-        >
-          <Pressable onPress={() => handleIconChange(null)}>
-            <View style={{ position: "relative" }}>
-              <AdaptiveIconSwatch primaryColor={currentTheme.colors.primary} />
-              <SelectionBadge badgeIcon={currentIconId ? "sync" : "check"} />
-            </View>
-          </Pressable>
-          {defaultIconThemes.map((theme) => (
-            <Pressable
-              key={`icon-${theme.id}`}
-              onPress={() => handleIconChange(theme.id)}
-            >
-              <View style={{ position: "relative" }}>
-                <AdaptiveIconSwatch primaryColor={theme.colors.primary} />
-                {currentIconId === theme.id && <SelectionBadge />}
-              </View>
-            </Pressable>
-          ))}
-        </Box>
-
-        {userIconThemes.length > 0 && (
-          <>
-            <SectionHeader title="Your Icons" />
             <Box
               style={{
                 flexDirection: "row",
-                flexWrap: "wrap",
-                gap: 10,
-                paddingVertical: 8,
+                alignItems: "center",
+                gap: 8,
+                flexShrink: 1,
+                minWidth: 0,
               }}
             >
-              {userIconThemes.map((theme) => (
-                <Pressable
-                  key={`user-icon-${theme.id}`}
-                  onPress={() => handleIconChange(theme.id)}
-                >
-                  <View style={{ position: "relative" }}>
-                    <AdaptiveIconSwatch primaryColor={theme.colors.primary} />
-                    {currentIconId === theme.id && <SelectionBadge />}
-                  </View>
-                </Pressable>
-              ))}
+              <Typography level="body-md" weight={700}>
+                Themes
+              </Typography>
+              <IconButton
+                padding={6}
+                size={16}
+                variant="soft"
+                color="neutral"
+                onPress={() => setThemeCreatorOpen(true)}
+              >
+                <PaletteIcon weight="fill" />
+              </IconButton>
             </Box>
-          </>
-        )}
-      </Paper>
- */
+          </Box>
+
+          <Box
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              minWidth: 0,
+            }}
+          >
+            <Typography level="body-xs" textColor="muted" style={{ flex: 1 }}>
+              Prefer embossed
+            </Typography>
+            <Switch
+              checked={settings.preferEmbossed}
+              onChange={(value) => {
+                settings.setPreferEmbossed(value);
+                void settings.sync();
+              }}
+            />
+          </Box>
+
+          <SectionHeader title="Default Themes" />
+          <Box
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 10,
+              paddingVertical: 8,
+            }}
+          >
+            {defaultThemes.map((theme) => (
+              <ThemeSwatch
+                key={theme.id}
+                stops={getThemeSwatchStops(
+                  theme.colors.background,
+                  theme.colors.primary,
+                )}
+                selected={isThemeSelected(theme)}
+                onPress={() => handleThemeChange(theme)}
+              />
+            ))}
+            <ThemeSwatch
+              stops={systemStops}
+              selected={!currentType}
+              badgeIcon={currentType ? "sync" : "check"}
+              alwaysShowBadge
+              onPress={handleSyncWithSystem}
+            />
+          </Box>
+
+          {userThemes.length > 0 && (
+            <>
+              <SectionHeader title="Your Themes" />
+              <ThemeGrid
+                themes={userThemes}
+                isSelected={isThemeSelected}
+                onSelect={handleThemeChange}
+                onDelete={(theme) => void handleDeleteTheme(theme)}
+                deletingId={deletingThemeId}
+              />
+            </>
+          )}
+
+          <SectionHeader title="Color Themes" />
+
+          <Typography level="body-xs" weight={700}>
+            Normal
+          </Typography>
+          <ThemeGrid
+            themes={normalThemes}
+            isSelected={isThemeSelected}
+            onSelect={handleThemeChange}
+          />
+
+          <Typography level="body-xs" weight={700}>
+            Gradient
+          </Typography>
+          <ThemeGrid
+            themes={gradientThemes}
+            isSelected={isThemeSelected}
+            onSelect={handleThemeChange}
+          />
+        </Paper>
+
+        <Paper
+          style={{
+            padding: 16,
+            borderRadius: 12,
+            gap: 12,
+            minWidth: 0,
+          }}
+          elevation={app.settings?.preferEmbossed ? 2 : 0}
+        >
+          <Typography level="body-md" weight={700}>
+            Icons
+          </Typography>
+
+          <SectionHeader title="Default Icons" />
+          <Box
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 10,
+              paddingVertical: 8,
+            }}
+          >
+            <IconSwatch
+              primaryColor={currentTheme.colors.primary}
+              selected={!currentIconId}
+              badgeIcon={currentIconId ? "sync" : "check"}
+              alwaysShowBadge
+              onPress={() => handleIconChange(null)}
+            />
+            {defaultColorThemes.map((iconTheme) => (
+              <IconSwatch
+                key={`icon-${iconTheme.id}`}
+                primaryColor={iconTheme.colors.primary}
+                selected={currentIconId === iconTheme.id}
+                onPress={() => handleIconChange(iconTheme.id)}
+              />
+            ))}
+          </Box>
+
+          {userThemes.length > 0 && (
+            <>
+              <SectionHeader title="Your Icons" />
+              <Box
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  gap: 10,
+                  paddingVertical: 8,
+                }}
+              >
+                {userThemes.map((iconTheme) => (
+                  <IconSwatch
+                    key={`user-icon-${iconTheme.id}`}
+                    primaryColor={iconTheme.colors.primary}
+                    selected={currentIconId === iconTheme.id}
+                    onPress={() => handleIconChange(iconTheme.id)}
+                  />
+                ))}
+              </Box>
+            </>
+          )}
+        </Paper>
+      </ScrollView>
+      <ThemeCreatorModal
+        visible={themeCreatorOpen}
+        onClose={() => setThemeCreatorOpen(false)}
+      />
+    </>
+  );
+});

@@ -19,7 +19,7 @@ export const DMChannelList = observer(() => {
         marginHorizontal: 12,
         gap: 8,
       }}
-      elevation={app.settings?.preferEmbossed ? 4 : 0}
+      elevation={app.settings?.preferEmbossed ? 2 : 0}
     >
       <Typography level="label-xs" textColor="muted">
         Direct Messages

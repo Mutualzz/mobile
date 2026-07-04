@@ -1,9 +1,11 @@
+import { Button } from "@components/Button";
+import { IconButton } from "@components/IconButton";
 import { SettingsScreen } from "@components/UserSettings/SettingsScreen";
 import { Paper } from "@components/Paper";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { ImageFormat, type Sizes, type APIPrivateUser } from "@mutualzz/types";
-import { Box, Button, Typography } from "@mutualzz/ui-native";
+import { Box, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Image, ScrollView } from "react-native";
@@ -125,9 +127,10 @@ export default observer(function AvatarEditorScreen() {
               }}
             >
               {previousAvatars.map((hash) => (
-                <Button
+                <IconButton
                   key={hash}
                   variant="plain"
+                  padding={0}
                   disabled={uploading}
                   onPress={() => void selectPreviousAvatar(hash)}
                 >
@@ -147,7 +150,7 @@ export default observer(function AvatarEditorScreen() {
                       borderRadius: 9999,
                     }}
                   />
-                </Button>
+                </IconButton>
               ))}
             </Box>
           )}

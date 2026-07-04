@@ -24,9 +24,14 @@ import { useState } from "react";
 import { Modal, Pressable } from "react-native";
 
 function flattenChannels(channels: Channel[]) {
+  const childIds = new Set(channels.filter((c) => c.parent).map((c) => c.id));
+
   const result: Channel[] = [];
   for (const channel of channels) {
+    if (childIds.has(channel.id)) continue;
+
     result.push(channel);
+
     if (channel.type === ChannelType.Category) {
       const children = channels.filter((c) => c.parent?.id === channel.id);
 
@@ -35,7 +40,7 @@ function flattenChannels(channels: Channel[]) {
     }
   }
 
-  return Array.from(new Set(result));
+  return result;
 }
 
 export const ChannelList = observer(() => {

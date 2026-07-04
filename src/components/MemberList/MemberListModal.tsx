@@ -90,7 +90,7 @@ export const MemberListModal = observer(
       <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
         <Screen
           variant="elevation"
-          elevation={app.settings?.preferEmbossed ? 2 : 0}
+          elevation={app.settings?.preferEmbossed ? 4 : 2}
           style={{ flexDirection: "column" }}
         >
           <ScreenHeader safeTop>

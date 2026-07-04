@@ -1,8 +1,9 @@
 import { MarkdownInput } from "@components/Markdown/MarkdownInput/MarkdownInput";
+import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import type { APIChannel } from "@mutualzz/types";
-import { Box, Button, InputDefault, Typography } from "@mutualzz/ui-native";
+import { Box, InputDefault, Typography } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
@@ -55,6 +56,7 @@ export const ChannelSettingsSheet = observer(
               gap: 12,
               maxHeight: "85%",
             }}
+            elevation={app.settings?.preferEmbossed ? 4 : 2}
           >
             <Typography level="body-lg" weight="bold">
               Channel Settings

@@ -57,6 +57,7 @@ export const ChannelListItem = observer(
 
       app.channels.setActive(channel.id);
       app.channels.setMostRecentChannelForSpace(space.id, channel.id);
+      app.setSpacesDrawerOpen(false);
 
       if (channel.isTextChannel) {
         navigate(`/spaces/channel/${channel.id}`);

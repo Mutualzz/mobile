@@ -1,7 +1,6 @@
 import { ChannelIcon } from "@components/Channel/ChannelIcon";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
-import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
@@ -17,7 +16,6 @@ interface Props {
 export const VoiceChannelView = observer(({ channel }: Props) => {
   const app = useAppStore();
   const { theme } = useTheme();
-  const { back } = useAppNavigation();
 
   useEffect(() => {
     void app.voice.joinChannel(channel.id);
@@ -31,7 +29,7 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
   return (
     <Screen style={{ flexDirection: "column" }}>
       <ScreenHeader>
-        <Pressable hitSlop={8} onPress={back}>
+        <Pressable hitSlop={8} onPress={() => app.setSpacesDrawerOpen(true)}>
           <ArrowLeftIcon color={theme.typography.colors.primary} />
         </Pressable>
         <ChannelIcon type={channel.type} />

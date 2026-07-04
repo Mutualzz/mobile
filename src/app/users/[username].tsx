@@ -1,8 +1,9 @@
+import { ProfileBlockCanvas } from "@components/Profile/canvas/ProfileBlockCanvas";
 import { UserProfileSheet } from "@components/Profile/UserProfileSheet";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
 import { IconButton } from "@components/IconButton";
 import { useAppStore } from "@hooks/useStores";
-import { Typography } from "@mutualzz/ui-native";
+import { Box, Typography } from "@mutualzz/ui-native";
 import { useQuery } from "@tanstack/react-query";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
@@ -32,6 +33,8 @@ const PublicProfileScreen = () => {
     return () => app.gateway.unsubscribeUser(user.id);
   }, [app.gateway, app.profiles, user?.id]);
 
+  const profile = user ? app.profiles.get(user.id) : undefined;
+
   if (!username) return <Redirect href="/" />;
 
   if (isLoading) {
@@ -60,14 +63,28 @@ const PublicProfileScreen = () => {
           Profile
         </Typography>
       </ScreenHeader>
-      <ScrollView
-        contentContainerStyle={{
-          padding: 16,
-          alignItems: "center",
-        }}
-      >
-        <UserProfileSheet user={user} modalId="public-profile" />
-      </ScrollView>
+      {profile?.configured && profile.blocks.length > 0 ? (
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+          <ProfileBlockCanvas profile={profile} user={user} />
+        </ScrollView>
+      ) : profile ? (
+        <ScrollView
+          contentContainerStyle={{ padding: 16, alignItems: "center" }}
+        >
+          <UserProfileSheet user={user} modalId="public-profile" />
+        </ScrollView>
+      ) : (
+        <Box
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+          }}
+        >
+          <ActivityIndicator />
+        </Box>
+      )}
     </Screen>
   );
 };

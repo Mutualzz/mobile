@@ -74,9 +74,10 @@ export const SpacesSidebar = observer(() => {
         borderBottomWidth: 0,
         borderLeftWidth: 0,
         borderRightWidth: 0,
-        flex: 1,
+        width: 72,
+        flexShrink: 0,
       }}
-      elevation={app.settings?.preferEmbossed ? 1 : 0}
+      elevation={app.settings?.preferEmbossed ? 2 : 0}
     >
       <Box
         style={{

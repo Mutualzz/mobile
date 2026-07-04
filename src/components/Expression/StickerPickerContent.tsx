@@ -1,9 +1,9 @@
 import { VirtualizedEmojiList } from "@components/Expression/VirtualizedEmojiList";
 import {
-    buildEmojiPickerList,
-    buildEmojiSearchList,
-    getGridColumnCount,
-    type EmojiCell,
+  buildEmojiPickerList,
+  buildEmojiSearchList,
+  getGridColumnCount,
+  type EmojiCell,
 } from "@components/Expression/emojiListModel";
 import { useAppStore } from "@hooks/useStores";
 import { ExpressionType } from "@mutualzz/types";
@@ -19,137 +19,121 @@ const STICKER_CELL_SIZE = 80;
 const STICKER_IMAGE_SIZE = 72;
 
 interface Props {
-    channel: Channel;
-    onSelectSticker: (sticker: Expression) => void;
+  channel: Channel;
+  onSelectSticker: (sticker: Expression) => void;
 }
 
 export const StickerPickerContent = observer(
-    ({ channel, onSelectSticker }: Props) => {
-        const app = useAppStore();
-        const { width } = useWindowDimensions();
-        const columns = getGridColumnCount(width, STICKER_CELL_SIZE);
-        const [search, setSearch] = useState("");
-        const meId = app.account?.id ?? "";
-        const me = channel.spaceId
-            ? app.spaces.get(channel.spaceId)?.members.me
-            : null;
+  ({ channel, onSelectSticker }: Props) => {
+    const app = useAppStore();
+    const { width } = useWindowDimensions();
+    const columns = getGridColumnCount(width, STICKER_CELL_SIZE);
+    const [search, setSearch] = useState("");
+    const meId = app.account?.id ?? "";
+    const me = channel.spaceId
+      ? app.spaces.get(channel.spaceId)?.members.me
+      : null;
 
-        const myStickers = useMemo(
-            () =>
-                app.expressions.stickers.filter(
-                    (sticker) =>
-                        !sticker.spaceId &&
-                        sticker.authorId === meId &&
-                        canUseSticker(meId, sticker, me, channel),
-                ),
-            [app.expressions.stickers, channel, me, meId],
-        );
+    const myStickers = app.expressions.stickers.filter(
+      (sticker) =>
+        !sticker.spaceId &&
+        sticker.authorId === meId &&
+        canUseSticker(meId, sticker, me, channel),
+    );
 
-        const spaceStickerGroups = useMemo(
-            () =>
-                app.spaces.all
-                    .map((space) => ({
-                        space,
-                        stickers: Array.from(space.expressions.values()).filter(
-                            (expression) =>
-                                expression.type === ExpressionType.Sticker &&
-                                canUseSticker(meId, expression, me, channel),
-                        ),
-                    }))
-                    .filter((group) => group.stickers.length > 0),
-            [app.spaces.all, channel, me, meId],
-        );
+    const spaceStickerGroups = app.spaces.all
+      .map((space) => ({
+        space,
+        stickers: Array.from(space.expressions.values()).filter(
+          (expression) =>
+            expression.type === ExpressionType.Sticker &&
+            canUseSticker(meId, expression, me, channel),
+        ),
+      }))
+      .filter((group) => group.stickers.length > 0);
 
-        const allStickers = useMemo(
-            () => [
-                ...myStickers,
-                ...spaceStickerGroups.flatMap((group) => group.stickers),
-            ],
-            [myStickers, spaceStickerGroups],
-        );
+    const allStickers = [
+      ...myStickers,
+      ...spaceStickerGroups.flatMap((group) => group.stickers),
+    ];
 
-        const searchResults = search.trim()
-            ? allStickers.filter((sticker) =>
-                  sticker.name
-                      .toLowerCase()
-                      .includes(search.toLowerCase().trim()),
-              )
-            : [];
+    const searchResults = search.trim()
+      ? allStickers.filter((sticker) =>
+          sticker.name.toLowerCase().includes(search.toLowerCase().trim()),
+        )
+      : [];
 
-        const { items } = useMemo(() => {
-            const toCells = (stickers: Expression[]): EmojiCell[] =>
-                stickers.map((sticker) => ({
-                    kind: "custom",
-                    emoji: sticker,
-                }));
+    const { items } = useMemo(() => {
+      const toCells = (stickers: Expression[]): EmojiCell[] =>
+        stickers.map((sticker) => ({
+          kind: "custom",
+          emoji: sticker,
+        }));
 
-            if (search.trim()) {
-                return buildEmojiSearchList(toCells(searchResults), columns);
-            }
+      if (search.trim()) {
+        return buildEmojiSearchList(toCells(searchResults), columns);
+      }
 
-            return buildEmojiPickerList(
-                [
-                    {
-                        sectionId: "my-stickers",
-                        title: "Your stickers",
-                        cells: toCells(myStickers),
-                    },
-                    ...spaceStickerGroups.map(({ space, stickers }) => ({
-                        sectionId: `space-${space.id}`,
-                        title: space.name,
-                        space,
-                        cells: toCells(stickers),
-                    })),
-                ],
-                columns,
-            );
-        }, [
-            columns,
-            myStickers,
-            search.trim(),
-            searchResults,
-            spaceStickerGroups,
-        ]);
+      return buildEmojiPickerList(
+        [
+          {
+            sectionId: "my-stickers",
+            title: "Your stickers",
+            cells: toCells(myStickers),
+          },
+          ...spaceStickerGroups.map(({ space, stickers }) => ({
+            sectionId: `space-${space.id}`,
+            title: space.name,
+            space,
+            cells: toCells(stickers),
+          })),
+        ],
+        columns,
+      );
+    }, [columns, myStickers, search.trim(), searchResults, spaceStickerGroups]);
 
-        const emptyLabel =
-            allStickers.length === 0 && !search.trim() ? (
-                <Typography
-                    level="body-sm"
-                    textColor="muted"
-                    style={{ textAlign: "center" }}
-                >
-                    No stickers yet. Upload some in User or Space settings.
-                </Typography>
-            ) : search.trim() && searchResults.length === 0 ? (
-                <Typography
-                    level="body-sm"
-                    textColor="muted"
-                    style={{ textAlign: "center" }}
-                >
-                    No results
-                </Typography>
-            ) : null;
+    const emptyLabel =
+      allStickers.length === 0 && !search.trim() ? (
+        <Typography
+          level="body-sm"
+          textColor="muted"
+          style={{ textAlign: "center" }}
+        >
+          No stickers yet. Upload some in User or Space settings.
+        </Typography>
+      ) : search.trim() && searchResults.length === 0 ? (
+        <Typography
+          level="body-sm"
+          textColor="muted"
+          style={{ textAlign: "center" }}
+        >
+          No results
+        </Typography>
+      ) : null;
 
-        return (
-            <Box style={{ flex: 1, minHeight: 0 }}>
-                <Box style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
-                    <Input
-                        value={search}
-                        onChangeText={setSearch}
-                        placeholder="Search stickers…"
-                    />
-                </Box>
+    return (
+      <Box style={{ flex: 1, minHeight: 0 }}>
+        <Box style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
+          <Input
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search stickers…"
+            variant="soft"
+            color="neutral"
+            style={{ borderRadius: 8 }}
+          />
+        </Box>
 
-                <VirtualizedEmojiList
-                    items={items}
-                    skinTone={null}
-                    onSelectEmoji={() => undefined}
-                    onSelectCustomEmoji={onSelectSticker}
-                    ListEmptyComponent={emptyLabel}
-                    cellSize={STICKER_CELL_SIZE}
-                    imageSize={STICKER_IMAGE_SIZE}
-                />
-            </Box>
-        );
-    },
+        <VirtualizedEmojiList
+          items={items}
+          skinTone={null}
+          onSelectEmoji={() => undefined}
+          onSelectCustomEmoji={onSelectSticker}
+          ListEmptyComponent={emptyLabel}
+          cellSize={STICKER_CELL_SIZE}
+          imageSize={STICKER_IMAGE_SIZE}
+        />
+      </Box>
+    );
+  },
 );

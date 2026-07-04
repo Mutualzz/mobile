@@ -1,10 +1,11 @@
 import { Paper } from "@components/Paper";
+import { Button } from "@components/Button";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useSettingsIconColor } from "@components/UserSettings/settingsTheme";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import type { APIPrivateUser } from "@mutualzz/types";
-import { Box, Button, Divider, Input, Typography } from "@mutualzz/ui-native";
+import { Box, Divider, Input, Typography } from "@mutualzz/ui-native";
 import type { ColorLike } from "@mutualzz/ui-core";
 import { observer } from "mobx-react-lite";
 import {
@@ -227,7 +228,7 @@ export const UserProfileSettings = observer(() => {
               onPress={() =>
                 card.method === "upload"
                   ? uploadAvatar()
-                  : navigate("/(tabs)/settings/avatar-editor")
+                  : navigate("/settings/avatar-editor")
               }
             >
               <Paper
@@ -362,7 +363,7 @@ export const UserProfileSettings = observer(() => {
           startDecorator={
             <PaletteIcon weight="fill" size={18} color={primaryIconColor} />
           }
-          onPress={() => navigate("/(tabs)/settings/profile-editor")}
+          onPress={() => navigate("/settings/profile-editor")}
         >
           Customize Profile
         </Button>

@@ -1,9 +1,9 @@
+import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType, type HttpException } from "@mutualzz/types";
 import {
   Box,
-  Button,
   ButtonGroup,
   InputDefault,
   Typography,
@@ -62,7 +62,7 @@ export const CategoryCreateSheet = observer(
         >
           <Paper
             variant="elevation"
-            elevation={3}
+            elevation={app.settings?.preferEmbossed ? 4 : 2}
             style={{
               borderTopLeftRadius: 16,
               borderTopRightRadius: 16,

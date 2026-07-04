@@ -42,47 +42,51 @@ const SpaceEndMessage = ({
   channel: Channel | null | undefined;
   canReadHistory: boolean;
   theme: ReturnType<typeof useTheme>["theme"];
-}) => (
-  <Box
-    style={{
-      flexDirection: "column",
-      marginLeft: 16,
-      paddingBottom: 16,
-    }}
-  >
-    <Paper
+}) => {
+  const app = useAppStore();
+
+  return (
+    <Box
       style={{
-        width: 64,
-        height: 64,
-        padding: 4,
-        borderRadius: 9999,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-      elevation={10}
-    >
-      <HashIcon size={48} color={theme.typography.colors.muted} />
-    </Paper>
-    <Typography
-      level="h4"
-      weight={700}
-      style={{
-        marginVertical: 8,
+        flexDirection: "column",
+        marginLeft: 16,
+        paddingBottom: 16,
       }}
     >
-      Welcome to #{channel?.name}!
-    </Typography>
-    {canReadHistory ? (
-      <Typography textColor="secondary">
-        This is the start of the #{channel?.name} channel.
+      <Paper
+        style={{
+          width: 64,
+          height: 64,
+          padding: 4,
+          borderRadius: 9999,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+        elevation={app.settings?.preferEmbossed ? 2 : 0}
+      >
+        <HashIcon size={48} color={theme.typography.colors.muted} />
+      </Paper>
+      <Typography
+        level="h4"
+        weight={700}
+        style={{
+          marginVertical: 8,
+        }}
+      >
+        Welcome to #{channel?.name}!
       </Typography>
-    ) : (
-      <Typography textColor="secondary">
-        You don't have permissions to read message history
-      </Typography>
-    )}
-  </Box>
-);
+      {canReadHistory ? (
+        <Typography textColor="secondary">
+          This is the start of the #{channel?.name} channel.
+        </Typography>
+      ) : (
+        <Typography textColor="secondary">
+          You don&apos;t have permissions to read message history
+        </Typography>
+      )}
+    </Box>
+  );
+};
 
 const DMEndMessage = ({ channel }: { channel: Channel }) => {
   const isGroupDM = channel.type === ChannelType.GroupDM;
@@ -198,8 +202,8 @@ export const MessageList = observer(({ channel }: Props) => {
 
   const latestMessageId = useMemo(() => {
     if (!messageGroups?.length) return undefined;
-    const lastGroup = messageGroups[messageGroups.length - 1];
-    return lastGroup.messages[lastGroup.messages.length - 1]?.id;
+    const newestGroup = messageGroups[0];
+    return newestGroup.messages[newestGroup.messages.length - 1]?.id;
   }, [messageGroups]);
 
   const ackLatest = useCallback(() => {

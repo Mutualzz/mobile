@@ -13,7 +13,7 @@ import dayjs from "dayjs";
 import calendar from "dayjs/plugin/calendar";
 import duration from "dayjs/plugin/duration";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { Slot } from "expo-router";
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
@@ -78,7 +78,16 @@ const Root = () => {
         <NavigationWithTheme>
           <NativeBaseline>
             <ModalProvider>
-              <Slot />
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen
+                  name="settings"
+                  options={{
+                    presentation: "modal",
+                    animation: "slide_from_bottom",
+                  }}
+                />
+              </Stack>
             </ModalProvider>
           </NativeBaseline>
         </NavigationWithTheme>

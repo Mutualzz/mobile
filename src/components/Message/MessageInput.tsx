@@ -307,7 +307,7 @@ export const MessageInput = observer(({ channel }: Props) => {
 
   return (
     <Paper
-      elevation={app.settings?.preferEmbossed ? 4 : 0}
+      elevation={app.settings?.preferEmbossed ? 3 : 0}
       style={{
         flexShrink: 0,
         flexGrow: 0,
@@ -424,7 +424,7 @@ export const MessageInput = observer(({ channel }: Props) => {
           enableEmoticons
           placeholder={placeholder}
           editable={!denySendingMessages}
-          elevation={app.settings?.preferEmbossed ? 5 : 0}
+          elevation={app.settings?.preferEmbossed ? 4 : 0}
           paddingLeft={14}
           paddingRight={showExpressionPicker ? 40 : 14}
           paddingTop={12}

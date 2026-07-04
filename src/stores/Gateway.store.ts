@@ -40,11 +40,8 @@ import { makeAutoObservable } from "mobx";
 import type { AppStore } from "./App.store";
 import type { Channel } from "./objects/Channel";
 import { fixConnectionUrl } from "@utils/urls";
-import { openWebSocket } from "@utils/openWebSocket"; // We have to create our own GatewayStatus "enum" to avoid issues with SSR
+import { openWebSocket } from "@utils/openWebSocket";
 
-// We have to create our own GatewayStatus "enum" to avoid issues with SSR
-// since WebSocket is not available in the server environment.
-// If someone has a better solution, please let me know. lol
 export const GatewayStatus = {
   CONNECTING: 0,
   OPEN: 1,
@@ -293,6 +290,29 @@ export class GatewayStore {
       op: GatewayOpcodes.PresenceUpdate,
       d: { presence, persist: !!opts?.persist },
     });
+  }
+
+  setStatus(status: PresenceStatus, opts?: { persist?: boolean }) {
+    const userId = this.app.account?.id;
+    if (!userId) return;
+
+    const prev = this.app.presence.get(userId);
+
+    this.app.presence.upsert(userId, {
+      ...(prev ?? { activities: [] }),
+      status,
+      device: "mobile",
+      updatedAt: Date.now(),
+    });
+
+    this.sendPresenceUpdate(
+      {
+        status,
+        device: "mobile",
+        activities: prev?.activities ?? [],
+      },
+      { persist: Boolean(opts?.persist) },
+    );
   }
 
   setCustomStatus(

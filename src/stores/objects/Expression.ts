@@ -62,7 +62,13 @@ export class Expression {
     animated = false,
     hash: string,
     size: Sizes = 128,
-    format: ExpressionFormat = ImageFormat.WebP
+    // Android's built-in Image component can't decode animated WebP without
+    // an optional native module (Fresco's animated-webp) that isn't bundled
+    // by default, so it fails to render regardless of what the server sends
+    // — GIF decodes natively there with no extra dependency. This is
+    // mobile-only (desktop's Chromium-based rendering handles animated WebP
+    // fine); static emojis, the common case, are unaffected and stay WebP.
+    format: ExpressionFormat = animated ? ImageFormat.GIF : ImageFormat.WebP
   ) {
     return REST.makeCDNUrl(
       CDNRoutes.expression(expressionId, hash, format, size, animated)

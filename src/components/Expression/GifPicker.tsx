@@ -346,7 +346,7 @@ export const GifPickerContent = observer(
             <Input
               value={search}
               onChangeText={setSearch}
-              placeholder="Search Klipy…"
+              placeholder="Search KLIPY"
               fullWidth
               startDecorator={
                 <MagnifyingGlassIcon
@@ -374,7 +374,6 @@ export const GifPickerContent = observer(
           data={listData}
           keyExtractor={(item) => item.id || item.url}
           numColumns={2}
-          // estimatedItemSize={tileWidth}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           drawDistance={360}

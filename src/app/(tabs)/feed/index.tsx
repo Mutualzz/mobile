@@ -1,7 +1,6 @@
-import { FeedSidebar } from "@components/Feed/FeedSidebar";
 import { Screen } from "@components/Screen/Screen";
 import { useTabBarContentInset } from "@hooks/useTabBarContentInset";
-import { Box, Typography } from "@mutualzz/ui-native";
+import { Stack, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 
 export default observer(() => {
@@ -18,12 +17,11 @@ export default observer(() => {
         borderRightWidth: 0,
       }}
     >
-      <FeedSidebar />
-      <Box
+      <Stack
+        flex={1}
+        justifyContent="center"
+        alignItems="center"
         style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
           paddingHorizontal: 20,
         }}
       >
@@ -31,7 +29,7 @@ export default observer(() => {
           Your feed is coming soon. Use the sidebar to view your public profile
           or customize your page.
         </Typography>
-      </Box>
+      </Stack>
     </Screen>
   );
 });

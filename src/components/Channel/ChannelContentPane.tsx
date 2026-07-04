@@ -5,13 +5,12 @@ import { MessageInput } from "@components/Message/MessageInput";
 import { MessageList } from "@components/Message/MessageList";
 import { TypingIndicator } from "@components/TypingIndicator";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
-import { ArrowLeftIcon, UsersIcon } from "phosphor-react-native";
+import { ArrowLeftIcon, HashIcon, UsersIcon } from "phosphor-react-native";
 import { useKeyboardOffset } from "@hooks/useKeyboardOffset";
 import { useScreenComposer } from "@hooks/useScreenComposer";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
-import { Typography, useTheme } from "@mutualzz/ui-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -22,11 +21,32 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const SpaceChannelIndex = () => {
+const EmptyChannelState = () => {
+    const { theme } = useTheme();
+
+    return (
+        <Screen style={{ flexDirection: "column" }}>
+            <Box
+                style={{
+                    flex: 1,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    padding: 24,
+                }}
+            >
+                <HashIcon size={40} color={theme.typography.colors.muted} />
+                <Typography textColor="muted" style={{ textAlign: "center" }}>
+                    Select a channel to start chatting
+                </Typography>
+            </Box>
+        </Screen>
+    );
+};
+
+export const ChannelContentPane = observer(() => {
     const app = useAppStore();
-    const { channelId } = useLocalSearchParams<{ channelId: string }>();
     const insets = useSafeAreaInsets();
-    const router = useRouter();
     const { theme } = useTheme();
     const keyboardHeight = useKeyboardOffset();
     const translateY = useRef(new Animated.Value(0)).current;
@@ -46,8 +66,8 @@ const SpaceChannelIndex = () => {
         }).start();
     }, [keyboardHeight, translateY, insets.bottom]);
 
-    const channel = channelId ? app.channels.get(channelId) : null;
-    if (!channel) return null;
+    const channel = app.channels.active;
+    if (!channel) return <EmptyChannelState />;
 
     if (channel.type === ChannelType.Voice) {
         return <VoiceChannelView channel={channel} />;
@@ -76,7 +96,10 @@ const SpaceChannelIndex = () => {
                         borderRightWidth: 0,
                     }}
                 >
-                    <Pressable hitSlop={8} onPress={() => router.back()}>
+                    <Pressable
+                        hitSlop={8}
+                        onPress={() => app.setSpacesDrawerOpen(true)}
+                    >
                         <ArrowLeftIcon color={theme.typography.colors.primary} />
                     </Pressable>
                     <ChannelIcon type={channel.type} />
@@ -96,7 +119,7 @@ const SpaceChannelIndex = () => {
                         transform: [{ translateY }],
                     }}
                 >
-                    <MessageList key={channel.id} channel={channel} />
+                    <MessageList channel={channel} />
                     <TypingIndicator channelId={channel.id} />
                     {composerVisible && <MessageInput channel={channel} />}
                 </Animated.View>
@@ -109,6 +132,4 @@ const SpaceChannelIndex = () => {
             />
         </KeyboardAvoidingView>
     );
-};
-
-export default observer(SpaceChannelIndex);
+});

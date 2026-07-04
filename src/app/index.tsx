@@ -1,6 +1,7 @@
+import { Button } from "@components/Button";
 import { AppLogo } from "@components/Logo/AppLogo";
 import { useAppStore } from "@hooks/useStores";
-import { Box, Button, ButtonGroup } from "@mutualzz/ui-native";
+import { Box, ButtonGroup } from "@mutualzz/ui-native";
 import { useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
