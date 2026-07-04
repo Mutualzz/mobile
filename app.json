@@ -1,80 +1,80 @@
 {
-    "expo": {
-        "name": "Mutualzz",
-        "slug": "mutualzz",
-        "version": "2.1.0",
-        "orientation": "portrait",
-        "icon": "./assets/icon.png",
-        "scheme": "com.mutualzz.app",
-        "userInterfaceStyle": "automatic",
-        "linking": {
-            "prefixes": ["com.mutualzz.app://", "mutualzz://"],
-            "config": {
-                "screens": {
-                    "invite/[code]": "invite/:code",
-                    "reset": "reset",
-                    "users/[username]": "users/:username"
-                }
-            }
-        },
-        "ios": {
-            "bundleIdentifier": "com.mutualzz.app",
-            "supportsTablet": true,
-            "config": {
-                "usesNonExemptEncryption": false
-            },
-            "icon": "./assets/ios.icon"
-        },
-        "android": {
-            "package": "com.mutualzz.app",
-            "adaptiveIcon": {
-                "foregroundImage": "./assets/adaptive-icon.png",
-                "backgroundColor": "#ffffff"
-            },
-            "softwareKeyboardLayoutMode": "resize"
-        },
-        "experiments": {
-            "typedRoutes": true,
-            "autolinkingModuleResolution": true
-        },
-        "plugins": [
-            "expo-router",
-            "expo-font",
-            [
-                "expo-notifications",
-                {
-                    "icon": "./assets/icon.png",
-                    "color": "#5865f2"
-                }
-            ],
-            [
-                "expo-secure-store",
-                {
-                    "configureAndroidBackup": true,
-                    "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
-                }
-            ],
-            [
-                "expo-splash-screen",
-                {
-                    "backgroundColor": "#FBF7FB",
-                    "image": "./assets/splash-icon.png",
-                    "dark": {
-                        "backgroundColor": "#0D0710",
-                        "image": "./assets/splash-icon.png"
-                    }
-                }
-            ],
-            "expo-asset",
-            "@react-native-community/datetimepicker",
-            "./plugins/withAnimatedWebp.js"
-        ],
-        "extra": {
-            "router": {},
-            "eas": {
-                "projectId": "eaaf0533-e2e0-469c-98e2-ad69ac469129"
-            }
-        },
-        "owner": "mutualzz"
-    }
+  "expo": {
+    "name": "Mutualzz",
+    "slug": "mutualzz",
+    "version": "2.1.1",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "com.mutualzz.app",
+    "userInterfaceStyle": "automatic",
+    "linking": {
+      "prefixes": ["com.mutualzz.app://", "mutualzz://"],
+      "config": {
+        "screens": {
+          "invite/[code]": "invite/:code",
+          "reset": "reset",
+          "users/[username]": "users/:username"
+        }
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.mutualzz.app",
+      "supportsTablet": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "icon": "./assets/ios.icon"
+    },
+    "android": {
+      "package": "com.mutualzz.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "experiments": {
+      "typedRoutes": true,
+      "autolinkingModuleResolution": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#5865f2"
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true,
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FBF7FB",
+          "image": "./assets/splash-icon.png",
+          "dark": {
+            "backgroundColor": "#0D0710",
+            "image": "./assets/splash-icon.png"
+          }
+        }
+      ],
+      "expo-asset",
+      "@react-native-community/datetimepicker",
+      "./plugins/withAnimatedWebp.js"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "eaaf0533-e2e0-469c-98e2-ad69ac469129"
+      }
+    },
+    "owner": "mutualzz"
+  }
 }

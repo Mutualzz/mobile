@@ -2,67 +2,65 @@ import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import type { APITheme, HttpException } from "@mutualzz/types";
-import { createColor, formatColor, type ColorLike } from "@mutualzz/ui-core";
-import { Box, Input, Switch, Typography, useTheme } from "@mutualzz/ui-native";
+import { baseDarkTheme, baseLightTheme } from "@mutualzz/ui-core";
+import { Box, IconButton, Switch, Typography, useTheme } from "@mutualzz/ui-native";
 import { Theme } from "@stores/objects/Theme";
 import { applyAdaptiveThemeValues } from "@utils/adaptation";
 import Snowflake from "@utils/Snowflake";
+import { useMutation } from "@tanstack/react-query";
+import {
+  GearIcon,
+  PaletteIcon,
+  TextAaIcon,
+  TextAlignJustifyIcon,
+  WarningIcon,
+  XIcon,
+} from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
-import { Modal, ScrollView } from "react-native";
+import { useState } from "react";
+import { Modal, Pressable, ScrollView, useColorScheme } from "react-native";
+import { ThemeCreatorAdaptivePage } from "./ThemeCreatorPages/ThemeCreatorAdaptivePage";
+import { ThemeCreatorBasePage } from "./ThemeCreatorPages/ThemeCreatorBasePage";
+import { ThemeCreatorDetailsPage } from "./ThemeCreatorPages/ThemeCreatorDetailsPage";
+import { ThemeCreatorFeedbackPage } from "./ThemeCreatorPages/ThemeCreatorFeedbackPage";
+import { ThemeCreatorManagePage } from "./ThemeCreatorPages/ThemeCreatorManagePage";
+import { ThemeCreatorTypographyPage } from "./ThemeCreatorPages/ThemeCreatorTypographyPage";
 
 interface Props {
   visible: boolean;
   onClose: () => void;
 }
 
-const parseColorInput = (value: string, fallback: ColorLike) => {
-  try {
-    return formatColor(
-      createColor(value ? (value.trim() as ColorLike) : fallback),
-    );
-  } catch {
-    return formatColor(fallback);
-  }
-};
+const NON_ADAPTIVE_TABS = [
+  { id: "details", label: "Details", Icon: TextAlignJustifyIcon },
+  { id: "base", label: "Base", Icon: PaletteIcon },
+  { id: "feedback", label: "Feedback", Icon: WarningIcon },
+  { id: "typography", label: "Typography", Icon: TextAaIcon },
+  { id: "manage", label: "Manage", Icon: GearIcon },
+] as const;
+
+const ADAPTIVE_TABS = [
+  { id: "details", label: "Details", Icon: TextAlignJustifyIcon },
+  { id: "adaptive", label: "Adaptive", Icon: PaletteIcon },
+  { id: "manage", label: "Manage", Icon: GearIcon },
+] as const;
 
 export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
   const app = useAppStore();
   const { theme: activeTheme, changeTheme } = useTheme();
+  const prefersDark = useColorScheme() === "dark";
   const themeCreator = app.themeCreator;
 
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    themeCreator.resetValues();
-    return () => {
-      themeCreator.stopPreview(changeTheme);
-    };
-  }, [changeTheme, themeCreator]);
+  const { values, currentPage, userInteracted, loadedType, nameEmpty } = themeCreator;
+  const tabs = values.adaptive ? ADAPTIVE_TABS : NON_ADAPTIVE_TABS;
+  const ownedByUser = !!values.id && app.account?.id === values.authorId;
+  const existingDraft = app.drafts.existsThemeDraft(values);
 
-  const { values } = themeCreator;
-
-  const updateBackground = (raw: string) => {
-    const background = parseColorInput(raw, values.colors.background);
-    const isDark = createColor(background).isDark();
-
-    themeCreator.setValues({
-      colors: {
-        ...values.colors,
-        background,
-      },
-      type: isDark ? "dark" : "light",
-    });
-  };
-
-  const updatePrimary = (raw: string) => {
-    themeCreator.setValues({
-      colors: {
-        ...values.colors,
-        primary: parseColorInput(raw, values.colors.primary),
-      },
-    });
+  const handleAdaptiveToggle = (checked: boolean) => {
+    themeCreator.setValues({ adaptive: checked });
+    themeCreator.setCurrentPage("details");
   };
 
   const handlePreview = (enabled: boolean) => {
@@ -74,32 +72,37 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
     themeCreator.stopPreview(changeTheme);
   };
 
-  const handleSave = async () => {
-    if (saving || themeCreator.nameEmpty) return;
-
-    setSaving(true);
+  const handleReset = () => {
+    themeCreator.resetValues();
+    themeCreator.resetFilters();
     setError(null);
+  };
 
-    try {
-      let payload = {
-        ...values,
-        id: Snowflake.generate(),
-      };
+  const handleApiError = (e: unknown, fallback: string) => {
+    const httpError = e as HttpException;
+    if (httpError?.errors?.length) {
+      const next: Record<string, string> = {};
+      httpError.errors.forEach((entry) => {
+        next[entry.path] = entry.message;
+      });
+      themeCreator.setErrors(next);
+      setError(httpError.message ?? fallback);
+    } else {
+      setError(getErrorMessage(e, fallback));
+    }
+  };
 
+  const { mutate: publishTheme, isPending: publishing } = useMutation({
+    mutationKey: ["theme-creator-publish", values.name],
+    mutationFn: async () => {
+      let payload = { ...values, id: Snowflake.generate() };
       if (values.adaptive) {
-        payload = {
-          ...applyAdaptiveThemeValues(values),
-          id: Snowflake.generate(),
-        };
+        payload = { ...applyAdaptiveThemeValues(values), id: Snowflake.generate() };
       }
-
-      const created = await app.rest.post<APITheme, APITheme>(
-        "@me/themes",
-        payload,
-      );
-
+      return app.rest.post<APITheme, APITheme>("@me/themes", payload);
+    },
+    onSuccess: (created) => {
       if (!created) return;
-
       const newTheme = app.themes.add(created);
       changeTheme(Theme.toEmotion(newTheme));
       app.settings?.setCurrentTheme(newTheme.id);
@@ -111,22 +114,58 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
       themeCreator.setLoadedType("custom");
       themeCreator.loadValues(created);
       themeCreator.stopPreview(changeTheme);
-      onClose();
-    } catch (e) {
-      const httpError = e as HttpException;
-      if (httpError?.errors?.length) {
-        const next: Record<string, string> = {};
-        httpError.errors.forEach((entry) => {
-          next[entry.path] = entry.message;
-        });
-        themeCreator.setErrors(next);
-        setError(httpError.message ?? "Failed to save theme");
-      } else {
-        setError(getErrorMessage(e, "Failed to save theme"));
+      setError(null);
+    },
+    onError: (e) => handleApiError(e, "Failed to publish theme"),
+  });
+
+  const { mutate: updateTheme, isPending: updating } = useMutation({
+    mutationKey: ["theme-creator-update", values.id],
+    mutationFn: async () => {
+      const payload = values.adaptive ? applyAdaptiveThemeValues(values) : values;
+      return app.rest.patch<APITheme, APITheme>(`@me/themes/${values.id}`, payload);
+    },
+    onSuccess: (updated) => {
+      if (!updated) return;
+      app.themes.update(updated);
+      if (app.settings?.currentTheme === updated.id) changeTheme(Theme.toEmotion(updated));
+      themeCreator.setErrors({});
+      setError(null);
+    },
+    onError: (e) => handleApiError(e, "Failed to update theme"),
+  });
+
+  const { mutate: deleteTheme, isPending: deleting } = useMutation({
+    mutationKey: ["theme-creator-delete", values.id],
+    mutationFn: async () => {
+      if (!values.id) return null;
+      return app.rest.delete<{ id: string }>(`@me/themes/${values.id}`);
+    },
+    onSuccess: (result) => {
+      if (!result) return;
+
+      const deletingCurrent = activeTheme.id === result.id;
+      app.themes.remove(result.id);
+
+      const remainingCustom = app.themes.all.filter((t) => t.authorId);
+      const fallback = prefersDark ? baseDarkTheme : baseLightTheme;
+
+      if (remainingCustom.length === 0) {
+        themeCreator.resetValues();
+        themeCreator.resetFilters();
+        changeTheme(Theme.toEmotion(fallback));
+      } else if (deletingCurrent) {
+        app.settings?.setCurrentTheme(fallback.id);
+        app.themes.setCurrentTheme(fallback.id);
+        changeTheme(Theme.toEmotion(fallback));
       }
-    } finally {
-      setSaving(false);
-    }
+    },
+    onError: (e) => handleApiError(e, "Failed to delete theme"),
+  });
+
+  const handleSaveDraft = () => {
+    if (existingDraft) app.drafts.updateThemeDraft(values);
+    else app.drafts.saveThemeDraft(values);
   };
 
   return (
@@ -149,205 +188,180 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
             borderTopRightRadius: 16,
             padding: 20,
             gap: 12,
-            maxHeight: "85%",
+            maxHeight: "88%",
           }}
           elevation={app.settings?.preferEmbossed ? 4 : 2}
         >
-          <Typography level="body-lg" weight="bold">
-            Theme Creator
-          </Typography>
+          <Box
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Typography level="body-lg" weight="bold">
+              Theme Creator
+            </Typography>
+            <IconButton
+              variant="plain"
+              color="neutral"
+              padding={4}
+              accessibilityLabel="Close"
+              onPress={onClose}
+            >
+              <XIcon size={18} />
+            </IconButton>
+          </Box>
+
+          <Box
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <Box style={{ flex: 1, gap: 2 }}>
+              <Typography level="body-sm" weight={700}>
+                Adaptive theme
+              </Typography>
+              <Typography level="body-xs" textColor="muted">
+                Derive surface and text colors automatically
+              </Typography>
+            </Box>
+            <Switch checked={values.adaptive} onChange={handleAdaptiveToggle} />
+          </Box>
+
+          <Box style={{ flexDirection: "row", gap: 4, flexWrap: "wrap" }}>
+            {tabs.map(({ id, label, Icon }) => (
+              <ThemeCreatorTab
+                key={id}
+                label={label}
+                Icon={Icon}
+                active={currentPage === id}
+                onPress={() => themeCreator.setCurrentPage(id)}
+              />
+            ))}
+          </Box>
 
           <ScrollView
-            contentContainerStyle={{
-              padding: 16,
-              gap: 16,
-            }}
+            contentContainerStyle={{ paddingVertical: 16, gap: 16 }}
             keyboardShouldPersistTaps="handled"
           >
-            <Box style={{ gap: 8 }}>
-              <Typography level="body-xs" textColor="muted">
-                Theme name
-              </Typography>
-              <Input
-                value={values.name}
-                onChangeText={(name) => themeCreator.setValues({ name })}
-                placeholder="My theme"
-                maxLength={64}
+            {currentPage === "details" && <ThemeCreatorDetailsPage />}
+            {!values.adaptive && currentPage === "base" && <ThemeCreatorBasePage />}
+            {!values.adaptive && currentPage === "feedback" && <ThemeCreatorFeedbackPage />}
+            {!values.adaptive && currentPage === "typography" && <ThemeCreatorTypographyPage />}
+            {values.adaptive && currentPage === "adaptive" && <ThemeCreatorAdaptivePage />}
+            {currentPage === "manage" && (
+              <ThemeCreatorManagePage
+                onDeleteTheme={() => deleteTheme()}
+                deletingTheme={deleting}
               />
-              {themeCreator.errors.name && (
-                <Typography level="body-xs" style={{ color: "#e74c3c" }}>
-                  {themeCreator.errors.name}
-                </Typography>
-              )}
-            </Box>
-
-            <Box style={{ gap: 8 }}>
-              <Typography level="body-xs" textColor="muted">
-                Description
-              </Typography>
-              <Input
-                value={values.description ?? ""}
-                onChangeText={(description) =>
-                  themeCreator.setValues({ description })
-                }
-                placeholder="Optional description"
-                maxLength={200}
-              />
-            </Box>
-
-            <Box style={{ gap: 8 }}>
-              <Typography level="body-xs" textColor="muted">
-                Background color
-              </Typography>
-              <Input
-                value={String(values.colors.background)}
-                onChangeText={updateBackground}
-                placeholder="#111111"
-                autoCapitalize="none"
-              />
-            </Box>
-
-            <Box style={{ gap: 8 }}>
-              <Typography level="body-xs" textColor="muted">
-                Primary color
-              </Typography>
-              <Input
-                value={String(values.colors.primary)}
-                onChangeText={updatePrimary}
-                placeholder="#5865f2"
-                autoCapitalize="none"
-              />
-            </Box>
-
-            <Box style={{ gap: 8 }}>
-              <Typography level="body-xs" textColor="muted">
-                Success color
-              </Typography>
-              <Input
-                value={String(values.colors.success ?? "")}
-                onChangeText={(raw) =>
-                  themeCreator.setValues({
-                    colors: {
-                      ...values.colors,
-                      success: parseColorInput(
-                        raw,
-                        values.colors.success ?? "#2ecc71",
-                      ),
-                    },
-                  })
-                }
-                placeholder="#2ecc71"
-                autoCapitalize="none"
-              />
-            </Box>
-
-            <Box style={{ gap: 8 }}>
-              <Typography level="body-xs" textColor="muted">
-                Warning color
-              </Typography>
-              <Input
-                value={String(values.colors.warning ?? "")}
-                onChangeText={(raw) =>
-                  themeCreator.setValues({
-                    colors: {
-                      ...values.colors,
-                      warning: parseColorInput(
-                        raw,
-                        values.colors.warning ?? "#f1c40f",
-                      ),
-                    },
-                  })
-                }
-                placeholder="#f1c40f"
-                autoCapitalize="none"
-              />
-            </Box>
-
-            <Box style={{ gap: 8 }}>
-              <Typography level="body-xs" textColor="muted">
-                Danger color
-              </Typography>
-              <Input
-                value={String(values.colors.danger ?? "")}
-                onChangeText={(raw) =>
-                  themeCreator.setValues({
-                    colors: {
-                      ...values.colors,
-                      danger: parseColorInput(
-                        raw,
-                        values.colors.danger ?? "#e74c3c",
-                      ),
-                    },
-                  })
-                }
-                placeholder="#e74c3c"
-                autoCapitalize="none"
-              />
-            </Box>
-
-            <Box
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-              }}
-            >
-              <Box style={{ flex: 1, gap: 2 }}>
-                <Typography level="body-sm" weight={700}>
-                  Adaptive theme
-                </Typography>
-                <Typography level="body-xs" textColor="muted">
-                  Derive surface and text colors automatically
-                </Typography>
-              </Box>
-              <Switch
-                checked={values.adaptive}
-                onChange={(checked) =>
-                  themeCreator.setValues({ adaptive: checked })
-                }
-              />
-            </Box>
-
-            <Box
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-              }}
-            >
-              <Typography level="body-sm" weight={700}>
-                Preview
-              </Typography>
-              <Switch
-                checked={themeCreator.inPreview}
-                onChange={handlePreview}
-              />
-            </Box>
-
-            {error && (
-              <Typography level="body-sm" style={{ color: "#e74c3c" }}>
-                {error}
-              </Typography>
             )}
-
-            <Button
-              color="primary"
-              disabled={themeCreator.nameEmpty || saving}
-              onPress={() => handleSave()}
-            >
-              {saving ? "Saving..." : "Create Theme"}
-            </Button>
-            <Button variant="plain" onPress={onClose}>
-              Close
-            </Button>
           </ScrollView>
+
+          <Box style={{ flexDirection: "row", gap: 8 }}>
+            <Button
+              variant="soft"
+              color="danger"
+              style={{ flex: 1 }}
+              disabled={!userInteracted || themeCreator.inPreview}
+              onPress={handleReset}
+            >
+              Reset
+            </Button>
+            <Button
+              variant="soft"
+              style={{ flex: 1 }}
+              disabled={loadedType === "default" || ownedByUser || !userInteracted}
+              onPress={() => handlePreview(!themeCreator.inPreview)}
+            >
+              {themeCreator.inPreview ? "Stop Preview" : "Preview"}
+            </Button>
+          </Box>
+
+          {error && (
+            <Typography level="body-sm" style={{ color: "#e74c3c" }}>
+              {error}
+            </Typography>
+          )}
+
+          <Box style={{ flexDirection: "row", gap: 8 }}>
+            <Button
+              color="warning"
+              style={{ flex: 1 }}
+              disabled={!userInteracted || nameEmpty || ownedByUser}
+              onPress={handleSaveDraft}
+            >
+              {existingDraft ? "Update Draft" : "Save Draft"}
+            </Button>
+            <Button
+              color="success"
+              style={{ flex: 1 }}
+              disabled={!userInteracted || nameEmpty || publishing || updating}
+              onPress={() => (ownedByUser ? updateTheme() : publishTheme())}
+            >
+              {publishing || updating
+                ? "Saving..."
+                : ownedByUser
+                  ? "Update"
+                  : "Publish"}
+            </Button>
+          </Box>
+          <Button variant="plain" onPress={onClose}>
+            Close
+          </Button>
         </Paper>
       </Box>
     </Modal>
   );
 });
+
+interface ThemeCreatorTabProps {
+  label: string;
+  Icon: typeof PaletteIcon;
+  active: boolean;
+  onPress: () => void;
+}
+
+const ThemeCreatorTab = ({ label, Icon, active, onPress }: ThemeCreatorTabProps) => {
+  const { theme } = useTheme();
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        flex: 1,
+        minWidth: 70,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 4,
+        paddingVertical: 8,
+        borderRadius: 8,
+        borderBottomWidth: 2,
+        borderBottomColor: active ? theme.colors.primary : "transparent",
+        backgroundColor: active ? `${theme.colors.primary}14` : "transparent",
+      }}
+    >
+      <Icon
+        size={16}
+        color={active ? theme.colors.primary : theme.typography.colors.muted}
+        weight="fill"
+      />
+      <Typography
+        level="body-xs"
+        weight={active ? "bold" : undefined}
+        style={{
+          color: active ? theme.colors.primary : theme.typography.colors.muted,
+        }}
+      >
+        {label}
+      </Typography>
+    </Pressable>
+  );
+};
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message;

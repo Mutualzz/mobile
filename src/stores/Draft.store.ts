@@ -79,6 +79,6 @@ export class DraftStore {
             return;
         }
 
-        this.themes.filter((t) => t.name !== theme.name);
+        this.themes.replace(this.themes.filter((t) => t.name !== theme.name));
     }
 }

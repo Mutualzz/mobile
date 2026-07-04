@@ -19,7 +19,8 @@ export type ThemeCreatorPage =
     | "base"
     | "feedback"
     | "typography"
-    | "adaptive";
+    | "adaptive"
+    | "manage";
 
 export type ThemeCreatorLoadedType = "default" | "draft" | "custom";
 
@@ -136,7 +137,7 @@ export class ThemeCreatorStore {
         if (this.filters.length === 0) return themes;
 
         return themes.filter((theme) =>
-            this.filters.every(
+            this.filters.some(
                 (filter) =>
                     theme.type === filter ||
                     theme.style === filter ||
