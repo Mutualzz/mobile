@@ -69,6 +69,8 @@ export const CustomStatusSheet = observer(({ visible, onClose }: Props) => {
   const trimmedText = text.trim();
   const canSave =
     hasCustomStatusContent(trimmedText, emoji) && trimmedText.length <= 128;
+  const canClear =
+    app.customStatus.enabled || !!app.customStatus.scheduledCustomStatus;
 
   const save = () => {
     if (!canSave) return;
@@ -82,6 +84,17 @@ export const CustomStatusSheet = observer(({ visible, onClose }: Props) => {
         durationMs: Number(durationValue),
       });
     }
+    onClose();
+  };
+
+  const clearStatus = () => {
+    app.gateway.clearScheduledCustomStatus();
+    app.gateway.clearCustomStatus();
+    setText("");
+    setEmoji(null);
+    setDurationValue(
+      toDurationValue(STATUS_DURATION_OPTIONS[4]?.durationMs ?? 24 * 60 * 60_000),
+    );
     onClose();
   };
 
@@ -218,9 +231,20 @@ export const CustomStatusSheet = observer(({ visible, onClose }: Props) => {
             </Pressable>
           </Box>
 
-          <Button disabled={!canSave} onPress={save} fullWidth>
+          <Button onPress={save} fullWidth>
             Save
           </Button>
+
+          {canClear && (
+            <Button
+              variant="plain"
+              color="danger"
+              fullWidth
+              onPress={clearStatus}
+            >
+              Clear status
+            </Button>
+          )}
         </Paper>
       </Box>
 

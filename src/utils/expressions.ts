@@ -25,6 +25,69 @@ export const canUseCustomEmoji = (
     return currentMember.hasPermission("UseExternalEmojis", channel ?? undefined);
 };
 
+export function getUsableCustomEmojis(
+    expressions: Expression[],
+    meId: Snowflake,
+    currentMember?: SpaceMember | null,
+    channel?: Channel | null,
+): Expression[] {
+    return expressions.filter(
+        (exp) =>
+            exp.type === ExpressionType.Emoji &&
+            canUseCustomEmoji(meId, exp, currentMember, channel),
+    );
+}
+
+/**
+ * The name typed/inserted for a custom emoji in composer text. Two emoji can
+ * share a raw `name`, so this returns `buildDeduplicatedEmojiLabels`'s
+ * disambiguated form (`name`, `name_1`, ...) instead of the raw name, keeping
+ * the composer text an unambiguous round-trip back to this exact expression.
+ */
+export function getCustomEmojiLabel(
+    expressions: Expression[],
+    expression: Expression,
+    meId: Snowflake,
+    currentMember?: SpaceMember | null,
+    channel?: Channel | null,
+): string {
+    const usable = getUsableCustomEmojis(
+        expressions,
+        meId,
+        currentMember,
+        channel,
+    );
+    const labels = buildDeduplicatedEmojiLabels(usable);
+    return labels.get(expression) ?? expression.name;
+}
+
+/** Inverse of {@link getCustomEmojiLabel} — resolves a shortcode's name back to its expression. */
+export function findCustomEmojiByLabel(
+    expressions: Expression[],
+    label: string,
+    meId: Snowflake,
+    currentMember?: SpaceMember | null,
+    channel?: Channel | null,
+): Expression | null {
+    const usable = getUsableCustomEmojis(
+        expressions,
+        meId,
+        currentMember,
+        channel,
+    );
+    const labels = buildDeduplicatedEmojiLabels(usable);
+    const lowerLabel = label.toLowerCase();
+
+    for (const exp of usable) {
+        const dedupedLabel = labels.get(exp);
+        if (dedupedLabel && dedupedLabel.toLowerCase() === lowerLabel) {
+            return exp;
+        }
+    }
+
+    return null;
+}
+
 export const canUseSticker = (
     meId: Snowflake,
     sticker: Expression,

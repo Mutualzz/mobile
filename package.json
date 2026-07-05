@@ -2,6 +2,7 @@
   "dependencies": {
     "@emotion/native": "11.11.0",
     "@emotion/react": "11.14.0",
+    "@expensify/react-native-live-markdown": "^0.1.332",
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/rubik": "^0.4.2",
     "@expo/metro-runtime": "^56.0.15",
@@ -19,12 +20,15 @@
     "@tanstack/react-query": "^5.101.0",
     "emojibase-data": "^17.0.0",
     "emojibase-regex": "^17.0.0",
+    "expensify-common": "^2.0.189",
     "expo": "~56.0.12",
     "expo-asset": "~56.0.17",
+    "expo-audio": "~56.0.12",
     "expo-clipboard": "~56.0.4",
     "expo-constants": "~56.0.18",
     "expo-dev-client": "~56.0.20",
     "expo-device": "~56.0.4",
+    "expo-document-picker": "~56.0.4",
     "expo-font": "~56.0.7",
     "expo-image-picker": "~56.0.18",
     "expo-linking": "~56.0.14",
@@ -35,6 +39,7 @@
     "expo-splash-screen": "~56.0.10",
     "expo-status-bar": "~56.0.4",
     "expo-system-ui": "~56.0.5",
+    "html-entities": "2.5.3",
     "imurmurhash": "^0.1.4",
     "markdown-it": "^14.2.0",
     "mobx": "^6.16.1",
@@ -76,5 +81,5 @@
     "typecheck": "tsc --noEmit",
     "web": "expo start --web"
   },
-  "version": "2.1.0"
+  "version": "2.2.0"
 }

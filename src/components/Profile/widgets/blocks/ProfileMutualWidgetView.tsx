@@ -1,0 +1,104 @@
+import {
+  getMutualSpaces,
+  isProfileFriend,
+} from "@components/Profile/canvas/profileBlockData.utils";
+import { SpaceIcon } from "@components/Space/SpaceIcon";
+import { useAppStore } from "@hooks/useStores";
+import type {
+  MobileProfileMutualBlock,
+  ProfileBlockSize,
+  Snowflake,
+} from "@mutualzz/types";
+import { Stack, Typography } from "@mutualzz/ui-native";
+import { observer } from "mobx-react-lite";
+import { UsersThreeIcon } from "phosphor-react-native";
+import { View } from "react-native";
+
+const VISIBLE_COUNT: Record<ProfileBlockSize, number> = { s: 3, m: 6, l: 10 };
+
+interface Props {
+  block: MobileProfileMutualBlock;
+  size: ProfileBlockSize;
+  userId: Snowflake;
+}
+
+export const ProfileMutualWidgetView = observer(({ block, size, userId }: Props) => {
+  const app = useAppStore();
+  const maxItems = block.maxItems ?? 6;
+
+  const mutualSpaces =
+    block.mode === "spaces" ? getMutualSpaces(app, userId, maxItems) : [];
+  const isFriend = block.mode === "friends" && isProfileFriend(app, userId);
+  const visible = mutualSpaces.slice(0, VISIBLE_COUNT[size]);
+
+  return (
+    <View style={{ width: "100%", height: "100%", padding: 12, gap: 8 }}>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <UsersThreeIcon size={16} weight="fill" />
+        <Typography level="body-sm" weight="bold">
+          {block.mode === "spaces" ? "Mutual Spaces" : "Friends"}
+        </Typography>
+      </Stack>
+
+      {block.mode === "friends" ? (
+        <Typography level="body-sm" textColor={isFriend ? "primary" : "muted"}>
+          {isFriend ? "You are friends" : "Not friends yet"}
+        </Typography>
+      ) : visible.length === 0 ? (
+        <Typography level="body-sm" textColor="muted">
+          No mutual spaces
+        </Typography>
+      ) : (
+        <Stack direction="column" spacing={0.75}>
+          {visible.map((space) => (
+            <Stack key={space.id} direction="row" spacing={1} alignItems="center">
+              <SpaceIcon space={space} size={22} />
+              <Typography level="body-sm" numberOfLines={1}>
+                {space.name}
+              </Typography>
+            </Stack>
+          ))}
+        </Stack>
+      )}
+    </View>
+  );
+});
+
+export const ProfileMutualWidgetExpandedContent = observer(
+  ({ block, userId }: { block: MobileProfileMutualBlock; userId: Snowflake }) => {
+    const app = useAppStore();
+    const maxItems = block.maxItems ?? 6;
+    const mutualSpaces =
+      block.mode === "spaces" ? getMutualSpaces(app, userId, maxItems) : [];
+    const isFriend = block.mode === "friends" && isProfileFriend(app, userId);
+
+    if (block.mode === "friends") {
+      return (
+        <Typography level="body-sm" textColor={isFriend ? "primary" : "muted"}>
+          {isFriend ? "You are friends" : "Not friends yet"}
+        </Typography>
+      );
+    }
+
+    if (mutualSpaces.length === 0) {
+      return (
+        <Typography level="body-sm" textColor="muted">
+          No mutual spaces
+        </Typography>
+      );
+    }
+
+    return (
+      <Stack direction="column" spacing={0.75}>
+        {mutualSpaces.map((space) => (
+          <Stack key={space.id} direction="row" spacing={1} alignItems="center">
+            <SpaceIcon space={space} size={22} />
+            <Typography level="body-sm" numberOfLines={1}>
+              {space.name}
+            </Typography>
+          </Stack>
+        ))}
+      </Stack>
+    );
+  },
+);

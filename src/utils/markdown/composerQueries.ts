@@ -2,14 +2,16 @@ import type { MentionType } from "@mutualzz/types";
 import type { Expression } from "@stores/objects/Expression";
 import type { Selection } from "./types";
 
-export type ActiveQuery = {
+export interface ActiveQuery {
     start: number;
     end: number;
     search: string;
-};
+}
 
 const MENTION_BREAK = /[\s*_`~|]/;
 const COLON_QUERY = /:([^\s:]{1,})$/;
+const CUSTOM_EMOJI_MARKDOWN = /<a?:[^:]+:\d+>/g;
+const CUSTOM_EMOJI_SHORTCODE = /:([^\s:]+):/g;
 
 export function detectMentionQuery(
     text: string,
@@ -68,4 +70,47 @@ export function formatMentionMarkdown(type: MentionType, id: string): string {
 export function formatCustomEmojiMarkdown(expression: Expression): string {
     const prefix = expression.animated ? "a" : "";
     return `<${prefix}:${expression.name}:${expression.id}>`;
+}
+
+/**
+ * Expands `:name:` shortcodes left in the composer (custom emoji are kept
+ * short while typing, Discord-style) into full `<a?:name:id>` markdown right
+ * before the text is sent or saved. Shortcodes that don't resolve to a known
+ * custom emoji are left untouched as plain text.
+ */
+export function expandCustomEmojiShortcodes(
+    text: string,
+    resolve: (name: string) => Expression | null | undefined,
+): string {
+    CUSTOM_EMOJI_MARKDOWN.lastIndex = 0;
+    const excludedRanges: [number, number][] = [];
+    let excludedMatch: RegExpExecArray | null;
+    while ((excludedMatch = CUSTOM_EMOJI_MARKDOWN.exec(text))) {
+        excludedRanges.push([
+            excludedMatch.index,
+            excludedMatch.index + excludedMatch[0].length,
+        ]);
+    }
+
+    CUSTOM_EMOJI_SHORTCODE.lastIndex = 0;
+    let result = "";
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = CUSTOM_EMOJI_SHORTCODE.exec(text))) {
+        const isExcluded = excludedRanges.some(
+            ([start, end]) => match!.index >= start && match!.index < end,
+        );
+        if (isExcluded) continue;
+
+        const expression = resolve(match[1]);
+        if (!expression) continue;
+
+        result += text.slice(lastIndex, match.index);
+        result += formatCustomEmojiMarkdown(expression);
+        lastIndex = match.index + match[0].length;
+    }
+
+    result += text.slice(lastIndex);
+    return result;
 }

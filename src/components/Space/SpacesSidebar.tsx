@@ -67,14 +67,14 @@ export const SpacesSidebar = observer(() => {
       fill={false}
       style={{
         flexDirection: "column",
-        paddingHorizontal: 8,
+        paddingHorizontal: 6,
         gap: 12,
         alignItems: "center",
         borderTopWidth: 0,
         borderBottomWidth: 0,
         borderLeftWidth: 0,
         borderRightWidth: 0,
-        width: 72,
+        width: 64,
         flexShrink: 0,
       }}
       elevation={app.settings?.preferEmbossed ? 2 : 0}
@@ -105,12 +105,13 @@ export const SpacesSidebar = observer(() => {
         />
       ))}
       <IconButton
-        style={{
-          borderRadius: 9999,
-        }}
+        shape="circle"
         color="success"
         variant="outlined"
         padding={8}
+        style={{
+          alignSelf: "center",
+        }}
         size="sm"
         onPress={() =>
           openModal("space-invite", <SpaceInviteModal />, {

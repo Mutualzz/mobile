@@ -142,6 +142,8 @@ const SectionHeader = memo(
           <Typography
             level="body-xs"
             textColor="muted"
+            numberOfLines={1}
+            maxFontSizeMultiplier={1.15}
             style={{ textTransform: "uppercase", letterSpacing: 0.5 }}
           >
             {title}
@@ -154,6 +156,8 @@ const SectionHeader = memo(
       <Typography
         level="body-xs"
         textColor="muted"
+        numberOfLines={1}
+        maxFontSizeMultiplier={1.15}
         style={{
           paddingHorizontal: 8,
           height: EMOJI_HEADER_HEIGHT,

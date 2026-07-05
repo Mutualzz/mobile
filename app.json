@@ -8,7 +8,10 @@
     "scheme": "com.mutualzz.app",
     "userInterfaceStyle": "automatic",
     "linking": {
-      "prefixes": ["com.mutualzz.app://", "mutualzz://"],
+      "prefixes": [
+        "com.mutualzz.app://",
+        "mutualzz://"
+      ],
       "config": {
         "screens": {
           "invite/[code]": "invite/:code",
@@ -67,7 +70,8 @@
       ],
       "expo-asset",
       "@react-native-community/datetimepicker",
-      "./plugins/withAnimatedWebp.js"
+      "./plugins/withAnimatedWebp.js",
+      "expo-audio"
     ],
     "extra": {
       "router": {},

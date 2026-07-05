@@ -90,7 +90,7 @@ export const SpaceCreateInviteSheet = observer(
               Creates a link to the default text channel for this space.
             </Typography>
             {error && (
-              <Typography level="body-sm" style={{ color: "#e74c3c" }}>
+              <Typography level="body-sm" color="danger" variant="plain">
                 {error}
               </Typography>
             )}

@@ -1,8 +1,6 @@
 import baseEmoticonRegex from "emojibase-regex/emoticon";
 import shortcodeRegex from "emojibase-regex/shortcode";
-import type { Expression } from "@stores/objects/Expression";
 import { getEmoji } from "../emojis";
-import { formatCustomEmojiMarkdown } from "./composerQueries";
 import { clampSelection, replaceRange } from "./textUtils";
 import type { Selection } from "./types";
 
@@ -18,10 +16,9 @@ const emoticonAtEndRegex = new RegExp(`(?:^|\\s)(${combinedPattern})$`);
 
 const localShortcodeRegex = new RegExp(shortcodeRegex.source, "g");
 
-export type EmojiTransformOptions = {
+export interface EmojiTransformOptions {
     enableEmoticons?: boolean;
-    resolveCustomEmojiByName?: (name: string) => Expression | null | undefined;
-};
+}
 
 export function applyEmojiTransforms(
     nextTextRaw: string,
@@ -38,7 +35,7 @@ export function applyEmojiTransforms(
     };
 } {
     const nextText = nextTextRaw;
-    let sel = clampSelection(nextText, selectionRaw);
+    const sel = clampSelection(nextText, selectionRaw);
 
     if (sel.start !== sel.end)
         return { text: nextText, selection: sel, didTransform: false };
@@ -85,25 +82,6 @@ export function applyEmojiTransforms(
                             hexCode: emoji.hexcode,
                             unicode: emoji.emoji,
                         },
-                        selection: { start: newCaret, end: newCaret },
-                        didTransform: true,
-                    };
-                }
-
-                const customEmoji =
-                    opts.resolveCustomEmojiByName?.(shortcodeName);
-                if (customEmoji) {
-                    const markdown = formatCustomEmojiMarkdown(customEmoji);
-                    const rep = replaceRange(
-                        nextText,
-                        absStart,
-                        absEnd,
-                        markdown,
-                    );
-                    const newCaret = caret + rep.delta;
-
-                    return {
-                        text: rep.text,
                         selection: { start: newCaret, end: newCaret },
                         didTransform: true,
                     };

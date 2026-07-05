@@ -1,3 +1,5 @@
+import "react-native-get-random-values";
+
 import { NativeBaseline } from "@components/NativeBaseline/NativeBaseline";
 import { NavigationWithTheme } from "@components/NavigationWithTheme";
 import { AppTheme } from "@contexts/AppTheme.context";

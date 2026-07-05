@@ -1,4 +1,5 @@
 import type {
+  APIMobileProfileBlock,
   APIProfileBlock,
   APIProfileMusic,
   APIUserProfile,
@@ -19,6 +20,7 @@ export class UserProfile {
   pageFontFamily?: string | null;
   profileMusic?: APIProfileMusic | null;
   blocks: APIProfileBlock[];
+  mobileBlocks: APIMobileProfileBlock[];
   updatedAt: Date;
 
   constructor(profile: APIUserProfile) {
@@ -31,6 +33,7 @@ export class UserProfile {
     this.pageFontFamily = profile.pageFontFamily ?? null;
     this.profileMusic = profile.profileMusic ?? null;
     this.blocks = profile.blocks ?? [];
+    this.mobileBlocks = profile.mobileBlocks ?? [];
     this.updatedAt = new Date(profile.updatedAt);
 
     makeAutoObservable(this, {}, { autoBind: true });
@@ -45,6 +48,7 @@ export class UserProfile {
     this.pageFontFamily = profile.pageFontFamily ?? null;
     this.profileMusic = profile.profileMusic ?? null;
     this.blocks = profile.blocks ?? [];
+    this.mobileBlocks = profile.mobileBlocks ?? [];
     this.updatedAt = new Date(profile.updatedAt);
     return this;
   }

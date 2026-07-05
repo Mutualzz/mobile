@@ -89,7 +89,13 @@ export const ReactionEmojiPicker = observer(
                     gap: 8,
                   }}
                 >
-                  <Typography level="body-md" weight="bold" style={{ flex: 1 }}>
+                  <Typography
+                    level="body-md"
+                    weight="bold"
+                    numberOfLines={1}
+                    maxFontSizeMultiplier={1.3}
+                    style={{ flex: 1 }}
+                  >
                     {title}
                   </Typography>
                   <IconButton padding={6} color="neutral" onPress={onClose}>

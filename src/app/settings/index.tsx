@@ -83,7 +83,6 @@ const SettingsIndex = () => {
               {startCase(category)}
             </Typography>
             <ButtonGroup
-              color="info"
               orientation="vertical"
               variant="plain"
               spacing={1.25}
@@ -96,7 +95,7 @@ const SettingsIndex = () => {
                     <page.Icon weight="fill" size={20} color={navIconColor} />
                   }
                   key={`user-settings-sidebar-${page.label}`}
-                  padding={5}
+                  padding={4}
                   style={{ minWidth: 0 }}
                   onPress={() => navigate(`/settings/${page.label}`)}
                 >

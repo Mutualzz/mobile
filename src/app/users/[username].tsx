@@ -1,5 +1,6 @@
-import { ProfileBlockCanvas } from "@components/Profile/canvas/ProfileBlockCanvas";
 import { UserProfileSheet } from "@components/Profile/UserProfileSheet";
+import { ProfileWidgetGrid } from "@components/Profile/widgets/ProfileWidgetGrid";
+import { ProfileWidgetsEmptyViewer } from "@components/Profile/widgets/ProfileWidgetsEmptyViewer";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
 import { IconButton } from "@components/IconButton";
 import { useAppStore } from "@hooks/useStores";
@@ -63,15 +64,16 @@ const PublicProfileScreen = () => {
           Profile
         </Typography>
       </ScreenHeader>
-      {profile?.configured && profile.blocks.length > 0 ? (
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-          <ProfileBlockCanvas profile={profile} user={user} />
-        </ScrollView>
-      ) : profile ? (
-        <ScrollView
-          contentContainerStyle={{ padding: 16, alignItems: "center" }}
-        >
+      {profile ? (
+        <ScrollView contentContainerStyle={{ padding: 16, alignItems: "center" }}>
           <UserProfileSheet user={user} modalId="public-profile" />
+          <Box style={{ width: "100%", marginTop: 16 }}>
+            {profile.mobileBlocks.length > 0 ? (
+              <ProfileWidgetGrid profile={profile} user={user} />
+            ) : (
+              <ProfileWidgetsEmptyViewer />
+            )}
+          </Box>
         </ScrollView>
       ) : (
         <Box

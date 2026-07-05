@@ -1,7 +1,12 @@
-import { ProfileBlockCanvas } from "@components/Profile/canvas/ProfileBlockCanvas";
 import { Button } from "@components/Button";
 import { SettingsScreen } from "@components/UserSettings/SettingsScreen";
 import { Paper } from "@components/Paper";
+import { MarkdownInput } from "@components/Markdown/MarkdownInput/MarkdownInput";
+import { ProfileWidgetEditorModal } from "@components/Profile/widgets/editor/ProfileWidgetEditorModal";
+import {
+  prepareMobileBlocksForSave,
+  validateMobileBlocksForSave,
+} from "@components/Profile/widgets/editor/profileWidgetEditor.utils";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Input, Typography } from "@mutualzz/ui-native";
@@ -16,7 +21,12 @@ import {
   ScrollView,
 } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
-import type { APIProfileMusic } from "@mutualzz/types";
+import type { APIMobileProfileBlock, APIProfileMusic } from "@mutualzz/types";
+import { expandCustomEmojiShortcodes } from "@utils/markdown/composerQueries";
+import { findCustomEmojiByLabel } from "@utils/expressions";
+import type { Selection } from "@utils/markdown/types";
+
+const BIO_MAX_LENGTH = 2000;
 
 export const ProfileEditorScreen = observer(() => {
   const app = useAppStore();
@@ -24,6 +34,10 @@ export const ProfileEditorScreen = observer(() => {
   const { back } = useAppNavigation();
 
   const [bio, setBio] = useState("");
+  const [bioSelection, setBioSelection] = useState<Selection>({
+    start: 0,
+    end: 0,
+  });
   const [backgroundColor, setBackgroundColor] = useState("");
   const [pageFontFamily, setPageFontFamily] = useState("");
   const [profileMusic, setProfileMusic] = useState<APIProfileMusic | null>(
@@ -31,6 +45,8 @@ export const ProfileEditorScreen = observer(() => {
   );
   const [bannerHash, setBannerHash] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [mobileBlocks, setMobileBlocks] = useState<APIMobileProfileBlock[]>([]);
+  const [widgetEditorOpen, setWidgetEditorOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +67,7 @@ export const ProfileEditorScreen = observer(() => {
     pageFontFamily,
     profileMusic,
     bannerHash,
+    mobileBlocks,
   });
   formStateRef.current = {
     bio,
@@ -58,6 +75,7 @@ export const ProfileEditorScreen = observer(() => {
     pageFontFamily,
     profileMusic,
     bannerHash,
+    mobileBlocks,
   };
   const profileRef = useRef(profile);
   profileRef.current = profile;
@@ -72,7 +90,8 @@ export const ProfileEditorScreen = observer(() => {
         state.pageFontFamily !== (p.pageFontFamily ?? "") ||
         state.bannerHash !== (p.banner ?? null) ||
         JSON.stringify(state.profileMusic) !==
-          JSON.stringify(p.profileMusic ?? null));
+          JSON.stringify(p.profileMusic ?? null) ||
+        JSON.stringify(state.mobileBlocks) !== JSON.stringify(p.mobileBlocks));
 
     if (isDirty) {
       Alert.alert(
@@ -111,6 +130,7 @@ export const ProfileEditorScreen = observer(() => {
     setProfileMusic(profile.profileMusic ?? null);
     setBannerHash(profile.banner ?? null);
     setBannerPreview(profile.constructBannerUrl());
+    setMobileBlocks(profile.mobileBlocks);
   }, [profile?.updatedAt, profile?.userId]);
 
   if (!account) return null;
@@ -153,18 +173,29 @@ export const ProfileEditorScreen = observer(() => {
   const saveProfile = async () => {
     if (saving || !profile) return;
 
+    const mobileBlocksError = validateMobileBlocksForSave(mobileBlocks);
+    if (mobileBlocksError) {
+      setError(mobileBlocksError);
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
     try {
+      const expandedBio = expandCustomEmojiShortcodes(bio.trim(), (name) =>
+        findCustomEmojiByLabel(app.expressions.all, name, account.id),
+      );
+
       await app.profiles.save({
-        bio: bio.trim() || null,
+        bio: expandedBio || null,
         banner: bannerHash,
         backgroundColor: backgroundColor.trim() || null,
         backgroundImage: profile.backgroundImage ?? null,
         pageFontFamily: pageFontFamily.trim() || null,
         profileMusic: profileMusic || null,
         blocks: profile.blocks,
+        mobileBlocks: prepareMobileBlocksForSave(mobileBlocks),
       });
     } catch (e) {
       setError(getErrorMessage(e, "Failed to save profile"));
@@ -200,8 +231,7 @@ export const ProfileEditorScreen = observer(() => {
           keyboardShouldPersistTaps="handled"
         >
           <Typography level="body-sm" textColor="muted">
-            Edit your profile page content. Block layout editing is read-only on
-            mobile for now.
+            Edit your profile page content and block layout.
           </Typography>
 
           <Paper
@@ -243,7 +273,6 @@ export const ProfileEditorScreen = observer(() => {
             )}
             <Button
               color="neutral"
-              variant="soft"
               disabled={uploadingBanner}
               onPress={uploadBanner}
             >
@@ -262,13 +291,16 @@ export const ProfileEditorScreen = observer(() => {
             <Typography level="body-md" weight={700}>
               Bio
             </Typography>
-            <Input
+            <MarkdownInput
               value={bio}
-              onChangeText={setBio}
+              onChange={(next) => setBio(next.slice(0, BIO_MAX_LENGTH))}
+              selection={bioSelection}
+              onChangeSelection={setBioSelection}
+              enableMentions={false}
+              enableEmojiAutocomplete
               placeholder="Tell people about yourself"
-              multiline
-              maxLength={2000}
-              style={{ minHeight: 120, textAlignVertical: "top" }}
+              elevation={0}
+              style={{ minHeight: 120 }}
             />
           </Paper>
 
@@ -341,24 +373,24 @@ export const ProfileEditorScreen = observer(() => {
             elevation={app.settings?.preferEmbossed ? 2 : 0}
           >
             <Typography level="body-md" weight={700}>
-              Blocks
+              Mobile Widgets
             </Typography>
-            {profile && profile.blocks.length > 0 ? (
-              <>
-                <ProfileBlockCanvas profile={profile} user={account} />
-                <Typography level="body-xs" textColor="muted">
-                  Block layout can only be edited on desktop for now.
-                </Typography>
-              </>
-            ) : (
-              <Typography level="body-sm" textColor="muted">
-                No blocks yet. Use desktop to add and arrange blocks.
-              </Typography>
-            )}
+            <Typography level="body-sm" textColor="muted">
+              {mobileBlocks.length > 0
+                ? `${mobileBlocks.length} widget${mobileBlocks.length === 1 ? "" : "s"} on your mobile profile.`
+                : "No widgets yet."}
+            </Typography>
+            <Button
+              color="neutral"
+              disabled={!profile}
+              onPress={() => setWidgetEditorOpen(true)}
+            >
+              Edit Widgets
+            </Button>
           </Paper>
 
           {error && (
-            <Typography level="body-sm" style={{ color: "#e74c3c" }}>
+            <Typography level="body-sm" color="danger" variant="plain">
               {error}
             </Typography>
           )}
@@ -371,6 +403,21 @@ export const ProfileEditorScreen = observer(() => {
             {saving ? "Saving..." : "Save Profile"}
           </Button>
         </ScrollView>
+      )}
+
+      {profile && (
+        <ProfileWidgetEditorModal
+          visible={widgetEditorOpen}
+          onClose={() => setWidgetEditorOpen(false)}
+          profile={profile}
+          user={account}
+          mobileBlocks={mobileBlocks}
+          onMobileBlocksChange={setMobileBlocks}
+          desktopBlocks={profile.blocks}
+          onSave={() => void saveProfile()}
+          saving={saving}
+          error={error}
+        />
       )}
     </SettingsScreen>
   );

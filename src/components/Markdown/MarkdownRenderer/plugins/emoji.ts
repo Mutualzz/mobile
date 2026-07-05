@@ -1,11 +1,13 @@
 import { customEmojiRegex } from "@components/Markdown/MarkdownRenderer/plugins/customEmoji";
 import { getEmoji } from "@utils/emojis";
 import { TWEMOJI_URL } from "@utils/urls";
+import unicodeEmojiRegex from "emojibase-regex";
 import shortcodeRegex from "emojibase-regex/shortcode";
 import type MarkdownIt from "markdown-it";
 import Token from "markdown-it/lib/token.mjs";
 
-const emojiRegex = new RegExp(shortcodeRegex.source, "g");
+const shortcodePattern = new RegExp(shortcodeRegex.source, "g");
+const unicodePattern = new RegExp(unicodeEmojiRegex.source, "g");
 
 function findCustomEmojiRanges(content: string): [number, number][] {
   const ranges: [number, number][] = [];
@@ -30,43 +32,65 @@ export const emojiPlugin = (md: MarkdownIt) => {
         const content = token.content;
         const newTokens: Token[] = [];
         let lastIndex = 0;
-        let match;
 
-        emojiRegex.lastIndex = 0;
         const customEmojiRanges = findCustomEmojiRanges(content);
 
-        while ((match = emojiRegex.exec(content))) {
-          if (isWithinRanges(match.index, customEmojiRanges)) {
+        const matches: { start: number; end: number; raw: string }[] = [];
+
+        shortcodePattern.lastIndex = 0;
+        let match;
+        while ((match = shortcodePattern.exec(content))) {
+          matches.push({
+            start: match.index,
+            end: match.index + match[0].length,
+            raw: match[0].slice(1, -1),
+          });
+        }
+
+        unicodePattern.lastIndex = 0;
+        while ((match = unicodePattern.exec(content))) {
+          matches.push({
+            start: match.index,
+            end: match.index + match[0].length,
+            raw: match[0],
+          });
+        }
+
+        matches.sort((a, b) => a.start - b.start);
+
+        for (const emojiMatch of matches) {
+          if (isWithinRanges(emojiMatch.start, customEmojiRanges)) {
+            continue;
+          }
+          if (emojiMatch.start < lastIndex) {
             continue;
           }
 
-          const emojiName = match[0].slice(1, -1);
-          const emojiData = getEmoji(emojiName);
+          const emojiData = getEmoji(emojiMatch.raw);
+          if (!emojiData) continue;
 
-          if (emojiData) {
-            if (lastIndex < match.index) {
-              const textToken = new Token("text", "", 0);
-              textToken.content = content.slice(lastIndex, match.index);
-              textToken.level = token.level;
-              newTokens.push(textToken);
-            }
-
-            const emojiToken = new Token("emoji", "", 0);
-            emojiToken.content = emojiData.emoji;
-            emojiToken.attrSet(
-              "name",
-              emojiData.shortcodes?.[0] || emojiData.emoji,
-            );
-            emojiToken.attrSet(
-              "url",
-              `${TWEMOJI_URL}/${emojiData.hexcode.toLowerCase()}.svg`,
-            );
-            emojiToken.attrSet("unicode", emojiData.emoji);
-            emojiToken.level = token.level;
-            newTokens.push(emojiToken);
-
-            lastIndex = match.index + match[0].length;
+          if (lastIndex < emojiMatch.start) {
+            const textToken = new Token("text", "", 0);
+            textToken.content = content.slice(lastIndex, emojiMatch.start);
+            textToken.level = token.level;
+            newTokens.push(textToken);
           }
+
+          const emojiToken = new Token("emoji", "", 0);
+          emojiToken.content = emojiData.emoji;
+          emojiToken.attrSet(
+            "name",
+            emojiData.shortcodes?.[0] || emojiData.emoji,
+          );
+          emojiToken.attrSet(
+            "url",
+            `${TWEMOJI_URL}/${emojiData.hexcode.toLowerCase()}.svg`,
+          );
+          emojiToken.attrSet("unicode", emojiData.emoji);
+          emojiToken.level = token.level;
+          newTokens.push(emojiToken);
+
+          lastIndex = emojiMatch.end;
         }
 
         if (lastIndex < content.length) {

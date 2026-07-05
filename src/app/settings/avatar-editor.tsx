@@ -157,7 +157,7 @@ export default observer(function AvatarEditorScreen() {
         </Paper>
 
         {error && (
-          <Typography level="body-sm" style={{ color: "#e74c3c" }}>
+          <Typography level="body-sm" color="danger" variant="plain">
             {error}
           </Typography>
         )}

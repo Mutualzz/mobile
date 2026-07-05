@@ -19,7 +19,7 @@ export const ThemeCreatorDetailsPage = observer(() => {
           maxLength={64}
         />
         {errors.name && (
-          <Typography level="body-xs" style={{ color: "#e74c3c" }}>
+          <Typography level="body-xs" color="danger" variant="plain">
             {errors.name}
           </Typography>
         )}

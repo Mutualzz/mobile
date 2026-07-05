@@ -216,7 +216,6 @@ export const MessageActionSheet = observer(
                     <ButtonGroup
                       orientation="vertical"
                       variant="plain"
-                      color="neutral"
                       fullWidth
                       horizontalAlign="left"
                       spacing={0.5}
@@ -267,7 +266,6 @@ export const MessageActionSheet = observer(
                   <Button
                     fullWidth
                     variant="soft"
-                    color="neutral"
                     padding={14}
                     onPress={onClose}
                   >

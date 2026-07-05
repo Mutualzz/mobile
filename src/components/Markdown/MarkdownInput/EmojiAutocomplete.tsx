@@ -19,27 +19,30 @@ const MIN_QUERY_LENGTH = 2;
 const MAX_CUSTOM = 7;
 const MAX_STANDARD = 7;
 
-type StandardSuggestion = {
+interface StandardSuggestion {
     kind: "standard";
     key: string;
     label: string;
     emoji: Emoji;
-};
+}
 
-type CustomSuggestion = {
+interface CustomSuggestion {
     kind: "custom";
     key: string;
     label: string;
+    name: string;
     expression: Expression;
-};
-
-type Suggestion = StandardSuggestion | CustomSuggestion;
+}
 
 interface Props {
-    channel: Channel;
+    // Optional — without a channel (e.g. a profile bio), custom-emoji
+    // suggestions fall back to canUseCustomEmoji's no-channel behavior
+    // (personal emojis you authored only); standard/unicode suggestions
+    // are unaffected either way.
+    channel?: Channel;
     search: string;
     onSelectStandard: (emoji: Emoji) => void;
-    onSelectCustom: (expression: Expression) => void;
+    onSelectCustom: (expression: Expression, name: string) => void;
 }
 
 export const EmojiAutocomplete = observer(
@@ -51,7 +54,7 @@ export const EmojiAutocomplete = observer(
             if (search.length < MIN_QUERY_LENGTH) return [];
 
             const lowerQuery = search.toLowerCase();
-            const me = channel.spaceId
+            const me = channel?.spaceId
                 ? app.spaces.get(channel.spaceId)?.members.me
                 : null;
 
@@ -88,6 +91,7 @@ export const EmojiAutocomplete = observer(
                     kind: "custom",
                     key: `custom-${exp.id}`,
                     label: `:${displayName}:`,
+                    name: displayName,
                     expression: exp,
                 });
             }
@@ -140,7 +144,10 @@ export const EmojiAutocomplete = observer(
                                     return;
                                 }
 
-                                onSelectCustom(suggestion.expression);
+                                onSelectCustom(
+                                    suggestion.expression,
+                                    suggestion.name,
+                                );
                             }}
                             style={({ pressed }) => ({
                                 flexDirection: "row",

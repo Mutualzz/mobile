@@ -3,7 +3,13 @@ import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import type { APITheme, HttpException } from "@mutualzz/types";
 import { baseDarkTheme, baseLightTheme } from "@mutualzz/ui-core";
-import { Box, IconButton, Switch, Typography, useTheme } from "@mutualzz/ui-native";
+import {
+  Box,
+  IconButton,
+  Switch,
+  Typography,
+  useTheme,
+} from "@mutualzz/ui-native";
 import { Theme } from "@stores/objects/Theme";
 import { applyAdaptiveThemeValues } from "@utils/adaptation";
 import Snowflake from "@utils/Snowflake";
@@ -53,7 +59,8 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
 
   const [error, setError] = useState<string | null>(null);
 
-  const { values, currentPage, userInteracted, loadedType, nameEmpty } = themeCreator;
+  const { values, currentPage, userInteracted, loadedType, nameEmpty } =
+    themeCreator;
   const tabs = values.adaptive ? ADAPTIVE_TABS : NON_ADAPTIVE_TABS;
   const ownedByUser = !!values.id && app.account?.id === values.authorId;
   const existingDraft = app.drafts.existsThemeDraft(values);
@@ -97,7 +104,10 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
     mutationFn: async () => {
       let payload = { ...values, id: Snowflake.generate() };
       if (values.adaptive) {
-        payload = { ...applyAdaptiveThemeValues(values), id: Snowflake.generate() };
+        payload = {
+          ...applyAdaptiveThemeValues(values),
+          id: Snowflake.generate(),
+        };
       }
       return app.rest.post<APITheme, APITheme>("@me/themes", payload);
     },
@@ -122,13 +132,19 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
   const { mutate: updateTheme, isPending: updating } = useMutation({
     mutationKey: ["theme-creator-update", values.id],
     mutationFn: async () => {
-      const payload = values.adaptive ? applyAdaptiveThemeValues(values) : values;
-      return app.rest.patch<APITheme, APITheme>(`@me/themes/${values.id}`, payload);
+      const payload = values.adaptive
+        ? applyAdaptiveThemeValues(values)
+        : values;
+      return app.rest.patch<APITheme, APITheme>(
+        `@me/themes/${values.id}`,
+        payload,
+      );
     },
     onSuccess: (updated) => {
       if (!updated) return;
       app.themes.update(updated);
-      if (app.settings?.currentTheme === updated.id) changeTheme(Theme.toEmotion(updated));
+      if (app.settings?.currentTheme === updated.id)
+        changeTheme(Theme.toEmotion(updated));
       themeCreator.setErrors({});
       setError(null);
     },
@@ -245,14 +261,22 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
           </Box>
 
           <ScrollView
-            contentContainerStyle={{ paddingVertical: 16, gap: 16 }}
+            contentContainerStyle={{ paddingVertical: 8, gap: 8 }}
             keyboardShouldPersistTaps="handled"
           >
             {currentPage === "details" && <ThemeCreatorDetailsPage />}
-            {!values.adaptive && currentPage === "base" && <ThemeCreatorBasePage />}
-            {!values.adaptive && currentPage === "feedback" && <ThemeCreatorFeedbackPage />}
-            {!values.adaptive && currentPage === "typography" && <ThemeCreatorTypographyPage />}
-            {values.adaptive && currentPage === "adaptive" && <ThemeCreatorAdaptivePage />}
+            {!values.adaptive && currentPage === "base" && (
+              <ThemeCreatorBasePage />
+            )}
+            {!values.adaptive && currentPage === "feedback" && (
+              <ThemeCreatorFeedbackPage />
+            )}
+            {!values.adaptive && currentPage === "typography" && (
+              <ThemeCreatorTypographyPage />
+            )}
+            {values.adaptive && currentPage === "adaptive" && (
+              <ThemeCreatorAdaptivePage />
+            )}
             {currentPage === "manage" && (
               <ThemeCreatorManagePage
                 onDeleteTheme={() => deleteTheme()}
@@ -261,20 +285,29 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
             )}
           </ScrollView>
 
-          <Box style={{ flexDirection: "row", gap: 8 }}>
+          <Box
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+            }}
+          >
             <Button
+              expand
               variant="soft"
               color="danger"
-              style={{ flex: 1 }}
               disabled={!userInteracted || themeCreator.inPreview}
               onPress={handleReset}
             >
               Reset
             </Button>
             <Button
+              expand
               variant="soft"
-              style={{ flex: 1 }}
-              disabled={loadedType === "default" || ownedByUser || !userInteracted}
+              disabled={
+                loadedType === "default" || ownedByUser || !userInteracted
+              }
               onPress={() => handlePreview(!themeCreator.inPreview)}
             >
               {themeCreator.inPreview ? "Stop Preview" : "Preview"}
@@ -282,23 +315,30 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
           </Box>
 
           {error && (
-            <Typography level="body-sm" style={{ color: "#e74c3c" }}>
+            <Typography level="body-sm" color="danger" variant="plain">
               {error}
             </Typography>
           )}
 
-          <Box style={{ flexDirection: "row", gap: 8 }}>
+          <Box
+            style={{
+              flexDirection: "row",
+              gap: 8,
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
             <Button
               color="warning"
-              style={{ flex: 1 }}
+              expand
               disabled={!userInteracted || nameEmpty || ownedByUser}
               onPress={handleSaveDraft}
             >
               {existingDraft ? "Update Draft" : "Save Draft"}
             </Button>
             <Button
+              expand
               color="success"
-              style={{ flex: 1 }}
               disabled={!userInteracted || nameEmpty || publishing || updating}
               onPress={() => (ownedByUser ? updateTheme() : publishTheme())}
             >
@@ -325,7 +365,12 @@ interface ThemeCreatorTabProps {
   onPress: () => void;
 }
 
-const ThemeCreatorTab = ({ label, Icon, active, onPress }: ThemeCreatorTabProps) => {
+const ThemeCreatorTab = ({
+  label,
+  Icon,
+  active,
+  onPress,
+}: ThemeCreatorTabProps) => {
   const { theme } = useTheme();
 
   return (

@@ -1,12 +1,14 @@
-import type { ProfileDividerBlock } from "@mutualzz/types";
+import type { MobileProfileDividerBlock, ProfileBlockSize } from "@mutualzz/types";
 import { View } from "react-native";
 
-export function ProfileDividerBlockView({
-  block,
-}: {
-  block: ProfileDividerBlock;
-}) {
+interface Props {
+  block: MobileProfileDividerBlock;
+  size: ProfileBlockSize;
+}
+
+export function ProfileDividerWidgetView({ block, size }: Props) {
   const style = block.style ?? "line";
+  const padding = size === "l" ? 20 : 8;
 
   if (style === "space") {
     return <View style={{ width: "100%", height: "100%" }} />;
@@ -19,6 +21,7 @@ export function ProfileDividerBlockView({
         height: "100%",
         alignItems: "center",
         justifyContent: "center",
+        paddingHorizontal: padding,
       }}
     >
       <View
@@ -29,8 +32,7 @@ export function ProfileDividerBlockView({
           borderTopWidth: style === "dotted" ? 2 : 0,
           borderStyle: style === "dotted" ? "dotted" : "solid",
           borderTopColor: "rgba(128,128,128,0.35)",
-          backgroundColor:
-            style === "line" ? "rgba(128,128,128,0.28)" : undefined,
+          backgroundColor: style === "line" ? "rgba(128,128,128,0.28)" : undefined,
         }}
       />
     </View>

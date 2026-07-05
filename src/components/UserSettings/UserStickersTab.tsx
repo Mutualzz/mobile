@@ -131,7 +131,7 @@ export const UserStickersTab = observer(() => {
     <Box style={{ gap: 16, minWidth: 0 }}>
       <Box style={{ gap: 12 }}>
         <Box style={{ gap: 4 }}>
-          <Typography level="body-sm" style={{ color: "#f5a623" }}>
+          <Typography level="body-sm" color="warning" variant="plain">
             Beta limit: {STICKER_LIMIT} stickers per account.
           </Typography>
           <Typography level="body-sm" textColor="muted">

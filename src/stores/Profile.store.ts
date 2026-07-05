@@ -1,4 +1,8 @@
-import type { APIUserProfile, Snowflake } from "@mutualzz/types";
+import type {
+    APIProfileMusicSearchTrack,
+    APIUserProfile,
+    Snowflake,
+} from "@mutualzz/types";
 import { makeAutoObservable, observable, type ObservableMap } from "mobx";
 import type { AppStore } from "./App.store";
 import { UserProfile } from "./objects/UserProfile";
@@ -70,6 +74,16 @@ export class ProfileStore {
         );
         if (!result) return undefined;
         return this.add(result);
+    }
+
+    searchMusic(
+        query: string,
+        opts: { limit?: number; source?: "itunes" | "deezer" | "all" } = {},
+    ) {
+        return this.app.rest.get<{ tracks: APIProfileMusicSearchTrack[] }>(
+            "@me/profile/music/search",
+            { q: query, limit: opts.limit ?? 10, source: opts.source ?? "all" },
+        );
     }
 
     uploadAsset(

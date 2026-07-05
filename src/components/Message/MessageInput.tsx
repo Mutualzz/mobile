@@ -18,7 +18,11 @@ import type { Message } from "@stores/objects/Message";
 import type { Expression } from "@stores/objects/Expression";
 import type { GifResult } from "@utils/gifs";
 import { resolveGifSendUrl } from "@utils/gifs";
-import { formatCustomEmojiMarkdown } from "@utils/markdown/composerQueries";
+import { expandCustomEmojiShortcodes } from "@utils/markdown/composerQueries";
+import {
+  findCustomEmojiByLabel,
+  getCustomEmojiLabel,
+} from "@utils/expressions";
 import { replaceRange } from "@utils/markdown/textUtils";
 import type { Selection } from "@utils/markdown/types";
 import type { PickerEmoji, SkinTone } from "@utils/emojis/emojiPickerData";
@@ -142,13 +146,32 @@ export const MessageInput = observer(({ channel }: Props) => {
     return hasText || stickers.length > 0;
   }, [content, editingMessage, stickers.length]);
 
+  const expandCustomEmoji = useCallback(
+    (text: string) => {
+      const currentMember = channel.spaceId
+        ? app.spaces.get(channel.spaceId)?.members.me
+        : null;
+
+      return expandCustomEmojiShortcodes(text, (name) =>
+        findCustomEmojiByLabel(
+          app.expressions.all,
+          name,
+          meId ?? "",
+          currentMember,
+          channel,
+        ),
+      );
+    },
+    [app.expressions.all, app.spaces, channel, meId],
+  );
+
   const saveEdit = useCallback(
     async (message: Message) => {
       if (!canSubmit() || saving) return;
 
       setSaving(true);
       try {
-        await message.edit(content);
+        await message.edit(expandCustomEmoji(content));
         setContent("");
         setSelection({ start: 0, end: 0 });
         setStickers([]);
@@ -158,7 +181,7 @@ export const MessageInput = observer(({ channel }: Props) => {
         setSaving(false);
       }
     },
-    [canSubmit, content, saving],
+    [canSubmit, content, expandCustomEmoji, saving],
   );
 
   const sendContent = useCallback(
@@ -227,7 +250,7 @@ export const MessageInput = observer(({ channel }: Props) => {
 
     if (!canSubmit()) return;
 
-    const text = content;
+    const text = expandCustomEmoji(content);
     const stickerList = stickers;
 
     setContent("");
@@ -235,7 +258,15 @@ export const MessageInput = observer(({ channel }: Props) => {
     setStickers([]);
 
     await sendContent(text, stickerList);
-  }, [canSubmit, content, editingMessage, saveEdit, sendContent, stickers]);
+  }, [
+    canSubmit,
+    content,
+    editingMessage,
+    expandCustomEmoji,
+    saveEdit,
+    sendContent,
+    stickers,
+  ]);
 
   const handleSelectEmoji = useCallback(
     (emoji: PickerEmoji, skinTone: SkinTone) => {
@@ -249,9 +280,19 @@ export const MessageInput = observer(({ channel }: Props) => {
 
   const handleSelectCustomEmoji = useCallback(
     (expression: Expression) => {
-      insertIntoComposer(formatCustomEmojiMarkdown(expression));
+      const currentMember = channel.spaceId
+        ? app.spaces.get(channel.spaceId)?.members.me
+        : null;
+      const label = getCustomEmojiLabel(
+        app.expressions.all,
+        expression,
+        meId ?? "",
+        currentMember,
+        channel,
+      );
+      insertIntoComposer(`:${label}:`);
     },
-    [insertIntoComposer],
+    [app.expressions.all, app.spaces, channel, insertIntoComposer, meId],
   );
 
   const handleSelectGif = useCallback(

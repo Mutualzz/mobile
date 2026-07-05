@@ -154,6 +154,8 @@ export const ExpressionPickerSheet = observer(
                           <Typography
                             level="body-sm"
                             weight={active ? "bold" : undefined}
+                            numberOfLines={1}
+                            maxFontSizeMultiplier={1.3}
                             style={{
                               color: active
                                 ? theme.colors.primary

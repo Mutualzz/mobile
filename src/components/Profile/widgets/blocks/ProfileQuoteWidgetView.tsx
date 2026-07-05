@@ -1,8 +1,10 @@
 import { ProfileMarkdownContent } from "@components/Profile/shared/ProfileMarkdownContent";
-import type { ProfileQuoteBlock } from "@mutualzz/types";
+import type { MobileProfileQuoteBlock, ProfileBlockSize } from "@mutualzz/types";
 import { dynamicElevation, formatColor } from "@mutualzz/ui-core";
 import { Stack, Typography, useTheme } from "@mutualzz/ui-native";
 import { QuotesIcon } from "phosphor-react-native";
+
+const LINE_CLAMP: Record<ProfileBlockSize, number> = { s: 2, m: 4, l: 8 };
 
 const variantStyles = (theme: ReturnType<typeof useTheme>["theme"]) => ({
   default: {
@@ -11,10 +13,7 @@ const variantStyles = (theme: ReturnType<typeof useTheme>["theme"]) => ({
     accent: theme.typography.colors.primary,
   },
   accent: {
-    background: formatColor(theme.colors.primary, {
-      darken: 25,
-      format: "hexa",
-    }),
+    background: formatColor(theme.colors.primary, { darken: 25, format: "hexa" }),
     border: theme.colors.primary,
     accent: theme.typography.colors.accent,
   },
@@ -28,7 +27,12 @@ const variantStyles = (theme: ReturnType<typeof useTheme>["theme"]) => ({
   },
 });
 
-export function ProfileQuoteBlockView({ block }: { block: ProfileQuoteBlock }) {
+interface Props {
+  block: MobileProfileQuoteBlock;
+  size: ProfileBlockSize;
+}
+
+export function ProfileQuoteWidgetView({ block, size }: Props) {
   const { theme } = useTheme();
   const variant = block.variant ?? "default";
   const styles = variantStyles(theme)[variant];
@@ -37,25 +41,38 @@ export function ProfileQuoteBlockView({ block }: { block: ProfileQuoteBlock }) {
     <Stack
       direction="column"
       spacing={1}
-      p={1.5}
+      p={1.25}
       style={{
         width: "100%",
         height: "100%",
-        borderRadius: 12,
         borderWidth: 1,
         borderColor: styles.border as string,
         backgroundColor: styles.background as string,
-        overflow: "hidden",
       }}
     >
-      <QuotesIcon size={20} weight="fill" color={styles.accent as string} />
+      <QuotesIcon size={16} weight="fill" color={styles.accent as string} />
+      {block.content ? (
+        <ProfileMarkdownContent value={block.content} lineClamp={LINE_CLAMP[size]} />
+      ) : null}
+      {size !== "s" && block.attribution ? (
+        <Typography level="body-xs" textColor="muted" style={{ fontStyle: "italic" }}>
+          — {block.attribution}
+        </Typography>
+      ) : null}
+    </Stack>
+  );
+}
+
+export function ProfileQuoteWidgetExpandedContent({
+  block,
+}: {
+  block: MobileProfileQuoteBlock;
+}) {
+  return (
+    <Stack direction="column" spacing={1}>
       {block.content ? <ProfileMarkdownContent value={block.content} /> : null}
       {block.attribution ? (
-        <Typography
-          level="body-xs"
-          textColor="muted"
-          style={{ fontStyle: "italic" }}
-        >
+        <Typography level="body-xs" textColor="muted" style={{ fontStyle: "italic" }}>
           — {block.attribution}
         </Typography>
       ) : null}
