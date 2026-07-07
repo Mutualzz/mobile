@@ -7,16 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "com.mutualzz.app",
     "userInterfaceStyle": "automatic",
-    "linking": {
-      "prefixes": ["com.mutualzz.app://", "mutualzz://"],
-      "config": {
-        "screens": {
-          "invite/[code]": "invite/:code",
-          "reset": "reset",
-          "users/[username]": "users/:username"
-        }
-      }
-    },
     "ios": {
       "bundleIdentifier": "com.mutualzz.app",
       "supportsTablet": true,
@@ -38,6 +28,7 @@
       "autolinkingModuleResolution": true
     },
     "plugins": [
+      "expo-dev-client",
       "expo-router",
       "expo-font",
       [
