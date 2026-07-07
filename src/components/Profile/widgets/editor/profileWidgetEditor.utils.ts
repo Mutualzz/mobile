@@ -5,14 +5,15 @@ import type {
 } from "@mutualzz/types";
 import Snowflake from "@utils/Snowflake";
 
-type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
+type DistributiveOmit<T, K extends keyof T> = T extends unknown
+  ? Omit<T, K>
+  : never;
 
 type MobileBlockContent = DistributiveOmit<
   APIMobileProfileBlock,
   "id" | "size" | "order"
 >;
 
-/** Position-free counterpart to ui-core's createDefaultBlockContent. */
 export function createDefaultMobileBlockContent(
   type: ProfileBlockType,
 ): MobileBlockContent {
@@ -73,7 +74,6 @@ export function addMobileWidget(
   return [...blocks, block];
 }
 
-/** Pure array-move + order reassignment, no coordinate math. */
 export function reorderMobileBlocks(
   blocks: APIMobileProfileBlock[],
   fromIndex: number,
@@ -112,11 +112,10 @@ export function updateMobileWidget(
   patch: Record<string, unknown>,
 ): APIMobileProfileBlock[] {
   return blocks.map((block) =>
-    block.id === blockId ? ({ ...block, ...patch } as APIMobileProfileBlock) : block,
+    block.id === blockId ? { ...block, ...patch } : block,
   );
 }
 
-/** Same filter desktop applies before save: drop blocks with no usable content. */
 export function prepareMobileBlocksForSave(
   blocks: APIMobileProfileBlock[],
 ): APIMobileProfileBlock[] {
@@ -128,7 +127,6 @@ export function prepareMobileBlocksForSave(
   });
 }
 
-/** Returns a user-facing error, or null if the widgets are ready to save. */
 export function validateMobileBlocksForSave(
   blocks: APIMobileProfileBlock[],
 ): string | null {
@@ -153,17 +151,23 @@ export function validateMobileBlocksForSave(
   return null;
 }
 
-/** One-time snapshot from desktop blocks into mobile widgets — not a live link. */
 export function copyDesktopBlocksToMobile(
   blocks: APIProfileBlock[],
 ): APIMobileProfileBlock[] {
   return blocks.map((block, index) => {
-    const { x: _x, y: _y, width: _w, height: _h, zIndex: _z, ...content } = block;
+    const {
+      x: _x,
+      y: _y,
+
+      height: _h,
+      zIndex: _z,
+      ...content
+    } = block;
     return {
       ...content,
       id: Snowflake.generate(),
       size: "m",
       order: index,
-    } as APIMobileProfileBlock;
+    };
   });
 }

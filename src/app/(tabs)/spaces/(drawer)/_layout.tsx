@@ -8,7 +8,7 @@ import { Box } from "@mutualzz/ui-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { BackHandler } from "react-native";
 
 const SpacesDrawerLayout = () => {
@@ -18,6 +18,7 @@ const SpacesDrawerLayout = () => {
     spaceId?: string;
     channelId?: string;
   }>();
+  const lastSyncedChannelIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     return () => {
@@ -29,8 +30,11 @@ const SpacesDrawerLayout = () => {
     if (app.mode !== "spaces") app.setMode("spaces");
 
     if (channelId) {
+      if (lastSyncedChannelIdRef.current === channelId) return;
+
       const channel = app.channels.get(channelId);
       if (channel) {
+        lastSyncedChannelIdRef.current = channelId;
         const channelSpaceId = channel.spaceId;
 
         if (channelSpaceId && channelSpaceId !== app.spaces.activeId) {
@@ -46,9 +50,11 @@ const SpacesDrawerLayout = () => {
             app.gateway.onChannelOpen(channelSpaceId, channelId),
           );
         }
-        return;
       }
+      return;
     }
+
+    lastSyncedChannelIdRef.current = undefined;
 
     if (spaceId && spaceId !== app.spaces.activeId) {
       app.spaces.setActive(spaceId);

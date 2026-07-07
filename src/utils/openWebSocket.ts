@@ -8,7 +8,6 @@ type ReactNativeWebSocket = new (
   options?: WebSocketOptions | null,
 ) => WebSocket;
 
-/** Opens a WebSocket with React Native-only options (e.g. custom headers). */
 export function openWebSocket(
   uri: string,
   options?: WebSocketOptions,

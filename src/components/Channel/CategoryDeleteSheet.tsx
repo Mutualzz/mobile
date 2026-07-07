@@ -27,17 +27,21 @@ export const CategoryDeleteSheet = observer(
         <Box
           style={{
             flex: 1,
-            justifyContent: "center",
-            padding: 24,
+            justifyContent: "flex-end",
             backgroundColor: "rgba(0,0,0,0.45)",
           }}
         >
           <Paper
             elevation={app.settings?.preferEmbossed ? 4 : 2}
-            style={{ padding: 20, borderRadius: 12, gap: 16 }}
+            style={{
+              padding: 24,
+              paddingBottom: 36,
+              borderRadius: 16,
+              gap: 16,
+            }}
           >
             <Typography level="body-md" weight="bold">
-              Delete category "{channel.name}"?
+              Delete category &quot;{channel.name}&quot;?
             </Typography>
             <Typography textColor="muted" level="body-sm">
               Choose whether to keep channels inside this category.

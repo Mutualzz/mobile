@@ -48,7 +48,7 @@ export const ProfileActivityWidgetView = observer(
 
     return (
       <View style={{ width: "100%", height: "100%", padding: 12, gap: 6 }}>
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack direction="row" alignItems="center" style={{ gap: 6 }}>
           <PulseIcon size={16} weight="fill" />
           <Typography level="body-sm" weight="bold">
             Activity
@@ -56,7 +56,7 @@ export const ProfileActivityWidgetView = observer(
         </Stack>
 
         {presence?.status ? (
-          <Stack direction="row" spacing={0.75} alignItems="center" style={{ flexWrap: "wrap" }}>
+          <Stack direction="row" alignItems="center" style={{ gap: 6, flexWrap: "wrap" }}>
             <Typography
               level="body-xs"
               textColor="muted"
@@ -79,8 +79,8 @@ export const ProfileActivityWidgetView = observer(
                   <Stack
                     key={`${activity.type}-${activity.name}-${index}`}
                     direction="row"
-                    spacing={0.4}
                     alignItems="center"
+                    style={{ gap: 4 }}
                   >
                     <ActivityTypeIcon type={activity.type} color={theme.colors.success} />
                     <Typography level="body-xs" textColor="accent" numberOfLines={1}>

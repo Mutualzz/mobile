@@ -55,8 +55,22 @@ const PublicProfileScreen = () => {
   }
 
   return (
-    <Screen style={{ flexDirection: "column" }}>
-      <ScreenHeader safeTop>
+    <Screen
+      style={{
+        flexDirection: "column",
+        borderBottomWidth: 0,
+        borderLeftWidth: 0,
+        borderRightWidth: 0,
+        borderTopWidth: 0,
+      }}
+    >
+      <ScreenHeader
+        style={{
+          borderTopWidth: 0,
+          borderLeftWidth: 0,
+          borderRightWidth: 0,
+        }}
+      >
         <IconButton padding={8} onPress={() => router.back()}>
           <ArrowLeftIcon size={20} />
         </IconButton>
@@ -65,9 +79,10 @@ const PublicProfileScreen = () => {
         </Typography>
       </ScreenHeader>
       {profile ? (
-        <ScrollView contentContainerStyle={{ padding: 16, alignItems: "center" }}>
-          <UserProfileSheet user={user} modalId="public-profile" />
-          <Box style={{ width: "100%", marginTop: 16 }}>
+        <ScrollView
+          contentContainerStyle={{ padding: 16, alignItems: "center" }}
+        >
+          <Box style={{ width: "100%" }}>
             {profile.mobileBlocks.length > 0 ? (
               <ProfileWidgetGrid profile={profile} user={user} />
             ) : (

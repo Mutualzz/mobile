@@ -33,7 +33,7 @@ export const ProfileMutualWidgetView = observer(({ block, size, userId }: Props)
 
   return (
     <View style={{ width: "100%", height: "100%", padding: 12, gap: 8 }}>
-      <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction="row" alignItems="center" style={{ gap: 6 }}>
         <UsersThreeIcon size={16} weight="fill" />
         <Typography level="body-sm" weight="bold">
           {block.mode === "spaces" ? "Mutual Spaces" : "Friends"}
@@ -49,9 +49,9 @@ export const ProfileMutualWidgetView = observer(({ block, size, userId }: Props)
           No mutual spaces
         </Typography>
       ) : (
-        <Stack direction="column" spacing={0.75}>
+        <Stack direction="column" style={{ gap: 6 }}>
           {visible.map((space) => (
-            <Stack key={space.id} direction="row" spacing={1} alignItems="center">
+            <Stack key={space.id} direction="row" alignItems="center" style={{ gap: 6 }}>
               <SpaceIcon space={space} size={22} />
               <Typography level="body-sm" numberOfLines={1}>
                 {space.name}
@@ -89,9 +89,9 @@ export const ProfileMutualWidgetExpandedContent = observer(
     }
 
     return (
-      <Stack direction="column" spacing={0.75}>
+      <Stack direction="column" style={{ gap: 6 }}>
         {mutualSpaces.map((space) => (
-          <Stack key={space.id} direction="row" spacing={1} alignItems="center">
+          <Stack key={space.id} direction="row" alignItems="center" style={{ gap: 6 }}>
             <SpaceIcon space={space} size={22} />
             <Typography level="body-sm" numberOfLines={1}>
               {space.name}

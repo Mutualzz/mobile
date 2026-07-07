@@ -15,7 +15,11 @@ import {
 } from "phosphor-react-native";
 import { Pressable, ScrollView } from "react-native";
 
-const ITEMS: { type: ProfileBlockType; label: string; Icon: typeof TextAaIcon }[] = [
+const ITEMS: {
+  type: ProfileBlockType;
+  label: string;
+  Icon: typeof TextAaIcon;
+}[] = [
   { type: "header", label: "Header", Icon: UserCircleIcon },
   { type: "text", label: "Text", Icon: TextAaIcon },
   { type: "quote", label: "Quote", Icon: QuotesIcon },
@@ -33,7 +37,6 @@ interface Props {
   onAddWidget: (type: ProfileBlockType) => void;
 }
 
-/** Tap-to-add widget palette — appends to the end of the mobile widget list. */
 export function ProfileWidgetPalette({ onAddWidget }: Props) {
   const { theme } = useTheme();
 
@@ -42,7 +45,11 @@ export function ProfileWidgetPalette({ onAddWidget }: Props) {
       horizontal
       showsHorizontalScrollIndicator={false}
       style={{ flexGrow: 0 }}
-      contentContainerStyle={{ gap: 8, paddingHorizontal: 12, alignItems: "flex-start" }}
+      contentContainerStyle={{
+        gap: 8,
+        paddingHorizontal: 12,
+        alignItems: "flex-start",
+      }}
     >
       {ITEMS.map(({ type, label, Icon }) => (
         <Pressable

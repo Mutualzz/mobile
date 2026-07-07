@@ -1,11 +1,14 @@
 import type { APIUserSettings, AppMode, Snowflake } from "@mutualzz/types";
 import { ObservableOrderedSet } from "@utils/ObservableOrderedSet";
-import { makeAutoObservable, observable } from "mobx";
+import { comparer, makeAutoObservable, observable, reaction } from "mobx";
 import type { AppStore } from "./App.store";
 import { makePersistable } from "mobx-persist-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AppState, type AppStateStatus } from "react-native";
 
 type SettingsPatch = Omit<APIUserSettings, "updatedAt">;
+
+const SYNC_DEBOUNCE_MS = 2_000;
 
 export class AccountSettingsStore {
   currentTheme?: string | null = "baseDark";
@@ -19,6 +22,8 @@ export class AccountSettingsStore {
 
   private lastSyncedHash: string;
   private syncIntervalId?: ReturnType<typeof setInterval>;
+  private debounceTimerId?: ReturnType<typeof setTimeout>;
+  private appStateSubscription: { remove: () => void };
 
   constructor(
     private readonly app: AppStore,
@@ -80,6 +85,38 @@ export class AccountSettingsStore {
       ],
       storage: AsyncStorage,
     });
+
+    reaction(
+      () => this.getSyncPayload(),
+      () => this.scheduleSync(),
+      {
+        equals: comparer.structural,
+      },
+    );
+
+    this.appStateSubscription = AppState.addEventListener(
+      "change",
+      (nextState) => this.handleAppStateChange(nextState),
+    );
+  }
+
+  private scheduleSync() {
+    if (this.debounceTimerId) clearTimeout(this.debounceTimerId);
+    this.debounceTimerId = setTimeout(() => this.sync(), SYNC_DEBOUNCE_MS);
+  }
+
+  private handleAppStateChange(nextState: AppStateStatus) {
+    if (nextState === "background" || nextState === "inactive") this.flush();
+  }
+
+  flush() {
+    if (this.debounceTimerId) clearTimeout(this.debounceTimerId);
+    void this.sync();
+  }
+
+  dispose() {
+    this.stopSyncing();
+    this.appStateSubscription.remove();
   }
 
   private getSyncPayload(): SettingsPatch {
@@ -140,6 +177,20 @@ export class AccountSettingsStore {
     this.currentIcon = icon;
   }
 
+  getPendingOverrides(): SettingsPatch | null {
+    return this.isDirty ? this.getSyncPayload() : null;
+  }
+
+  applyLocalOverrides(payload: SettingsPatch) {
+    this.spacePositions.replace(payload.spacePositions.map(String));
+    this.currentTheme = payload.currentTheme;
+    this.currentIcon = payload.currentIcon;
+    this.preferredMode = payload.preferredMode;
+    this.preferEmbossed = payload.preferEmbossed;
+    this.favoriteEmojis = observable.array(payload.favoriteEmojis ?? []);
+    this.favoriteGifs = observable.array(payload.favoriteGifs ?? []);
+  }
+
   update(settings: Partial<APIUserSettings>) {
     if (settings.spacePositions != undefined)
       this.spacePositions.replace(settings.spacePositions.map(String));
@@ -166,16 +217,19 @@ export class AccountSettingsStore {
   }
 
   startSyncing() {
+    // Backstop in case the debounced sync (see the reaction registered in the
+    // constructor) got dropped, e.g. a change was made while offline.
     this.syncIntervalId = setInterval(
       () => {
         this.sync();
       },
       10 * 60 * 1000,
-    ); // Sync every 10 minutes, send only if there are changes
+    );
   }
 
   stopSyncing() {
     clearInterval(this.syncIntervalId);
+    if (this.debounceTimerId) clearTimeout(this.debounceTimerId);
   }
 
   addPosition(spaceId: Snowflake) {

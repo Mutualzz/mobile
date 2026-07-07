@@ -1,6 +1,12 @@
 import { Button } from "@components/Button";
 import type { ColorLike } from "@mutualzz/ui-core";
-import { Box, IconButton, InputColor, Slider, Typography } from "@mutualzz/ui-native";
+import {
+  Box,
+  IconButton,
+  InputColor,
+  Slider,
+  Typography,
+} from "@mutualzz/ui-native";
 import {
   ArrowCounterClockwiseIcon,
   ArrowClockwiseIcon,
@@ -28,7 +34,6 @@ export interface DrawCanvasState {
 const CANVAS_SIZE = 320;
 const DEFAULT_BACKGROUND = "#1a1a2e";
 
-/** Serializes the current strokes into a flattened SVG string for display via SvgXml. */
 export function renderStrokesToSvg(state: DrawCanvasState): string {
   const paths = state.strokes
     .map(
@@ -46,7 +51,15 @@ interface Props {
   onSave: (state: DrawCanvasState) => void;
 }
 
-const BRUSH_COLORS = ["#ffffff", "#f4f4f5", "#ef4444", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7"];
+const BRUSH_COLORS = [
+  "#ffffff",
+  "#f4f4f5",
+  "#ef4444",
+  "#f59e0b",
+  "#22c55e",
+  "#3b82f6",
+  "#a855f7",
+];
 
 export function ProfileDrawCanvas({ initial, onCancel, onSave }: Props) {
   const [strokes, setStrokes] = useState<DrawStroke[]>(initial?.strokes ?? []);
@@ -73,7 +86,10 @@ export function ProfileDrawCanvas({ initial, onCancel, onSave }: Props) {
   const commitStroke = () => {
     setCurrentPath((prev) => {
       if (prev) {
-        setStrokes((s) => [...s, { d: prev, color: activeColor, width: strokeWidth }]);
+        setStrokes((s) => [
+          ...s,
+          { d: prev, color: activeColor, width: strokeWidth },
+        ]);
         setRedoStack([]);
       }
       return null;
@@ -124,8 +140,16 @@ export function ProfileDrawCanvas({ initial, onCancel, onSave }: Props) {
             overflow: "hidden",
           }}
         >
-          <Svg width={CANVAS_SIZE} height={CANVAS_SIZE} viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}>
-            <Rect width={CANVAS_SIZE} height={CANVAS_SIZE} fill={backgroundColor} />
+          <Svg
+            width={CANVAS_SIZE}
+            height={CANVAS_SIZE}
+            viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
+          >
+            <Rect
+              width={CANVAS_SIZE}
+              height={CANVAS_SIZE}
+              fill={backgroundColor}
+            />
             {strokes.map((s, i) => (
               <Path
                 key={i}
@@ -151,7 +175,14 @@ export function ProfileDrawCanvas({ initial, onCancel, onSave }: Props) {
         </View>
       </GestureDetector>
 
-      <Box style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", justifyContent: "center" }}>
+      <Box
+        style={{
+          flexDirection: "row",
+          gap: 6,
+          flexWrap: "wrap",
+          justifyContent: "center",
+        }}
+      >
         {BRUSH_COLORS.map((color) => (
           <IconButton
             key={color}
@@ -163,7 +194,12 @@ export function ProfileDrawCanvas({ initial, onCancel, onSave }: Props) {
               setErasing(false);
               setBrushColor(color);
             }}
-            style={{ backgroundColor: color, borderRadius: 999, width: 28, height: 28 }}
+            style={{
+              backgroundColor: color,
+              borderRadius: 999,
+              width: 28,
+              height: 28,
+            }}
           >
             <></>
           </IconButton>
@@ -190,7 +226,13 @@ export function ProfileDrawCanvas({ initial, onCancel, onSave }: Props) {
 
       <Box style={{ gap: 4 }}>
         <Typography level="body-xs">Stroke width ({strokeWidth}px)</Typography>
-        <Slider min={1} max={24} step={1} value={strokeWidth} onChange={(v) => setStrokeWidth(v as number)} />
+        <Slider
+          min={1}
+          max={24}
+          step={1}
+          value={strokeWidth}
+          onChange={(v) => setStrokeWidth(v as number)}
+        />
       </Box>
 
       <Box style={{ gap: 4 }}>
@@ -199,7 +241,7 @@ export function ProfileDrawCanvas({ initial, onCancel, onSave }: Props) {
         </Typography>
         <InputColor
           value={backgroundColor as ColorLike}
-          onChange={(next) => setBackgroundColor(next as string)}
+          onChange={(next) => setBackgroundColor(next)}
           fullWidth
         />
       </Box>

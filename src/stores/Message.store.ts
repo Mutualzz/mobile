@@ -72,10 +72,7 @@ export class MessageStore {
         const oldMessage = this.get(data.id);
         if (!oldMessage) return;
 
-        const nextMessage = new Message(this.app, data);
-        nextMessage.setEditing(oldMessage.editing);
-
-        this.messages[this.messages.indexOf(oldMessage)] = nextMessage;
+        oldMessage.update(data);
     }
 
     get count() {

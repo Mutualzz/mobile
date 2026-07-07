@@ -3,6 +3,7 @@ import { useAppStore } from "@hooks/useStores";
 import type { Snowflake } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
+import { useEffect } from "react";
 
 interface Props {
     userId: Snowflake;
@@ -19,10 +20,14 @@ export const UserMention = observer(({ userId, spaceId }: Props) => {
     const user = app.users.get(userId);
     const member = space?.members.get(userId);
 
+    useEffect(() => {
+        if (!user) void app.users.resolve(userId);
+    }, [app.users, userId, user]);
+
     if (!user) {
         return (
             <Typography level="body-sm" textColor="muted">
-                @{userId}
+                @unknown-user
             </Typography>
         );
     }

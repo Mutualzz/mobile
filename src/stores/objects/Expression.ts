@@ -3,14 +3,18 @@ import {
   type APIExpression,
   CDNRoutes,
   type ExpressionFormat,
-  ExpressionType,
+  type ExpressionType,
   ImageFormat,
   type Sizes,
-  type Snowflake
+  type Snowflake,
 } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
 import { REST } from "@stores/REST.store";
-import { BitField, ExpressionFlags, expressionFlags } from "@mutualzz/bitfield";
+import {
+  BitField,
+  type ExpressionFlags,
+  expressionFlags,
+} from "@mutualzz/bitfield";
 
 export class Expression {
   id: Snowflake;
@@ -29,7 +33,7 @@ export class Expression {
 
   constructor(
     private readonly app: AppStore,
-    data: APIExpression
+    data: APIExpression,
   ) {
     this.id = data.id;
     this.type = data.type;
@@ -62,16 +66,10 @@ export class Expression {
     animated = false,
     hash: string,
     size: Sizes = 128,
-    // Android's built-in Image component can't decode animated WebP without
-    // an optional native module (Fresco's animated-webp) that isn't bundled
-    // by default, so it fails to render regardless of what the server sends
-    // — GIF decodes natively there with no extra dependency. This is
-    // mobile-only (desktop's Chromium-based rendering handles animated WebP
-    // fine); static emojis, the common case, are unaffected and stay WebP.
-    format: ExpressionFormat = animated ? ImageFormat.GIF : ImageFormat.WebP
+    format: ExpressionFormat = animated ? ImageFormat.GIF : ImageFormat.WebP,
   ) {
     return REST.makeCDNUrl(
-      CDNRoutes.expression(expressionId, hash, format, size, animated)
+      CDNRoutes.expression(expressionId, hash, format, size, animated),
     );
   }
 
@@ -100,7 +98,7 @@ export class Expression {
       spaceId: this.spaceId,
       createdAt: this.createdAt,
       animated: this.animated,
-      flags: this.flags.toBigInt()
+      flags: this.flags.toBigInt(),
     };
   }
 }

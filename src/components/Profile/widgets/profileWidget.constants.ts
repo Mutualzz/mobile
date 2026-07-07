@@ -6,8 +6,6 @@ export const WIDGET_TILE_HEIGHTS: Record<ProfileBlockSize, number> = {
   l: 260,
 };
 
-/** Divider has no content that benefits from the shared tile heights above —
- * it just needs to read as a thin break, not an oversized empty card. */
 const DIVIDER_TILE_HEIGHTS: Record<ProfileBlockSize, number> = {
   s: 32,
   m: 32,
@@ -17,9 +15,13 @@ const DIVIDER_TILE_HEIGHTS: Record<ProfileBlockSize, number> = {
 export const getWidgetTileHeight = (
   type: ProfileBlockType,
   size: ProfileBlockSize,
-): number => (type === "divider" ? DIVIDER_TILE_HEIGHTS[size] : WIDGET_TILE_HEIGHTS[size]);
+): number =>
+  type === "divider" ? DIVIDER_TILE_HEIGHTS[size] : WIDGET_TILE_HEIGHTS[size];
 
-export const WIDGET_SUPPORTED_SIZES: Record<ProfileBlockType, ProfileBlockSize[]> = {
+export const WIDGET_SUPPORTED_SIZES: Record<
+  ProfileBlockType,
+  ProfileBlockSize[]
+> = {
   header: ["m", "l"],
   text: ["s", "m", "l"],
   image: ["s", "m", "l"],
@@ -33,7 +35,9 @@ export const WIDGET_SUPPORTED_SIZES: Record<ProfileBlockType, ProfileBlockSize[]
   draw: ["s", "m", "l"],
 };
 
-export const WIDGET_MAXIMIZABLE_TYPES: Partial<Record<ProfileBlockType, boolean>> = {
+export const WIDGET_MAXIMIZABLE_TYPES: Partial<
+  Record<ProfileBlockType, boolean>
+> = {
   text: true,
   image: true,
   links: true,
@@ -63,12 +67,6 @@ export interface PackedRect {
   height: number;
 }
 
-/**
- * Same flow-wrap packing the read-only grid gets from CSS flexWrap (S = half
- * row, two S's share a row; M/L always take a full row) — computed explicitly
- * here so the editor can position tiles identically and use the resulting
- * rects for drag hit-testing.
- */
 export function computePackedLayout(
   items: { id: string; size: ProfileBlockSize; height: number }[],
   rowGap = 10,
@@ -81,9 +79,21 @@ export function computePackedLayout(
     if (item.size === "s") {
       if (!pending) {
         pending = { id: item.id, height: item.height };
-        rects.push({ id: item.id, left: "0%", top: cursorY, width: "50%", height: item.height });
+        rects.push({
+          id: item.id,
+          left: "0%",
+          top: cursorY,
+          width: "50%",
+          height: item.height,
+        });
       } else {
-        rects.push({ id: item.id, left: "50%", top: cursorY, width: "50%", height: item.height });
+        rects.push({
+          id: item.id,
+          left: "50%",
+          top: cursorY,
+          width: "50%",
+          height: item.height,
+        });
         cursorY += Math.max(pending.height, item.height) + rowGap;
         pending = null;
       }
@@ -92,7 +102,13 @@ export function computePackedLayout(
         cursorY += pending.height + rowGap;
         pending = null;
       }
-      rects.push({ id: item.id, left: "0%", top: cursorY, width: "100%", height: item.height });
+      rects.push({
+        id: item.id,
+        left: "0%",
+        top: cursorY,
+        width: "100%",
+        height: item.height,
+      });
       cursorY += item.height + rowGap;
     }
   }

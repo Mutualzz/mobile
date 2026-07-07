@@ -23,13 +23,6 @@ interface Props extends PropsWithChildren {
   drawerWidth?: number;
 }
 
-/**
- * A persistent "push" drawer: opening slides drawerContent in from the left
- * and shifts children right by the same amount, leaving a visible/tappable
- * sliver of content on the right edge. The content wrapper's element tree is
- * identical regardless of `open` (only the gesture's `.enabled()` and props
- * change) so `children` is never unmounted/remounted by toggling the drawer.
- */
 export function SwipeableDrawer({
   open,
   onOpenChange,
@@ -124,20 +117,6 @@ export function SwipeableDrawer({
         {drawerContent}
       </Animated.View>
 
-      {!open && (
-        <GestureDetector gesture={edgeOpen}>
-          <View
-            style={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: EDGE_HIT_ZONE_WIDTH,
-            }}
-          />
-        </GestureDetector>
-      )}
-
       <GestureDetector gesture={dragClose}>
         <Animated.View style={[{ flex: 1 }, contentStyle]}>
           {children}
@@ -154,6 +133,20 @@ export function SwipeableDrawer({
           />
         </Animated.View>
       </GestureDetector>
+
+      {!open && (
+        <GestureDetector gesture={edgeOpen}>
+          <View
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: EDGE_HIT_ZONE_WIDTH,
+            }}
+          />
+        </GestureDetector>
+      )}
     </View>
   );
 }

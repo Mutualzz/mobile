@@ -130,7 +130,7 @@ export const ProfileEditorScreen = observer(() => {
     setProfileMusic(profile.profileMusic ?? null);
     setBannerHash(profile.banner ?? null);
     setBannerPreview(profile.constructBannerUrl());
-    setMobileBlocks(profile.mobileBlocks);
+    setMobileBlocks(JSON.parse(JSON.stringify(profile.mobileBlocks)));
   }, [profile?.updatedAt, profile?.userId]);
 
   if (!account) return null;

@@ -2,12 +2,7 @@ import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType, type HttpException } from "@mutualzz/types";
-import {
-  Box,
-  ButtonGroup,
-  InputDefault,
-  Typography,
-} from "@mutualzz/ui-native";
+import { Box, InputDefault, Typography } from "@mutualzz/ui-native";
 import type { Space } from "@stores/objects/Space";
 import { useMutation } from "@tanstack/react-query";
 import { FolderSimpleIcon } from "phosphor-react-native";
@@ -64,9 +59,9 @@ export const CategoryCreateSheet = observer(
             variant="elevation"
             elevation={app.settings?.preferEmbossed ? 4 : 2}
             style={{
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
+              borderRadius: 16,
               padding: 20,
+              paddingBottom: 36,
               gap: 16,
             }}
           >
@@ -85,18 +80,25 @@ export const CategoryCreateSheet = observer(
                 {error}
               </Typography>
             )}
-            <ButtonGroup fullWidth spacing={8}>
-              <Button color="danger" variant="plain" onPress={onClose}>
+            <Box
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                gap: 8,
+              }}
+            >
+              <Button color="danger" expand variant="soft" onPress={onClose}>
                 Cancel
               </Button>
               <Button
+                expand
                 color="success"
                 disabled={isPending || !name.trim()}
                 onPress={() => createCategory()}
               >
                 Create
               </Button>
-            </ButtonGroup>
+            </Box>
           </Paper>
         </Box>
       </Modal>

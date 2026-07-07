@@ -1,9 +1,17 @@
 import type { UserProfile } from "@stores/objects/UserProfile";
-import type { MobileProfileMusicBlock, ProfileBlockSize } from "@mutualzz/types";
+import type {
+  MobileProfileMusicBlock,
+  ProfileBlockSize,
+} from "@mutualzz/types";
 import { Stack, Typography, useTheme } from "@mutualzz/ui-native";
-import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import {
+  setAudioModeAsync,
+  useAudioPlayer,
+  useAudioPlayerStatus,
+} from "expo-audio";
 import { MusicNotesIcon, PauseIcon, PlayIcon } from "phosphor-react-native";
-import { Image, Pressable, View } from "react-native";
+import { useEffect } from "react";
+import { ActivityIndicator, Image, Pressable, View } from "react-native";
 
 interface Props {
   block: MobileProfileMusicBlock;
@@ -32,8 +40,6 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
         ? "Preview"
         : null;
 
-  // YouTube links aren't embeddable playback on mobile (no iframe), so only
-  // an uploaded MP3 or a resolved preview URL are actually playable here.
   const playableUrl = audioHash
     ? profile.constructProfileMusicAudioUrl(audioHash)
     : (block.previewUrl ?? null);
@@ -41,9 +47,29 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
   const player = useAudioPlayer(playableUrl ?? undefined);
   const status = useAudioPlayerStatus(player);
 
+  useEffect(() => {
+    setAudioModeAsync({ playsInSilentMode: true }).catch(() => undefined);
+  }, []);
+
+  const ready = status.isLoaded;
+
   const togglePlay = () => {
+    if (!ready) return;
     if (status.playing) player.pause();
-    else player.play();
+    else {
+      // Restart from the top once a preview/track has finished.
+      if (status.didJustFinish) player.seekTo(0);
+      player.play();
+    }
+  };
+
+  const PlaybackIcon = ({ playSize }: { playSize: number }) => {
+    if (!ready) return <ActivityIndicator size="small" color="#fff" />;
+    return status.playing ? (
+      <PauseIcon size={playSize} color="#fff" weight="fill" />
+    ) : (
+      <PlayIcon size={playSize} color="#fff" weight="fill" />
+    );
   };
 
   const art = (
@@ -59,7 +85,10 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
       }}
     >
       {image ? (
-        <Image source={{ uri: image }} style={{ width: "100%", height: "100%" }} />
+        <Image
+          source={{ uri: image }}
+          style={{ width: "100%", height: "100%" }}
+        />
       ) : (
         <MusicNotesIcon size={22} color={theme.typography.colors.muted} />
       )}
@@ -88,11 +117,7 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
               backgroundColor: theme.colors.primary,
             }}
           >
-            {status.playing ? (
-              <PauseIcon size={11} color="#fff" weight="fill" />
-            ) : (
-              <PlayIcon size={11} color="#fff" weight="fill" />
-            )}
+            <PlaybackIcon playSize={11} />
           </View>
         ) : null}
       </Pressable>
@@ -102,13 +127,11 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
   return (
     <Stack
       direction="row"
-      spacing={1.25}
       alignItems="center"
-      p={1.25}
-      style={{ width: "100%", height: "100%" }}
+      style={{ width: "100%", height: "100%", gap: 10, padding: 12 }}
     >
       {art}
-      <Stack direction="column" style={{ flex: 1, minWidth: 0 }}>
+      <Stack direction="column" style={{ flex: 1, minWidth: 0, gap: 2 }}>
         <Typography level="body-sm" weight="bold" numberOfLines={2}>
           {title}
         </Typography>
@@ -135,11 +158,7 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
             backgroundColor: theme.colors.primary,
           }}
         >
-          {status.playing ? (
-            <PauseIcon size={16} color="#fff" weight="fill" />
-          ) : (
-            <PlayIcon size={16} color="#fff" weight="fill" />
-          )}
+          <PlaybackIcon playSize={16} />
         </Pressable>
       ) : null}
     </Stack>

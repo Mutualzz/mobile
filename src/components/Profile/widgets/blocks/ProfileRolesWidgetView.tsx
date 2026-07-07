@@ -45,7 +45,7 @@ export const ProfileRolesWidgetView = observer(({ block, size, userId }: Props) 
 
   return (
     <View style={{ width: "100%", height: "100%", padding: 12, gap: 8 }}>
-      <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction="row" alignItems="center" style={{ gap: 6 }}>
         <ShieldCheckIcon size={16} weight="fill" />
         <Typography level="body-sm" weight="bold">
           Roles
@@ -57,7 +57,7 @@ export const ProfileRolesWidgetView = observer(({ block, size, userId }: Props) 
           {member ? "No roles to show" : "Join a shared space to display roles"}
         </Typography>
       ) : (
-        <Stack direction="row" spacing={0.75} style={{ flexWrap: "wrap" }}>
+        <Stack direction="row" style={{ gap: 6, flexWrap: "wrap" }}>
           {visible.map((role) => (
             <RoleChip key={role.id} name={role.name} color={role.color} />
           ))}
@@ -82,7 +82,7 @@ export const ProfileRolesWidgetExpandedContent = observer(
     }
 
     return (
-      <Stack direction="row" spacing={0.75} style={{ flexWrap: "wrap" }}>
+      <Stack direction="row" style={{ gap: 6, flexWrap: "wrap" }}>
         {roles.map((role) => (
           <RoleChip key={role.id} name={role.name} color={role.color} />
         ))}

@@ -1,6 +1,7 @@
 import { ProfileMarkdownContent } from "@components/Profile/shared/ProfileMarkdownContent";
 import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
+import { ReportContentSheet } from "@components/Report/ReportContentSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useModal } from "@hooks/useModal";
@@ -10,6 +11,8 @@ import type { SpaceMember } from "@stores/objects/SpaceMember";
 import type { User } from "@stores/objects/User";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { useQuery } from "@tanstack/react-query";
+import type { Href } from "expo-router";
+import { FlagIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { ActivityIndicator, Image, View } from "react-native";
@@ -23,7 +26,7 @@ interface Props {
 export const UserProfileSheet = observer(({ user, member, modalId }: Props) => {
   const app = useAppStore();
   const { theme } = useTheme();
-  const { closeModal } = useModal();
+  const { closeModal, openModal } = useModal();
   const { navigate } = useAppNavigation();
 
   useEffect(() => {
@@ -40,6 +43,7 @@ export const UserProfileSheet = observer(({ user, member, modalId }: Props) => {
   void profile?.updatedAt;
 
   const isSelf = app.account?.id === user.id;
+  const isViewerStaff = app.account?.isStaff ?? false;
   const bannerUrl = profile?.constructBannerUrl();
   const backgroundUrl = profile?.constructBackgroundUrl();
   const displayName = member?.displayName ?? user.displayName;
@@ -58,6 +62,24 @@ export const UserProfileSheet = observer(({ user, member, modalId }: Props) => {
   const openFullProfile = () => {
     closeModal(modalId);
     navigate(`/users/${user.username}`);
+  };
+
+  const openStaffPanel = () => {
+    closeModal(modalId);
+    navigate(`/staff/users/${user.id}` as Href);
+  };
+
+  const openReport = () => {
+    closeModal(modalId);
+    openModal(
+      `report-user-${user.id}`,
+      <ReportContentSheet
+        targetType="user"
+        targetId={user.id}
+        contentLabel="this user"
+        modalId={`report-user-${user.id}`}
+      />,
+    );
   };
 
   return (
@@ -166,6 +188,27 @@ export const UserProfileSheet = observer(({ user, member, modalId }: Props) => {
                 >
                   View Profile
                 </Button>
+                {isViewerStaff && !isSelf && (
+                  <Button
+                    size="sm"
+                    color="danger"
+                    variant="soft"
+                    onPress={openStaffPanel}
+                  >
+                    Staff Panel
+                  </Button>
+                )}
+                {!isSelf && (
+                  <Button
+                    size="sm"
+                    color="danger"
+                    variant="soft"
+                    startDecorator={<FlagIcon size={16} weight="fill" />}
+                    onPress={openReport}
+                  >
+                    Report
+                  </Button>
+                )}
               </Box>
             </>
           )}

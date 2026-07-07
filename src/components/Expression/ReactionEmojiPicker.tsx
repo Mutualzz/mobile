@@ -25,10 +25,6 @@ interface Props {
   onSelectCustomEmoji: (expression: Expression) => void;
 }
 
-// A thin bottom-sheet shell around EmojiPickerContent — the same picker used
-// by the main message composer's emoji tab (ExpressionPickerSheet) — so
-// every "pick an emoji" surface in the app (reactions, custom status, the
-// composer) shares one implementation instead of drifting apart.
 export const ReactionEmojiPicker = observer(
   ({
     visible,

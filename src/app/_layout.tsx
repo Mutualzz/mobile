@@ -89,6 +89,13 @@ const Root = () => {
                     animation: "slide_from_bottom",
                   }}
                 />
+                <Stack.Screen
+                  name="staff"
+                  options={{
+                    presentation: "modal",
+                    animation: "slide_from_bottom",
+                  }}
+                />
               </Stack>
             </ModalProvider>
           </NativeBaseline>

@@ -1,13 +1,16 @@
 import { Button } from "@components/Button";
 import { ReactionEmojiPicker } from "@components/Expression/ReactionEmojiPicker";
 import { Paper } from "@components/Paper";
+import { ReportContentSheet } from "@components/Report/ReportContentSheet";
 import {
   CopyIcon,
+  FlagIcon,
   PencilSimpleIcon,
   SmileyIcon,
   TrashIcon,
 } from "phosphor-react-native";
 import { useRecentEmojis } from "@hooks/useRecentEmojis";
+import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
 import { UnicodeEmoji } from "@components/emojis/UnicodeEmoji";
 import { Box, ButtonGroup, Divider, useTheme } from "@mutualzz/ui-native";
@@ -76,6 +79,7 @@ export const MessageActionSheet = observer(
     const { recents, addRecentStandard, addRecentCustom } = useRecentEmojis();
     const quickItems = getQuickReactionItems(app, recents, 3);
     const [pickerOpen, setPickerOpen] = useState(false);
+    const { openModal } = useModal();
 
     useEffect(() => {
       if (!visible) setPickerOpen(false);
@@ -85,7 +89,8 @@ export const MessageActionSheet = observer(
     const canEdit = message.author?.id === app.account?.id;
     const canDelete = canEdit || !!me?.hasPermission("ManageMessages");
     const canCopy = !!message.content?.trim();
-    const hasActions = canCopy || canEdit || canDelete;
+    const canReport = message.author?.id !== app.account?.id;
+    const hasActions = canCopy || canEdit || canDelete || canReport;
 
     const handleQuickReaction = (item: QuickReactionItem) => {
       if (item.kind === "standard") {
@@ -121,6 +126,19 @@ export const MessageActionSheet = observer(
     const handleDelete = async () => {
       onClose();
       await message.delete();
+    };
+
+    const handleReport = () => {
+      onClose();
+      openModal(
+        `report-message-${message.id}`,
+        <ReportContentSheet
+          targetType="message"
+          targetId={message.id}
+          contentLabel="this message"
+          modalId={`report-message-${message.id}`}
+        />,
+      );
     };
 
     const handlePickerEmoji = (emoji: PickerEmoji, skinTone: SkinTone) => {
@@ -251,6 +269,17 @@ export const MessageActionSheet = observer(
                           onPress={() => void handleDelete()}
                         >
                           Delete Message
+                        </Button>
+                      )}
+                      {canReport && (
+                        <Button
+                          fullWidth
+                          padding={12}
+                          color="danger"
+                          startDecorator={<FlagIcon size={20} weight="fill" />}
+                          onPress={handleReport}
+                        >
+                          Report Message
                         </Button>
                       )}
                     </ButtonGroup>

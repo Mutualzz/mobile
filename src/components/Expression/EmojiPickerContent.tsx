@@ -32,9 +32,6 @@ import { Pressable, ScrollView, useWindowDimensions } from "react-native";
 const SKIN_TONES: SkinTone[] = ["1F3FB", "1F3FC", "1F3FD", "1F3FE", "1F3FF"];
 
 interface Props {
-  // Optional: reactions and custom-status pickers aren't scoped to a single
-  // channel/space, so they omit this and fall back to "any space you're a
-  // member of" instead of channel-specific external-emoji permission checks.
   channel?: Channel;
   onSelectEmoji: (emoji: PickerEmoji, skinTone: SkinTone) => void;
   onSelectCustomEmoji: (expression: Expression) => void;
@@ -199,7 +196,7 @@ export const EmojiPickerContent = observer(
         if (searchCells.length === 0) {
           return {
             items: [] as EmojiListItem[],
-            sectionIndexById: {} as Record<string, number>,
+            sectionIndexById: {},
           };
         }
 

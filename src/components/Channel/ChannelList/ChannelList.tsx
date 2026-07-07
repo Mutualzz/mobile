@@ -7,14 +7,7 @@ import { IconButton } from "@components/IconButton";
 import { ChannelListItem } from "@components/Channel/ChannelListItem/ChannelListItem";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
 import { SpaceCreateInviteSheet } from "@components/SpaceSettings/SpaceCreateInviteSheet";
-import { canOpenSpaceSettings } from "@components/SpaceSettings/spaceSettingsPages";
-import { useAppNavigation } from "@hooks/useAppNavigation";
-import {
-  CaretDownIcon,
-  GearIcon,
-  PlusIcon,
-  UserPlusIcon,
-} from "phosphor-react-native";
+import { CaretDownIcon, PlusIcon, UserPlusIcon } from "phosphor-react-native";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
 import { Box, ButtonGroup, Typography } from "@mutualzz/ui-native";
@@ -45,7 +38,6 @@ function flattenChannels(channels: Channel[]) {
 
 export const ChannelList = observer(() => {
   const app = useAppStore();
-  const { navigate } = useAppNavigation();
 
   const [createChannelOpen, setCreateChannelOpen] = useState(false);
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
@@ -59,7 +51,6 @@ export const ChannelList = observer(() => {
   if (!space) return null;
 
   const spaceMe = space.members.me;
-  const showSpaceSettings = !!spaceMe && canOpenSpaceSettings(spaceMe);
   const canManageChannels = !!spaceMe?.hasPermission("ManageChannels");
 
   const visibleChannels = space.visibleChannels;
@@ -110,15 +101,7 @@ export const ChannelList = observer(() => {
             justifyContent: "flex-end",
           }}
         >
-          <ButtonGroup size={12} spacing={16} variant="plain">
-            {showSpaceSettings ? (
-              <IconButton
-                accessibilityLabel="Space settings"
-                onPress={() => navigate(`/(tabs)/spaces/${space.id}/settings`)}
-              >
-                <GearIcon weight="fill" />
-              </IconButton>
-            ) : null}
+          <ButtonGroup size={12} spacing={4} variant="plain">
             <IconButton
               accessibilityLabel="Create invite"
               onPress={() => setInviteOpen(true)}

@@ -11,6 +11,7 @@ import { Pressable, ScrollView } from "react-native";
 interface Candidate {
     id: string;
     displayName: string;
+    mentionLabel: string;
     type: MentionType;
     userId?: Snowflake;
 }
@@ -18,7 +19,7 @@ interface Candidate {
 interface Props {
     channel: Channel;
     search: string;
-    onSelect: (type: MentionType, id: string) => void;
+    onSelect: (type: MentionType, id: string, label: string) => void;
 }
 
 export const MentionAutocomplete = observer(
@@ -36,21 +37,29 @@ export const MentionAutocomplete = observer(
 
         const candidates = useMemo(() => {
             const userCandidates: Candidate[] = space
-                ? [...space.members.all.values()].map((member) => ({
-                      id: member.userId,
-                      displayName:
+                ? [...space.members.all.values()].map((member) => {
+                      const label =
                           member.user?.displayName ??
                           member.user?.username ??
-                          member.userId,
-                      type: "user" as const,
-                      userId: member.userId,
-                  }))
-                : channel.dmRecipientsList.map((user) => ({
-                      id: user.id,
-                      displayName: user.displayName ?? user.username ?? user.id,
-                      type: "user" as const,
-                      userId: user.id,
-                  }));
+                          member.userId;
+                      return {
+                          id: member.userId,
+                          displayName: label,
+                          mentionLabel: label,
+                          type: "user" as const,
+                          userId: member.userId,
+                      };
+                  })
+                : channel.dmRecipientsList.map((user) => {
+                      const label = user.displayName ?? user.username ?? user.id;
+                      return {
+                          id: user.id,
+                          displayName: label,
+                          mentionLabel: label,
+                          type: "user" as const,
+                          userId: user.id,
+                      };
+                  });
 
             const roleCandidates: Candidate[] =
                 space && space.roles
@@ -63,6 +72,7 @@ export const MentionAutocomplete = observer(
                           .map((role) => ({
                               id: role.id,
                               displayName: `@${role.name}`,
+                              mentionLabel: role.name,
                               type: "role" as const,
                           }))
                     : [];
@@ -73,6 +83,7 @@ export const MentionAutocomplete = observer(
                     specialCandidates.push({
                         id: "everyone",
                         displayName: "@everyone",
+                        mentionLabel: "everyone",
                         type: "everyone",
                     });
                 }
@@ -80,6 +91,7 @@ export const MentionAutocomplete = observer(
                     specialCandidates.push({
                         id: "here",
                         displayName: "@here",
+                        mentionLabel: "here",
                         type: "here",
                     });
                 }
@@ -127,7 +139,11 @@ export const MentionAutocomplete = observer(
                         <Pressable
                             key={`${candidate.type}:${candidate.id}`}
                             onPress={() =>
-                                onSelect(candidate.type, candidate.id)
+                                onSelect(
+                                    candidate.type,
+                                    candidate.id,
+                                    candidate.mentionLabel,
+                                )
                             }
                             style={({ pressed }) => ({
                                 flexDirection: "row",

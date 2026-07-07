@@ -150,17 +150,18 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
           </Typography>
         ) : null}
 
-        <Box style={{ flexDirection: "row", gap: 8 }}>
-          <Button
-            color="neutral"
-            variant="soft"
-            style={{ flex: 1 }}
-            onPress={() => back()}
-          >
+        <Box
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            gap: 8,
+          }}
+        >
+          <Button color="neutral" variant="soft" expand onPress={() => back()}>
             Back
           </Button>
           <Button
-            style={{ flex: 1 }}
+            expand
             disabled={!dirty || saving}
             onPress={() => void saveRole()}
           >

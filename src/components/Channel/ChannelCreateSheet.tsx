@@ -64,7 +64,7 @@ export const ChannelCreateSheet = observer(
         <Box
           style={{
             flex: 1,
-            justifyContent: "flex-end",
+            justifyContent: "center",
             backgroundColor: "rgba(0,0,0,0.45)",
           }}
         >
@@ -109,22 +109,30 @@ export const ChannelCreateSheet = observer(
                 )}
               </Box>
             </ScrollView>
-            <ButtonGroup spacing={8}>
+            <Box
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
               <Button
-                variant="plain"
+                variant="soft"
                 color="danger"
                 onPress={onClose}
                 disabled={isPending}
+                expand
               >
                 Cancel
               </Button>
               <Button
+                expand
+                color="success"
                 disabled={isPending || !name.trim()}
                 onPress={() => createChannel()}
               >
                 Create
               </Button>
-            </ButtonGroup>
+            </Box>
           </Paper>
         </Box>
       </Modal>

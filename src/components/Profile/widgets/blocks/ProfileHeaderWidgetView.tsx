@@ -3,14 +3,15 @@ import { UserAvatar } from "@components/User/UserAvatar";
 import type { AccountStore } from "@stores/Account.store";
 import type { User } from "@stores/objects/User";
 import type { UserProfile } from "@stores/objects/UserProfile";
-import type { MobileProfileHeaderBlock, ProfileBlockSize } from "@mutualzz/types";
+import type {
+  MobileProfileHeaderBlock,
+  ProfileBlockSize,
+} from "@mutualzz/types";
 import { Stack, Typography } from "@mutualzz/ui-native";
 import { Image, View } from "react-native";
 
 const AVATAR_SIZE = 56;
 const BANNER_HEIGHT = 64;
-// Overscan the image beyond the visible banner strip so we can shift it
-// vertically to approximate desktop's `background-position center Y%` crop.
 const BANNER_OVERSCAN_HEIGHT = BANNER_HEIGHT * 1.6;
 
 interface Props {
@@ -55,15 +56,17 @@ export function ProfileHeaderWidgetView({ block, size, user, profile }: Props) {
       <Stack
         direction="row"
         alignItems="center"
-        spacing={1.25}
-        p={1.5}
         flex={1}
         minWidth={0}
         minHeight={0}
-        style={size === "l" ? { marginTop: -AVATAR_SIZE / 2 } : undefined}
+        style={{
+          gap: 10,
+          padding: 12,
+          ...(size === "l" ? { marginTop: -AVATAR_SIZE / 2 } : null),
+        }}
       >
         <UserAvatar user={user} size={AVATAR_SIZE} />
-        <Stack direction="column" spacing={0.25} flex={1} minWidth={0}>
+        <Stack direction="column" flex={1} minWidth={0} style={{ gap: 2 }}>
           <Typography level="title-sm" numberOfLines={1}>
             {user.displayName}
           </Typography>

@@ -23,6 +23,12 @@ import {
   findCustomEmojiByLabel,
   getCustomEmojiLabel,
 } from "@utils/expressions";
+import {
+  entitiesToRawMarkdown,
+  rawMarkdownToFriendly,
+  shiftEntitiesForEdit,
+  type MentionEntity,
+} from "@utils/markdown/mentionEntities";
 import { replaceRange } from "@utils/markdown/textUtils";
 import type { Selection } from "@utils/markdown/types";
 import type { PickerEmoji, SkinTone } from "@utils/emojis/emojiPickerData";
@@ -32,7 +38,7 @@ import { createSystemMessage } from "@utils/index";
 import { messageFlags } from "@mutualzz/bitfield";
 import { HttpException, HttpStatusCode } from "@mutualzz/types";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -48,6 +54,7 @@ export const MessageInput = observer(({ channel }: Props) => {
   const insets = useSafeAreaInsets();
   const keyboardVisible = useKeyboardVisible();
   const [content, setContent] = useState("");
+  const [entities, setEntities] = useState<MentionEntity[]>([]);
   const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
   const [stickers, setStickers] = useState<Expression[]>([]);
   const [saving, setSaving] = useState(false);
@@ -85,10 +92,21 @@ export const MessageInput = observer(({ channel }: Props) => {
   useEffect(() => {
     if (!editingMessage) return;
 
-    setContent(editingMessage.content ?? "");
+    const { text, entities: parsedEntities } = rawMarkdownToFriendly(
+      editingMessage.content ?? "",
+      (id) => {
+        const member = space?.members.get(id);
+        const user = app.users.get(id);
+        return member?.displayName || user?.displayName || user?.username;
+      },
+      (id) => space?.roles.get(id)?.name,
+    );
+
+    setContent(text);
+    setEntities(parsedEntities);
     setSelection({ start: 0, end: 0 });
     setStickers([]);
-  }, [editingMessage?.id, editingMessage?.editing]);
+  }, [editingMessage?.id, editingMessage?.editing, app.users, space]);
 
   useEffect(() => {
     return () => {
@@ -117,6 +135,7 @@ export const MessageInput = observer(({ channel }: Props) => {
   const cancelEditing = useCallback(() => {
     editingMessage?.setEditing(false);
     setContent("");
+    setEntities([]);
     setSelection({ start: 0, end: 0 });
     setStickers([]);
   }, [editingMessage]);
@@ -125,6 +144,7 @@ export const MessageInput = observer(({ channel }: Props) => {
     (insert: string) => {
       const rep = replaceRange(content, selection.start, selection.end, insert);
       const caret = selection.start + insert.length;
+      setEntities((prev) => shiftEntitiesForEdit(prev, content, rep.text));
       setContent(rep.text);
       setSelection({ start: caret, end: caret });
       triggerTyping();
@@ -132,11 +152,16 @@ export const MessageInput = observer(({ channel }: Props) => {
     [content, selection.end, selection.start, triggerTyping],
   );
 
+  const rawContent = useMemo(
+    () => entitiesToRawMarkdown(content, entities),
+    [content, entities],
+  );
+
   const canSubmit = useCallback(() => {
     if (editingMessage) {
       return (
-        !!content.trim() &&
-        content.trim() !== (editingMessage.content ?? "").trim()
+        !!rawContent.trim() &&
+        rawContent.trim() !== (editingMessage.content ?? "").trim()
       );
     }
 
@@ -144,7 +169,7 @@ export const MessageInput = observer(({ channel }: Props) => {
       !!content && !!content.trim() && !!content.replace(/\r?\n|\r/g, "");
 
     return hasText || stickers.length > 0;
-  }, [content, editingMessage, stickers.length]);
+  }, [content, editingMessage, rawContent, stickers.length]);
 
   const expandCustomEmoji = useCallback(
     (text: string) => {
@@ -171,8 +196,9 @@ export const MessageInput = observer(({ channel }: Props) => {
 
       setSaving(true);
       try {
-        await message.edit(expandCustomEmoji(content));
+        await message.edit(expandCustomEmoji(rawContent));
         setContent("");
+        setEntities([]);
         setSelection({ start: 0, end: 0 });
         setStickers([]);
       } catch {
@@ -181,7 +207,7 @@ export const MessageInput = observer(({ channel }: Props) => {
         setSaving(false);
       }
     },
-    [canSubmit, content, expandCustomEmoji, saving],
+    [canSubmit, expandCustomEmoji, rawContent, saving],
   );
 
   const sendContent = useCallback(
@@ -250,19 +276,20 @@ export const MessageInput = observer(({ channel }: Props) => {
 
     if (!canSubmit()) return;
 
-    const text = expandCustomEmoji(content);
+    const text = expandCustomEmoji(rawContent);
     const stickerList = stickers;
 
     setContent("");
+    setEntities([]);
     setSelection({ start: 0, end: 0 });
     setStickers([]);
 
     await sendContent(text, stickerList);
   }, [
     canSubmit,
-    content,
     editingMessage,
     expandCustomEmoji,
+    rawContent,
     saveEdit,
     sendContent,
     stickers,
@@ -299,6 +326,7 @@ export const MessageInput = observer(({ channel }: Props) => {
     (gif: GifResult) => {
       if (denySendingMessages || editingMessage) return;
       setContent("");
+      setEntities([]);
       setSelection({ start: 0, end: 0 });
       setStickers([]);
       void sendContent(resolveGifSendUrl(gif));
@@ -461,6 +489,8 @@ export const MessageInput = observer(({ channel }: Props) => {
           onSubmit={() => void sendMessage()}
           selection={selection}
           onChangeSelection={setSelection}
+          entities={entities}
+          onChangeEntities={setEntities}
           channelId={channel.id}
           enableEmoticons
           placeholder={placeholder}

@@ -56,6 +56,15 @@ export class AccountStore {
     return this.globalName || this.username;
   }
 
+  get isFounder() {
+    return this.flags.has("Founder");
+  }
+
+  // Founders are implicitly staff, in addition to anyone with the Staff flag.
+  get isStaff() {
+    return this.flags.has("Staff") || this.isFounder;
+  }
+
   get previousAvatarUrls(): Map<string, string> {
     const map = new Map<string, string>();
     for (const avatar of this.previousAvatars) {

@@ -7,7 +7,7 @@ import { Typography } from "@mutualzz/ui-native";
 import { XIcon } from "phosphor-react-native";
 import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   Modal,
   type NativeScrollEvent,
@@ -60,14 +60,14 @@ export const MemberListModal = observer(
     }, [space, channel.spaceId, channel.id, hasMore, app.gateway]);
 
     useEffect(() => {
-      if (!visible || !channel.spaceId) return;
+      if (!visible || !channel.spaceId || !hasMore) return;
 
       app.gateway.requestMemberListRange(
         channel.spaceId,
         channel.id,
         PAGE_SIZE,
       );
-    }, [visible, channel.id, channel.spaceId, app.gateway]);
+    }, [visible, channel.id, channel.spaceId, app.gateway, hasMore]);
 
     const handleScroll = useCallback(
       (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -87,10 +87,14 @@ export const MemberListModal = observer(
     );
 
     return (
-      <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <Modal
+        visible={visible}
+        animationType="slide"
+        transparent
+        onRequestClose={onClose}
+      >
         <Screen
-          variant="elevation"
-          elevation={app.settings?.preferEmbossed ? 4 : 2}
+          elevation={app.settings?.preferEmbossed ? 4 : 1}
           style={{ flexDirection: "column" }}
         >
           <ScreenHeader safeTop>

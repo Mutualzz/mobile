@@ -15,6 +15,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import {
     Animated,
+    Keyboard,
     KeyboardAvoidingView,
     Platform,
     Pressable,
@@ -65,6 +66,10 @@ export const ChannelContentPane = observer(() => {
             useNativeDriver: true,
         }).start();
     }, [keyboardHeight, translateY, insets.bottom]);
+
+    useEffect(() => {
+        if (app.spacesDrawerOpen) Keyboard.dismiss();
+    }, [app.spacesDrawerOpen]);
 
     const channel = app.channels.active;
     if (!channel) return <EmptyChannelState />;

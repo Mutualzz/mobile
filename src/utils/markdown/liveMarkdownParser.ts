@@ -24,7 +24,10 @@ interface AtomicSpan {
   type: MarkdownType;
 }
 
-function findAtomicSpans(value: string): AtomicSpan[] {
+function findAtomicSpans(
+  value: string,
+  mentionEntities: { start: number; end: number }[],
+): AtomicSpan[] {
   "worklet";
   const spans: AtomicSpan[] = [];
 
@@ -34,13 +37,16 @@ function findAtomicSpans(value: string): AtomicSpan[] {
     spans.push({ start: m.index, end: m.index + m[0].length, type: "emoji" });
   }
 
-  const mentionRe = /<@&?\d+>|@everyone|@here/g;
-  while ((m = mentionRe.exec(value))) {
-    const isHere = m[0] === "@everyone" || m[0] === "@here";
+  for (const entity of mentionEntities) {
+    spans.push({ start: entity.start, end: entity.end, type: "mention-user" });
+  }
+
+  const hereRe = /@everyone|@here/g;
+  while ((m = hereRe.exec(value))) {
     spans.push({
       start: m.index,
       end: m.index + m[0].length,
-      type: isHere ? "mention-here" : "mention-user",
+      type: "mention-here",
     });
   }
 
@@ -114,15 +120,13 @@ function scanMarkers(
   }
 }
 
-/**
- * Custom parser worklet for react-native-live-markdown, replacing the old
- * invisible-TextInput + tokenized-overlay approach. Runs on the UI thread —
- * every helper it calls must also be a worklet.
- */
-export function liveMarkdownParser(value: string): MarkdownRange[] {
+export function liveMarkdownParser(
+  value: string,
+  mentionEntities: { start: number; end: number }[] = [],
+): MarkdownRange[] {
   "worklet";
   const ranges: MarkdownRange[] = [];
-  const atomicSpans = findAtomicSpans(value);
+  const atomicSpans = findAtomicSpans(value, mentionEntities);
 
   for (const span of atomicSpans) {
     ranges.push({

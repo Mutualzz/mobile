@@ -19,39 +19,28 @@ export const UserBar = observer(() => {
 
   return (
     <>
-      <Box
+      <Pressable
+        onPress={() => setMenuOpen(true)}
+        onLongPress={() => setStatusOpen(true)}
         style={{
+          flex: 1,
           flexDirection: "row",
           alignItems: "center",
-          justifyContent: "space-between",
-          width: "100%",
+          gap: 6,
+          minWidth: 0,
           paddingHorizontal: 12,
-          paddingVertical: 8,
-          gap: 8,
         }}
       >
-        <Pressable
-          onPress={() => setMenuOpen(true)}
-          onLongPress={() => setStatusOpen(true)}
-          style={{
-            flex: 1,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 10,
-            minWidth: 0,
-          }}
-        >
-          <UserAvatar user={account} size="lg" badge showInvisible />
-          <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
-            <Typography level="body-sm" numberOfLines={1}>
-              {account.displayName}
-            </Typography>
-            <Typography level="body-xs" textColor="muted" numberOfLines={1}>
-              {customStatus || `@${account.username}`}
-            </Typography>
-          </Box>
-        </Pressable>
-      </Box>
+        <UserAvatar user={account} size="lg" badge showInvisible />
+        <Box style={{ flex: 1, minWidth: 0 }}>
+          <Typography level="body-sm" numberOfLines={1}>
+            {account.displayName}
+          </Typography>
+          <Typography level="body-xs" textColor="muted" numberOfLines={1}>
+            {customStatus || `@${account.username}`}
+          </Typography>
+        </Box>
+      </Pressable>
 
       <AccountMenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
 

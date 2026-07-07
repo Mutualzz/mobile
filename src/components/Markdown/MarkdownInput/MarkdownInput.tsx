@@ -17,6 +17,10 @@ import {
 } from "@utils/markdown/composerQueries";
 import { applyEmojiTransforms } from "@utils/markdown/emojiTransforms";
 import { liveMarkdownParser } from "@utils/markdown/liveMarkdownParser";
+import {
+  shiftEntitiesForEdit,
+  type MentionEntity,
+} from "@utils/markdown/mentionEntities";
 import { makeTextMetrics } from "@utils/markdown/metrics";
 import { replaceRange } from "@utils/markdown/textUtils";
 import { type Selection } from "@utils/markdown/types";
@@ -26,6 +30,7 @@ import {
   useCallback,
   useMemo,
   useRef,
+  useState,
   type ForwardRefExoticComponent,
   type ReactNode,
   type RefAttributes,
@@ -54,6 +59,9 @@ interface Props extends Omit<PaperProps, "onChange"> {
   selection: Selection;
   onChangeSelection: (next: Selection) => void;
 
+  entities?: MentionEntity[];
+  onChangeEntities?: (next: MentionEntity[]) => void;
+
   channelId?: Snowflake;
   enableEmoticons?: boolean;
   enableMentions?: boolean;
@@ -76,6 +84,8 @@ export const MarkdownInput = observer(
     onChange,
     selection,
     onChangeSelection,
+    entities: controlledEntities,
+    onChangeEntities: controlledOnChangeEntities,
     channelId,
     enableEmoticons = false,
     enableMentions = true,
@@ -97,6 +107,13 @@ export const MarkdownInput = observer(
     const submitLockRef = useRef(false);
     const ignoreChangeRef = useRef(false);
     const inputRef = useRef<TextInput>(null);
+
+    const [uncontrolledEntities, setUncontrolledEntities] = useState<
+      MentionEntity[]
+    >([]);
+    const entities = controlledEntities ?? uncontrolledEntities;
+    const onChangeEntities =
+      controlledOnChangeEntities ?? setUncontrolledEntities;
 
     const submit = useCallback(() => {
       if (!onSubmit || submitLockRef.current) return;
@@ -193,28 +210,60 @@ export const MarkdownInput = observer(
       return detectColonQuery(value, selection);
     }, [enableEmojiAutocomplete, mentionQuery, selection, value]);
 
+    const parser = useCallback(
+      (text: string) => {
+        "worklet";
+        return liveMarkdownParser(text, entities);
+      },
+      [entities],
+    );
+
     const applyReplacement = useCallback(
-      (start: number, end: number, insert: string, trailingSpace = true) => {
+      (
+        start: number,
+        end: number,
+        insert: string,
+        trailingSpace = true,
+        entity?: { type: MentionEntity["type"]; id: string },
+      ) => {
         const replacement = trailingSpace ? `${insert} ` : insert;
         const rep = replaceRange(value, start, end, replacement);
         const caret = start + replacement.length;
 
+        let nextEntities = shiftEntitiesForEdit(entities, value, rep.text);
+        if (entity) {
+          nextEntities = [
+            ...nextEntities,
+            { start, end: start + insert.length, ...entity },
+          ];
+        }
+
         onChange(rep.text);
+        onChangeEntities(nextEntities);
         onChangeSelection({ start: caret, end: caret });
 
-        // The native view doesn't always pick up a same-tick value+selection
-        // change from JS (autocomplete inserts), so re-assert the caret once
-        // the new text has actually landed.
         requestAnimationFrame(() => {
           inputRef.current?.setSelection(caret, caret);
         });
       },
-      [onChange, onChangeSelection, value],
+      [entities, onChange, onChangeEntities, onChangeSelection, value],
     );
 
     const handleMentionSelect = useCallback(
-      (type: MentionType, id: string) => {
+      (type: MentionType, id: string, label: string) => {
         if (!mentionQuery) return;
+
+        if (type === "user" || type === "role") {
+          applyReplacement(
+            mentionQuery.start,
+            mentionQuery.end,
+            `@${label}`,
+            true,
+            { type, id },
+          );
+          return;
+        }
+
         applyReplacement(
           mentionQuery.start,
           mentionQuery.end,
@@ -270,7 +319,7 @@ export const MarkdownInput = observer(
           ref={inputRef}
           multiline
           value={value}
-          parser={liveMarkdownParser}
+          parser={parser}
           markdownStyle={markdownStyle}
           returnKeyType="send"
           enablesReturnKeyAutomatically
@@ -286,6 +335,7 @@ export const MarkdownInput = observer(
 
             let nextText = next;
             let nextSel = selectionRef.current;
+            let nextEntities = shiftEntitiesForEdit(entities, prevValue, next);
 
             const delta = nextText.length - value.length;
 
@@ -301,6 +351,11 @@ export const MarkdownInput = observer(
               });
 
               if (out.didTransform) {
+                nextEntities = shiftEntitiesForEdit(
+                  nextEntities,
+                  nextText,
+                  out.text,
+                );
                 nextText = out.text;
                 nextSel = out.selection;
                 onChangeSelection(nextSel);
@@ -308,6 +363,7 @@ export const MarkdownInput = observer(
             }
 
             onChange(nextText);
+            onChangeEntities(nextEntities);
           }}
           onKeyPress={(event) => {
             if (event.nativeEvent.key === "Enter") {

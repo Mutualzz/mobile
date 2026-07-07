@@ -40,11 +40,11 @@ export function ProfileQuoteWidgetView({ block, size }: Props) {
   return (
     <Stack
       direction="column"
-      spacing={1}
-      p={1.25}
       style={{
         width: "100%",
         height: "100%",
+        gap: 8,
+        padding: 12,
         borderWidth: 1,
         borderColor: styles.border as string,
         backgroundColor: styles.background as string,
@@ -69,7 +69,7 @@ export function ProfileQuoteWidgetExpandedContent({
   block: MobileProfileQuoteBlock;
 }) {
   return (
-    <Stack direction="column" spacing={1}>
+    <Stack direction="column" style={{ gap: 8 }}>
       {block.content ? <ProfileMarkdownContent value={block.content} /> : null}
       {block.attribution ? (
         <Typography level="body-xs" textColor="muted" style={{ fontStyle: "italic" }}>
