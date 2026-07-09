@@ -1,5 +1,11 @@
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
+import { registerBackgroundNotificationTask } from "@setup/backgroundNotificationTask";
+import notifee, { EventType } from "@notifee/react-native";
+import {
+  displayAndroidMessageNotification,
+  parseMessagePushData,
+} from "@utils/androidMessageNotification";
 import {
   DM_REPLY_ACTION_ID,
   ensureDmReplyNotificationCategory,
@@ -14,15 +20,38 @@ import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
 import type { Href } from "expo-router";
 import { useEffect, useRef } from "react";
+import { Platform } from "react-native";
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+  handleNotification: async (notification) => {
+    const data = notification.request.content.data;
+
+    if (
+      Platform.OS === "android" &&
+      data &&
+      typeof data === "object"
+    ) {
+      const parsed = parseMessagePushData(data as Record<string, unknown>);
+      if (parsed) {
+        await displayAndroidMessageNotification(parsed);
+        return {
+          shouldShowAlert: false,
+          shouldPlaySound: false,
+          shouldSetBadge: false,
+          shouldShowBanner: false,
+          shouldShowList: false,
+        };
+      }
+    }
+
+    return {
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    };
+  },
 });
 
 function navigateFromNotificationUrl(
@@ -81,6 +110,34 @@ async function handleNotificationResponse(
   }
 }
 
+async function handleNotifeePress(
+  data: Record<string, unknown> | undefined,
+  navigate: ReturnType<typeof useAppNavigation>["navigate"],
+  rest: ReturnType<typeof useAppStore>["rest"],
+  actionId?: string,
+  input?: string,
+) {
+  if (!data) return;
+
+  if (actionId === DM_REPLY_ACTION_ID) {
+    const content = input?.trim();
+    const channelId = data.channelId;
+    if (!content || typeof channelId !== "string") return;
+
+    try {
+      await sendNotificationReply(rest, channelId, content);
+    } catch (error) {
+      console.warn("[push] notifee reply failed", error);
+    }
+    return;
+  }
+
+  const url = data.url;
+  if (typeof url === "string") {
+    navigateFromNotificationUrl(navigate, url);
+  }
+}
+
 export function usePushNotifications(enabled: boolean) {
   const app = useAppStore();
   const { navigate } = useAppNavigation();
@@ -94,7 +151,45 @@ export function usePushNotifications(enabled: boolean) {
     void ensureDmReplyNotificationCategory().catch((error) => {
       console.warn("[push] failed to register reply category", error);
     });
+
+    if (Platform.OS === "android") {
+      void registerBackgroundNotificationTask().catch((error) => {
+        console.warn("[push] failed to register background task", error);
+      });
+    }
   }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+
+    return notifee.onForegroundEvent(({ type, detail }) => {
+      if (
+        type !== EventType.PRESS &&
+        type !== EventType.ACTION_PRESS
+      ) {
+        return;
+      }
+
+      void handleNotifeePress(
+        detail.notification?.data,
+        navigateRef.current,
+        restRef.current,
+        detail.pressAction?.id,
+        detail.input,
+      );
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    void notifee.getInitialNotification().then((initial) => {
+      const url = initial?.notification?.data?.url;
+      if (typeof url === "string") {
+        navigateFromNotificationUrl(navigateRef.current, url);
+      }
+    });
+  }, [enabled]);
 
   useEffect(() => {
     if (!enabled || !app.token) return;
@@ -124,6 +219,21 @@ export function usePushNotifications(enabled: boolean) {
       console.warn("[push] registration failed", error);
     });
 
+    const receivedSub =
+      Platform.OS === "android"
+        ? Notifications.addNotificationReceivedListener((notification) => {
+            const data = notification.request.content.data;
+            if (!data || typeof data !== "object") return;
+
+            const parsed = parseMessagePushData(
+              data as Record<string, unknown>,
+            );
+            if (!parsed) return;
+
+            void displayAndroidMessageNotification(parsed);
+          })
+        : null;
+
     const responseSub = Notifications.addNotificationResponseReceivedListener(
       (response) => {
         void handleNotificationResponse(
@@ -136,6 +246,7 @@ export function usePushNotifications(enabled: boolean) {
 
     return () => {
       mounted = false;
+      receivedSub?.remove();
       responseSub.remove();
 
       const token = pushTokenRef.current;

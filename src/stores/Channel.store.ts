@@ -331,8 +331,10 @@ export class ChannelStore {
       this.collapsedCategories.set(spaceId, new Set());
 
     const spaceCollapsed = this.collapsedCategories.get(spaceId)!;
-    if (spaceCollapsed.has(categoryId)) spaceCollapsed.delete(categoryId);
-    else spaceCollapsed.add(categoryId);
+    const next = new Set(spaceCollapsed);
+    if (next.has(categoryId)) next.delete(categoryId);
+    else next.add(categoryId);
+    this.collapsedCategories.set(spaceId, next);
   }
 
   isCategoryCollapsed(spaceId: string, categoryId: string): boolean {

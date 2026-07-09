@@ -2,23 +2,17 @@ import { Button } from "@components/Button";
 import { ChannelIcon } from "@components/Channel/ChannelIcon";
 import { IconButton } from "@components/IconButton";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
+import TabBar from "@components/Tabs/TabBar";
+import { UserBar } from "@components/User/UserBar";
 import { VoiceChannelChatSheet } from "@components/Views/VoiceChannelChatSheet";
 import { VoiceChannelParticipant } from "@components/Views/VoiceChannelParticipant";
 import { VoiceParticipantActionSheet } from "@components/Views/VoiceParticipantActionSheet";
+import { useTabBarContentInset } from "@hooks/useTabBarContentInset";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import type { VoiceState } from "@stores/objects/VoiceState";
-import {
-  ArrowLeftIcon,
-  ChatCircleIcon,
-  HeadphonesIcon,
-  MicrophoneIcon,
-  MicrophoneSlashIcon,
-  PhoneXIcon,
-  VideoCameraIcon,
-  VideoCameraSlashIcon,
-} from "phosphor-react-native";
+import { ArrowLeftIcon, ChatCircleIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { FlatList, Pressable } from "react-native";
@@ -30,10 +24,12 @@ interface Props {
 export const VoiceChannelView = observer(({ channel }: Props) => {
   const app = useAppStore();
   const { theme } = useTheme();
+  const tabBarInset = useTabBarContentInset();
   const [chatOpen, setChatOpen] = useState(false);
   const [moderationTarget, setModerationTarget] = useState<VoiceState | null>(
     null,
   );
+  const [moderationOpen, setModerationOpen] = useState(false);
 
   const space = channel.space;
 
@@ -45,6 +41,19 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
   const joinFailed =
     app.voice.connectionStatus === "failed" &&
     app.voice.currentVoiceTarget?.channelId === channel.id;
+
+  const openModeration = (state: VoiceState) => {
+    setModerationTarget(state);
+    setModerationOpen(true);
+  };
+
+  const requestCloseModeration = () => {
+    setModerationOpen(false);
+  };
+
+  const handleModerationClosed = () => {
+    setModerationTarget(null);
+  };
 
   return (
     <>
@@ -72,7 +81,7 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
           </IconButton>
         </ScreenHeader>
 
-        <Box style={{ flex: 1, padding: 16, gap: 12 }}>
+        <Box style={{ flex: 1, padding: 16, gap: 12, paddingBottom: tabBarInset }}>
           {!isJoined ? (
             <Box style={{ gap: 12, alignItems: "center", paddingVertical: 8 }}>
               <Typography textColor="muted" style={{ textAlign: "center" }}>
@@ -99,77 +108,13 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
               ) : null}
             </Box>
           ) : (
-            <Box
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 8,
-              }}
-            >
-              <Typography textColor="muted" style={{ flex: 1 }}>
-                {isConnecting
-                  ? "Connecting to voice..."
-                  : isConnected
-                    ? "Connected to voice"
-                    : (app.voice.connectionError ?? "Voice connection failed")}
-              </Typography>
-              <Box style={{ flexDirection: "row", gap: 6 }}>
-                <Pressable
-                  disabled={!isConnected}
-                  onPress={() => app.voice.setMute(!app.voice.selfMute)}
-                >
-                  {app.voice.effectiveSelfMute ? (
-                    <MicrophoneSlashIcon
-                      size={18}
-                      color={theme.typography.colors.primary}
-                      weight="fill"
-                    />
-                  ) : (
-                    <MicrophoneIcon
-                      size={18}
-                      color={theme.typography.colors.primary}
-                      weight="fill"
-                    />
-                  )}
-                </Pressable>
-                <Pressable
-                  disabled={!isConnected}
-                  onPress={() => app.voice.setDeaf(!app.voice.selfDeaf)}
-                >
-                  <HeadphonesIcon
-                    size={18}
-                    color={theme.typography.colors.primary}
-                    weight="fill"
-                  />
-                </Pressable>
-                <Pressable
-                  disabled={!isConnected}
-                  onPress={() => void app.voice.toggleCamera()}
-                >
-                  {app.voice.cameraEnabled ? (
-                    <VideoCameraIcon
-                      size={18}
-                      color={theme.typography.colors.primary}
-                      weight="fill"
-                    />
-                  ) : (
-                    <VideoCameraSlashIcon
-                      size={18}
-                      color={theme.typography.colors.primary}
-                      weight="fill"
-                    />
-                  )}
-                </Pressable>
-                <Pressable onPress={() => void app.voice.leave()}>
-                  <PhoneXIcon
-                    size={18}
-                    color={theme.colors.danger}
-                    weight="fill"
-                  />
-                </Pressable>
-              </Box>
-            </Box>
+            <Typography textColor="muted">
+              {isConnecting
+                ? "Connecting to voice..."
+                : isConnected
+                  ? "Connected to voice"
+                  : (app.voice.connectionError ?? "Voice connection failed")}
+            </Typography>
           )}
 
           <FlatList
@@ -182,7 +127,7 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
                 space={space}
                 selfId={selfId}
                 showAudioControls={isConnected}
-                onModerate={() => setModerationTarget(item)}
+                onModerate={() => openModeration(item)}
               />
             )}
             ListEmptyComponent={
@@ -194,20 +139,25 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
         </Box>
       </Screen>
 
+      <TabBar>
+        <UserBar />
+      </TabBar>
+
       <VoiceChannelChatSheet
         channel={channel}
         visible={chatOpen}
         onClose={() => setChatOpen(false)}
       />
 
-      {space && moderationTarget && (
+      {moderationTarget && space ? (
         <VoiceParticipantActionSheet
           state={moderationTarget}
           space={space}
-          visible
-          onClose={() => setModerationTarget(null)}
+          visible={moderationOpen}
+          onRequestClose={requestCloseModeration}
+          onClose={handleModerationClosed}
         />
-      )}
+      ) : null}
     </>
   );
 });

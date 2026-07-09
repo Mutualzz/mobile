@@ -1,4 +1,3 @@
-import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
 import { EmojiPickerContent } from "@components/Expression/EmojiPickerContent";
 import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
@@ -65,9 +64,8 @@ export const ReactionEmojiPicker = observer(
             width: "100%",
           }}
         >
-          <AppKeyboardAvoidingView>
-            <View onStartShouldSetResponder={() => true}>
-              <Paper
+          <View onStartShouldSetResponder={() => true}>
+            <Paper
                 elevation={app.settings?.preferEmbossed ? 4 : 2}
                 style={{
                   height: height * 0.7,
@@ -105,7 +103,6 @@ export const ReactionEmojiPicker = observer(
                 />
               </Paper>
             </View>
-          </AppKeyboardAvoidingView>
         </View>
       </Modal>
     );

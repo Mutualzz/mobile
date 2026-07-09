@@ -1,5 +1,6 @@
 import { ChatComposerPane } from "@components/Message/ChatComposerPane";
 import { VoiceChannelView } from "@components/Views/VoiceChannelView";
+import { VoiceUserBarOverlay } from "@components/User/VoiceUserBarOverlay";
 import { ChannelIcon } from "@components/Channel/ChannelIcon";
 import { MemberListModal } from "@components/MemberList/MemberListModal";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
@@ -102,6 +103,8 @@ export const ChannelContentPane = observer(() => {
                 visible={memberListOpen}
                 onClose={() => setMemberListOpen(false)}
             />
+
+            <VoiceUserBarOverlay />
         </Screen>
     );
 });

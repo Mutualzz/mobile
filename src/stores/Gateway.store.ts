@@ -40,6 +40,8 @@ import {
   createCompressor,
 } from "@utils/compressor";
 import { makeAutoObservable } from "mobx";
+import type { NativeEventSubscription } from "react-native";
+import { AppState, type AppStateStatus } from "react-native";
 import type { AppStore } from "./App.store";
 import type { Channel } from "./objects/Channel";
 import { fixConnectionUrl } from "@utils/urls";
@@ -103,6 +105,11 @@ export class GatewayStore {
   private subscribedUserIds = new Set<string>();
   private presenceLoopInterval: Timer | null = null;
   private lastPresenceHash: string | null = null;
+  private backgroundedAt: number | null = null;
+  private backgroundPresenceStatus: PresenceStatus | null = null;
+  private foregroundProbeTimer: Timer | null = null;
+  private foregroundProbeResolve: ((acked: boolean) => void) | null = null;
+  private readonly appStateSubscription: NativeEventSubscription;
 
   constructor(private readonly app: AppStore) {
     makeAutoObservable(this);
@@ -110,6 +117,10 @@ export class GatewayStore {
       this.handleScheduledCustomStatusExpired;
     this.app.presence.onScheduledStatusExpire =
       this.handleScheduledStatusExpired;
+    this.appStateSubscription = AppState.addEventListener(
+      "change",
+      this.handleAppStateChange,
+    );
   }
 
   requestMemberListRange(spaceId: string, channelId: string, pageSize = 50) {
@@ -222,6 +233,7 @@ export class GatewayStore {
   async disconnect(code = 1000, reason?: string) {
     this.shouldReconnect = false;
     this.clearReconnect();
+    this.clearForegroundProbe();
 
     if (this.socket) {
       this.readyState = GatewayStatus.CLOSING;
@@ -252,6 +264,145 @@ export class GatewayStore {
       this.logger.debug(`[Reconnect] ${this.url}`);
       this.connect(this.url);
     }, this.reconnectTimeout);
+  }
+
+  private handleAppStateChange = (nextState: AppStateStatus) => {
+    if (nextState === "background" || nextState === "inactive") {
+      this.backgroundedAt = Date.now();
+
+      const userId = this.app.account?.id;
+      if (
+        userId &&
+        this.readyState === GatewayStatus.OPEN &&
+        !this.backgroundPresenceStatus
+      ) {
+        const current = this.app.presence.get(userId)?.status ?? "online";
+        if (
+          current !== "idle" &&
+          current !== "offline" &&
+          current !== "invisible" &&
+          current !== "dnd"
+        ) {
+          this.backgroundPresenceStatus = current;
+          this.setStatus("idle");
+        }
+      }
+
+      return;
+    }
+
+    if (nextState === "active") {
+      if (this.backgroundPresenceStatus) {
+        this.setStatus(this.backgroundPresenceStatus);
+        this.backgroundPresenceStatus = null;
+      }
+
+      void this.handleForeground();
+    }
+  };
+
+  private clearForegroundProbe() {
+    if (this.foregroundProbeTimer) {
+      clearTimeout(this.foregroundProbeTimer);
+      this.foregroundProbeTimer = null;
+    }
+    this.foregroundProbeResolve = null;
+  }
+
+  private teardownSocket() {
+    this.stopHeartbeater();
+    this.clearForegroundProbe();
+
+    if (!this.socket) {
+      this.readyState = GatewayStatus.CLOSED;
+      return;
+    }
+
+    const socket = this.socket;
+    socket.onopen = null;
+    socket.onmessage = null;
+    socket.onerror = null;
+    socket.onclose = null;
+
+    try {
+      if (
+        socket.readyState === WebSocket.OPEN ||
+        socket.readyState === WebSocket.CONNECTING
+      ) {
+        socket.close(4000, "reconnect");
+      }
+    } catch {}
+
+    this.socket = null;
+    this.readyState = GatewayStatus.CLOSED;
+  }
+
+  private forceReconnect() {
+    if (!this.app.token) return;
+
+    this.logger.debug("[Foreground] Forcing gateway reconnect");
+    this.clearReconnect();
+    this.shouldReconnect = true;
+    this.teardownSocket();
+    void this.connect();
+  }
+
+  private probeConnection(timeoutMs: number) {
+    return new Promise<boolean>((resolve) => {
+      if (
+        !this.socket ||
+        this.socket.readyState !== WebSocket.OPEN ||
+        this.readyState !== GatewayStatus.OPEN
+      ) {
+        resolve(false);
+        return;
+      }
+
+      this.clearForegroundProbe();
+      this.foregroundProbeResolve = resolve;
+      this.heartbeatAck = false;
+      this.sendHeartbeat();
+
+      this.foregroundProbeTimer = setTimeout(() => {
+        this.foregroundProbeTimer = null;
+        const done = this.foregroundProbeResolve;
+        this.foregroundProbeResolve = null;
+        done?.(this.heartbeatAck);
+      }, timeoutMs);
+    });
+  }
+
+  private restartHeartbeater() {
+    if (!this.heartbeatInterval) return;
+    this.stopHeartbeater();
+    this.heartbeatAck = true;
+    this.startHeartbeater();
+  }
+
+  private async handleForeground() {
+    if (!this.app.token) return;
+
+    this.backgroundedAt = null;
+
+    const socketOpen =
+      !!this.socket &&
+      this.socket.readyState === WebSocket.OPEN &&
+      this.readyState === GatewayStatus.OPEN;
+
+    if (!socketOpen) {
+      this.forceReconnect();
+      return;
+    }
+
+    const probeTimeout = Math.min(this.heartbeatInterval ?? 30_000, 10_000);
+    const acked = await this.probeConnection(probeTimeout);
+
+    if (!acked) {
+      this.forceReconnect();
+      return;
+    }
+
+    this.restartHeartbeater();
   }
 
   onChannelOpen = (spaceId: string, channelId: string) => {
@@ -814,10 +965,13 @@ export class GatewayStore {
   }
 
   private handleInvalidSession = (resumable: boolean) => {
-    this.cleanup();
+    this.stopHeartbeater();
+    this.socket = null;
+    this.readyState = GatewayStatus.CLOSED;
 
     this.logger.debug(`Received invalid session; Can Resume: ${resumable}`);
     if (!resumable) {
+      this.reset();
       this.handleIdentify();
       return;
     }
@@ -826,7 +980,9 @@ export class GatewayStore {
   };
 
   private handleReconnect() {
-    this.cleanup();
+    this.stopHeartbeater();
+    this.socket = null;
+    this.readyState = GatewayStatus.CLOSED;
 
     this.logger.debug(`[Gateway] -> Reconnect`);
     this.startReconnect();
@@ -865,9 +1021,12 @@ export class GatewayStore {
   }
 
   private handleClose = (code?: number, reason?: string) => {
-    this.cleanup();
+    this.stopHeartbeater();
+    this.socket = null;
+    this.readyState = GatewayStatus.CLOSED;
 
     if (code === GatewayCloseCodes.ForceLogout) {
+      this.reset();
       void this.app.logout();
       return;
     }
@@ -893,6 +1052,7 @@ export class GatewayStore {
     this.sessionId = null;
     this.sequence = 0;
     this.readyState = GatewayStatus.CLOSED;
+    this.backgroundPresenceStatus = null;
     this.stopPresenceLoop();
   };
 
@@ -940,8 +1100,9 @@ export class GatewayStore {
 
     this.socket?.close(4009);
 
-    this.cleanup();
-    this.reset();
+    this.stopHeartbeater();
+    this.socket = null;
+    this.readyState = GatewayStatus.CLOSED;
 
     this.startReconnect();
   };
@@ -959,12 +1120,22 @@ export class GatewayStore {
     this.logger.debug("Cleaning up");
     this.stopHeartbeater();
     this.socket = null;
-    this.sessionId = null;
+    this.readyState = GatewayStatus.CLOSED;
   };
 
   private handleHeartbeatAck = () => {
     this.logger.debug("Received heartbeat ack");
     this.heartbeatAck = true;
+
+    if (this.foregroundProbeResolve) {
+      const done = this.foregroundProbeResolve;
+      this.foregroundProbeResolve = null;
+      if (this.foregroundProbeTimer) {
+        clearTimeout(this.foregroundProbeTimer);
+        this.foregroundProbeTimer = null;
+      }
+      done(true);
+    }
   };
 
   private handleDispatch = (data: any) => {
@@ -984,6 +1155,9 @@ export class GatewayStore {
   private onResume = () => {
     this.logger.debug("[Resume] Session");
     this.resubscribeUsers();
+    this.app.setGatewayReady(true);
+    this.startPresenceLoop();
+    this.app.voice.onGatewayReconnected();
   };
 
   private onReady = async (payload: GatewayReadyPayload) => {
@@ -1038,6 +1212,7 @@ export class GatewayStore {
     if (space) this.app.spaces.setActive(space.id);
 
     this.app.channels.setPreferredActive();
+    this.app.voice.onGatewayReconnected();
   };
 
   // Dispatcher Handlers start here

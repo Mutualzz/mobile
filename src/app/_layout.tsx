@@ -1,5 +1,7 @@
 import "react-native-get-random-values";
 import "@setup/webrtc";
+import "@setup/notifeeBackgroundHandler";
+import "@setup/backgroundNotificationTask";
 
 import { NativeBaseline } from "@components/NativeBaseline/NativeBaseline";
 import { NavigationWithTheme } from "@components/NavigationWithTheme";

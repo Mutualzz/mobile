@@ -51,7 +51,7 @@ import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Image, Platform, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 
 const MAX_STICKERS = 3;
 const MAX_ATTACHMENTS = 10;
@@ -231,21 +231,28 @@ export const MessageInput = observer(({ channel }: Props) => {
     if (denySendingMessages || editingMessage) return;
     if (attachments.length >= MAX_ATTACHMENTS) return;
 
-    const result = await DocumentPicker.getDocumentAsync({
-      multiple: true,
-      copyToCacheDirectory: true,
-      type: ["image/*", "video/*", "*/*"],
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images", "videos"],
+      allowsMultipleSelection: true,
+      quality: 1,
     });
 
     if (result.canceled) return;
 
     const next = result.assets
-      .filter((a) => (a.size ?? 0) <= MAX_ATTACHMENT_SIZE)
+      .filter((a) => (a.fileSize ?? 0) <= MAX_ATTACHMENT_SIZE)
       .map((a) => ({
         uri: a.uri,
-        type: a.mimeType ?? "application/octet-stream",
-        name: a.name,
-        size: a.size ?? undefined,
+        type:
+          a.mimeType ??
+          (a.type === "video" ? "video/mp4" : "image/jpeg"),
+        name:
+          a.fileName ??
+          `attachment.${a.type === "video" ? "mp4" : "jpg"}`,
+        size: a.fileSize ?? undefined,
       }));
 
     setAttachments((prev) => [...prev, ...next].slice(0, MAX_ATTACHMENTS));
@@ -357,6 +364,7 @@ export const MessageInput = observer(({ channel }: Props) => {
           );
         }
 
+        let result: APIMessage | undefined;
         if (fileList.length > 0) {
           const formData = new FormData();
           if (text) formData.append("content", text);
@@ -375,10 +383,15 @@ export const MessageInput = observer(({ channel }: Props) => {
               name: file.name,
             } as unknown as Blob);
           });
-          await channel.sendMessage(formData, msg);
+          result = await channel.sendMessage(formData, msg);
         } else {
-          await channel.sendMessage(body, msg);
+          result = await channel.sendMessage(body, msg);
         }
+
+        if (result?.nonce) {
+          app.queue.handleIncomingMessage(result);
+        }
+        app.queue.remove(nonce);
       } catch (e) {
         const error =
           e instanceof Error

@@ -1,5 +1,6 @@
 import { ChatComposerPane } from "@components/Message/ChatComposerPane";
 import { DMChannelHeader } from "@components/DMChannel/DMChannelHeader";
+import { VoiceUserBarOverlay } from "@components/User/VoiceUserBarOverlay";
 import { GroupDMAddRecipientSheet } from "@components/DMChannel/GroupDMAddRecipientSheet";
 import { GroupDMManageSheet } from "@components/DMChannel/GroupDMManageSheet";
 import { Screen } from "@components/Screen/Screen";
@@ -97,6 +98,8 @@ export const DMContentPane = observer(() => {
           insideDMs
         />
       ) : null}
+
+      <VoiceUserBarOverlay />
     </Screen>
   );
 });

@@ -1,4 +1,3 @@
-import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
 import { EmojiPickerContent } from "@components/Expression/EmojiPickerContent";
 import { GifPickerContent } from "@components/Expression/GifPicker";
 import { StickerPickerContent } from "@components/Expression/StickerPickerContent";
@@ -88,18 +87,17 @@ export const ExpressionPickerSheet = observer(
           pointerEvents="box-none"
           style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
         >
-          <AppKeyboardAvoidingView>
-            <Paper
-              elevation={app.settings?.preferEmbossed ? 4 : 2}
-              style={{
-                height: height * 0.62,
-                borderTopLeftRadius: 16,
-                borderTopRightRadius: 16,
-                backgroundColor: theme.colors.background,
-                paddingTop: 12,
-                paddingBottom: insets.bottom + 8,
-              }}
-            >
+          <Paper
+            elevation={app.settings?.preferEmbossed ? 4 : 2}
+            style={{
+              height: height * 0.62,
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              backgroundColor: theme.colors.background,
+              paddingTop: 12,
+              paddingBottom: insets.bottom + 8,
+            }}
+          >
               <Box
                 style={{
                   flexDirection: "row",
@@ -200,9 +198,8 @@ export const ExpressionPickerSheet = observer(
                     onSelectSticker={onSelectSticker}
                   />
                 ) : null}
-              </Box>
-            </Paper>
-          </AppKeyboardAvoidingView>
+            </Box>
+          </Paper>
         </View>
       </Modal>
     );

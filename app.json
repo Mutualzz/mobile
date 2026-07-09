@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mutualzz",
     "slug": "mutualzz",
-    "version": "3.1.0",
+    "version": "3.1.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "com.mutualzz.app",
@@ -14,7 +14,13 @@
         "usesNonExemptEncryption": false
       },
       "icon": "./assets/ios.icon",
-      "appleTeamId": "HQ5FZ3HQC5"
+      "appleTeamId": "HQ5FZ3HQC5",
+      "infoPlist": {
+        "NSUserActivityTypes": ["INSendMessageIntent"]
+      },
+      "entitlements": {
+        "com.apple.developer.usernotifications.communication": true
+      }
     },
     "android": {
       "package": "com.mutualzz.app",
@@ -31,6 +37,7 @@
     "plugins": [
       "expo-dev-client",
       "@bacons/apple-targets",
+      "@notifee/react-native",
       "expo-router",
       "expo-font",
       [

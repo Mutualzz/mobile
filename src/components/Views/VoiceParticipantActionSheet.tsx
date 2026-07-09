@@ -25,11 +25,12 @@ interface Props {
   state: VoiceState;
   space: Space;
   visible: boolean;
+  onRequestClose: () => void;
   onClose: () => void;
 }
 
 export const VoiceParticipantActionSheet = observer(
-  ({ state, space, visible, onClose }: Props) => {
+  ({ state, space, visible, onRequestClose, onClose }: Props) => {
     const app = useAppStore();
     const insets = useSafeAreaInsets();
     const user = state.user;
@@ -49,15 +50,15 @@ export const VoiceParticipantActionSheet = observer(
 
         if (action === "mute") body.spaceMute = !state.spaceMute;
         else if (action === "deafen") body.spaceDeaf = !state.spaceDeaf;
-        else if (action === "disconnect") {
-          body.disconnect = true;
-          onClose();
-        }
+        else if (action === "disconnect") body.disconnect = true;
 
         return app.rest.patch(
           `/spaces/${space.id}/members/${member.id}/voice`,
           body,
         );
+      },
+      onSuccess: () => {
+        onRequestClose();
       },
     });
 

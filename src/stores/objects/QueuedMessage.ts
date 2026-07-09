@@ -91,16 +91,19 @@ export class QueuedMessage extends MessageBase {
         this.error = undefined;
 
         const expressionIds = this.expressions.map((expression) => expression.id);
+        const body = {
+            content: this.content ?? "",
+            nonce: this.id,
+            ...(expressionIds.length ? { expressionIds } : {}),
+            ...(this.repliedToId ? { repliedToId: this.repliedToId } : {}),
+        };
 
         try {
-            await channel.sendMessage(
-                {
-                    content: this.content ?? "",
-                    nonce: this.id,
-                    ...(expressionIds.length ? { expressionIds } : {}),
-                },
-                this,
-            );
+            const result = await channel.sendMessage(body, this);
+            if (result?.nonce) {
+                this.app.queue.handleIncomingMessage(result);
+            }
+            this.app.queue.remove(this.id);
         } catch (e) {
             const error =
                 e instanceof Error

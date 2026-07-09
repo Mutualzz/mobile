@@ -16,7 +16,7 @@ import DateTimePicker, {
   type DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { useMutation } from "@tanstack/react-query";
-import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import {
   CalendarIcon,
   CalendarPlusIcon,
@@ -76,20 +76,29 @@ export const PostComposer = observer(({ onPosted }: Props) => {
   });
 
   const pickMedia = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      multiple: true,
-      copyToCacheDirectory: true,
-      type: ["image/*", "video/*"],
+    if (assets.length >= MAX_FILES) return;
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images", "videos"],
+      allowsMultipleSelection: true,
+      quality: 1,
     });
 
     if (result.canceled) return;
 
     const next = result.assets
-      .filter((asset) => (asset.size ?? 0) <= MAX_FILE_SIZE)
+      .filter((asset) => (asset.fileSize ?? 0) <= MAX_FILE_SIZE)
       .map((asset) => ({
         uri: asset.uri,
-        type: asset.mimeType ?? "application/octet-stream",
-        name: asset.name,
+        type:
+          asset.mimeType ??
+          (asset.type === "video" ? "video/mp4" : "image/jpeg"),
+        name:
+          asset.fileName ??
+          `attachment.${asset.type === "video" ? "mp4" : "jpg"}`,
       }));
 
     setAssets((prev) => [...prev, ...next].slice(0, MAX_FILES));

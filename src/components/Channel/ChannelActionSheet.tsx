@@ -58,7 +58,7 @@ export const ChannelActionSheet = observer(
     const canManageChannels =
       me?.hasPermission("ManageChannels", channel) ?? false;
     const canInvite = me?.hasPermission("CreateInvites", channel) ?? false;
-    const flatChannels = flattenChannels(space.visibleChannels);
+    const flatChannels = flattenChannels(space.channels);
     const { canMoveUp, canMoveDown } = getChannelMoveState(
       flatChannels,
       channel.id,
@@ -68,7 +68,7 @@ export const ChannelActionSheet = observer(
     const moveChannel = (direction: -1 | 1) => {
       const nextOrder = moveChannelInList(
         flatChannels,
-        space.visibleChannels,
+        space.channels,
         channel.id,
         direction,
       );

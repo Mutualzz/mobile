@@ -77,9 +77,11 @@ const ChannelRow = observer(
 export const SpaceChannelsSettings = observer(({ space }: Props) => {
   const app = useAppStore();
 
+  const allChannels = space.channels;
+
   const flatChannels = useMemo(
-    () => flattenChannels(space.visibleChannels),
-    [space.visibleChannels],
+    () => flattenChannels(allChannels),
+    [allChannels],
   );
 
   const categoryLabels = useMemo(
@@ -96,7 +98,7 @@ export const SpaceChannelsSettings = observer(({ space }: Props) => {
   const handleReorder = (fromIndex: number, toIndex: number) => {
     const nextOrder = reorderChannelInList(
       flatChannels,
-      space.visibleChannels,
+      allChannels,
       fromIndex,
       toIndex,
     );

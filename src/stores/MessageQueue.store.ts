@@ -41,10 +41,11 @@ export class MessageQueue {
     handleIncomingMessage(message: APIMessage) {
         if (!message.nonce) return;
 
-        if (!this.get(message.channelId).find((x) => x.id === message.nonce))
+        const nonce = String(message.nonce);
+        if (!this.get(message.channelId).find((x) => String(x.id) === nonce))
             return;
 
-        this.remove(message.nonce);
+        this.remove(nonce);
     }
 
     clear() {

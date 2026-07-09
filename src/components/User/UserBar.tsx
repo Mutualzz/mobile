@@ -284,7 +284,7 @@ export const UserBar = observer(() => {
                   return;
                 }
 
-                app.voice.setMute(!app.settings?.preferredSelfMute);
+                app.voice.setMute(!app.voice.selfMute);
               }}
               accessibilityLabel={
                 app.voice.spaceMute
@@ -314,7 +314,7 @@ export const UserBar = observer(() => {
                   return;
                 }
 
-                app.voice.setDeaf(!app.settings?.preferredSelfDeaf);
+                app.voice.setDeaf(!app.voice.selfDeaf);
               }}
               accessibilityLabel={
                 app.voice.spaceDeaf

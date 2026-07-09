@@ -1,3 +1,4 @@
+import Intents
 import UserNotifications
 
 class NotificationService: UNNotificationServiceExtension {
@@ -17,56 +18,51 @@ class NotificationService: UNNotificationServiceExtension {
       return
     }
 
-    if let userInfo = request.content.userInfo["body"] as? [String: Any],
-      let richContent = userInfo["_richContent"] as? [String: Any],
-      let imageUrlString = richContent["image"] as? String,
-      let imageUrl = URL(string: imageUrlString)
-    {
-      downloadAndAttachImage(url: imageUrl, to: bestAttemptContent) { content in
-        contentHandler(content)
-      }
+    let userInfo = request.content.userInfo
+    let senderId = stringValue(userInfo, keys: "senderId")
+    let senderName = stringValue(userInfo, keys: "senderName") ?? bestAttemptContent.title
+    let conversationId = stringValue(userInfo, keys: "conversationId", "channelId")
+    let avatarUrl =
+      stringValue(userInfo, keys: "authorAvatarUrl")
+      ?? richContentImageUrl(userInfo)
+
+    guard let senderId, let conversationId, !senderName.isEmpty else {
+      contentHandler(bestAttemptContent)
       return
     }
 
-    contentHandler(bestAttemptContent)
-  }
+    let avatarImage = avatarUrl.flatMap { downloadAvatarImage(from: $0) }
 
-  private func downloadAndAttachImage(
-    url: URL,
-    to content: UNMutableNotificationContent,
-    completion: @escaping (UNNotificationContent) -> Void
-  ) {
-    let task = URLSession.shared.downloadTask(with: url) { temporaryFileLocation, _, _ in
-      guard let temporaryFileLocation = temporaryFileLocation else {
-        completion(content)
-        return
-      }
+    let sender = INPerson(
+      personHandle: INPersonHandle(value: senderId, type: .unknown),
+      nameComponents: nil,
+      displayName: senderName,
+      image: avatarImage,
+      contactIdentifier: nil,
+      customIdentifier: senderId
+    )
 
-      let fileManager = FileManager.default
-      let tempDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
-      let targetFileName = temporaryFileLocation.lastPathComponent + ".jpg"
-      let targetUrl = tempDirectory.appendingPathComponent(targetFileName)
+    let intent = INSendMessageIntent(
+      recipients: nil,
+      outgoingMessageType: .outgoingMessageText,
+      content: bestAttemptContent.body,
+      speakableGroupName: nil,
+      conversationIdentifier: conversationId,
+      serviceName: "Mutualzz",
+      sender: sender,
+      attachments: nil
+    )
 
-      try? fileManager.removeItem(at: targetUrl)
+    let interaction = INInteraction(intent: intent, response: nil)
+    interaction.direction = .incoming
+    interaction.donate(completion: nil)
 
-      do {
-        try fileManager.moveItem(at: temporaryFileLocation, to: targetUrl)
-
-        let attachment = try UNNotificationAttachment(
-          identifier: "image",
-          url: targetUrl,
-          options: nil
-        )
-
-        content.attachments = [attachment]
-      } catch {
-        print("Error processing attachment: \(error.localizedDescription)")
-      }
-
-      completion(content)
+    do {
+      let updated = try bestAttemptContent.updating(from: intent)
+      contentHandler(updated)
+    } catch {
+      contentHandler(bestAttemptContent)
     }
-
-    task.resume()
   }
 
   override func serviceExtensionTimeWillExpire() {
@@ -75,5 +71,62 @@ class NotificationService: UNNotificationServiceExtension {
     {
       contentHandler(bestAttemptContent)
     }
+  }
+
+  private func stringValue(
+    _ userInfo: [AnyHashable: Any],
+    keys: String...
+  ) -> String? {
+    for key in keys {
+      if let value = userInfo[key] as? String, !value.isEmpty {
+        return value
+      }
+
+      if let body = userInfo["body"] as? [String: Any],
+        let value = body[key] as? String,
+        !value.isEmpty
+      {
+        return value
+      }
+    }
+
+    return nil
+  }
+
+  private func richContentImageUrl(_ userInfo: [AnyHashable: Any]) -> String? {
+    if let body = userInfo["body"] as? [String: Any],
+      let richContent = body["_richContent"] as? [String: Any],
+      let image = richContent["image"] as? String,
+      !image.isEmpty
+    {
+      return image
+    }
+
+    return nil
+  }
+
+  private func downloadAvatarImage(from urlString: String) -> INImage? {
+    guard let url = URL(string: urlString) else { return nil }
+
+    var request = URLRequest(url: url)
+    request.timeoutInterval = 5
+
+    var imageData: Data?
+    let semaphore = DispatchSemaphore(value: 0)
+
+    let task = URLSession.shared.dataTask(with: request) { data, response, _ in
+      if let data = data,
+        let httpResponse = response as? HTTPURLResponse,
+        httpResponse.statusCode == 200
+      {
+        imageData = data
+      }
+      semaphore.signal()
+    }
+    task.resume()
+    semaphore.wait()
+
+    guard let imageData = imageData else { return nil }
+    return INImage(imageData: imageData)
   }
 }
