@@ -13,7 +13,8 @@
       "config": {
         "usesNonExemptEncryption": false
       },
-      "icon": "./assets/ios.icon"
+      "icon": "./assets/ios.icon",
+      "appleTeamId": "HQ5FZ3HQC5"
     },
     "android": {
       "package": "com.mutualzz.app",
