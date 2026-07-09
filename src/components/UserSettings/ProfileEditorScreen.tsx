@@ -10,7 +10,9 @@ import {
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Input, Typography } from "@mutualzz/ui-native";
+import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
 import { useScaledProfilePreviewHeight } from "@utils/accessibilityLayout";
+import { pickProfileImageAsset } from "@utils/profileImagePicker";
 import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -18,10 +20,8 @@ import {
   ActivityIndicator,
   Alert,
   BackHandler,
-  Image,
   ScrollView,
 } from "react-native";
-import ImagePicker from "react-native-image-crop-picker";
 import type { APIMobileProfileBlock, APIProfileMusic } from "@mutualzz/types";
 import { expandCustomEmojiShortcodes } from "@utils/markdown/composerQueries";
 import { findCustomEmojiByLabel } from "@utils/expressions";
@@ -138,39 +138,36 @@ export const ProfileEditorScreen = observer(() => {
 
   if (!account) return null;
 
-  const uploadBanner = () => {
+  const uploadBanner = async () => {
     if (uploadingBanner) return;
 
-    ImagePicker.openPicker({
-      mediaType: "photo",
-      cropping: true,
-      width: 1200,
-      height: 400,
-    })
-      .then(async (image) => {
-        setUploadingBanner(true);
-        setError(null);
-
-        try {
-          const result = await app.profiles.uploadAsset("banner", {
-            uri: image.path,
-            type: image.mime ?? "image/jpeg",
-            name: image.filename ?? "banner.jpg",
-          });
-
-          setBannerHash(result.hash);
-          setBannerPreview(image.path);
-        } catch (e) {
-          setError(getErrorMessage(e, "Failed to upload banner"));
-        } finally {
-          setUploadingBanner(false);
-          void ImagePicker.clean();
-        }
-      })
-      .catch(() => undefined)
-      .finally(() => {
-        void ImagePicker.clean();
+    try {
+      const image = await pickProfileImageAsset({
+        cropWidth: 1200,
+        cropHeight: 400,
       });
+      if (!image) return;
+
+      setUploadingBanner(true);
+      setError(null);
+
+      try {
+        const result = await app.profiles.uploadAsset("banner", {
+          uri: image.path,
+          type: image.mime,
+          name: image.name,
+        });
+
+        setBannerHash(result.hash);
+        setBannerPreview(image.path);
+      } catch (e) {
+        setError(getErrorMessage(e, "Failed to upload banner"));
+      } finally {
+        setUploadingBanner(false);
+      }
+    } catch (e) {
+      setError(getErrorMessage(e, "Failed to pick banner image"));
+    }
   };
 
   const saveProfile = async () => {
@@ -250,8 +247,9 @@ export const ProfileEditorScreen = observer(() => {
               Banner
             </Typography>
             {bannerPreview ? (
-              <Image
-                source={{ uri: bannerPreview }}
+              <ProfileBlockImage
+                uri={bannerPreview}
+                assetHash={bannerHash}
                 style={{
                   width: "100%",
                   height: bannerPreviewHeight,

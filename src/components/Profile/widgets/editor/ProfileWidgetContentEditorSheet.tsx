@@ -479,8 +479,9 @@ function ProfileImageFields({
     <>
       {previewUrl ? (
         <FieldSection title="Preview">
-          <Image
-            source={{ uri: previewUrl }}
+          <ProfileBlockImage
+            uri={previewUrl}
+            assetHash={src.startsWith("http") ? null : src}
             style={{ width: "100%", height: imagePreviewHeight, borderRadius: 8 }}
             resizeMode="cover"
           />

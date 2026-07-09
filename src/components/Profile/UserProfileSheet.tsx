@@ -35,11 +35,11 @@ import {
   PencilSimpleIcon,
   XIcon,
 } from "phosphor-react-native";
+import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   ScrollView,
   View,
@@ -219,8 +219,9 @@ export const UserProfileSheet = observer(
           }}
         />
         {backgroundUrl ? (
-          <Image
-            source={{ uri: backgroundUrl }}
+          <ProfileBlockImage
+            uri={backgroundUrl}
+            assetHash={profile?.backgroundImage}
             style={{
               position: "absolute",
               top: 0,
@@ -249,8 +250,9 @@ export const UserProfileSheet = observer(
                 }}
               >
                 {bannerUrl ? (
-                  <Image
-                    source={{ uri: bannerUrl }}
+                  <ProfileBlockImage
+                    uri={bannerUrl}
+                    assetHash={profile?.banner}
                     style={{ width: "100%", height: "100%" }}
                     resizeMode="cover"
                   />

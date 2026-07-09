@@ -92,17 +92,18 @@ export class UserProfile {
     source: string | null | undefined,
     format: AvatarFormat = ImageFormat.WebP,
     size: Sizes = 1024,
-    animated = false,
+    animated?: boolean,
   ) {
     if (!source) return null;
     if (source.startsWith("http")) return source;
+    const isAnimated = animated ?? source.startsWith("a_");
     return REST.makeCDNUrl(
       CDNRoutes.profileBackground(
         this.userId,
         source,
         format,
         size,
-        animated,
+        isAnimated,
       ),
     );
   }
