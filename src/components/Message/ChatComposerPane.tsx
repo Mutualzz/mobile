@@ -4,6 +4,7 @@ import { MessageInput } from "@components/Message/MessageInput";
 import { MessageList } from "@components/Message/MessageList";
 import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
+import { Platform } from "react-native";
 
 interface Props {
   channel: Channel;
@@ -12,14 +13,20 @@ interface Props {
 
 export const ChatComposerPane = observer(
   ({ channel, composerVisible }: Props) => {
+    const footer = (
+      <ComposerFooter channelId={channel.id}>
+        {composerVisible ? <MessageInput channel={channel} /> : null}
+      </ComposerFooter>
+    );
+
     return (
       <AppKeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        automaticOffset={false}
         style={{ flex: 1, minHeight: 0, flexDirection: "column" }}
       >
         <MessageList channel={channel} />
-        <ComposerFooter channelId={channel.id}>
-          {composerVisible ? <MessageInput channel={channel} /> : null}
-        </ComposerFooter>
+        {footer}
       </AppKeyboardAvoidingView>
     );
   },
