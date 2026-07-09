@@ -27,7 +27,7 @@ import {
 } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { Image, Pressable, ScrollView } from "react-native";
+import { Image, Keyboard, Pressable, ScrollView } from "react-native";
 
 interface Props {
   post: Post;
@@ -231,6 +231,7 @@ export const PostComments = observer(({ post }: Props) => {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ gap: 12, paddingBottom: 8 }}
+        onTouchStart={() => Keyboard.dismiss()}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

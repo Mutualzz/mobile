@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "488538640990",
+    "project_id": "mutualzz-f72ef",
+    "storage_bucket": "mutualzz-f72ef.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:488538640990:android:4027c879bd036f0d0c9acf",
+        "android_client_info": {
+          "package_name": "com.mutualzz.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKqjXd9C7BEeoiMLuxw_9ybqlcX3RhqjU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

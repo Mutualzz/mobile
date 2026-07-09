@@ -4,6 +4,7 @@ import { UserAvatar } from "@components/User/UserAvatar";
 import { HashIcon, ArrowDownIcon } from "phosphor-react-native";
 import { Logger } from "@mutualzz/logger";
 import { useAppStore } from "@hooks/useStores";
+import { useKeyboardVisible } from "@hooks/useKeyboardOffset";
 import { ChannelType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
@@ -16,6 +17,7 @@ import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
   Platform,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -156,6 +158,7 @@ const ScrollToBottomFab = ({
 export const MessageList = observer(({ channel }: Props) => {
   const app = useAppStore();
   const { theme } = useTheme();
+  const keyboardVisible = useKeyboardVisible();
   const listRef = useRef<FlashListRef<MessageGroupType>>(null);
   const isAtBottomRef = useRef(true);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
@@ -322,6 +325,13 @@ export const MessageList = observer(({ channel }: Props) => {
     });
   }, [latestMessageId, scrollToBottom]);
 
+  useEffect(() => {
+    if (!keyboardVisible || !isAtBottomRef.current) return;
+    requestAnimationFrame(() => {
+      scrollToBottom(true);
+    });
+  }, [keyboardVisible, scrollToBottom]);
+
   const fetchMore = useCallback(() => {
     if (!channel?.messages.count) {
       logger.warn("channel has no messages, aborting fetchMore!");
@@ -430,6 +440,7 @@ export const MessageList = observer(({ channel }: Props) => {
         onStartReachedThreshold={0.2}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        onTouchStart={() => Keyboard.dismiss()}
         keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={listHeader}

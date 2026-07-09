@@ -1,9 +1,7 @@
+import { ChatComposerPane } from "@components/Message/ChatComposerPane";
 import { DMChannelHeader } from "@components/DMChannel/DMChannelHeader";
 import { GroupDMAddRecipientSheet } from "@components/DMChannel/GroupDMAddRecipientSheet";
 import { GroupDMManageSheet } from "@components/DMChannel/GroupDMManageSheet";
-import { ComposerFooter } from "@components/Message/ComposerFooter";
-import { MessageInput } from "@components/Message/MessageInput";
-import { MessageList } from "@components/Message/MessageList";
 import { Screen } from "@components/Screen/Screen";
 import { UserActionSheet } from "@components/User/UserActionSheet";
 import { ChatCircleIcon } from "phosphor-react-native";
@@ -12,7 +10,7 @@ import { useAppStore } from "@hooks/useStores";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { Keyboard, View } from "react-native";
+import { Keyboard } from "react-native";
 
 const EmptyDMState = () => {
   const { theme } = useTheme();
@@ -76,18 +74,7 @@ export const DMContentPane = observer(() => {
             : undefined
         }
       />
-      <View
-        style={{
-          flex: 1,
-          minHeight: 0,
-          flexDirection: "column",
-        }}
-      >
-        <MessageList channel={channel} />
-        <ComposerFooter channelId={channel.id}>
-          {composerVisible ? <MessageInput channel={channel} /> : null}
-        </ComposerFooter>
-      </View>
+      <ChatComposerPane channel={channel} composerVisible={composerVisible} />
 
       {channel.isGroupDM ? (
         <>

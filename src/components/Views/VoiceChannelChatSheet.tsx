@@ -1,8 +1,6 @@
 import { ChannelIcon } from "@components/Channel/ChannelIcon";
 import { IconButton } from "@components/IconButton";
-import { ComposerFooter } from "@components/Message/ComposerFooter";
-import { MessageInput } from "@components/Message/MessageInput";
-import { MessageList } from "@components/Message/MessageList";
+import { ChatComposerPane } from "@components/Message/ChatComposerPane";
 import { Paper } from "@components/Paper";
 import { useScreenComposer } from "@hooks/useScreenComposer";
 import { useAppStore } from "@hooks/useStores";
@@ -59,44 +57,36 @@ export const VoiceChannelChatSheet = observer(
               overflow: "hidden",
             }}
           >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 10,
-                paddingHorizontal: 16,
-                paddingTop: 16,
-                paddingBottom: 12,
-                borderBottomWidth: 1,
-                borderBottomColor: `${theme.typography.colors.muted}33`,
-              }}
-            >
-              <ChannelIcon type={channel.type} />
-              <Typography level="body-lg" weight="bold" truncate="single" style={{ flex: 1 }}>
-                {channel.name}
-              </Typography>
-              <IconButton
-                padding={6}
-                color="neutral"
-                accessibilityLabel="Close chat"
-                onPress={handleClose}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 10,
+                  paddingHorizontal: 16,
+                  paddingTop: 16,
+                  paddingBottom: 12,
+                  borderBottomWidth: 1,
+                  borderBottomColor: `${theme.typography.colors.muted}33`,
+                }}
               >
-                <XIcon size={20} />
-              </IconButton>
-            </View>
+                <ChannelIcon type={channel.type} />
+                <Typography level="body-lg" weight="bold" truncate="single" style={{ flex: 1 }}>
+                  {channel.name}
+                </Typography>
+                <IconButton
+                  padding={6}
+                  color="neutral"
+                  accessibilityLabel="Close chat"
+                  onPress={handleClose}
+                >
+                  <XIcon size={20} />
+                </IconButton>
+              </View>
 
-            <View
-              style={{
-                flex: 1,
-                minHeight: 0,
-                flexDirection: "column",
-              }}
-            >
-              <MessageList channel={channel} />
-              <ComposerFooter channelId={channel.id}>
-                {composerVisible ? <MessageInput channel={channel} /> : null}
-              </ComposerFooter>
-            </View>
+            <ChatComposerPane
+              channel={channel}
+              composerVisible={composerVisible}
+            />
           </Paper>
         </View>
       </Modal>

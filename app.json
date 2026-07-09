@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mutualzz",
     "slug": "mutualzz",
-    "version": "3.0.0",
+    "version": "3.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "com.mutualzz.app",
@@ -17,8 +17,9 @@
     },
     "android": {
       "package": "com.mutualzz.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       }
     },
@@ -28,6 +29,7 @@
     },
     "plugins": [
       "expo-dev-client",
+      "@bacons/apple-targets",
       "expo-router",
       "expo-font",
       [

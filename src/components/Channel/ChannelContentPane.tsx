@@ -1,9 +1,7 @@
+import { ChatComposerPane } from "@components/Message/ChatComposerPane";
 import { VoiceChannelView } from "@components/Views/VoiceChannelView";
 import { ChannelIcon } from "@components/Channel/ChannelIcon";
 import { MemberListModal } from "@components/MemberList/MemberListModal";
-import { ComposerFooter } from "@components/Message/ComposerFooter";
-import { MessageInput } from "@components/Message/MessageInput";
-import { MessageList } from "@components/Message/MessageList";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
 import { ArrowLeftIcon, HashIcon, UsersIcon } from "phosphor-react-native";
 import { useScreenComposer } from "@hooks/useScreenComposer";
@@ -12,7 +10,7 @@ import { ChannelType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { Keyboard, Pressable, View } from "react-native";
+import { Keyboard, Pressable } from "react-native";
 
 const EmptyChannelState = () => {
     const { theme } = useTheme();
@@ -94,18 +92,10 @@ export const ChannelContentPane = observer(() => {
                     />
                 </Pressable>
             </ScreenHeader>
-            <View
-                style={{
-                    flexDirection: "column",
-                    flex: 1,
-                    minHeight: 0,
-                }}
-            >
-                <MessageList channel={channel} />
-                <ComposerFooter channelId={channel.id}>
-                    {composerVisible ? <MessageInput channel={channel} /> : null}
-                </ComposerFooter>
-            </View>
+            <ChatComposerPane
+                channel={channel}
+                composerVisible={composerVisible}
+            />
 
             <MemberListModal
                 channel={channel}
