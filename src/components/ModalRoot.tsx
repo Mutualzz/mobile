@@ -13,7 +13,7 @@ export const ModalRoot = observer(() => {
       {modals.map((modal, idx) => (
         <Modal
           {...modal.props}
-          key={modal.id}
+          key={modal.key}
           open={true}
           onClose={() => closeModal(modal.id)}
           style={{

@@ -1,6 +1,10 @@
-import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
+import {
+  ProfileBlockCroppedImage,
+  ProfileBlockImage,
+} from "@components/Profile/shared/ProfileBlockImage";
 import type { UserProfile } from "@stores/objects/UserProfile";
 import type { MobileProfileImageBlock } from "@mutualzz/types";
+import { ImageFormat } from "@mutualzz/types";
 import { View } from "react-native";
 
 interface Props {
@@ -10,6 +14,7 @@ interface Props {
 
 export function ProfileImageWidgetView({ block, profile }: Props) {
   const src = block.src ? profile.constructBlockImageUrl(block.src) : null;
+  const resizeMode = block.objectFit === "contain" ? "contain" : "cover";
 
   return (
     <View
@@ -20,11 +25,12 @@ export function ProfileImageWidgetView({ block, profile }: Props) {
       }}
     >
       {src ? (
-        <ProfileBlockImage
+        <ProfileBlockCroppedImage
           uri={src}
           assetHash={block.src}
-          style={{ width: "100%", height: "100%" }}
-          resizeMode={block.objectFit === "contain" ? "contain" : "cover"}
+          crop={block.crop}
+          containerStyle={{ width: "100%", height: "100%" }}
+          resizeMode={resizeMode}
         />
       ) : null}
     </View>
@@ -32,7 +38,9 @@ export function ProfileImageWidgetView({ block, profile }: Props) {
 }
 
 export function ProfileImageWidgetExpandedContent({ block, profile }: Props) {
-  const src = block.src ? profile.constructBlockImageUrl(block.src) : null;
+  const src = block.src
+    ? profile.constructBlockImageUrl(block.src, ImageFormat.WebP, 1024)
+    : null;
   if (!src) return null;
 
   return (

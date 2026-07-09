@@ -9,7 +9,7 @@ import {
 } from "@components/Profile/widgets/editor/profileWidgetEditor.utils";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
-import { Box, Input, Typography } from "@mutualzz/ui-native";
+import { Box, Input, Typography, hasOpenModals } from "@mutualzz/ui-native";
 import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
 import { useScaledProfilePreviewHeight } from "@utils/accessibilityLayout";
 import { pickProfileImageAsset } from "@utils/profileImagePicker";
@@ -117,6 +117,7 @@ export const ProfileEditorScreen = observer(() => {
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
+        if (hasOpenModals()) return false;
         handleBackRef.current();
         return true;
       },

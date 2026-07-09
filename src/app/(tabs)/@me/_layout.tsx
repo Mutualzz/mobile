@@ -2,6 +2,7 @@ import { DMContentPane } from "@components/DMChannel/DMContentPane";
 import { MeDrawerContent } from "@components/DMChannel/MeDrawerContent";
 import { SwipeableDrawer } from "@components/Navigation/SwipeableDrawer";
 import { useAppStore } from "@hooks/useStores";
+import { hasOpenModals } from "@mutualzz/ui-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef } from "react";
@@ -50,6 +51,7 @@ const MeLayout = () => {
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
+        if (hasOpenModals()) return false;
         if (app.mode !== "@me") return false;
         if (!app.channels.activeId) return false;
 

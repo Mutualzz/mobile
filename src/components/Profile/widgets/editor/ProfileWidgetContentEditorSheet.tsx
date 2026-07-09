@@ -15,12 +15,18 @@ import { useAppStore } from "@hooks/useStores";
 import type { UserProfile } from "@stores/objects/UserProfile";
 import type { APIMobileProfileBlock, ProfileLinkItem } from "@mutualzz/types";
 import { Box, Input, Modal, Switch, Slider, Typography, useTheme } from "@mutualzz/ui-native";
-import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
+import { ProfileBlockCroppedImage } from "@components/Profile/shared/ProfileBlockImage";
 import { useScaledProfilePreviewHeight } from "@utils/accessibilityLayout";
-import { pickProfileImageAsset } from "@utils/profileImagePicker";
+import {
+  canAdjustProfileImageCrop,
+  pickProfileImageForUpload,
+  recropProfileImageFromUrl,
+} from "@utils/profileImagePicker";
+import type { ProfileImageCrop } from "@mutualzz/types";
 import * as DocumentPicker from "expo-document-picker";
 import {
   ArrowLeftIcon,
+  CropIcon,
   PlusIcon,
   TrashIcon,
   UploadSimpleIcon,
@@ -275,6 +281,7 @@ function ProfileWidgetContentFields({
         <ProfileImageFields
           src={block.src}
           objectFit={block.objectFit}
+          crop={block.crop}
           profile={profile}
           update={update}
         />
@@ -430,18 +437,22 @@ function ProfileDrawFields({
 function ProfileImageFields({
   src,
   objectFit,
+  crop,
   profile,
   update,
 }: {
   src: string;
   objectFit?: "cover" | "contain";
+  crop?: ProfileImageCrop | null;
   profile: UserProfile;
   update: (patch: Record<string, unknown>) => void;
 }) {
   const app = useAppStore();
   const [uploading, setUploading] = useState(false);
+  const [recropping, setRecropping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const imagePreviewHeight = useScaledProfilePreviewHeight(140);
+  const canAdjustCrop = canAdjustProfileImageCrop(src);
 
   const previewUrl = src
     ? src.startsWith("http")
@@ -453,7 +464,7 @@ function ProfileImageFields({
     if (uploading) return;
 
     try {
-      const image = await pickProfileImageAsset({ freeStyle: true });
+      const image = await pickProfileImageForUpload();
       if (!image) return;
 
       setUploading(true);
@@ -464,7 +475,7 @@ function ProfileImageFields({
           type: image.mime,
           name: image.name,
         });
-        update({ src: result.hash });
+        update({ src: result.hash, crop: null });
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to upload image");
       } finally {
@@ -475,15 +486,43 @@ function ProfileImageFields({
     }
   };
 
+  const adjustCrop = async () => {
+    if (recropping || !canAdjustCrop) return;
+
+    const sourceUrl = profile.constructBlockImageSourceUrl(src);
+    if (!sourceUrl) {
+      setError("This image cannot be re-cropped");
+      return;
+    }
+
+    try {
+      setRecropping(true);
+      setError(null);
+      const nextCrop = await recropProfileImageFromUrl(sourceUrl);
+      if (nextCrop) {
+        update({ crop: nextCrop });
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to adjust crop");
+    } finally {
+      setRecropping(false);
+    }
+  };
+
   return (
     <>
       {previewUrl ? (
         <FieldSection title="Preview">
-          <ProfileBlockImage
+          <ProfileBlockCroppedImage
             uri={previewUrl}
             assetHash={src.startsWith("http") ? null : src}
-            style={{ width: "100%", height: imagePreviewHeight, borderRadius: 8 }}
-            resizeMode="cover"
+            crop={crop}
+            containerStyle={{
+              width: "100%",
+              height: imagePreviewHeight,
+              borderRadius: 8,
+            }}
+            resizeMode={objectFit === "contain" ? "contain" : "cover"}
           />
         </FieldSection>
       ) : null}
@@ -492,9 +531,23 @@ function ProfileImageFields({
         <Button color="neutral" disabled={uploading} onPress={uploadImage}>
           <UploadSimpleIcon size={14} /> {uploading ? "Uploading..." : "Upload image"}
         </Button>
+        {canAdjustCrop ? (
+          <Button
+            color="neutral"
+            disabled={recropping || uploading}
+            onPress={adjustCrop}
+          >
+            <CropIcon size={14} /> {recropping ? "Opening cropper..." : "Adjust crop"}
+          </Button>
+        ) : null}
+        {crop && canAdjustCrop ? (
+          <Button color="neutral" onPress={() => update({ crop: null })}>
+            Reset crop
+          </Button>
+        ) : null}
         <Input
           value={src}
-          onChangeText={(next) => update({ src: next })}
+          onChangeText={(next) => update({ src: next, crop: null })}
           placeholder="Or paste an image URL"
           autoCapitalize="none"
         />
@@ -514,6 +567,12 @@ function ProfileImageFields({
           value={objectFit ?? "cover"}
           onChange={(next) => update({ objectFit: next })}
         />
+        {canAdjustCrop ? (
+          <Typography level="body-xs" textColor="muted">
+            Use Adjust crop to choose which part of the image shows in the
+            widget. Full view always shows the original image.
+          </Typography>
+        ) : null}
       </FieldSection>
     </>
   );

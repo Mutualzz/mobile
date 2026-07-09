@@ -4,7 +4,7 @@ import { SwipeableDrawer } from "@components/Navigation/SwipeableDrawer";
 import { SpacesSidebar } from "@components/Space/SpacesSidebar";
 import { useTabBarContentInset } from "@hooks/useTabBarContentInset";
 import { useAppStore } from "@hooks/useStores";
-import { Box } from "@mutualzz/ui-native";
+import { Box, hasOpenModals } from "@mutualzz/ui-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
@@ -76,6 +76,7 @@ const SpacesDrawerLayout = () => {
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
+        if (hasOpenModals()) return false;
         if (app.mode !== "spaces") return false;
         if (!app.channels.activeId) return false;
 

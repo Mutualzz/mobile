@@ -9,6 +9,7 @@ import {
 } from "react";
 
 interface ModalStackItem {
+    key: string;
     id: string;
     content: ReactNode;
     props?: Partial<ModalProps>;
@@ -46,7 +47,7 @@ export const ModalProvider = ({ children }: PropsWithChildren) => {
     const openModal = useCallback(
         (id: string, content: ReactNode, props: Partial<ModalProps> = {}) => {
             setModals((prev) => [
-                ...prev,
+                ...prev.filter((modal) => modal.id !== id),
                 {
                     key: `modal-${id}-${Date.now()}`,
                     id,

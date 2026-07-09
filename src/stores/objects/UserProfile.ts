@@ -122,6 +122,15 @@ export class UserProfile {
     );
   }
 
+  constructBlockImageSourceUrl(source: string | null | undefined) {
+    if (!source) return null;
+    if (source.startsWith("http")) return source;
+    if (source.startsWith("a_")) return null;
+    return REST.makeCDNUrl(
+      CDNRoutes.profileImage(this.userId, source, ImageFormat.PNG, 1024),
+    );
+  }
+
   constructProfileMusicAudioUrl(hash: string) {
     return REST.makeCDNUrl(CDNRoutes.profileMusic(this.userId, hash));
   }
