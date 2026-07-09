@@ -15,7 +15,9 @@ import { useAppStore } from "@hooks/useStores";
 import type { UserProfile } from "@stores/objects/UserProfile";
 import type { APIMobileProfileBlock, ProfileLinkItem } from "@mutualzz/types";
 import { Box, Input, Modal, Switch, Slider, Typography, useTheme } from "@mutualzz/ui-native";
+import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
 import { useScaledProfilePreviewHeight } from "@utils/accessibilityLayout";
+import { pickProfileImageAsset } from "@utils/profileImagePicker";
 import * as DocumentPicker from "expo-document-picker";
 import {
   ArrowLeftIcon,
@@ -26,11 +28,9 @@ import {
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import {
-  Image,
   Pressable,
   ScrollView,
 } from "react-native";
-import ImagePicker from "react-native-image-crop-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SvgXml } from "react-native-svg";
 
@@ -449,33 +449,30 @@ function ProfileImageFields({
       : profile.constructBlockImageUrl(src)
     : null;
 
-  const uploadImage = () => {
+  const uploadImage = async () => {
     if (uploading) return;
 
-    ImagePicker.openPicker({
-      mediaType: "photo",
-      cropping: true,
-      freeStyleCropEnabled: true,
-    })
-      .then(async (image) => {
-        setUploading(true);
-        setError(null);
-        try {
-          const result = await app.profiles.uploadAsset("image", {
-            uri: image.path,
-            type: image.mime ?? "image/jpeg",
-            name: image.filename ?? "image.jpg",
-          });
-          update({ src: result.hash });
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Failed to upload image");
-        } finally {
-          setUploading(false);
-          void ImagePicker.clean();
-        }
-      })
-      .catch(() => undefined)
-      .finally(() => void ImagePicker.clean());
+    try {
+      const image = await pickProfileImageAsset({ freeStyle: true });
+      if (!image) return;
+
+      setUploading(true);
+      setError(null);
+      try {
+        const result = await app.profiles.uploadAsset("image", {
+          uri: image.path,
+          type: image.mime,
+          name: image.name,
+        });
+        update({ src: result.hash });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to upload image");
+      } finally {
+        setUploading(false);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to pick image");
+    }
   };
 
   return (

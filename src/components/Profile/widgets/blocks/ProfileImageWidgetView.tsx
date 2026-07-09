@@ -1,6 +1,7 @@
+import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
 import type { UserProfile } from "@stores/objects/UserProfile";
 import type { MobileProfileImageBlock } from "@mutualzz/types";
-import { Image, View } from "react-native";
+import { View } from "react-native";
 
 interface Props {
   block: MobileProfileImageBlock;
@@ -19,8 +20,9 @@ export function ProfileImageWidgetView({ block, profile }: Props) {
       }}
     >
       {src ? (
-        <Image
-          source={{ uri: src }}
+        <ProfileBlockImage
+          uri={src}
+          assetHash={block.src}
           style={{ width: "100%", height: "100%" }}
           resizeMode={block.objectFit === "contain" ? "contain" : "cover"}
         />
@@ -34,8 +36,9 @@ export function ProfileImageWidgetExpandedContent({ block, profile }: Props) {
   if (!src) return null;
 
   return (
-    <Image
-      source={{ uri: src }}
+    <ProfileBlockImage
+      uri={src}
+      assetHash={block.src}
       style={{ width: "100%", aspectRatio: 1 }}
       resizeMode="contain"
     />

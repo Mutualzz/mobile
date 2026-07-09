@@ -21,7 +21,7 @@ import type {
 import { Box, Modal, Typography, useTheme } from "@mutualzz/ui-native";
 import { XIcon } from "phosphor-react-native";
 import { useState } from "react";
-import { ScrollView } from "react-native";
+import { ScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "@components/IconButton";
 

@@ -1,3 +1,4 @@
+import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
 import { ProfileMarkdownContent } from "@components/Profile/shared/ProfileMarkdownContent";
 import { UserAvatar } from "@components/User/UserAvatar";
 import type { AccountStore } from "@stores/Account.store";
@@ -8,7 +9,7 @@ import type {
   ProfileBlockSize,
 } from "@mutualzz/types";
 import { Stack, Typography } from "@mutualzz/ui-native";
-import { Image, View } from "react-native";
+import { View } from "react-native";
 
 const AVATAR_SIZE = 56;
 const BANNER_HEIGHT = 64;
@@ -39,8 +40,9 @@ export function ProfileHeaderWidgetView({ block, size, user, profile }: Props) {
           }}
         >
           {bannerUrl ? (
-            <Image
-              source={{ uri: bannerUrl }}
+            <ProfileBlockImage
+              uri={bannerUrl}
+              assetHash={profile.banner}
               style={{
                 position: "absolute",
                 width: "100%",

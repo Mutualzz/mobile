@@ -65,12 +65,13 @@ export class UserProfile {
     source: string | null | undefined,
     format: AvatarFormat = ImageFormat.WebP,
     size: Sizes = 512,
-    animated = false,
+    animated?: boolean,
   ) {
     if (!source) return null;
     if (source.startsWith("http")) return source;
+    const isAnimated = animated ?? source.startsWith("a_");
     return REST.makeCDNUrl(
-      CDNRoutes.profileBanner(this.userId, source, format, size, animated),
+      CDNRoutes.profileBanner(this.userId, source, format, size, isAnimated),
     );
   }
 
@@ -106,10 +107,17 @@ export class UserProfile {
     );
   }
 
-  constructBlockImageUrl(src: string) {
-    if (src.startsWith("http")) return src;
+  constructBlockImageUrl(
+    source: string | null | undefined,
+    format: AvatarFormat = ImageFormat.WebP,
+    size: Sizes = 512,
+    animated?: boolean,
+  ) {
+    if (!source) return null;
+    if (source.startsWith("http")) return source;
+    const isAnimated = animated ?? source.startsWith("a_");
     return REST.makeCDNUrl(
-      CDNRoutes.profileImage(this.userId, src, ImageFormat.WebP, 512),
+      CDNRoutes.profileImage(this.userId, source, format, size, isAnimated),
     );
   }
 

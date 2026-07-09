@@ -14,7 +14,7 @@ import type { APIMobileProfileBlock, ProfileBlockSize } from "@mutualzz/types";
 import { Paper } from "@mutualzz/ui-native";
 import { CaretDownIcon, CaretUpIcon, XIcon } from "phosphor-react-native";
 import { useState } from "react";
-import { Pressable, View, type LayoutChangeEvent } from "react-native";
+import { View, type LayoutChangeEvent } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { scheduleOnRN } from "react-native-worklets";
 
@@ -139,10 +139,21 @@ export function ProfileWidgetEditableList({
         const rect = rects[index];
         const isDragging = draggingId === block.id;
 
+        const tapGesture = Gesture.Tap()
+          .maxDuration(LONG_PRESS_MS - 1)
+          .onEnd(() => {
+            scheduleOnRN(onEditContent, block);
+          });
+
+        const longPressGesture = Gesture.LongPress()
+          .minDuration(LONG_PRESS_MS)
+          .onStart(() => {
+            scheduleOnRN(onEnterEditMode);
+          });
+
         const panGesture = Gesture.Pan()
           .activateAfterLongPress(LONG_PRESS_MS)
           .onStart(() => {
-            scheduleOnRN(onEnterEditMode);
             scheduleOnRN(setDraggingId, block.id);
           })
           .onUpdate((e) => {
@@ -152,8 +163,11 @@ export function ProfileWidgetEditableList({
             scheduleOnRN(handleDragEnd, index, e.translationX, e.translationY);
           });
 
+        const dragGesture = Gesture.Simultaneous(longPressGesture, panGesture);
+        const gesture = Gesture.Exclusive(dragGesture, tapGesture);
+
         return (
-          <GestureDetector key={block.id} gesture={panGesture}>
+          <GestureDetector key={block.id} gesture={gesture}>
             <View
               style={{
                 position: "absolute",
@@ -168,28 +182,24 @@ export function ProfileWidgetEditableList({
               }}
             >
               <View
+                pointerEvents="none"
                 style={{
                   flex: 1,
                   marginHorizontal: ROW_GAP / 2,
                   opacity: isDragging ? 0.9 : 1,
                 }}
               >
-                <Pressable
-                  onPress={() => onEditContent(block)}
-                  style={{ width: "100%", height: "100%" }}
+                <Paper
+                  elevation={1}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: 12,
+                    overflow: "hidden",
+                  }}
                 >
-                  <Paper
-                    elevation={1}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      borderRadius: 12,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <ProfileWidgetRenderer block={block} profile={profile} user={user} />
-                  </Paper>
-                </Pressable>
+                  <ProfileWidgetRenderer block={block} profile={profile} user={user} />
+                </Paper>
               </View>
 
               {editMode ? (
