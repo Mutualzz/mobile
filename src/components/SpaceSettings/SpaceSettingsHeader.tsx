@@ -30,20 +30,30 @@ export const SpaceSettingsHeader = observer(
         }}
       >
         {showBack ? (
-          <Pressable hitSlop={8} onPress={() => back()}>
+          <Pressable
+            hitSlop={11}
+            onPress={() => back()}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
             <ArrowLeftIcon size={22} weight="bold" color={iconColor} />
           </Pressable>
         ) : null}
         <Typography
           level="body-lg"
           weight="bold"
-          numberOfLines={1}
+          truncate="single"
           style={{ flex: 1 }}
         >
           {title}
         </Typography>
         {onClose ? (
-          <Pressable hitSlop={8} onPress={onClose}>
+          <Pressable
+            hitSlop={11}
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
             <XIcon size={22} weight="bold" color={iconColor} />
           </Pressable>
         ) : null}

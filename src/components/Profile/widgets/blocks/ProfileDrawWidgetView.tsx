@@ -1,4 +1,5 @@
 import type { MobileProfileDrawBlock } from "@mutualzz/types";
+import { Typography } from "@mutualzz/ui-native";
 import { PencilSimpleIcon } from "phosphor-react-native";
 import { View } from "react-native";
 import { SvgXml } from "react-native-svg";
@@ -16,9 +17,14 @@ export function ProfileDrawWidgetView({ block }: Props) {
           height: "100%",
           alignItems: "center",
           justifyContent: "center",
+          gap: 6,
+          padding: 12,
         }}
       >
-        <PencilSimpleIcon size={28} style={{ opacity: 0.3 }} />
+        <PencilSimpleIcon size={28} color="rgba(128,128,128,0.45)" />
+        <Typography level="body-xs" textColor="muted" style={{ textAlign: "center" }}>
+          No drawing yet
+        </Typography>
       </View>
     );
   }

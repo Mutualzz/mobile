@@ -5,350 +5,519 @@ import { DefaultMention } from "@components/Markdown/components/mention/DefaultM
 import { RoleMention } from "@components/Markdown/components/mention/RoleMention";
 import { UserMention } from "@components/Markdown/components/mention/UserMention";
 import { Spoiler } from "@components/Markdown/components/Spoiler";
-import { Theme } from "@emotion/react";
+import type { Theme } from "@emotion/react";
 import type { TypographyColor } from "@mutualzz/ui-core";
 import type { ColorLike } from "@mutualzz/ui-core";
 import type { Snowflake } from "@mutualzz/types";
+import { InlineTwemoji } from "@components/emojis/Twemoji";
 import { Box, Typography } from "@mutualzz/ui-native";
-import { ReactNode } from "react";
-import { Linking } from "react-native";
+import type { ReactElement, ReactNode } from "react";
+import { isValidElement } from "react";
+import { Linking, Text, type TextStyle } from "react-native";
+
+const inlineRowStyle = {
+  flexDirection: "row" as const,
+  flexWrap: "wrap" as const,
+  alignItems: "center" as const,
+};
+
+type RunSegment = string | ReactElement;
+
+type FormatFrame = {
+  segments: RunSegment[];
+  textProps: {
+    weight?: "bold";
+    style?: TextStyle;
+  };
+};
+
+const isTypographyElement = (node: ReactNode) =>
+  isValidElement(node) && node.type === Typography;
+
+const createTextRunBuilder = (
+  textProps: {
+    level: "body-sm";
+    textColor: TypographyColor | ColorLike | "inherit";
+  },
+  theme: Theme,
+  flushTo: (node: ReactNode) => void,
+) => {
+  let segments: RunSegment[] = [];
+  const formatStack: FormatFrame[] = [];
+  let linkStack: { href: string; segments: RunSegment[] } | null = null;
+
+  const activeSegments = () =>
+    linkStack?.segments ??
+    formatStack[formatStack.length - 1]?.segments ??
+    segments;
+
+  const flush = (key: string) => {
+    if (segments.length === 0) return;
+    flushTo(
+      <Typography key={key} {...textProps}>
+        {segments}
+      </Typography>,
+    );
+    segments = [];
+  };
+
+  const pushFormatted = (
+    key: string,
+    frameSegments: RunSegment[],
+    frameProps: FormatFrame["textProps"],
+  ) => {
+    activeSegments().push(
+      <Typography key={key} {...textProps} {...frameProps}>
+        {frameSegments}
+      </Typography>,
+    );
+  };
+
+  return {
+    pushText(text: string) {
+      if (text) activeSegments().push(text);
+    },
+    pushNewline() {
+      activeSegments().push("\n");
+    },
+    pushEmoji(
+      unicode: string | undefined,
+      _url: string | undefined,
+      isEmojiOnly: boolean,
+      key: string,
+    ) {
+      if (!unicode) return;
+      const size = isEmojiOnly ? 36 : 22;
+      activeSegments().push(
+        <InlineTwemoji key={key} value={unicode} size={size} />,
+      );
+    },
+    pushLink(content: string, href: string, key: string) {
+      activeSegments().push(
+        <Text
+          key={key}
+          style={{
+            color: theme.colors.info,
+            textDecorationLine: "underline",
+          }}
+          onPress={() => href && Linking.openURL(href)}
+        >
+          {content}
+        </Text>,
+      );
+    },
+    openStrong() {
+      formatStack.push({ segments: [], textProps: { weight: "bold" } });
+    },
+    closeStrong(key: string) {
+      const frame = formatStack.pop();
+      if (!frame) return;
+      pushFormatted(key, frame.segments, frame.textProps);
+    },
+    openEm() {
+      formatStack.push({
+        segments: [],
+        textProps: { style: { fontStyle: "italic" } },
+      });
+    },
+    closeEm(key: string) {
+      const frame = formatStack.pop();
+      if (!frame) return;
+      pushFormatted(key, frame.segments, frame.textProps);
+    },
+    openUnderline() {
+      formatStack.push({
+        segments: [],
+        textProps: { style: { textDecorationLine: "underline" } },
+      });
+    },
+    closeUnderline(key: string) {
+      const frame = formatStack.pop();
+      if (!frame) return;
+      pushFormatted(key, frame.segments, frame.textProps);
+    },
+    openStrike() {
+      formatStack.push({
+        segments: [],
+        textProps: { style: { textDecorationLine: "line-through" } },
+      });
+    },
+    closeStrike(key: string) {
+      const frame = formatStack.pop();
+      if (!frame) return;
+      pushFormatted(key, frame.segments, frame.textProps);
+    },
+    openLink(href: string) {
+      linkStack = { href, segments: [] };
+    },
+    closeLink(key: string) {
+      if (!linkStack) return;
+      const { href, segments: linkSegments } = linkStack;
+      linkStack = null;
+      activeSegments().push(
+        <Text
+          key={key}
+          style={{
+            color: theme.colors.info,
+            textDecorationLine: "underline",
+          }}
+          onPress={() => href && Linking.openURL(href)}
+        >
+          {linkSegments}
+        </Text>,
+      );
+    },
+    flush,
+    hasContent: () => segments.length > 0,
+  };
+};
 
 export const renderBlocks = (
-    theme: Theme,
-    tokens: any[],
-    isEmojiOnly: boolean,
-    spaceId?: Snowflake | null,
-    textColor: TypographyColor | ColorLike | "inherit" = "primary",
+  theme: Theme,
+  tokens: any[],
+  isEmojiOnly: boolean,
+  spaceId?: Snowflake | null,
+  textColor: TypographyColor | ColorLike | "inherit" = "primary",
 ) => {
-    const out: ReactNode[] = [];
-    const stack: any[] = [];
+  const out: ReactNode[] = [];
+  const stack: any[] = [];
 
-    for (let i = 0; i < tokens.length; i++) {
-        const t = tokens[i];
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i];
 
-        if (t.type.endsWith("_open")) {
-            stack.push({ token: t, children: [] as ReactNode[] });
-            continue;
-        }
-        if (t.type.endsWith("_close")) {
-            const node = stack.pop();
-            const el = renderBlockNode(theme, node.token, node.children, i);
-            if (stack.length) stack[stack.length - 1].children.push(el);
-            else out.push(el);
-            continue;
-        }
-
-        if (t.type === "inline") {
-            const inline = renderInline(
-                theme,
-                t.children ?? [],
-                isEmojiOnly,
-                spaceId,
-                textColor,
-            );
-            if (stack.length) stack[stack.length - 1].children.push(inline);
-            else out.push(inline);
-            continue;
-        }
-
-        const leaf = renderInline(theme, [t], isEmojiOnly, spaceId, textColor);
-        if (stack.length) stack[stack.length - 1].children.push(leaf);
-        else out.push(leaf);
+    if (t.type.endsWith("_open")) {
+      stack.push({ token: t, children: [] as ReactNode[] });
+      continue;
+    }
+    if (t.type.endsWith("_close")) {
+      const node = stack.pop();
+      const el = renderBlockNode(theme, node.token, node.children, i);
+      if (stack.length) stack[stack.length - 1].children.push(el);
+      else out.push(el);
+      continue;
     }
 
-    return out;
+    if (t.type === "inline") {
+      const inline = renderInline(
+        theme,
+        t.children ?? [],
+        isEmojiOnly,
+        spaceId,
+        textColor,
+      );
+      if (stack.length) stack[stack.length - 1].children.push(inline);
+      else out.push(inline);
+      continue;
+    }
+
+    const leaf = renderInline(theme, [t], isEmojiOnly, spaceId, textColor);
+    if (stack.length) stack[stack.length - 1].children.push(leaf);
+    else out.push(leaf);
+  }
+
+  return out;
 };
 
 export const renderBlockNode = (
-    theme: Theme,
-    openToken: any,
-    children: ReactNode[],
-    key: number,
+  theme: Theme,
+  openToken: any,
+  children: ReactNode[],
+  key: number,
 ) => {
-    switch (openToken.type) {
-        case "paragraph_open":
-            return (
-                <Box key={key} style={{ flexShrink: 1, alignSelf: "stretch" }}>
-                    {children}
-                </Box>
-            );
+  switch (openToken.type) {
+    case "paragraph_open":
+      return (
+        <Box key={key} style={{ flexShrink: 1, alignSelf: "stretch" }}>
+          {children}
+        </Box>
+      );
 
-        case "heading_open": {
-            return (
-                <Box
-                    key={key}
-                    style={{
-                        flexDirection: "row",
-                        flexWrap: "wrap",
-                        alignItems: "center",
-                    }}
-                >
-                    {children}
-                </Box>
-            );
-        }
-
-        case "blockquote_open":
-            return (
-                <Blockquote key={key}>
-                    <Box
-                        style={{
-                            flexDirection: "row",
-                            flexWrap: "wrap",
-                            alignItems: "center",
-                        }}
-                    >
-                        {children}
-                    </Box>
-                </Blockquote>
-            );
-
-        default:
-            return (
-                <Box
-                    key={key}
-                    style={{
-                        flexDirection: "row",
-                        flexWrap: "wrap",
-                        alignItems: "center",
-                    }}
-                >
-                    {children}
-                </Box>
-            );
+    case "heading_open": {
+      return (
+        <Box
+          key={key}
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          {children}
+        </Box>
+      );
     }
+
+    case "blockquote_open":
+      return (
+        <Blockquote key={key}>
+          <Box
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            {children}
+          </Box>
+        </Blockquote>
+      );
+
+    default:
+      return (
+        <Box
+          key={key}
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          {children}
+        </Box>
+      );
+  }
 };
 
 export const renderInline = (
-    theme: Theme,
-    tokens: any[],
-    isEmojiOnly: boolean,
-    spaceId?: Snowflake | null,
-    textColor: TypographyColor | ColorLike | "inherit" = "primary",
+  theme: Theme,
+  tokens: any[],
+  isEmojiOnly: boolean,
+  spaceId?: Snowflake | null,
+  textColor: TypographyColor | ColorLike | "inherit" = "primary",
 ) => {
-    const out: ReactNode[] = [];
-    const stack: { type: string; attrs?: any; children: ReactNode[] }[] = [];
+  const out: ReactNode[] = [];
+  const stack: { type: string; attrs?: any; children: ReactNode[] }[] = [];
 
-    const textProps = {
-        level: "body-sm" as const,
-        textColor,
-        style: { flexShrink: 1 },
-    };
+  const textProps = {
+    level: "body-sm" as const,
+    textColor,
+  };
 
-    const pushNode = (node: ReactNode) => {
-        if (stack.length) stack[stack.length - 1].children.push(node);
-        else out.push(node);
-    };
+  let flushTarget: (node: ReactNode) => void = (node) => {
+    out.push(node);
+  };
 
-    for (let i = 0; i < tokens.length; i++) {
-        const token = tokens[i];
-
-        if (token.type === "emoji") {
-            pushNode(
-                <Emoji
-                    key={`emoji-${i}`}
-                    name={token.attrGet?.("name")}
-                    url={token.attrGet?.("url")}
-                    unicode={token.attrGet?.("unicode")}
-                    isEmojiOnly={isEmojiOnly}
-                />,
-            );
-            continue;
-        }
-
-        if (token.type === "customEmoji") {
-            pushNode(
-                <CustomEmoji
-                    key={`custom-emoji-${i}`}
-                    raw={token.content}
-                    isEmojiOnly={isEmojiOnly}
-                />,
-            );
-            continue;
-        }
-
-        if (token.type === "mention") {
-            const type = token.attrGet?.("type");
-            const id = token.attrGet?.("id") ?? "";
-
-            if (type === "user") {
-                pushNode(
-                    <UserMention
-                        key={`mention-user-${i}`}
-                        userId={id}
-                        spaceId={spaceId}
-                    />,
-                );
-            } else if (type === "role") {
-                pushNode(
-                    <RoleMention
-                        key={`mention-role-${i}`}
-                        roleId={id}
-                        spaceId={spaceId}
-                    />,
-                );
-            } else if (type === "everyone" || type === "here") {
-                pushNode(
-                    <DefaultMention
-                        key={`mention-default-${i}`}
-                        mentionId={id}
-                    />,
-                );
-            } else {
-                pushNode(
-                    <Typography key={`mention-fallback-${i}`} {...textProps}>
-                        {token.content}
-                    </Typography>,
-                );
-            }
-            continue;
-        }
-
-        if (token.type === "link") {
-            const href = token.attrGet?.("href") ?? token.content;
-            pushNode(
-                <Typography
-                    key={`link-${i}`}
-                    level="body-sm"
-                    style={{
-                        color: theme.colors.info,
-                        textDecorationLine: "underline",
-                    }}
-                    onPress={() => href && Linking.openURL(href)}
-                >
-                    {token.content}
-                </Typography>,
-            );
-            continue;
-        }
-
-        if (token.type === "spoiler") {
-            pushNode(<Spoiler key={`spoiler-${i}`}>{token.content}</Spoiler>);
-            continue;
-        }
-
-        if (token.type === "text") {
-            pushNode(
-                <Typography key={`text-${i}`} {...textProps}>
-                    {token.content}
-                </Typography>,
-            );
-            continue;
-        }
-
-        if (token.type === "link_open") {
-            stack.push({
-                type: "link",
-                attrs: { href: token.attrGet("href") },
-                children: [],
-            });
-            continue;
-        }
-
-        if (token.type === "link_close") {
-            const node = stack.pop()!;
-            const href = node.attrs?.href;
-            pushNode(
-                <Typography
-                    key={`a-${i}`}
-                    level="body-sm"
-                    style={{
-                        color: theme.colors.info,
-                        textDecorationLine: "underline",
-                    }}
-                    onPress={() => href && Linking.openURL(href)}
-                >
-                    {node.children}
-                </Typography>,
-            );
-            continue;
-        }
-
-        if (token.type === "strong") {
-            pushNode(
-                <Typography
-                    key={`strong-${i}`}
-                    {...textProps}
-                    weight="bold"
-                >
-                    {token.content}
-                </Typography>,
-            );
-            continue;
-        }
-
-        if (token.type === "em") {
-            pushNode(
-                <Typography
-                    key={`em-${i}`}
-                    {...textProps}
-                    style={{ ...textProps.style, fontStyle: "italic" }}
-                >
-                    {token.content}
-                </Typography>,
-            );
-            continue;
-        }
-
-        if (token.type === "underline") {
-            pushNode(
-                <Typography
-                    key={`u-${i}`}
-                    {...textProps}
-                    style={{
-                        ...textProps.style,
-                        textDecorationLine: "underline",
-                    }}
-                >
-                    {token.content}
-                </Typography>,
-            );
-            continue;
-        }
-
-        if (token.type === "s_open") {
-            stack.push({ type: "del", children: [] });
-            continue;
-        }
-        if (token.type === "s_close") {
-            const node = stack.pop()!;
-            pushNode(
-                <Typography
-                    key={`del-${i}`}
-                    {...textProps}
-                    style={{
-                        ...textProps.style,
-                        textDecorationLine: "line-through",
-                    }}
-                >
-                    {node.children}
-                </Typography>,
-            );
-            continue;
-        }
+  const pushNode = (node: ReactNode) => {
+    if (stack.length && stack[stack.length - 1].type !== "spoiler") {
+      stack[stack.length - 1].children.push(node);
+      return;
     }
+    flushTarget(node);
+  };
 
-    while (stack.length) {
-        const node = stack.pop()!;
-        out.push(
-            <Typography key={`unclosed-${stack.length}`} {...textProps}>
-                {node.children}
-            </Typography>,
+  const run = createTextRunBuilder(textProps, theme, pushNode);
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+
+    if (token.type === "emoji") {
+      if (isEmojiOnly) {
+        run.flush(`run-${i}`);
+        pushNode(
+          <Emoji
+            key={`emoji-${i}`}
+            name={token.attrGet?.("name")}
+            url={token.attrGet?.("url")}
+            unicode={token.attrGet?.("unicode")}
+            isEmojiOnly
+          />,
         );
+      } else {
+        run.pushEmoji(
+          token.attrGet?.("unicode"),
+          token.attrGet?.("url"),
+          false,
+          `emoji-${i}`,
+        );
+      }
+      continue;
     }
 
-    return (
-        <Box
-            key={`inline-${out.length}`}
-            style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
-                alignItems: "center",
-                flexShrink: 1,
-                alignSelf: "stretch",
-            }}
-        >
-            {out}
-        </Box>
+    if (token.type === "customEmoji") {
+      run.flush(`run-${i}`);
+      pushNode(
+        <CustomEmoji
+          key={`custom-emoji-${i}`}
+          raw={token.content}
+          isEmojiOnly={isEmojiOnly}
+        />,
+      );
+      continue;
+    }
+
+    if (token.type === "mention") {
+      run.flush(`run-${i}`);
+      const type = token.attrGet?.("type");
+      const id = token.attrGet?.("id") ?? "";
+
+      if (type === "user") {
+        pushNode(
+          <UserMention
+            key={`mention-user-${i}`}
+            userId={id}
+            spaceId={spaceId}
+          />,
+        );
+      } else if (type === "role") {
+        pushNode(
+          <RoleMention
+            key={`mention-role-${i}`}
+            roleId={id}
+            spaceId={spaceId}
+          />,
+        );
+      } else if (type === "everyone" || type === "here") {
+        pushNode(
+          <DefaultMention key={`mention-default-${i}`} mentionId={id} />,
+        );
+      } else {
+        run.pushText(token.content);
+      }
+      continue;
+    }
+
+    if (token.type === "link") {
+      run.pushLink(
+        token.content,
+        token.attrGet?.("href") ?? token.content,
+        `link-${i}`,
+      );
+      continue;
+    }
+
+    if (token.type === "spoiler") {
+      run.flush(`run-${i}`);
+      pushNode(<Spoiler key={`spoiler-${i}`}>{token.content}</Spoiler>);
+      continue;
+    }
+
+    if (token.type === "text") {
+      run.pushText(token.content);
+      continue;
+    }
+
+    if (token.type === "softbreak" || token.type === "hardbreak") {
+      run.pushNewline();
+      continue;
+    }
+
+    if (token.type === "strikethrough") {
+      run.openStrike();
+      run.pushText(token.content);
+      run.closeStrike(`strikethrough-${i}`);
+      continue;
+    }
+
+    if (token.type === "link_open") {
+      run.openLink(token.attrGet("href"));
+      continue;
+    }
+
+    if (token.type === "link_close") {
+      run.closeLink(`a-${i}`);
+      continue;
+    }
+
+    if (token.type === "strong") {
+      run.openStrong();
+      run.pushText(token.content);
+      run.closeStrong(`strong-${i}`);
+      continue;
+    }
+
+    if (token.type === "em") {
+      run.openEm();
+      run.pushText(token.content);
+      run.closeEm(`em-${i}`);
+      continue;
+    }
+
+    if (token.type === "underline") {
+      run.openUnderline();
+      run.pushText(token.content);
+      run.closeUnderline(`u-${i}`);
+      continue;
+    }
+
+    if (token.type === "strong_open") {
+      run.openStrong();
+      continue;
+    }
+    if (token.type === "strong_close") {
+      run.closeStrong(`strong-${i}`);
+      continue;
+    }
+
+    if (token.type === "em_open") {
+      run.openEm();
+      continue;
+    }
+    if (token.type === "em_close") {
+      run.closeEm(`em-${i}`);
+      continue;
+    }
+
+    if (token.type === "underline_open") {
+      run.openUnderline();
+      continue;
+    }
+    if (token.type === "underline_close") {
+      run.closeUnderline(`u-${i}`);
+      continue;
+    }
+
+    if (token.type === "spoiler_open") {
+      run.flush(`run-${i}`);
+      const spoilerChildren: ReactNode[] = [];
+      stack.push({ type: "spoiler", children: spoilerChildren });
+      flushTarget = (node) => {
+        spoilerChildren.push(node);
+      };
+      continue;
+    }
+    if (token.type === "spoiler_close") {
+      run.flush(`run-${i}`);
+      const node = stack.pop()!;
+      flushTarget = (node) => {
+        out.push(node);
+      };
+      pushNode(<Spoiler key={`spoiler-${i}`}>{node.children}</Spoiler>);
+      continue;
+    }
+
+    if (token.type === "s_open") {
+      run.openStrike();
+      continue;
+    }
+    if (token.type === "s_close") {
+      run.closeStrike(`del-${i}`);
+      continue;
+    }
+  }
+
+  run.flush("run-final");
+
+  while (stack.length) {
+    const node = stack.pop()!;
+    pushNode(
+      <Box key={`unclosed-${stack.length}`} style={inlineRowStyle}>
+        {node.children}
+      </Box>,
     );
+  }
+
+  const needsInlineRow = out.some((node) => !isTypographyElement(node));
+
+  return (
+    <Box
+      key={`inline-${out.length}`}
+      style={{
+        ...(needsInlineRow ? inlineRowStyle : null),
+        flexShrink: 1,
+        alignSelf: "stretch",
+      }}
+    >
+      {out}
+    </Box>
+  );
 };

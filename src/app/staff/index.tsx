@@ -10,7 +10,11 @@ import { userFlags } from "@mutualzz/bitfield";
 import type { APIUser } from "@mutualzz/types";
 import { Box, Input, Typography } from "@mutualzz/ui-native";
 import { Button } from "@components/Button";
-import { ClockCounterClockwiseIcon, WarningIcon } from "phosphor-react-native";
+import {
+    ClockCounterClockwiseIcon,
+    GavelIcon,
+    WarningIcon,
+} from "phosphor-react-native";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { observer } from "mobx-react-lite";
@@ -65,7 +69,7 @@ const StaffIndexScreen = () => {
             lastPage.length === PAGE_LIMIT
                 ? lastPage[lastPage.length - 1].username
                 : undefined,
-        enabled: !!trimmedQuery || !!effectiveFlag,
+        enabled: isStaff && (!!trimmedQuery || !!effectiveFlag),
     });
 
     const results = data?.pages.flat() ?? [];
@@ -78,7 +82,10 @@ const StaffIndexScreen = () => {
     return (
         <Screen style={{ flexDirection: "column" }}>
             <StaffHeader title="Staff" />
-            <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+            <ScrollView
+                contentContainerStyle={{ padding: 16, gap: 16 }}
+                keyboardShouldPersistTaps="handled"
+            >
                 <Box
                     style={{
                         flexDirection: "row",
@@ -115,6 +122,15 @@ const StaffIndexScreen = () => {
                             onPress={() => navigate("/staff/activity" as Href)}
                         >
                             Activity
+                        </Button>
+                        <Button
+                            size="sm"
+                            color="neutral"
+                            variant="soft"
+                            startDecorator={<GavelIcon size={16} />}
+                            onPress={() => navigate("/staff/appeals" as Href)}
+                        >
+                            Appeals
                         </Button>
                     </Box>
                 </Box>
@@ -192,14 +208,14 @@ const StaffIndexScreen = () => {
                                     <Typography
                                         level="body-sm"
                                         weight={700}
-                                        numberOfLines={1}
+                                        truncate="single"
                                     >
                                         {user.displayName}
                                     </Typography>
                                     <Typography
                                         level="body-xs"
                                         textColor="muted"
-                                        numberOfLines={1}
+                                        truncate="single"
                                     >
                                         @{user.username}
                                     </Typography>

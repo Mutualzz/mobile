@@ -19,7 +19,7 @@ const STICKER_CELL_SIZE = 80;
 const STICKER_IMAGE_SIZE = 72;
 
 interface Props {
-  channel: Channel;
+  channel?: Channel | null;
   onSelectSticker: (sticker: Expression) => void;
 }
 
@@ -30,7 +30,7 @@ export const StickerPickerContent = observer(
     const columns = getGridColumnCount(width, STICKER_CELL_SIZE);
     const [search, setSearch] = useState("");
     const meId = app.account?.id ?? "";
-    const me = channel.spaceId
+    const me = channel?.spaceId
       ? app.spaces.get(channel.spaceId)?.members.me
       : null;
 

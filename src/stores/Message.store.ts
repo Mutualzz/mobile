@@ -129,6 +129,10 @@ export class MessageStore {
             `/channels/${channelId}/messages/${id}`,
         );
         if (!message) return undefined;
+        if (this.has(message.id)) {
+            this.update(message);
+            return this.get(message.id);
+        }
         return this.add(message);
     }
 }

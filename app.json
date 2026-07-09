@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mutualzz",
     "slug": "mutualzz",
-    "version": "2.2.0",
+    "version": "3.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "com.mutualzz.app",
@@ -59,7 +59,16 @@
       "expo-asset",
       "@react-native-community/datetimepicker",
       "./plugins/withAnimatedWebp.js",
-      "expo-audio"
+      "expo-audio",
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera for voice video.",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice channels."
+        }
+      ],
+      "expo-video",
+      "expo-image"
     ],
     "extra": {
       "router": {},

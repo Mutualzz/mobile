@@ -9,3 +9,6 @@ export const fixConnectionUrl = (url: string) => {
 
 export const TWEMOJI_URL =
     "https://cdnjs.cloudflare.com/ajax/libs/twemoji/16.0.1/svg";
+
+export const TWEMOJI_PNG_URL =
+    "https://cdnjs.cloudflare.com/ajax/libs/twemoji/16.0.1/72x72";

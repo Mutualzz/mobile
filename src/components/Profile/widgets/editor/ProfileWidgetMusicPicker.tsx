@@ -3,13 +3,13 @@ import { Paper } from "@components/Paper";
 import { useDebouncedEffect } from "@hooks/useDebouncedEffect";
 import { useAppStore } from "@hooks/useStores";
 import type { APIProfileMusicSearchTrack } from "@mutualzz/types";
-import { Box, Input, Typography, useTheme } from "@mutualzz/ui-native";
+import { Box, Input, Modal, Typography, useTheme } from "@mutualzz/ui-native";
+import { useScaledProfileMusicSizes } from "@utils/accessibilityLayout";
 import { MusicNotesIcon, XIcon } from "phosphor-react-native";
 import { useState } from "react";
 import {
   ActivityIndicator,
   Image,
-  Modal,
   Pressable,
   ScrollView,
   View,
@@ -24,6 +24,7 @@ interface Props {
 export function ProfileWidgetMusicPicker({ visible, onClose, onSelect }: Props) {
   const app = useAppStore();
   const { theme } = useTheme();
+  const musicSizes = useScaledProfileMusicSizes();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<APIProfileMusicSearchTrack[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,119 +67,124 @@ export function ProfileWidgetMusicPicker({ visible, onClose, onSelect }: Props) 
   );
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <Pressable
-        style={{
-          flex: 1,
-          justifyContent: "flex-end",
-          backgroundColor: "rgba(0,0,0,0.45)",
-        }}
-        onPress={onClose}
+    <Modal
+      open={visible}
+      onClose={onClose}
+      layout="fullscreen"
+      showCloseButton={false}
+      style={{
+        justifyContent: "flex-end",
+        alignItems: "stretch",
+        backgroundColor: "transparent",
+        paddingVertical: 0,
+      }}
+    >
+      <View
+        pointerEvents="box-none"
+        style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
       >
-        <Pressable onPress={() => undefined}>
-          <Paper
+        <Paper
+          style={{
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            padding: 20,
+            gap: 12,
+            maxHeight: "80%",
+          }}
+          elevation={2}
+        >
+          <Box
             style={{
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
-              padding: 20,
-              gap: 12,
-              maxHeight: "80%",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
-            elevation={2}
           >
-            <Box
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
+            <Typography level="body-lg" weight="bold">
+              Search for a song
+            </Typography>
+            <IconButton
+              variant="plain"
+              color="neutral"
+              padding={4}
+              accessibilityLabel="Close"
+              onPress={onClose}
             >
-              <Typography level="body-lg" weight="bold">
-                Search for a song
-              </Typography>
-              <IconButton
-                variant="plain"
-                color="neutral"
-                padding={4}
-                accessibilityLabel="Close"
-                onPress={onClose}
-              >
-                <XIcon size={18} />
-              </IconButton>
-            </Box>
+              <XIcon size={18} />
+            </IconButton>
+          </Box>
 
-            <Input
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Song or artist name"
-              autoFocus
-            />
+          <Input
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Song or artist name"
+            autoFocus
+          />
 
-            {loading ? (
-              <ActivityIndicator color={theme.colors.primary} />
-            ) : error ? (
-              <Typography level="body-sm" color="danger">
-                {error}
-              </Typography>
-            ) : (
-              <ScrollView contentContainerStyle={{ gap: 6 }}>
-                {results.length === 0 && query.trim() ? (
-                  <Typography level="body-sm" textColor="muted">
-                    No results
-                  </Typography>
-                ) : (
-                  results.map((track) => (
-                    <Pressable
-                      key={`${track.source}-${track.id}`}
-                      onPress={() => onSelect(track)}
+          {loading ? (
+            <ActivityIndicator color={theme.colors.primary} />
+          ) : error ? (
+            <Typography level="body-sm" color="danger">
+              {error}
+            </Typography>
+          ) : (
+            <ScrollView contentContainerStyle={{ gap: 6 }}>
+              {results.length === 0 && query.trim() ? (
+                <Typography level="body-sm" textColor="muted">
+                  No results
+                </Typography>
+              ) : (
+                results.map((track) => (
+                  <Pressable
+                    key={`${track.source}-${track.id}`}
+                    onPress={() => onSelect(track)}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: 8,
+                      borderRadius: 10,
+                      backgroundColor: theme.colors.surface,
+                    }}
+                  >
+                    <View
                       style={{
-                        flexDirection: "row",
+                        width: musicSizes.trackArt,
+                        height: musicSizes.trackArt,
+                        borderRadius: 8,
+                        overflow: "hidden",
+                        backgroundColor: theme.colors.background,
                         alignItems: "center",
-                        gap: 10,
-                        padding: 8,
-                        borderRadius: 10,
-                        backgroundColor: theme.colors.surface,
+                        justifyContent: "center",
                       }}
                     >
-                      <View
-                        style={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: 8,
-                          overflow: "hidden",
-                          backgroundColor: theme.colors.background,
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {track.image ? (
-                          <Image
-                            source={{ uri: track.image }}
-                            style={{ width: "100%", height: "100%" }}
-                          />
-                        ) : (
-                          <MusicNotesIcon
-                            size={18}
-                            color={theme.typography.colors.muted}
-                          />
-                        )}
-                      </View>
-                      <Box style={{ flex: 1, minWidth: 0 }}>
-                        <Typography level="body-sm" weight="bold" numberOfLines={1}>
-                          {track.name}
-                        </Typography>
-                        <Typography level="body-xs" textColor="muted" numberOfLines={1}>
-                          {track.artists}
-                        </Typography>
-                      </Box>
-                    </Pressable>
-                  ))
-                )}
-              </ScrollView>
-            )}
-          </Paper>
-        </Pressable>
-      </Pressable>
+                      {track.image ? (
+                        <Image
+                          source={{ uri: track.image }}
+                          style={{ width: "100%", height: "100%" }}
+                        />
+                      ) : (
+                        <MusicNotesIcon
+                          size={18}
+                          color={theme.typography.colors.muted}
+                        />
+                      )}
+                    </View>
+                    <Box style={{ flex: 1, minWidth: 0 }}>
+                      <Typography level="body-sm" weight="bold" truncate="single">
+                        {track.name}
+                      </Typography>
+                      <Typography level="body-xs" textColor="muted" truncate="single">
+                        {track.artists}
+                      </Typography>
+                    </Box>
+                  </Pressable>
+                ))
+              )}
+            </ScrollView>
+          )}
+        </Paper>
+      </View>
     </Modal>
   );
 }

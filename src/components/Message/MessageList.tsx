@@ -6,6 +6,7 @@ import { Logger } from "@mutualzz/logger";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
+import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import type { MessageGroup as MessageGroupType } from "@stores/Message.store";
 import type { Channel } from "@stores/objects/Channel";
 import type { Space } from "@stores/objects/Space";
@@ -44,6 +45,7 @@ const SpaceEndMessage = ({
   theme: ReturnType<typeof useTheme>["theme"];
 }) => {
   const app = useAppStore();
+  const endIconSize = useScaledSquareSize(64);
 
   return (
     <Box
@@ -55,8 +57,8 @@ const SpaceEndMessage = ({
     >
       <Paper
         style={{
-          width: 64,
-          height: 64,
+          width: endIconSize,
+          height: endIconSize,
           padding: 4,
           borderRadius: 9999,
           alignItems: "center",
@@ -127,8 +129,6 @@ const ScrollToBottomFab = ({
   visible: boolean;
   onPress: () => void;
 }) => {
-  const app = useAppStore();
-
   if (!visible) return null;
 
   return (
@@ -203,8 +203,13 @@ export const MessageList = observer(({ channel }: Props) => {
   const latestMessageId = useMemo(() => {
     if (!messageGroups?.length) return undefined;
     const newestGroup = messageGroups[0];
-    return newestGroup.messages[newestGroup.messages.length - 1]?.id;
+    return newestGroup.messages[0]?.id;
   }, [messageGroups]);
+
+  const listData = useMemo(
+    () => (messageGroups ? [...messageGroups].reverse() : []),
+    [messageGroups],
+  );
 
   const ackLatest = useCallback(() => {
     if (!channel?.id) return;
@@ -256,7 +261,7 @@ export const MessageList = observer(({ channel }: Props) => {
   });
 
   const scrollToBottom = useCallback((animated = true) => {
-    listRef.current?.scrollToOffset({ offset: 0, animated });
+    listRef.current?.scrollToEnd({ animated });
     isAtBottomRef.current = true;
     setShowScrollToBottom(false);
   }, []);
@@ -314,8 +319,11 @@ export const MessageList = observer(({ channel }: Props) => {
 
   const handleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const offsetY = event.nativeEvent.contentOffset.y;
-      const atBottom = offsetY <= SCROLL_BOTTOM_THRESHOLD;
+      const { contentOffset, contentSize, layoutMeasurement } =
+        event.nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - contentOffset.y - layoutMeasurement.height;
+      const atBottom = distanceFromBottom <= SCROLL_BOTTOM_THRESHOLD;
       isAtBottomRef.current = atBottom;
       setShowScrollToBottom(!atBottom);
     },
@@ -338,16 +346,11 @@ export const MessageList = observer(({ channel }: Props) => {
     [],
   );
 
-  const listFooter = useMemo(() => {
+  const listHeader = useMemo(() => {
     if (!channel) return null;
 
     return (
       <Box>
-        {isFetchingNextPage ? (
-          <Box style={{ paddingVertical: 16, alignItems: "center" }}>
-            <ActivityIndicator />
-          </Box>
-        ) : null}
         {isDM ? (
           <DMEndMessage channel={channel} />
         ) : (
@@ -357,6 +360,11 @@ export const MessageList = observer(({ channel }: Props) => {
             theme={theme}
           />
         )}
+        {isFetchingNextPage ? (
+          <Box style={{ paddingVertical: 16, alignItems: "center" }}>
+            <ActivityIndicator />
+          </Box>
+        ) : null}
       </Box>
     );
   }, [channel, isDM, canReadHistory, theme, isFetchingNextPage]);
@@ -366,20 +374,27 @@ export const MessageList = observer(({ channel }: Props) => {
       <FlashList
         ref={listRef}
         key={channel?.id}
-        data={messageGroups ?? []}
+        data={listData}
         renderItem={renderGroup}
         keyExtractor={keyExtractor}
-        inverted
+        maintainVisibleContentPosition={{ startRenderingFromBottom: true }}
         drawDistance={ESTIMATED_GROUP_HEIGHT * 8}
-        onEndReached={fetchMore}
-        onEndReachedThreshold={0.2}
+        onContentSizeChange={() => {
+          if (!isAtBottomRef.current) return;
+          requestAnimationFrame(() => {
+            scrollToBottom(false);
+          });
+        }}
+        onStartReached={fetchMore}
+        onStartReachedThreshold={0.2}
         onScroll={handleScroll}
         scrollEventThrottle={16}
         keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         keyboardShouldPersistTaps="handled"
-        ListFooterComponent={listFooter}
+        ListHeaderComponent={listHeader}
         contentContainerStyle={{
           paddingHorizontal: 8,
+          paddingTop: 8,
           paddingBottom: 8,
         }}
         style={{ flex: 1 }}

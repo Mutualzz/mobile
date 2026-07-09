@@ -7,6 +7,7 @@
             "@hooks/*": ["./src/hooks/*"],
             "@contexts/*": ["./src/contexts/*"],
             "@components/*": ["./src/components/*"],
+            "@setup/*": ["./src/setup/*"],
             "@utils/*": ["./src/utils/*"],
             "@themes/*": ["./src/themes/*"],
             "@themes": ["./src/themes/index.ts"],

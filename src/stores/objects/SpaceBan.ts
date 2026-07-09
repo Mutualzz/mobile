@@ -19,11 +19,11 @@ export class SpaceBan {
     this.reason = data.reason;
     this.createdAt = new Date(data.createdAt);
 
-    if (data.bannedBy) {
+    if (data.user) {
       const existing = this.app.users.get(data.userId);
       if (existing) {
         this._user = existing;
-      } else this._user = this.app.users.add(data.bannedBy);
+      } else this._user = this.app.users.add(data.user);
     }
 
     if (data.bannedBy) {

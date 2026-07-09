@@ -1,6 +1,7 @@
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import type { PaperProps } from "@mutualzz/ui-native";
+import { scaledLayoutSize, useFontScale } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { forwardRef, type PropsWithChildren } from "react";
 import { View } from "react-native";
@@ -92,6 +93,7 @@ const ScreenHeaderComponent = forwardRef<View, ScreenHeaderProps>(
     ) => {
         const app = useAppStore();
         const insets = useSafeAreaInsets();
+        const fontScale = useFontScale();
         const topInset = resolveTopInset(safeTop, insets.top);
         const headerTopInset =
             topInset != null ? topInset + safeTopExtra : undefined;
@@ -106,15 +108,18 @@ const ScreenHeaderComponent = forwardRef<View, ScreenHeaderProps>(
                     ref={ref}
                     style={[
                         {
-                            paddingTop: 12,
-                            paddingHorizontal: safeHorizontal
+                            paddingTop: scaledLayoutSize(12, fontScale, 1.35),
+                            paddingLeft: safeHorizontal
                                 ? insets.left + 16
                                 : 16,
-                            paddingBottom: 12,
-                            minHeight: 52,
+                            paddingRight: safeHorizontal
+                                ? insets.right + 16
+                                : 16,
+                            paddingBottom: scaledLayoutSize(12, fontScale, 1.35),
+                            minHeight: scaledLayoutSize(52, fontScale, 1.75),
                             flexDirection: "row",
                             alignItems: "center",
-                            gap: 10,
+                            gap: scaledLayoutSize(10, fontScale, 1.25),
                         },
                         style,
                     ]}

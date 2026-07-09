@@ -59,7 +59,11 @@ export const StaffUserDisableConfirmSheet = observer(
                 </Typography>
                 <InputDefault
                     fullWidth
-                    placeholder="Reason (optional)"
+                    placeholder={
+                        disable
+                            ? "Reason (required)"
+                            : "Reason (optional)"
+                    }
                     value={reason}
                     onChangeText={setReason}
                 />
@@ -70,7 +74,7 @@ export const StaffUserDisableConfirmSheet = observer(
                 )}
                 <Button
                     color="danger"
-                    disabled={isPending}
+                    disabled={isPending || (disable && !reason.trim())}
                     onPress={() => mutate()}
                 >
                     {isPending

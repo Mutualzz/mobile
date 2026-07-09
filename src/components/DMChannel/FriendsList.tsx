@@ -3,6 +3,7 @@ import { Button } from "@components/Button";
 import { UserProfileTrigger } from "@components/Profile/UserProfileTrigger";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { Paper } from "@components/Paper";
+import { useUserRowStyle } from "@components/userRowStyle";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography } from "@mutualzz/ui-native";
@@ -19,23 +20,14 @@ const RelationshipRow = ({
   actions: ReactNode;
 }) => {
   const user = relationship.otherUser;
+  const rowStyle = useUserRowStyle();
   if (!user) return null;
 
   return (
     <UserProfileTrigger user={user}>
-      <Paper
-        variant="plain"
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 12,
-          paddingVertical: 10,
-          paddingHorizontal: 12,
-          borderRadius: 10,
-        }}
-      >
+      <Paper variant="plain" style={rowStyle}>
         <UserAvatar user={user} size="md" />
-        <Typography level="body-sm" style={{ flex: 1 }} numberOfLines={1}>
+        <Typography level="body-sm" style={{ flex: 1 }} truncate="single">
           {user.displayName}
         </Typography>
         <Box style={{ flexDirection: "row", gap: 6, flexShrink: 0 }}>

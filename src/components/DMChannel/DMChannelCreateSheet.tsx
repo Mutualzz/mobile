@@ -1,13 +1,24 @@
+import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
-import { Box, InputDefault, Typography } from "@mutualzz/ui-native";
+import { Box, InputDefault, Modal, Typography } from "@mutualzz/ui-native";
+import {
+  MODAL_SHEET_KEYBOARD_STYLE,
+  MODAL_SHEET_WRAPPER_STYLE,
+  useModalSheetMaxHeight,
+} from "@utils/modalSheet";
+import { useScaledModalListMaxHeight } from "@utils/accessibilityLayout";
 import type { User } from "@stores/objects/User";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
-import { FlatList, Modal, Pressable } from "react-native";
+import {
+  FlatList,
+  Pressable,
+  View,
+} from "react-native";
 
 interface Props {
   visible: boolean;
@@ -22,6 +33,8 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
   const [groupName, setGroupName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const maxSheetHeight = useModalSheetMaxHeight(0.85);
+  const listMaxHeight = useScaledModalListMaxHeight();
 
   const suggestions = useMemo(() => {
     const all = app.getSuggestedGroupDMRecipients();
@@ -52,7 +65,7 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
       const recipientIds = selected.map((user) => user.id);
       const channel =
         selected.length === 1
-          ? await app.channels.openDM(recipientIds[0]!)
+          ? await app.channels.openDM(recipientIds[0])
           : await app.channels.openGroupDM({
               recipientIds,
               name: groupName.trim() || undefined,
@@ -67,90 +80,112 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <Box
-        style={{
-          flex: 1,
-          justifyContent: "flex-end",
-          backgroundColor: "rgba(0,0,0,0.45)",
-        }}
-      >
-        <Paper
-          elevation={app.settings?.preferEmbossed ? 4 : 2}
-          style={{
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            padding: 20,
-            gap: 12,
-            maxHeight: "85%",
-          }}
-        >
-          <Typography level="body-lg" weight="bold">
-            New Message
-          </Typography>
-          <InputDefault
-            fullWidth
-            placeholder="Search people"
-            value={search}
-            onChangeText={setSearch}
-          />
-          {selected.length > 1 && (
+    <Modal
+      open={visible}
+      onClose={onClose}
+      layout="fullscreen"
+      showCloseButton={false}
+      style={{
+        justifyContent: "flex-end",
+        alignItems: "stretch",
+        backgroundColor: "transparent",
+        paddingVertical: 0,
+      }}
+    >
+      <View pointerEvents="box-none" style={MODAL_SHEET_WRAPPER_STYLE}>
+        <AppKeyboardAvoidingView style={MODAL_SHEET_KEYBOARD_STYLE}>
+          <Paper
+            elevation={app.settings?.preferEmbossed ? 4 : 2}
+            style={{
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              padding: 20,
+              gap: 12,
+              maxHeight: maxSheetHeight,
+            }}
+          >
+            <Typography level="body-lg" weight="bold">
+              New Message
+            </Typography>
             <InputDefault
               fullWidth
-              placeholder="Group name (optional)"
-              value={groupName}
-              onChangeText={setGroupName}
+              placeholder="Search people"
+              accessibilityLabel="Search people"
+              value={search}
+              onChangeText={setSearch}
+              returnKeyType="search"
             />
-          )}
-          <FlatList
-            data={suggestions}
-            keyExtractor={(item) => item.id}
-            style={{ maxHeight: 320 }}
-            renderItem={({ item }) => {
-              const isSelected = selected.some((entry) => entry.id === item.id);
-              return (
-                <Pressable onPress={() => toggleUser(item)}>
-                  <Box
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 12,
-                      paddingVertical: 10,
-                    }}
+            {selected.length > 1 && (
+              <InputDefault
+                fullWidth
+                placeholder="Group name (optional)"
+                accessibilityLabel="Group name"
+                value={groupName}
+                onChangeText={setGroupName}
+              />
+            )}
+            <FlatList
+              data={suggestions}
+              keyExtractor={(item) => item.id}
+              style={{ maxHeight: listMaxHeight }}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => {
+                const isSelected = selected.some(
+                  (entry) => entry.id === item.id,
+                );
+                return (
+                  <Pressable
+                    onPress={() => toggleUser(item)}
+                    accessibilityRole="checkbox"
+                    accessibilityLabel={`${item.displayName}, @${item.username}`}
+                    accessibilityState={{ checked: isSelected }}
                   >
-                    <UserAvatar user={item} size={36} />
-                    <Box style={{ flex: 1 }}>
-                      <Typography weight={600}>{item.displayName}</Typography>
-                      <Typography level="body-sm" textColor="muted">
-                        @{item.username}
+                    <Box
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 12,
+                        paddingVertical: 10,
+                      }}
+                    >
+                      <UserAvatar user={item} size={36} />
+                      <Box style={{ flex: 1 }}>
+                        <Typography weight={600}>{item.displayName}</Typography>
+                        <Typography level="body-sm" textColor="muted">
+                          @{item.username}
+                        </Typography>
+                      </Box>
+                      <Typography color="primary">
+                        {isSelected ? "Selected" : ""}
                       </Typography>
                     </Box>
-                    <Typography color="primary">
-                      {isSelected ? "Selected" : ""}
-                    </Typography>
-                  </Box>
-                </Pressable>
-              );
-            }}
-          />
-          {error && (
-            <Typography color="danger" level="body-sm">
-              {error}
-            </Typography>
-          )}
-          <Box style={{ flexDirection: "row", gap: 8 }}>
-            <Button variant="plain" onPress={onClose}>
-              Cancel
-            </Button>
-            <Button
-              disabled={selected.length === 0 || saving}
-              onPress={() => void create()}
-            >
-              Create
-            </Button>
-          </Box>
-        </Paper>
-      </Box>
+                  </Pressable>
+                );
+              }}
+            />
+            {error && (
+              <Typography
+                color="danger"
+                level="body-sm"
+                accessibilityLiveRegion="polite"
+              >
+                {error}
+              </Typography>
+            )}
+            <Box style={{ flexDirection: "row", gap: 8 }}>
+              <Button variant="plain" onPress={onClose}>
+                Cancel
+              </Button>
+              <Button
+                disabled={selected.length === 0 || saving}
+                onPress={() => void create()}
+              >
+                Create
+              </Button>
+            </Box>
+          </Paper>
+        </AppKeyboardAvoidingView>
+      </View>
     </Modal>
   );
 });

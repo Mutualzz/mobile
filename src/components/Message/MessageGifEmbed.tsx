@@ -5,6 +5,7 @@ import {
     getMessageGifMaxWidth,
     MESSAGE_GIF_MAX_HEIGHT,
 } from "@utils/gifs";
+import { buildVideoHtml, VIDEO_SIZE_SCRIPT } from "@utils/webViewVideo";
 import { StarIcon } from "phosphor-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -23,64 +24,6 @@ interface Props {
     pageUrl?: string | null;
     isFavorited: boolean;
     onToggleFavorite: () => void;
-}
-
-const VIDEO_SIZE_SCRIPT = `
-(function () {
-  var video = document.querySelector("video");
-  if (!video) return;
-
-  function sendSize() {
-    var width = video.videoWidth;
-    var height = video.videoHeight;
-    if (!width || !height) return;
-    window.ReactNativeWebView.postMessage(
-      JSON.stringify({ type: "size", width: width, height: height })
-    );
-  }
-
-  video.addEventListener("loadedmetadata", sendSize);
-  video.addEventListener("loadeddata", sendSize);
-})();
-true;
-`;
-
-function buildGifVideoHtml(mediaUrl: string, posterUrl?: string | null) {
-    const poster = posterUrl ? ` poster="${posterUrl}"` : "";
-
-    return `<!DOCTYPE html>
-<html>
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        background: transparent;
-        overflow: hidden;
-      }
-      body {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      video {
-        display: block;
-        max-width: 100%;
-        max-height: 100%;
-        width: auto;
-        height: auto;
-        object-fit: contain;
-        border-radius: 8px;
-      }
-    </style>
-  </head>
-  <body>
-    <video src="${mediaUrl}"${poster} autoplay loop muted playsinline></video>
-  </body>
-</html>`;
 }
 
 export function MessageGifEmbed({
@@ -152,13 +95,19 @@ export function MessageGifEmbed({
     );
 
     const html = useMemo(
-        () => buildGifVideoHtml(mediaUrl, imageUrl),
+        () =>
+            buildVideoHtml(mediaUrl, {
+                posterUrl: imageUrl,
+                autoplay: true,
+                loop: true,
+                muted: true,
+            }),
         [mediaUrl, imageUrl],
     );
 
     const openPage = () => {
         if (!pageUrl) return;
-        Linking.openURL(pageUrl).catch(() => {});
+        Linking.openURL(pageUrl).catch(() => undefined);
     };
 
     return (

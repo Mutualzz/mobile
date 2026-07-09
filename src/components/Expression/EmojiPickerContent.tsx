@@ -22,6 +22,7 @@ import {
   type SkinTone,
 } from "@utils/emojis/emojiPickerData";
 import { unifiedToEmoji } from "@utils/emojis/unified";
+import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import { ClockIcon, HashIcon, StarIcon, UserIcon } from "phosphor-react-native";
 import type { FlashListRef } from "@shopify/flash-list";
 import type { EmojiListItem } from "@components/Expression/emojiListModel";
@@ -32,7 +33,7 @@ import { Pressable, ScrollView, useWindowDimensions } from "react-native";
 const SKIN_TONES: SkinTone[] = ["1F3FB", "1F3FC", "1F3FD", "1F3FE", "1F3FF"];
 
 interface Props {
-  channel?: Channel;
+  channel?: Channel | null;
   onSelectEmoji: (emoji: PickerEmoji, skinTone: SkinTone) => void;
   onSelectCustomEmoji: (expression: Expression) => void;
 }
@@ -42,6 +43,7 @@ export const EmojiPickerContent = observer(
     const app = useAppStore();
     const { theme } = useTheme();
     const { width } = useWindowDimensions();
+    const skinToneButtonSize = useScaledSquareSize(28);
     const columns = getEmojiColumnCount(width);
     const listRef = useRef<FlashListRef<EmojiListItem>>(null);
     const { recents, addRecentStandard, addRecentCustom } = useRecentEmojis();
@@ -56,12 +58,7 @@ export const EmojiPickerContent = observer(
     const meId = app.account?.id ?? "";
 
     const canUseEmoji = useCallback(
-      (emoji: Expression) => {
-        if (emoji.type !== ExpressionType.Emoji) return false;
-        if (channel) return canUseCustomEmoji(meId, emoji, me, channel);
-        if (!emoji.spaceId) return emoji.authorId === meId;
-        return true;
-      },
+      (emoji: Expression) => canUseCustomEmoji(meId, emoji, me, channel),
       [channel, me, meId],
     );
 
@@ -109,6 +106,7 @@ export const EmojiPickerContent = observer(
                 kind: "standard" as const,
                 emoji,
                 unified,
+                skinTone: tone,
               };
             }
 
@@ -146,6 +144,7 @@ export const EmojiPickerContent = observer(
               kind: "standard" as const,
               emoji,
               unified: resolvedUnified,
+              skinTone: tone,
             };
           })
           .filter(Boolean),
@@ -155,7 +154,12 @@ export const EmojiPickerContent = observer(
     const toCells = useCallback(
       (
         entries: (
-          | { kind: "standard"; emoji: PickerEmoji; unified?: string }
+          | {
+              kind: "standard";
+              emoji: PickerEmoji;
+              unified?: string;
+              skinTone?: SkinTone;
+            }
           | { kind: "custom"; emoji: Expression }
           | null
         )[],
@@ -165,7 +169,12 @@ export const EmojiPickerContent = observer(
             (
               entry,
             ): entry is
-              | { kind: "standard"; emoji: PickerEmoji; unified?: string }
+              | {
+                  kind: "standard";
+                  emoji: PickerEmoji;
+                  unified?: string;
+                  skinTone?: SkinTone;
+                }
               | { kind: "custom"; emoji: Expression } => entry != null,
           )
           .map((entry) =>
@@ -175,6 +184,7 @@ export const EmojiPickerContent = observer(
                   kind: "standard",
                   emoji: entry.emoji,
                   unified: entry.unified,
+                  skinTone: entry.skinTone,
                 },
           ),
       [],
@@ -357,8 +367,8 @@ export const EmojiPickerContent = observer(
           <Pressable
             onPress={() => setSkinTone(null)}
             style={{
-              width: 28,
-              height: 28,
+              width: skinToneButtonSize,
+              height: skinToneButtonSize,
               alignItems: "center",
               justifyContent: "center",
               borderRadius: 6,
@@ -373,8 +383,8 @@ export const EmojiPickerContent = observer(
               key={tone}
               onPress={() => setSkinTone(tone)}
               style={{
-                width: 28,
-                height: 28,
+                width: skinToneButtonSize,
+                height: skinToneButtonSize,
                 alignItems: "center",
                 justifyContent: "center",
                 borderRadius: 6,
@@ -451,7 +461,7 @@ export const EmojiPickerContent = observer(
                         ? theme.colors.primary
                         : theme.typography.colors.muted,
                     }}
-                    numberOfLines={1}
+                    truncate="single"
                   >
                     {item.label}
                   </Typography>

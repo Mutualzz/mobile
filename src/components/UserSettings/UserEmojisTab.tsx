@@ -10,11 +10,15 @@ import type { Expression } from "@stores/objects/Expression";
 import { observer } from "mobx-react-lite";
 import { TrashIcon } from "phosphor-react-native";
 import { Image } from "react-native";
+import { useExpressionThumbnailStyle } from "@utils/accessibilityLayout";
 import ImagePicker from "react-native-image-crop-picker";
 
 const EMOJI_LIMIT = 100;
 
-const ExpressionRow = observer(({ expression }: { expression: Expression }) => (
+const ExpressionRow = observer(({ expression }: { expression: Expression }) => {
+  const thumbnailStyle = useExpressionThumbnailStyle();
+
+  return (
   <Paper
     variant="plain"
     style={{
@@ -28,17 +32,12 @@ const ExpressionRow = observer(({ expression }: { expression: Expression }) => (
   >
     <Image
       source={{ uri: expression.url }}
-      style={{
-        width: 32,
-        height: 32,
-        borderRadius: 6,
-        flexShrink: 0,
-      }}
+      style={thumbnailStyle}
     />
     <Typography
       level="body-sm"
       style={{ flex: 1, minWidth: 0 }}
-      numberOfLines={1}
+      truncate="single"
     >
       :{expression.name}:
     </Typography>
@@ -53,7 +52,8 @@ const ExpressionRow = observer(({ expression }: { expression: Expression }) => (
       <TrashIcon weight="fill" />
     </IconButton>
   </Paper>
-));
+  );
+});
 
 const EmojiSection = ({
   title,
@@ -121,10 +121,7 @@ export const UserEmojisTab = observer(() => {
           />,
         );
       })
-      .catch(() => undefined)
-      .finally(() => {
-        void ImagePicker.clean();
-      });
+      .catch(() => undefined);
   };
 
   return (

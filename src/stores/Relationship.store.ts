@@ -82,6 +82,24 @@ export class RelationshipStore {
         return this.all.filter((r) => r.isFriend);
     }
 
+    get online() {
+        return this.all
+            .filter((r) => r.isFriend)
+            .filter((r) => {
+                const friendId = r.otherUserIdForMe;
+                if (!friendId) return false;
+                const presence = this.app.presence.get(friendId);
+                return (
+                    presence?.status !== "offline" &&
+                    presence?.status !== "invisible"
+                );
+            });
+    }
+
+    get pending() {
+        return [...this.getIncoming(), ...this.getOutgoing()];
+    }
+
     getBlocked() {
         return this.all.filter((r) => r.isBlocked);
     }
@@ -106,10 +124,13 @@ export class RelationshipStore {
         return this.addAll(data);
     }
 
-    async sendFriendRequest(userId: Snowflake) {
-        return this.app.rest.post<APIRelationship>(`/@me/relationships`, {
-            userId,
-        });
+    async sendFriendRequest(identifier: string) {
+        const response = await this.app.rest.post<APIRelationship>(
+            `/@me/relationships`,
+            { identifier: identifier.trim() },
+        );
+        if (response) this.update(response);
+        return response;
     }
 
     async acceptFriendRequest(userId: Snowflake) {

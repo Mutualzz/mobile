@@ -1,6 +1,8 @@
 import { Button } from "@components/Button";
 import { StaffUserDisableConfirmSheet } from "@components/Staff/StaffUserDisableConfirmSheet";
 import { StaffUserForceLogoutConfirmSheet } from "@components/Staff/StaffUserForceLogoutConfirmSheet";
+import { StaffUserRestrictConfirmSheet } from "@components/Staff/StaffUserRestrictConfirmSheet";
+import { StaffUserWarnConfirmSheet } from "@components/Staff/StaffUserWarnConfirmSheet";
 import { Screen } from "@components/Screen/Screen";
 import { StaffHeader } from "@components/Staff/StaffHeader";
 import { UserAvatar } from "@components/User/UserAvatar";
@@ -14,6 +16,7 @@ import {
 import type {
     APIPrivateUser,
     APIStaffAction,
+    APIStaffNote,
     APIStaffSession,
     HttpException,
 } from "@mutualzz/types";
@@ -31,6 +34,7 @@ import { ActivityIndicator, Pressable, ScrollView } from "react-native";
 import dayjs from "dayjs";
 
 const AUDIT_PAGE_LIMIT = 50;
+const NOTES_PAGE_LIMIT = 50;
 
 const actionLabels: Record<string, string> = {
     "user.disable": "disabled this account",
@@ -39,6 +43,9 @@ const actionLabels: Record<string, string> = {
     "user.session_revoke": "revoked a session on this account",
     "user.profile_update": "updated this account's profile",
     "user.verify_reminder_sent": "sent a verification reminder to this account",
+    "user.warn": "sent this account a warning",
+    "user.restrict": "temporarily restricted this account",
+    "user.restrict_lift": "lifted a restriction on this account",
 };
 
 const describeAction = (action: string) => {
@@ -90,7 +97,7 @@ const StaffUserScreen = () => {
         isError,
     } = useQuery({
         queryKey: userQueryKey,
-        enabled: !!userId,
+        enabled: isStaff && !!userId,
         queryFn: () => app.rest.get<APIPrivateUser>(`/staff/users/${userId}`),
     });
 
@@ -123,7 +130,7 @@ const StaffUserScreen = () => {
         isFetchingNextPage: isFetchingNextActionsPage,
     } = useInfiniteQuery({
         queryKey: actionsQueryKey,
-        enabled: !!user,
+        enabled: isStaff && !!user,
         queryFn: ({ pageParam }) =>
             app.rest.get<APIStaffAction[]>(`/staff/users/${userId}/actions`, {
                 ...(pageParam ? { before: pageParam } : {}),
@@ -147,7 +154,7 @@ const StaffUserScreen = () => {
 
     const { data: sessions = [] } = useQuery({
         queryKey: sessionsQueryKey,
-        enabled: !!user,
+        enabled: isStaff && !!user,
         queryFn: () =>
             app.rest.get<APIStaffSession[]>(
                 `/staff/users/${userId}/sessions`,
@@ -158,6 +165,59 @@ const StaffUserScreen = () => {
         queryClient.invalidateQueries({ queryKey: actionsQueryKey });
         queryClient.invalidateQueries({ queryKey: sessionsQueryKey });
     };
+
+    const handleWarned = () => {
+        queryClient.invalidateQueries({ queryKey: actionsQueryKey });
+    };
+
+    const { mutate: liftRestriction, isPending: liftingRestriction } =
+        useMutation({
+            mutationKey: ["staff-lift-restriction", userId],
+            mutationFn: () =>
+                app.rest.delete<APIPrivateUser>(
+                    `/staff/users/${userId}/restrict`,
+                ),
+            onSuccess: handleUpdated,
+        });
+
+    const notesQueryKey = ["staff-notes", userId];
+
+    const {
+        data: notesData,
+        isFetching: isFetchingNotes,
+        fetchNextPage: fetchNextNotesPage,
+        hasNextPage: hasNextNotesPage,
+        isFetchingNextPage: isFetchingNextNotesPage,
+    } = useInfiniteQuery({
+        queryKey: notesQueryKey,
+        enabled: isStaff && !!user,
+        queryFn: ({ pageParam }) =>
+            app.rest.get<APIStaffNote[]>(`/staff/users/${userId}/notes`, {
+                ...(pageParam ? { before: pageParam } : {}),
+                limit: NOTES_PAGE_LIMIT,
+            }),
+        initialPageParam: undefined as string | undefined,
+        getNextPageParam: (lastPage) =>
+            lastPage.length === NOTES_PAGE_LIMIT
+                ? lastPage[lastPage.length - 1].id
+                : undefined,
+    });
+
+    const notes = notesData?.pages.flat() ?? [];
+
+    const [noteDraft, setNoteDraft] = useState("");
+
+    const { mutate: addNote, isPending: addingNote } = useMutation({
+        mutationKey: ["staff-add-note", userId],
+        mutationFn: () =>
+            app.rest.post<APIStaffNote>(`/staff/users/${userId}/notes`, {
+                content: noteDraft.trim(),
+            }),
+        onSuccess: () => {
+            setNoteDraft("");
+            queryClient.invalidateQueries({ queryKey: notesQueryKey });
+        },
+    });
 
     const { mutate: revokeSession, isPending: revokingSession } = useMutation({
         mutationKey: ["staff-revoke-session", userId],
@@ -268,6 +328,9 @@ const StaffUserScreen = () => {
     }
 
     const isDisabled = user.flags.has("Disabled");
+    const isRestricted =
+        !!privateUser.restrictedUntil &&
+        new Date(privateUser.restrictedUntil) > new Date();
 
     return (
         <Screen style={{ flexDirection: "column" }}>
@@ -391,6 +454,14 @@ const StaffUserScreen = () => {
                                 "MMM D, YYYY h:mm A",
                             )}
                         />
+                        {isRestricted && (
+                            <DetailRow
+                                label="Restricted Until"
+                                value={dayjs(
+                                    privateUser.restrictedUntil,
+                                ).format("MMM D, YYYY h:mm A")}
+                            />
+                        )}
                     </Box>
                 </Box>
 
@@ -497,6 +568,48 @@ const StaffUserScreen = () => {
                     >
                         Force Logout
                     </Button>
+                    <Button
+                        color="warning"
+                        onPress={() =>
+                            openModal(
+                                `staff-warn-user-${user.id}`,
+                                <StaffUserWarnConfirmSheet
+                                    userId={user.id}
+                                    username={user.username}
+                                    onSuccess={handleWarned}
+                                    modalId={`staff-warn-user-${user.id}`}
+                                />,
+                            )
+                        }
+                    >
+                        Warn User
+                    </Button>
+                    {isRestricted ? (
+                        <Button
+                            color="warning"
+                            disabled={liftingRestriction}
+                            onPress={() => liftRestriction()}
+                        >
+                            Lift Restriction
+                        </Button>
+                    ) : (
+                        <Button
+                            color="warning"
+                            onPress={() =>
+                                openModal(
+                                    `staff-restrict-user-${user.id}`,
+                                    <StaffUserRestrictConfirmSheet
+                                        userId={user.id}
+                                        username={user.username}
+                                        onSuccess={handleUpdated}
+                                        modalId={`staff-restrict-user-${user.id}`}
+                                    />,
+                                )
+                            }
+                        >
+                            Restrict User
+                        </Button>
+                    )}
                 </Box>
 
                 <Divider lineColor="muted" style={{ opacity: 0.35 }} />
@@ -551,6 +664,67 @@ const StaffUserScreen = () => {
                                     </Button>
                                 </Box>
                             ))}
+                        </Box>
+                    )}
+                </Box>
+
+                <Divider lineColor="muted" style={{ opacity: 0.35 }} />
+
+                <Box style={{ gap: 8 }}>
+                    <Typography level="body-md" weight={700}>
+                        Staff Notes
+                    </Typography>
+                    <InputDefault
+                        fullWidth
+                        multiline
+                        placeholder="Leave a note for other staff — not visible to the user"
+                        value={noteDraft}
+                        onChangeText={setNoteDraft}
+                    />
+                    <Button
+                        color="primary"
+                        variant="soft"
+                        disabled={addingNote || !noteDraft.trim()}
+                        onPress={() => addNote()}
+                    >
+                        {addingNote ? "Adding..." : "Add Note"}
+                    </Button>
+                    {!isFetchingNotes && notes.length === 0 ? (
+                        <Typography level="body-sm" textColor="muted">
+                            No staff notes yet
+                        </Typography>
+                    ) : (
+                        <Box style={{ gap: 12 }}>
+                            {notes.map((note) => (
+                                <Box key={note.id} style={{ gap: 2 }}>
+                                    <Typography level="body-sm">
+                                        {note.content}
+                                    </Typography>
+                                    <Typography
+                                        level="body-xs"
+                                        textColor="muted"
+                                    >
+                                        {note.author.globalName ||
+                                            note.author.username}
+                                        {" · "}
+                                        {dayjs(note.createdAt).format(
+                                            "MMM D, YYYY h:mm A",
+                                        )}
+                                    </Typography>
+                                </Box>
+                            ))}
+                            {hasNextNotesPage && (
+                                <Button
+                                    color="neutral"
+                                    variant="soft"
+                                    disabled={isFetchingNextNotesPage}
+                                    onPress={() => fetchNextNotesPage()}
+                                >
+                                    {isFetchingNextNotesPage
+                                        ? "Loading..."
+                                        : "Load more"}
+                                </Button>
+                            )}
                         </Box>
                     )}
                 </Box>

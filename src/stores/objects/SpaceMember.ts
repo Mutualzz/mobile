@@ -333,7 +333,7 @@ export class SpaceMember {
     this.invalidateChannelPermCache();
 
     try {
-      return this.app.rest.put(
+      return await this.app.rest.put(
         `/spaces/${this.spaceId}/members/${this.userId}/roles/${role.id}`,
       );
     } catch (e) {
@@ -349,7 +349,7 @@ export class SpaceMember {
     this.invalidateChannelPermCache();
 
     try {
-      return this.app.rest.delete(
+      return await this.app.rest.delete(
         `/spaces/${this.spaceId}/members/${this.userId}/roles/${role.id}`,
       );
     } catch (e) {

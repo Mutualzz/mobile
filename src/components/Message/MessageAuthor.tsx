@@ -20,7 +20,12 @@ export const MessageAuthor = observer(({ message, space }: Props) => {
 
     return (
         <UserProfileTrigger user={author} member={member}>
-            <Typography>{author.displayName}</Typography>
+            <Typography
+                truncate="single"
+                style={{ flexShrink: 1 }}
+            >
+                {author.displayName}
+            </Typography>
         </UserProfileTrigger>
     );
 });

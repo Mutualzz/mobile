@@ -10,6 +10,7 @@ import type { Space } from "@stores/objects/Space";
 import { Box, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { TrashIcon } from "phosphor-react-native";
+import { useExpressionThumbnailStyle } from "@utils/accessibilityLayout";
 import { Image } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
 
@@ -20,6 +21,7 @@ interface Props {
 const EmojiRow = observer(
   ({ expression, space }: { expression: Expression; space: Space }) => {
     const app = useAppStore();
+    const thumbnailStyle = useExpressionThumbnailStyle();
     const canManage =
       space.members.me?.hasPermission("ManageExpressions") ||
       expression.authorId === app.account?.id;
@@ -40,9 +42,9 @@ const EmojiRow = observer(
       >
         <Image
           source={{ uri: expression.url }}
-          style={{ width: 32, height: 32, borderRadius: 6 }}
+          style={thumbnailStyle}
         />
-        <Typography level="body-sm" style={{ flex: 1 }} numberOfLines={1}>
+        <Typography level="body-sm" style={{ flex: 1 }} truncate="single">
           :{expression.name}:
         </Typography>
         {canManage ? (
@@ -63,7 +65,6 @@ const EmojiRow = observer(
 );
 
 export const SpaceEmojisSettings = observer(({ space }: Props) => {
-  const app = useAppStore();
   const { openModal } = useModal();
 
   const emojis = Array.from(space.expressions.values()).filter(
@@ -93,10 +94,7 @@ export const SpaceEmojisSettings = observer(({ space }: Props) => {
           />,
         );
       })
-      .catch(() => undefined)
-      .finally(() => {
-        void ImagePicker.clean();
-      });
+      .catch(() => undefined);
   };
 
   const canUpload =

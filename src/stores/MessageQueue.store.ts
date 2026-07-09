@@ -23,12 +23,14 @@ export class MessageQueue {
     }
 
     remove(id: Snowflake) {
-        const message = this.messages.find((x) => x.id === id)!;
+        const message = this.messages.find((x) => x.id === id);
+        if (!message) return;
         this.messages.remove(message);
     }
 
     send(id: Snowflake) {
-        const message = this.messages.find((x) => x.id === id)!;
+        const message = this.messages.find((x) => x.id === id);
+        if (!message) return;
         message.status = QueuedMessageStatus.Sending;
     }
 
@@ -43,5 +45,9 @@ export class MessageQueue {
             return;
 
         this.remove(message.nonce);
+    }
+
+    clear() {
+        this.messages.clear();
     }
 }

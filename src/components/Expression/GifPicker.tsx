@@ -7,6 +7,7 @@ import {
   XIcon,
 } from "phosphor-react-native";
 import { Box, Input, Typography, useTheme } from "@mutualzz/ui-native";
+import { useScaledProfilePreviewHeight, useScaledSquareSize } from "@utils/accessibilityLayout";
 import type { GifResult, GifsResponse, GifTagsResponse } from "@utils/gifs";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { FlashList } from "@shopify/flash-list";
@@ -42,6 +43,7 @@ const GifTile = ({
   onToggleFavorite: () => void;
 }) => {
   const { theme } = useTheme();
+  const favoriteButtonSize = useScaledSquareSize(24);
   const preview = gif.preview || gif.url;
 
   return (
@@ -60,7 +62,12 @@ const GifTile = ({
           backgroundColor: `${theme.colors.neutral}18`,
         }}
       >
-        <Pressable onPress={onSelect} style={{ width: "100%", height: "100%" }}>
+        <Pressable
+          onPress={onSelect}
+          style={{ width: "100%", height: "100%" }}
+          accessibilityRole="button"
+          accessibilityLabel={gif.title || "GIF"}
+        >
           <Image
             source={{ uri: preview }}
             style={{ width: "100%", height: "100%" }}
@@ -70,15 +77,18 @@ const GifTile = ({
 
         <Pressable
           onPress={onToggleFavorite}
-          hitSlop={8}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={isFavorited ? "Remove favorite" : "Add favorite"}
+          accessibilityState={{ selected: isFavorited }}
           style={{
             position: "absolute",
             top: 4,
             right: 4,
             zIndex: 1,
-            width: 24,
-            height: 24,
-            borderRadius: 6,
+            width: favoriteButtonSize,
+            height: favoriteButtonSize,
+            borderRadius: favoriteButtonSize / 4,
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: "rgba(0,0,0,0.55)",
@@ -106,6 +116,7 @@ export const GifPickerContent = observer(
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const favoriteGifs = app.settings?.favoriteGifs ?? [];
+    const tagTileHeight = useScaledProfilePreviewHeight(96);
 
     const tileWidth = useMemo(
       () => (windowWidth - LIST_HORIZONTAL_PADDING * 2 - TILE_GAP) / 2,
@@ -202,7 +213,7 @@ export const GifPickerContent = observer(
                 onPress={() => setViewingFavorites(true)}
                 style={{
                   width: "48%",
-                  height: 96,
+                  height: tagTileHeight,
                   margin: "1%",
                   borderRadius: 8,
                   overflow: "hidden",
@@ -244,7 +255,7 @@ export const GifPickerContent = observer(
                 onPress={() => setSearch(tag.name)}
                 style={{
                   width: "48%",
-                  height: 96,
+                  height: tagTileHeight,
                   margin: "1%",
                   borderRadius: 8,
                   overflow: "hidden",

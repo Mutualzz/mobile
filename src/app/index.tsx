@@ -5,6 +5,7 @@ import { Box, ButtonGroup } from "@mutualzz/ui-native";
 import { useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
+import { Linking } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const IndexRoute = () => {
@@ -39,7 +40,13 @@ const IndexRoute = () => {
         >
           <ButtonGroup spacing={10} size="lg">
             <Button onPress={() => router.replace("/login")}>Login</Button>
-            <Button>Privacy Policy</Button>
+            <Button
+              onPress={() =>
+                Linking.openURL("https://mutualzz.com/privacy").catch(() => {})
+              }
+            >
+              Privacy Policy
+            </Button>
             <Button onPress={() => router.replace("/register")}>
               Register
             </Button>

@@ -5,20 +5,22 @@ import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
 import { Box, Typography } from "@mutualzz/ui-native";
 import type { Space } from "@stores/objects/Space";
+import type { Channel } from "@stores/objects/Channel";
 import { Invite } from "@stores/objects/Invite";
 import * as Clipboard from "expo-clipboard";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable } from "react-native";
 
 interface Props {
   space: Space;
+  channel?: Channel | null;
   modalId?: string;
   onClose?: () => void;
 }
 
 export const SpaceCreateInviteSheet = observer(
-  ({ space, modalId = "space-create-invite", onClose }: Props) => {
+  ({ space, channel, modalId = "space-create-invite", onClose }: Props) => {
     const app = useAppStore();
     const { closeModal } = useModal();
     const close = onClose ?? (() => closeModal(modalId));
@@ -26,17 +28,26 @@ export const SpaceCreateInviteSheet = observer(
     const [inviteUrl, setInviteUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
+    const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(
+      () => () => {
+        if (copiedTimer.current) clearTimeout(copiedTimer.current);
+      },
+      [],
+    );
 
     const createInvite = async () => {
       setCreating(true);
       setError(null);
 
       try {
-        const channel =
+        const targetChannel =
+          channel ??
           space.firstNavigableChannel ??
           space.visibleChannels.find((item) => item.type === ChannelType.Text);
 
-        const created = await space.createInvite(channel?.id);
+        const created = await space.createInvite(targetChannel?.id);
         if (!created) return;
 
         space.addInvite(created);
@@ -52,7 +63,8 @@ export const SpaceCreateInviteSheet = observer(
       if (!inviteUrl) return;
       await Clipboard.setStringAsync(inviteUrl);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopied(false), 2000);
     };
 
     return (
@@ -87,7 +99,9 @@ export const SpaceCreateInviteSheet = observer(
         ) : (
           <Box style={{ gap: 8 }}>
             <Typography level="body-sm" textColor="muted">
-              Creates a link to the default text channel for this space.
+              {channel
+                ? `Creates a link to #${channel.name}.`
+                : "Creates a link to the default text channel for this space."}
             </Typography>
             {error && (
               <Typography level="body-sm" color="danger" variant="plain">

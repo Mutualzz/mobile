@@ -4,6 +4,7 @@ import { MarkdownInput } from "@components/Markdown/MarkdownInput/MarkdownInput"
 import { Paper } from "@components/Paper";
 import {
   CheckIcon,
+  PaperclipIcon,
   PaperPlaneTiltIcon,
   PencilSimpleIcon,
   SmileyIcon,
@@ -11,8 +12,18 @@ import {
 } from "phosphor-react-native";
 import { useKeyboardVisible } from "@hooks/useKeyboardOffset";
 import { useAppStore } from "@hooks/useStores";
-import { ChannelType, MessageType } from "@mutualzz/types";
-import { Box, Typography, useTheme } from "@mutualzz/ui-native";
+import { type APIMessage, ChannelType, MessageType } from "@mutualzz/types";
+import {
+  Box,
+  scaledLayoutSize,
+  Typography,
+  useFontScale,
+  useTheme,
+} from "@mutualzz/ui-native";
+import {
+  useScaledComposerPanelMaxHeight,
+  useScaledFeedPreviewSizes,
+} from "@utils/accessibilityLayout";
 import type { Channel } from "@stores/objects/Channel";
 import type { Message } from "@stores/objects/Message";
 import type { Expression } from "@stores/objects/Expression";
@@ -39,10 +50,20 @@ import { messageFlags } from "@mutualzz/bitfield";
 import { HttpException, HttpStatusCode } from "@mutualzz/types";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Image } from "react-native";
+import { Image, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as DocumentPicker from "expo-document-picker";
 
 const MAX_STICKERS = 3;
+const MAX_ATTACHMENTS = 10;
+const MAX_ATTACHMENT_SIZE = 100 * 1024 * 1024;
+
+interface PickedAttachment {
+  uri: string;
+  type: string;
+  name: string;
+  size?: number;
+}
 
 interface Props {
   channel: Channel;
@@ -51,12 +72,16 @@ interface Props {
 export const MessageInput = observer(({ channel }: Props) => {
   const app = useAppStore();
   const { theme } = useTheme();
+  const fontScale = useFontScale();
+  const composerMaxHeight = useScaledComposerPanelMaxHeight();
+  const feedSizes = useScaledFeedPreviewSizes();
   const insets = useSafeAreaInsets();
   const keyboardVisible = useKeyboardVisible();
   const [content, setContent] = useState("");
   const [entities, setEntities] = useState<MentionEntity[]>([]);
   const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
   const [stickers, setStickers] = useState<Expression[]>([]);
+  const [attachments, setAttachments] = useState<PickedAttachment[]>([]);
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const typingCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -90,6 +115,10 @@ export const MessageInput = observer(({ channel }: Props) => {
   const showExpressionPicker = !editingMessage && !denySendingMessages;
 
   useEffect(() => {
+    app.setReplyingTo(null);
+  }, [app, channel.id]);
+
+  useEffect(() => {
     if (!editingMessage) return;
 
     const { text, entities: parsedEntities } = rawMarkdownToFriendly(
@@ -107,6 +136,25 @@ export const MessageInput = observer(({ channel }: Props) => {
     setSelection({ start: 0, end: 0 });
     setStickers([]);
   }, [editingMessage?.id, editingMessage?.editing, app.users, space]);
+
+  const editingMessageIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (editingMessage) {
+      editingMessageIdRef.current = editingMessage.id;
+      return;
+    }
+
+    const previousId = editingMessageIdRef.current;
+    editingMessageIdRef.current = null;
+
+    if (previousId && !channel.messages.get(previousId)) {
+      setContent("");
+      setEntities([]);
+      setSelection({ start: 0, end: 0 });
+      setStickers([]);
+    }
+  }, [editingMessage, channel.messages]);
 
   useEffect(() => {
     return () => {
@@ -168,8 +216,42 @@ export const MessageInput = observer(({ channel }: Props) => {
     const hasText =
       !!content && !!content.trim() && !!content.replace(/\r?\n|\r/g, "");
 
-    return hasText || stickers.length > 0;
-  }, [content, editingMessage, rawContent, stickers.length]);
+    return hasText || stickers.length > 0 || attachments.length > 0;
+  }, [
+    content,
+    editingMessage,
+    rawContent,
+    stickers.length,
+    attachments.length,
+  ]);
+
+  const pickAttachments = useCallback(async () => {
+    if (denySendingMessages || editingMessage) return;
+    if (attachments.length >= MAX_ATTACHMENTS) return;
+
+    const result = await DocumentPicker.getDocumentAsync({
+      multiple: true,
+      copyToCacheDirectory: true,
+      type: ["image/*", "video/*", "*/*"],
+    });
+
+    if (result.canceled) return;
+
+    const next = result.assets
+      .filter((a) => (a.size ?? 0) <= MAX_ATTACHMENT_SIZE)
+      .map((a) => ({
+        uri: a.uri,
+        type: a.mimeType ?? "application/octet-stream",
+        name: a.name,
+        size: a.size ?? undefined,
+      }));
+
+    setAttachments((prev) => [...prev, ...next].slice(0, MAX_ATTACHMENTS));
+  }, [attachments.length, denySendingMessages, editingMessage]);
+
+  const removeAttachment = useCallback((index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
   const expandCustomEmoji = useCallback(
     (text: string) => {
@@ -211,13 +293,36 @@ export const MessageInput = observer(({ channel }: Props) => {
   );
 
   const sendContent = useCallback(
-    async (text: string, stickerList: Expression[] = []) => {
+    async (
+      text: string,
+      stickerList: Expression[] = [],
+      fileList: PickedAttachment[] = [],
+    ) => {
       const trimmed = text.trim();
-      if (!trimmed && stickerList.length === 0) return;
+      if (!trimmed && stickerList.length === 0 && fileList.length === 0) return;
 
       const nonce = Snowflake.generate();
       const author = app.account!.raw;
       const stickerIds = stickerList.map((sticker) => sticker.id);
+      const replyingTo = app.replyingTo;
+      const repliedToId = replyingTo?.id;
+      const mentionReply = app.replyMention;
+      const repliedToPayload: APIMessage | undefined =
+        replyingTo && repliedToId
+          ? {
+              id: replyingTo.id,
+              content: replyingTo.content,
+              authorId: replyingTo.authorId,
+              channelId: replyingTo.channelId!,
+              spaceId: replyingTo.spaceId,
+              type: replyingTo.type,
+              createdAt: replyingTo.createdAt,
+              author: replyingTo.author?.toJSON(),
+              edited: false,
+              flags: 0n,
+            }
+          : undefined;
+
       const msg = app.queue.add({
         id: nonce,
         content: text,
@@ -226,15 +331,20 @@ export const MessageInput = observer(({ channel }: Props) => {
         channelId: channel.id,
         spaceId: channel.space?.id ?? null,
         createdAt: new Date().toISOString(),
-        type: MessageType.Default,
+        type: repliedToId ? MessageType.Reply : MessageType.Default,
         expressionIds: stickerIds,
         expressions: stickerList.map((sticker) => sticker.toJSON()),
+        repliedToId,
+        repliedTo: repliedToPayload,
       });
+
+      app.setReplyingTo(null);
 
       const body = {
         content: text,
         nonce,
         ...(stickerIds.length > 0 ? { expressionIds: stickerIds } : {}),
+        ...(repliedToId ? { repliedToId, mentionReply } : {}),
       };
 
       try {
@@ -245,7 +355,28 @@ export const MessageInput = observer(({ channel }: Props) => {
           );
         }
 
-        await channel.sendMessage(body, msg);
+        if (fileList.length > 0) {
+          const formData = new FormData();
+          if (text) formData.append("content", text);
+          formData.append("nonce", String(nonce));
+          stickerIds.forEach((id) =>
+            formData.append("expressionIds[]", String(id)),
+          );
+          if (repliedToId) {
+            formData.append("repliedToId", repliedToId);
+            formData.append("mentionReply", String(mentionReply));
+          }
+          fileList.forEach((file) => {
+            formData.append("attachments", {
+              uri: file.uri,
+              type: file.type,
+              name: file.name,
+            } as unknown as Blob);
+          });
+          await channel.sendMessage(formData, msg);
+        } else {
+          await channel.sendMessage(body, msg);
+        }
       } catch (e) {
         const error =
           e instanceof Error
@@ -265,7 +396,7 @@ export const MessageInput = observer(({ channel }: Props) => {
         if (sysMessage) channel.messages.add(sysMessage);
       }
     },
-    [app.account, app.queue, channel, isDM, theyBlockedMe],
+    [app, channel, isDM, theyBlockedMe],
   );
 
   const sendMessage = useCallback(async () => {
@@ -278,13 +409,15 @@ export const MessageInput = observer(({ channel }: Props) => {
 
     const text = expandCustomEmoji(rawContent);
     const stickerList = stickers;
+    const fileList = attachments;
 
     setContent("");
     setEntities([]);
     setSelection({ start: 0, end: 0 });
     setStickers([]);
+    setAttachments([]);
 
-    await sendContent(text, stickerList);
+    await sendContent(text, stickerList, fileList);
   }, [
     canSubmit,
     editingMessage,
@@ -293,6 +426,7 @@ export const MessageInput = observer(({ channel }: Props) => {
     saveEdit,
     sendContent,
     stickers,
+    attachments,
   ]);
 
   const handleSelectEmoji = useCallback(
@@ -394,6 +528,48 @@ export const MessageInput = observer(({ channel }: Props) => {
         borderBottomWidth: 0,
       }}
     >
+      {app.replyingTo && !editingMessage ? (
+        <Box
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            paddingTop: 10,
+            paddingBottom: 10,
+            marginBottom: 8,
+            borderBottomWidth: 1,
+            borderBottomColor: `${theme.colors.neutral}33`,
+          }}
+        >
+          <Typography level="body-xs" textColor="muted" style={{ flex: 1 }}>
+            Replying to{" "}
+            <Typography level="body-xs" weight={700}>
+              {app.replyingTo.author?.displayName ?? "Unknown"}
+            </Typography>
+          </Typography>
+          {app.replyingTo.authorId !== app.account?.id ? (
+            <Pressable onPress={() => app.setReplyMention(!app.replyMention)}>
+              <Typography
+                level="body-xs"
+                weight={700}
+                color={app.replyMention ? "info" : undefined}
+                textColor={app.replyMention ? undefined : "muted"}
+              >
+                {app.replyMention ? "@ ON" : "@ OFF"}
+              </Typography>
+            </Pressable>
+          ) : null}
+          <IconButton
+            padding={6}
+            color="neutral"
+            onPress={() => app.setReplyingTo(null)}
+            accessibilityLabel="Cancel reply"
+          >
+            <XIcon size={20} />
+          </IconButton>
+        </Box>
+      ) : null}
+
       {editingMessage && (
         <Box
           style={{
@@ -446,15 +622,15 @@ export const MessageInput = observer(({ channel }: Props) => {
               key={sticker.id}
               style={{
                 position: "relative",
-                width: 72,
-                height: 72,
+                width: feedSizes.sticker,
+                height: feedSizes.sticker,
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
               <Image
                 source={{ uri: sticker.url }}
-                style={{ width: 64, height: 64 }}
+                style={{ width: feedSizes.asset, height: feedSizes.asset }}
                 resizeMode="contain"
               />
               <IconButton
@@ -477,16 +653,80 @@ export const MessageInput = observer(({ channel }: Props) => {
         </Box>
       )}
 
+      {attachments.length > 0 && (
+        <Box
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 8,
+            paddingBottom: 10,
+            marginBottom: 8,
+            borderBottomWidth: 1,
+            borderBottomColor: `${theme.colors.neutral}33`,
+          }}
+        >
+          {attachments.map((file, index) => (
+            <Box
+              key={`${file.uri}-${index}`}
+              style={{
+                position: "relative",
+                maxWidth: scaledLayoutSize(160, fontScale, 1.75),
+                paddingVertical: scaledLayoutSize(6, fontScale, 1.35),
+                paddingHorizontal: scaledLayoutSize(10, fontScale, 1.35),
+                borderRadius: 999,
+                backgroundColor: theme.colors.surface,
+              }}
+            >
+              <Typography
+                level="body-xs"
+                truncate="single"
+                style={{ maxWidth: scaledLayoutSize(120, fontScale, 1.75) }}
+              >
+                {file.name}
+              </Typography>
+              <IconButton
+                padding={4}
+                color="neutral"
+                onPress={() => removeAttachment(index)}
+                accessibilityLabel="Remove attachment"
+                style={{
+                  position: "absolute",
+                  top: -6,
+                  right: -6,
+                  backgroundColor: `${theme.colors.neutral}88`,
+                  borderRadius: 999,
+                }}
+              >
+                <XIcon size={12} />
+              </IconButton>
+            </Box>
+          ))}
+        </Box>
+      )}
+
       <Box
         style={{
           flexDirection: "row",
           alignItems: "center",
         }}
       >
+        <IconButton
+          padding={6}
+          color="neutral"
+          onPress={() => void pickAttachments()}
+          accessibilityLabel="Add attachment"
+          disabled={
+            denySendingMessages ||
+            !!editingMessage ||
+            attachments.length >= MAX_ATTACHMENTS
+          }
+          style={{ borderRadius: 999, marginRight: 6 }}
+        >
+          <PaperclipIcon size={20} weight="bold" />
+        </IconButton>
         <MarkdownInput
           value={content}
           onChange={handleContentChange}
-          onSubmit={() => void sendMessage()}
           selection={selection}
           onChangeSelection={setSelection}
           entities={entities}
@@ -513,8 +753,8 @@ export const MessageInput = observer(({ channel }: Props) => {
             ) : undefined
           }
           style={{
-            minHeight: 44,
-            maxHeight: 160,
+            minHeight: scaledLayoutSize(44, fontScale, 1.5),
+            maxHeight: composerMaxHeight,
             flex: 1,
             marginRight: 8,
             borderRadius: 999,

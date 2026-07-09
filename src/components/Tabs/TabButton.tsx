@@ -2,12 +2,15 @@ import { resolveSize, type Size } from "@mutualzz/ui-core";
 import {
   type ButtonProps,
   DecoratorWrapper,
+  MAX_FONT_SCALE_MULTIPLIER,
   resolveButtonContainerStyles,
+  Typography,
   useTheme,
 } from "@mutualzz/ui-native";
+import { useScaledMinTouchSize } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
 import { forwardRef, type ReactNode } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
 
 interface Props extends Pick<
   ButtonProps,
@@ -28,6 +31,7 @@ const TabButtonComponent = forwardRef<View, Props>(
     ref,
   ) => {
     const { theme } = useTheme();
+    const touchTarget = useScaledMinTouchSize();
     const resolvedSize = resolveSize(theme, size, baseSizeMap);
 
     return (
@@ -59,7 +63,7 @@ const TabButtonComponent = forwardRef<View, Props>(
               alignSelf: "stretch",
               width: "100%",
               padding: 0,
-
+              ...touchTarget,
               transform: [{ translateY: pressed ? -2 : 0 }],
             },
           ];
@@ -74,21 +78,20 @@ const TabButtonComponent = forwardRef<View, Props>(
             flexGrow: 0,
             flexShrink: 1,
             minWidth: 0,
+            paddingHorizontal: 4,
           }}
         >
-          <Text
-            style={[
-              {
-                fontSize: resolvedSize,
-                textAlign: "center",
-                color: theme.typography.colors.primary,
-              },
-            ]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
+          <Typography
+            truncate="single"
+            maxFontSizeMultiplier={MAX_FONT_SCALE_MULTIPLIER}
+            style={{
+              fontSize: resolvedSize,
+              textAlign: "center",
+              color: theme.typography.colors.primary,
+            }}
           >
             {children}
-          </Text>
+          </Typography>
         </View>
       </Pressable>
     );

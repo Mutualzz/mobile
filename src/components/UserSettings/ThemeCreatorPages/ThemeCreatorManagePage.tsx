@@ -3,11 +3,11 @@ import { useAppStore } from "@hooks/useStores";
 import type { ThemeCreatorFilter, ThemeCreatorLoadedType } from "@stores/ThemeCreator.store";
 import { Theme } from "@stores/objects/Theme";
 import { sortThemes } from "@utils/index";
-import { Box, Button, Typography, useTheme } from "@mutualzz/ui-native";
+import { Box, Button, Modal, Typography, useTheme } from "@mutualzz/ui-native";
 import { CaretDownIcon, CheckIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Modal, Pressable } from "react-native";
+import { Pressable } from "react-native";
 
 const capitalize = (value: string) =>
   value.charAt(0).toUpperCase() + value.slice(1);
@@ -122,7 +122,7 @@ export const ThemeCreatorManagePage = observer(
               opacity: sortedThemes.length === 0 ? 0.5 : 1,
             }}
           >
-            <Typography level="body-sm" numberOfLines={1} style={{ flex: 1 }}>
+            <Typography level="body-sm" truncate="single" style={{ flex: 1 }}>
               {sortedThemes.length === 0
                 ? "No themes available"
                 : (selectedTheme?.name ?? "Pick a theme")}
@@ -177,71 +177,62 @@ export const ThemeCreatorManagePage = observer(
         </Box>
 
         <Modal
-          visible={pickerOpen}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setPickerOpen(false)}
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          layout="center"
+          showCloseButton={false}
         >
-          <Pressable
+          <Paper
+            elevation={app.settings?.preferEmbossed ? 4 : 2}
             style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "rgba(0,0,0,0.45)",
-              padding: 24,
+              width: "100%",
+              maxWidth: 320,
+              maxHeight: "70%",
+              borderRadius: 16,
+              padding: 8,
+              gap: 2,
             }}
-            onPress={() => setPickerOpen(false)}
           >
-            <Pressable
-              onPress={() => undefined}
-              style={{ width: "100%", maxWidth: 320, maxHeight: "70%" }}
-            >
-              <Paper
-                elevation={app.settings?.preferEmbossed ? 4 : 2}
-                style={{ borderRadius: 16, padding: 8, gap: 2 }}
-              >
-                {sortedThemes.map((theme) => {
-                  const active = theme.id === values.id;
-                  return (
-                    <Pressable
-                      key={theme.id}
-                      onPress={() => {
-                        loadValues(Theme.serialize(theme));
-                        setPickerOpen(false);
-                      }}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        paddingVertical: 10,
-                        paddingHorizontal: 12,
-                        borderRadius: 8,
-                        backgroundColor: active
-                          ? `${uiTheme.colors.primary}18`
-                          : undefined,
-                      }}
-                    >
-                      <Typography
-                        level="body-sm"
-                        weight={active ? 600 : undefined}
-                        numberOfLines={1}
-                        style={{ flex: 1 }}
-                      >
-                        {theme.name}
-                      </Typography>
-                      {active ? (
-                        <CheckIcon
-                          size={16}
-                          weight="bold"
-                          color={uiTheme.colors.success}
-                        />
-                      ) : null}
-                    </Pressable>
-                  );
-                })}
-              </Paper>
-            </Pressable>
-          </Pressable>
+            {sortedThemes.map((theme) => {
+              const active = theme.id === values.id;
+              return (
+                <Pressable
+                  key={theme.id}
+                  onPress={() => {
+                    loadValues(Theme.serialize(theme));
+                    setPickerOpen(false);
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    paddingVertical: 10,
+                    paddingHorizontal: 12,
+                    borderRadius: 8,
+                    backgroundColor: active
+                      ? `${uiTheme.colors.primary}18`
+                      : undefined,
+                  }}
+                >
+                  <Typography
+                    level="body-sm"
+                    weight={active ? 600 : undefined}
+                    truncate="single"
+                    style={{ flex: 1 }}
+                  >
+                    {theme.name}
+                  </Typography>
+                  {active ? (
+                    <CheckIcon
+                      size={16}
+                      weight="bold"
+                      color={uiTheme.colors.success}
+                    />
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </Paper>
         </Modal>
       </Box>
     );

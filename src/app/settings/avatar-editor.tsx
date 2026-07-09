@@ -1,4 +1,6 @@
-import { Button } from "@components/Button";
+import { AvatarDrawDraftsSection } from "@components/Avatar/AvatarDrawDraftsSection";
+import { AvatarDrawEditor } from "@components/Avatar/AvatarDrawEditor";
+import { AvatarStudioMethodCards } from "@components/Avatar/AvatarStudioMethodCards";
 import { IconButton } from "@components/IconButton";
 import { SettingsScreen } from "@components/UserSettings/SettingsScreen";
 import { Paper } from "@components/Paper";
@@ -6,16 +8,22 @@ import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { ImageFormat, type Sizes, type APIPrivateUser } from "@mutualzz/types";
 import { Box, Typography } from "@mutualzz/ui-native";
+import { useScaledAvatarEditorSizes } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
-import { Image, ScrollView } from "react-native";
+import { useRef, useState } from "react";
+import { Image, ScrollView, View } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
 
 export default observer(function AvatarEditorScreen() {
   const app = useAppStore();
   const { back } = useAppNavigation();
   const account = app.account;
+  const avatarSizes = useScaledAvatarEditorSizes();
+  const scrollRef = useRef<ScrollView>(null);
+  const presetsOffsetRef = useRef(0);
   const [uploading, setUploading] = useState(false);
+  const [drawOpen, setDrawOpen] = useState(false);
+  const [drawDraftId, setDrawDraftId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   if (!account) return null;
@@ -60,8 +68,16 @@ export default observer(function AvatarEditorScreen() {
       });
   };
 
-  const openDrawCropper = () => {
-    uploadFromLibrary();
+  const openDrawEditor = (draftId?: string) => {
+    setDrawDraftId(draftId ?? null);
+    setDrawOpen(true);
+  };
+
+  const scrollToPresets = () => {
+    scrollRef.current?.scrollTo({
+      y: presetsOffsetRef.current,
+      animated: true,
+    });
   };
 
   const selectPreviousAvatar = async (hash: string) => {
@@ -84,77 +100,125 @@ export default observer(function AvatarEditorScreen() {
   return (
     <SettingsScreen title="Avatar Studio" contentStyle={{ flex: 1 }}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 32 }}
       >
-        <Paper style={{ padding: 16, borderRadius: 12, gap: 12 }}>
+        <Paper
+          variant="soft"
+          style={{ padding: 16, borderRadius: 12, gap: 12 }}
+          elevation={app.settings?.preferEmbossed ? 2 : 0}
+        >
           <Typography level="body-md" weight={700}>
-            Upload
+            Avatar studio
           </Typography>
           <Typography level="body-sm" textColor="muted">
-            Pick a photo or GIF from your library.
+            Upload a new avatar or jump in quickly below.
           </Typography>
-          <Button disabled={uploading} onPress={uploadFromLibrary}>
-            Choose from library
-          </Button>
         </Paper>
 
-        <Paper style={{ padding: 16, borderRadius: 12, gap: 12 }}>
+        <AvatarStudioMethodCards
+          embossed={app.settings?.preferEmbossed}
+          onUpload={uploadFromLibrary}
+          onDraw={() => openDrawEditor()}
+          onAvatars={scrollToPresets}
+        />
+
+        <AvatarDrawDraftsSection
+          embossed={app.settings?.preferEmbossed}
+          onOpenDraft={(draftId) => openDrawEditor(draftId)}
+        />
+
+        <Paper
+          style={{ padding: 16, borderRadius: 12, gap: 12 }}
+          elevation={app.settings?.preferEmbossed ? 2 : 0}
+        >
           <Typography level="body-md" weight={700}>
-            Draw
+            Current avatar
           </Typography>
           <Typography level="body-sm" textColor="muted">
-            Use the library picker to crop a sketch or exported drawing.
+            Preview your current avatar before switching to another upload or
+            preset.
           </Typography>
-          <Button disabled={uploading} variant="soft" onPress={openDrawCropper}>
-            Open crop editor
-          </Button>
-        </Paper>
-
-        <Paper style={{ padding: 16, borderRadius: 12, gap: 12 }}>
-          <Typography level="body-md" weight={700}>
-            Previous avatars
-          </Typography>
-          {previousAvatars.length === 0 ? (
-            <Typography textColor="muted" level="body-sm">
-              No previous avatars yet.
-            </Typography>
-          ) : (
-            <Box
-              style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
-                gap: 12,
+          <Box style={{ alignItems: "center", paddingVertical: 4 }}>
+            <Image
+              source={{
+                uri:
+                  account.avatarUrl ??
+                  account.constructAvatarUrl(
+                    false,
+                    "light",
+                    128,
+                    ImageFormat.PNG,
+                  ),
               }}
-            >
-              {previousAvatars.map((hash) => (
-                <IconButton
-                  key={hash}
-                  variant="plain"
-                  padding={0}
-                  disabled={uploading}
-                  onPress={() => void selectPreviousAvatar(hash)}
-                >
-                  <Image
-                    source={{
-                      uri: account.constructAvatarUrl(
-                        hash.startsWith("a_"),
-                        "light",
-                        48 as Sizes,
-                        ImageFormat.PNG,
-                        hash,
-                      ),
-                    }}
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 9999,
-                    }}
-                  />
-                </IconButton>
-              ))}
-            </Box>
-          )}
+              style={{
+                width: avatarSizes.current,
+                height: avatarSizes.current,
+                borderRadius: 999,
+              }}
+            />
+          </Box>
         </Paper>
+
+        <View
+          onLayout={(event) => {
+            presetsOffsetRef.current = event.nativeEvent.layout.y;
+          }}
+        >
+          <Paper
+            style={{ padding: 16, borderRadius: 12, gap: 12 }}
+            elevation={app.settings?.preferEmbossed ? 2 : 0}
+          >
+            <Typography level="body-md" weight={700}>
+              Avatar presets
+            </Typography>
+            <Typography level="body-sm" textColor="muted">
+              Reuse a previous avatar from your saved history.
+            </Typography>
+            {previousAvatars.length === 0 ? (
+              <Typography textColor="muted" level="body-sm">
+                No previous avatars yet.
+              </Typography>
+            ) : (
+              <Box
+                style={{
+                  padding: 8,
+                  gap: 16,
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  justifyContent: "space-around",
+                }}
+              >
+                {previousAvatars.map((hash) => (
+                  <IconButton
+                    key={hash}
+                    variant="plain"
+                    padding={0}
+                    disabled={uploading}
+                    onPress={() => void selectPreviousAvatar(hash)}
+                  >
+                    <Image
+                      source={{
+                        uri: account.constructAvatarUrl(
+                          hash.startsWith("a_"),
+                          "light",
+                          48 as Sizes,
+                          ImageFormat.PNG,
+                          hash,
+                        ),
+                      }}
+                      style={{
+                        width: avatarSizes.preset,
+                        height: avatarSizes.preset,
+                        borderRadius: 9999,
+                      }}
+                    />
+                  </IconButton>
+                ))}
+              </Box>
+            )}
+          </Paper>
+        </View>
 
         {error && (
           <Typography level="body-sm" color="danger" variant="plain">
@@ -162,6 +226,16 @@ export default observer(function AvatarEditorScreen() {
           </Typography>
         )}
       </ScrollView>
+
+      <AvatarDrawEditor
+        visible={drawOpen}
+        initialDraftId={drawDraftId}
+        onClose={() => {
+          setDrawOpen(false);
+          setDrawDraftId(null);
+        }}
+        onUploaded={() => back()}
+      />
     </SettingsScreen>
   );
 });

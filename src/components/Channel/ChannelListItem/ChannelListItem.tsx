@@ -13,6 +13,7 @@ import {
 } from "@mutualzz/ui-native";
 import { type Channel } from "@stores/objects/Channel";
 import { type Space } from "@stores/objects/Space";
+import { useScaledMentionBadgeStyle, useScaledSquareSize } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
 import { Pressable } from "react-native";
 
@@ -44,6 +45,8 @@ export const ChannelListItem = observer(
     const { theme } = useTheme();
     const { navigate } = useAppNavigation();
     const app = useAppStore();
+    const mentionBadgeStyle = useScaledMentionBadgeStyle();
+    const unreadDotSize = useScaledSquareSize(8);
 
     const readState = app.readStates.get(channel.id);
     const isUnread = readState?.isUnread ?? false;
@@ -69,18 +72,29 @@ export const ChannelListItem = observer(
       }
     };
 
+    const accessibilityLabel = isCategory
+      ? (channel.name ?? undefined)
+      : `${channel.name}${mentionCount > 0 ? `, ${mentionCount} mentions` : isUnread ? ", unread" : ""}`;
+
     return (
-      <Pressable onPress={handlePress} onLongPress={onLongPress}>
+      <Pressable
+        onPress={handlePress}
+        onLongPress={onLongPress}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ selected: active, expanded: isCategory ? !isCollapsed : undefined }}
+      >
         <Paper
           style={{
             marginLeft: isCategory ? 0 : channel.parent ? 12 : 8,
             paddingHorizontal: 8,
+            paddingVertical: 4,
             marginRight: isCategory ? 12 : 20,
             borderRadius: 6,
             alignItems: "center",
             justifyContent: "space-between",
             flexDirection: "row",
-            height: isCategory ? 32 : 28,
+            minHeight: isCategory ? 32 : 28,
           }}
           key={channel.id}
           color={props.color}
@@ -92,6 +106,8 @@ export const ChannelListItem = observer(
               flexDirection: "row",
               alignItems: "center",
               gap: 4,
+              flexShrink: 1,
+              minWidth: 0,
             }}
           >
             {!isCategory && <ChannelIcon type={channel.type} />}
@@ -111,6 +127,7 @@ export const ChannelListItem = observer(
             )}
             <Typography
               textColor={isCategory ? "primary" : "secondary"}
+              truncate="single"
               style={{
                 fontSize: isCategory ? 12 : 14,
                 fontWeight: isCategory
@@ -119,6 +136,7 @@ export const ChannelListItem = observer(
                     ? "700"
                     : "600",
                 letterSpacing: isCategory ? 0.5 : 0,
+                flexShrink: 1,
               }}
             >
               {channel.name}
@@ -137,19 +155,17 @@ export const ChannelListItem = observer(
               {mentionCount > 0 && (
                 <Box
                   style={{
-                    minWidth: 16,
-                    height: 16,
+                    ...mentionBadgeStyle,
                     borderRadius: 9999,
                     backgroundColor: theme.colors.danger,
-                    paddingHorizontal: 4,
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
                   <Typography
+                    level="body-xs"
                     style={{
                       color: "#fff",
-                      fontSize: 10,
                       fontWeight: "600",
                     }}
                   >
@@ -160,8 +176,8 @@ export const ChannelListItem = observer(
               {isUnread && mentionCount === 0 && !active && (
                 <Box
                   style={{
-                    width: 8,
-                    height: 8,
+                    width: unreadDotSize,
+                    height: unreadDotSize,
                     borderRadius: 9999,
                     backgroundColor: theme.typography.colors.primary,
                   }}
@@ -174,6 +190,7 @@ export const ChannelListItem = observer(
               size={14}
               variant="plain"
               color="neutral"
+              accessibilityLabel="Create channel in category"
               style={{
                 borderRadius: 9999,
               }}

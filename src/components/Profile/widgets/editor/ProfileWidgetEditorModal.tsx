@@ -18,10 +18,10 @@ import type {
   ProfileBlockSize,
   ProfileBlockType,
 } from "@mutualzz/types";
-import { Box, Typography, useTheme } from "@mutualzz/ui-native";
+import { Box, Modal, Typography, useTheme } from "@mutualzz/ui-native";
 import { XIcon } from "phosphor-react-native";
 import { useState } from "react";
-import { Modal, ScrollView } from "react-native";
+import { ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "@components/IconButton";
 
@@ -79,7 +79,15 @@ export function ProfileWidgetEditorModal({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal
+      open={visible}
+      onClose={onClose}
+      layout="fullscreen"
+      hideBackdrop
+      showCloseButton={false}
+      disableBackdropClick
+      style={{ paddingVertical: 0 }}
+    >
       <Box
         style={{
           flex: 1,
@@ -99,25 +107,22 @@ export function ProfileWidgetEditorModal({
           <IconButton padding={6} onPress={onClose}>
             <XIcon size={20} />
           </IconButton>
-          <Typography level="title-md" weight="bold">
-            Mobile Widgets
-          </Typography>
-          {editMode ? (
+          {editMode && (
             <Button size="sm" color="neutral" onPress={() => setEditMode(false)}>
               Done
             </Button>
-          ) : (
-            <Box style={{ width: 60 }} />
           )}
         </Box>
 
         <ProfileWidgetPalette onAddWidget={handleAddWidget} />
 
         <ScrollView
+          style={{ flex: 1 }}
           contentContainerStyle={{
             padding: 16,
-            paddingBottom: insets.bottom + 16,
+            paddingBottom: 16,
           }}
+          keyboardShouldPersistTaps="handled"
         >
           {sortedBlocks.length === 0 ? (
             <ProfileWidgetsEmptyEditor
@@ -147,8 +152,14 @@ export function ProfileWidgetEditorModal({
           ) : null}
         </ScrollView>
 
-        <Box style={{ padding: 16, paddingBottom: insets.bottom + 16 }}>
-          <Button color="primary" disabled={saving} onPress={onSave}>
+        <Box
+          style={{
+            padding: 16,
+            paddingBottom: insets.bottom + 16,
+            flexShrink: 0,
+          }}
+        >
+          <Button color="primary" fullWidth disabled={saving} onPress={onSave}>
             {saving ? "Saving..." : "Save Profile"}
           </Button>
         </Box>

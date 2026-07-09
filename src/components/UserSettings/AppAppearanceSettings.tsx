@@ -19,6 +19,10 @@ import {
 import type { Theme as StoreTheme } from "@stores/objects/Theme";
 import { Theme } from "@stores/objects/Theme";
 import { getThemeSwatchStops, type ThemeSwatchStop } from "@utils/themeSwatch";
+import {
+  useScaledSquareSize,
+  useScaledThemeSwatchSize,
+} from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import {
@@ -39,6 +43,7 @@ const SelectionBadge = ({
   badgeIcon?: "check" | "sync";
 }) => {
   const { theme } = useTheme();
+  const badgeSize = useScaledSquareSize(24);
 
   return (
     <View
@@ -46,9 +51,9 @@ const SelectionBadge = ({
         position: "absolute",
         top: -1,
         right: -2,
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        width: badgeSize,
+        height: badgeSize,
+        borderRadius: badgeSize / 2,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: theme.colors.primary,
@@ -104,6 +109,7 @@ const ThemeSwatch = ({
   deleting?: boolean;
 }) => {
   const { theme } = useTheme();
+  const swatchSize = useScaledThemeSwatchSize(SWATCH_SIZE);
   const showBadge = alwaysShowBadge || selected;
   const outline = 3;
 
@@ -112,8 +118,8 @@ const ThemeSwatch = ({
       <View
         style={{
           position: "relative",
-          width: SWATCH_SIZE,
-          height: SWATCH_SIZE,
+          width: swatchSize,
+          height: swatchSize,
         }}
       >
         {selected && (
@@ -122,9 +128,9 @@ const ThemeSwatch = ({
               position: "absolute",
               top: -outline,
               left: -outline,
-              width: SWATCH_SIZE + outline * 2,
-              height: SWATCH_SIZE + outline * 2,
-              borderRadius: (SWATCH_SIZE + outline * 2) / 2,
+              width: swatchSize + outline * 2,
+              height: swatchSize + outline * 2,
+              borderRadius: (swatchSize + outline * 2) / 2,
               borderWidth: outline,
               borderColor: theme.colors.primary,
             }}
@@ -149,9 +155,9 @@ const ThemeSwatch = ({
         )}
         <View
           style={{
-            width: SWATCH_SIZE,
-            height: SWATCH_SIZE,
-            borderRadius: SWATCH_SIZE / 2,
+            width: swatchSize,
+            height: swatchSize,
+            borderRadius: swatchSize / 2,
             overflow: "hidden",
             borderWidth: outline,
             borderColor: theme.colors.primary,
@@ -165,23 +171,27 @@ const ThemeSwatch = ({
   );
 };
 
-const AdaptiveIconSwatch = ({ primaryColor }: { primaryColor: string }) => (
-  <View
-    style={{
-      width: SWATCH_SIZE,
-      height: SWATCH_SIZE,
-      borderRadius: SWATCH_SIZE / 2,
-      overflow: "hidden",
-      backgroundColor: primaryColor,
-    }}
-  >
-    <Image
-      source={adaptiveIconMark}
-      style={{ width: SWATCH_SIZE, height: SWATCH_SIZE }}
-      resizeMode="cover"
-    />
-  </View>
-);
+const AdaptiveIconSwatch = ({ primaryColor }: { primaryColor: string }) => {
+  const swatchSize = useScaledThemeSwatchSize(SWATCH_SIZE);
+
+  return (
+    <View
+      style={{
+        width: swatchSize,
+        height: swatchSize,
+        borderRadius: swatchSize / 2,
+        overflow: "hidden",
+        backgroundColor: primaryColor,
+      }}
+    >
+      <Image
+        source={adaptiveIconMark}
+        style={{ width: swatchSize, height: swatchSize }}
+        resizeMode="cover"
+      />
+    </View>
+  );
+};
 
 const IconSwatch = ({
   primaryColor,
@@ -197,6 +207,7 @@ const IconSwatch = ({
   alwaysShowBadge?: boolean;
 }) => {
   const { theme } = useTheme();
+  const swatchSize = useScaledThemeSwatchSize(SWATCH_SIZE);
   const showBadge = alwaysShowBadge || selected;
   const outline = 3;
 
@@ -205,8 +216,8 @@ const IconSwatch = ({
       <View
         style={{
           position: "relative",
-          width: SWATCH_SIZE,
-          height: SWATCH_SIZE,
+          width: swatchSize,
+          height: swatchSize,
         }}
       >
         {selected && (
@@ -215,9 +226,9 @@ const IconSwatch = ({
               position: "absolute",
               top: -outline,
               left: -outline,
-              width: SWATCH_SIZE + outline * 2,
-              height: SWATCH_SIZE + outline * 2,
-              borderRadius: (SWATCH_SIZE + outline * 2) / 2,
+              width: swatchSize + outline * 2,
+              height: swatchSize + outline * 2,
+              borderRadius: (swatchSize + outline * 2) / 2,
               borderWidth: outline,
               borderColor: theme.colors.primary,
             }}
@@ -415,7 +426,13 @@ export const AppAppearanceSettings = observer(() => {
             </Box>
           </Box>
 
-          <Box
+          <Pressable
+            accessibilityRole="switch"
+            accessibilityState={{ checked: settings.preferEmbossed }}
+            onPress={() => {
+              settings.setPreferEmbossed(!settings.preferEmbossed);
+              void settings.sync();
+            }}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -434,7 +451,7 @@ export const AppAppearanceSettings = observer(() => {
                 void settings.sync();
               }}
             />
-          </Box>
+          </Pressable>
 
           <SectionHeader title="Default Themes" />
           <Box

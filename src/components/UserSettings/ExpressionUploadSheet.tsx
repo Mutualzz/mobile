@@ -5,9 +5,11 @@ import { useAppStore } from "@hooks/useStores";
 import type { APIExpression } from "@mutualzz/types";
 import { ExpressionType } from "@mutualzz/types";
 import { Box, Input, Typography } from "@mutualzz/ui-native";
+import { useScaledFeedPreviewSizes } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Image } from "react-native";
+import ImagePicker from "react-native-image-crop-picker";
 
 interface Props {
   type: ExpressionType;
@@ -29,6 +31,7 @@ export const ExpressionUploadSheet = observer(
   }: Props) => {
     const app = useAppStore();
     const { closeModal } = useModal();
+    const feedSizes = useScaledFeedPreviewSizes();
     const [name, setName] = useState(
       fileName.replace(/\.[^.]+$/, "").slice(0, 32),
     );
@@ -70,6 +73,7 @@ export const ExpressionUploadSheet = observer(
         }
 
         closeModal(modalId);
+        void ImagePicker.clean();
       } catch (e) {
         const message =
           e instanceof Error
@@ -105,8 +109,8 @@ export const ExpressionUploadSheet = observer(
           <Image
             source={{ uri }}
             style={{
-              width: 72,
-              height: 72,
+              width: feedSizes.sticker,
+              height: feedSizes.sticker,
               borderRadius: 8,
             }}
             resizeMode="contain"

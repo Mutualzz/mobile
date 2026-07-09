@@ -1,3 +1,4 @@
+import { ProfileActivityWidgetExpandedContent } from "@components/Profile/widgets/blocks/ProfileActivityWidgetView";
 import { ProfileDrawWidgetExpandedContent } from "@components/Profile/widgets/blocks/ProfileDrawWidgetView";
 import { ProfileImageWidgetExpandedContent } from "@components/Profile/widgets/blocks/ProfileImageWidgetView";
 import { ProfileLinksWidgetExpandedContent } from "@components/Profile/widgets/blocks/ProfileLinksWidgetView";
@@ -48,6 +49,10 @@ export function ProfileWidgetItem({ block, profile, user }: Props) {
         return <ProfileImageWidgetExpandedContent block={block} profile={profile} />;
       case "links":
         return <ProfileLinksWidgetExpandedContent block={block} />;
+      case "activity":
+        return (
+          <ProfileActivityWidgetExpandedContent block={block} userId={user.id} />
+        );
       case "roles":
         return <ProfileRolesWidgetExpandedContent block={block} userId={user.id} />;
       case "mutual":

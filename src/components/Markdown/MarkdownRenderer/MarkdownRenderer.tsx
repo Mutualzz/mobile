@@ -1,5 +1,5 @@
 import { renderBlocks } from "@components/Markdown/MarkdownRenderer/MarkdownRenderer.helpers";
-import { MarkdownRendererProps } from "@components/Markdown/MarkdownRenderer/MarkdownRenderer.types";
+import type { MarkdownRendererProps } from "@components/Markdown/MarkdownRenderer/MarkdownRenderer.types";
 import { customEmojiPlugin } from "@components/Markdown/MarkdownRenderer/plugins/customEmoji";
 import { emojiPlugin } from "@components/Markdown/MarkdownRenderer/plugins/emoji";
 import { emphasisPlugin } from "@components/Markdown/MarkdownRenderer/plugins/emphasis";
@@ -16,66 +16,62 @@ import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 
 export const MarkdownRenderer = observer(
-    ({
-        color = "neutral",
-        textColor = "primary",
-        variant = "plain",
-        enlargeEmojiOnly = true,
-        spaceId,
-        value,
-        ...props
-    }: MarkdownRendererProps) => {
-        const { theme } = useTheme();
+  ({
+    color = "neutral",
+    textColor = "primary",
+    variant = "plain",
+    enlargeEmojiOnly = true,
+    spaceId,
+    value,
+    ...props
+  }: MarkdownRendererProps) => {
+    const { theme } = useTheme();
 
-        const isEmojiOnly = useMemo(
-            () => isEmojiOnlyMessage(value, enlargeEmojiOnly),
-            [value, enlargeEmojiOnly],
-        );
+    const isEmojiOnly = useMemo(
+      () => isEmojiOnlyMessage(value, enlargeEmojiOnly),
+      [value, enlargeEmojiOnly],
+    );
 
-        const md = useMemo(() => {
-            const instance = new MarkdownIt("default", {
-                html: false,
-                linkify: false,
-                typographer: true,
-                breaks: true,
-            });
+    const md = useMemo(() => {
+      const instance = new MarkdownIt("default", {
+        html: false,
+        linkify: false,
+        typographer: true,
+        breaks: true,
+      });
 
-            instance.disable("emphasis");
-            instance.disable("table");
-            instance.disable("hr");
-            instance.disable("escape");
+      instance.disable("emphasis");
+      instance.disable("table");
+      instance.disable("hr");
+      instance.disable("escape");
 
-            instance.use(emojiPlugin);
-            instance.use(customEmojiPlugin);
-            instance.use(mentionPlugin);
-            instance.use(strikethroughPlugin);
-            instance.use(emphasisPlugin);
-            instance.use(underlinePlugin);
-            instance.use(spoilerPlugin);
-            instance.use(linkPlugin);
+      // Formatting runs first so splitByMarker leaves inner text tokens for
+      // mentions, emojis, and links to resolve inside bold/italic/etc.
+      instance.use(strikethroughPlugin);
+      instance.use(emphasisPlugin);
+      instance.use(underlinePlugin);
+      instance.use(spoilerPlugin);
+      instance.use(mentionPlugin);
+      instance.use(linkPlugin);
+      instance.use(emojiPlugin);
+      instance.use(customEmojiPlugin);
 
-            return instance;
-        }, []);
+      return instance;
+    }, []);
 
-        const tokens = useMemo(() => md.parse(value ?? "", {}), [md, value]);
+    const tokens = useMemo(() => md.parse(value ?? "", {}), [md, value]);
 
-        return (
-            <Paper
-                color={color}
-                variant={variant}
-                style={{
-                    flexShrink: 1,
-                }}
-                {...props}
-            >
-                {renderBlocks(
-                    theme,
-                    tokens,
-                    isEmojiOnly,
-                    spaceId,
-                    textColor,
-                )}
-            </Paper>
-        );
-    },
+    return (
+      <Paper
+        color={color}
+        variant={variant}
+        style={{
+          flexShrink: 1,
+        }}
+        {...props}
+      >
+        {renderBlocks(theme, tokens, isEmojiOnly, spaceId, textColor)}
+      </Paper>
+    );
+  },
 );

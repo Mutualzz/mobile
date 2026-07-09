@@ -12,7 +12,7 @@ import type { User } from "@stores/objects/User";
 import type { UserProfile } from "@stores/objects/UserProfile";
 import type { APIMobileProfileBlock, ProfileBlockSize } from "@mutualzz/types";
 import { Paper } from "@mutualzz/ui-native";
-import { XIcon } from "phosphor-react-native";
+import { CaretDownIcon, CaretUpIcon, XIcon } from "phosphor-react-native";
 import { useState } from "react";
 import { Pressable, View, type LayoutChangeEvent } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -66,8 +66,7 @@ function findTargetIndex(
     }
   }
 
-  // Fell outside every tile (dragged past the top/bottom edge) — snap to
-  // whichever tile is vertically closest, then horizontally closest.
+
   let best = draggedIndex;
   let bestDist = Infinity;
   for (let i = 0; i < rects.length; i++) {
@@ -125,6 +124,12 @@ export function ProfileWidgetEditableList({
 
     setDraggingId(null);
     setDragOffset({ x: 0, y: 0 });
+  };
+
+  const moveBlock = (index: number, direction: -1 | 1) => {
+    const toIndex = index + direction;
+    if (toIndex < 0 || toIndex >= blocks.length) return;
+    onChange(reorder(blocks, index, toIndex));
   };
 
   return (
@@ -193,6 +198,10 @@ export function ProfileWidgetEditableList({
                   size={size}
                   onDelete={() => onDelete(block.id)}
                   onChangeSize={(next) => onChangeSize(block.id, next)}
+                  onMoveUp={index > 0 ? () => moveBlock(index, -1) : undefined}
+                  onMoveDown={
+                    index < blocks.length - 1 ? () => moveBlock(index, 1) : undefined
+                  }
                 />
               ) : null}
             </View>
@@ -208,18 +217,31 @@ function EditModeOverlay({
   size,
   onDelete,
   onChangeSize,
+  onMoveUp,
+  onMoveDown,
 }: {
   type: APIMobileProfileBlock["type"];
   size: ProfileBlockSize;
   onDelete: () => void;
   onChangeSize: (size: ProfileBlockSize) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }) {
   return (
     <>
       <View style={{ position: "absolute", top: 6, right: 6 + ROW_GAP / 2 }} pointerEvents="box-none">
         <ProfileWidgetSizePill type={type} size={size} onChange={onChangeSize} />
       </View>
-      <View style={{ position: "absolute", top: 6, left: 6 + ROW_GAP / 2 }} pointerEvents="box-none">
+      <View
+        style={{
+          position: "absolute",
+          top: 6,
+          left: 6 + ROW_GAP / 2,
+          flexDirection: "row",
+          gap: 6,
+        }}
+        pointerEvents="box-none"
+      >
         <IconButton
           variant="solid"
           color="danger"
@@ -228,6 +250,26 @@ function EditModeOverlay({
           onPress={onDelete}
         >
           <XIcon size={14} color="#fff" />
+        </IconButton>
+        <IconButton
+          variant="solid"
+          color="neutral"
+          accessibilityLabel="Move widget up"
+          disabled={!onMoveUp}
+          padding={4}
+          onPress={onMoveUp}
+        >
+          <CaretUpIcon size={14} color="#fff" />
+        </IconButton>
+        <IconButton
+          variant="solid"
+          color="neutral"
+          accessibilityLabel="Move widget down"
+          disabled={!onMoveDown}
+          padding={4}
+          onPress={onMoveDown}
+        >
+          <CaretDownIcon size={14} color="#fff" />
         </IconButton>
       </View>
     </>

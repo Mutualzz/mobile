@@ -41,6 +41,7 @@ export const WIDGET_MAXIMIZABLE_TYPES: Partial<
   text: true,
   image: true,
   links: true,
+  activity: true,
   roles: true,
   mutual: true,
   quote: true,
@@ -50,11 +51,17 @@ export const WIDGET_MAXIMIZABLE_TYPES: Partial<
 export const isWidgetMaximizable = (type: ProfileBlockType) =>
   WIDGET_MAXIMIZABLE_TYPES[type] === true;
 
+const DEFAULT_SUPPORTED_SIZES: ProfileBlockSize[] = ["s", "m", "l"];
+
+export const getSupportedWidgetSizes = (
+  type: ProfileBlockType,
+): ProfileBlockSize[] => WIDGET_SUPPORTED_SIZES[type] ?? DEFAULT_SUPPORTED_SIZES;
+
 export const clampWidgetSize = (
   type: ProfileBlockType,
   size: ProfileBlockSize,
 ): ProfileBlockSize => {
-  const supported = WIDGET_SUPPORTED_SIZES[type];
+  const supported = getSupportedWidgetSizes(type);
   if (supported.includes(size)) return size;
   return supported[supported.length - 1];
 };

@@ -3,13 +3,12 @@ import { MemberListItem } from "@components/MemberList/MemberListItem";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
 import { IconButton } from "@components/IconButton";
 import { useAppStore } from "@hooks/useStores";
-import { Typography } from "@mutualzz/ui-native";
+import { Modal, Typography } from "@mutualzz/ui-native";
 import { XIcon } from "phosphor-react-native";
 import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef } from "react";
 import {
-  Modal,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   ScrollView,
@@ -88,10 +87,13 @@ export const MemberListModal = observer(
 
     return (
       <Modal
-        visible={visible}
-        animationType="slide"
-        transparent
-        onRequestClose={onClose}
+        open={visible}
+        onClose={onClose}
+        layout="fullscreen"
+        hideBackdrop
+        showCloseButton={false}
+        disableBackdropClick
+        style={{ paddingVertical: 0 }}
       >
         <Screen
           elevation={app.settings?.preferEmbossed ? 4 : 1}
@@ -144,20 +146,23 @@ export const MemberListModal = observer(
                 <ListSection
                   key={`${category.name}-${index}`}
                   name={category.name}
-                  items={category.items.map((member: any) => (
-                    <MemberListItem
-                      key={
-                        member.userId ??
-                        member.user?.id ??
-                        `${category.name}-${index}`
-                      }
-                      member={member}
-                      space={space}
-                      isOwner={
-                        (member.userId ?? member.user?.id) === space?.ownerId
-                      }
-                    />
-                  ))}
+                  items={category.items.map(
+                    (member: any, memberIndex: number) => (
+                      <MemberListItem
+                        key={
+                          member.userId ??
+                          member.user?.id ??
+                          `${category.name}-${index}-${memberIndex}`
+                        }
+                        member={member}
+                        space={space}
+                        isOwner={
+                          (member.userId ?? member.user?.id) ===
+                          space?.ownerId
+                        }
+                      />
+                    ),
+                  )}
                 />
               ))}
 

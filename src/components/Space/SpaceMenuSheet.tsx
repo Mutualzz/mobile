@@ -10,12 +10,13 @@ import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
 import { useSpaceSettingsAccess } from "@hooks/useSpaceFromRoute";
-import { Box, Typography } from "@mutualzz/ui-native";
+import { Box, Modal, Typography } from "@mutualzz/ui-native";
+import type { Href } from "expo-router";
 import type { Space } from "@stores/objects/Space";
-import { GearIcon, SignOutIcon, TrashIcon } from "phosphor-react-native";
+import { GearIcon, SignOutIcon, TrashIcon, CheckCircleIcon } from "phosphor-react-native";
 import startCase from "lodash-es/startCase";
 import { observer } from "mobx-react-lite";
-import { Modal, Pressable, ScrollView } from "react-native";
+import { ScrollView, View } from "react-native";
 
 interface Props {
   space: Space;
@@ -34,13 +35,19 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
   const categories = me ? getVisibleSpaceSettingsPages(me) : [];
   const { canManage } = useSpaceSettingsAccess(space);
   const isOwner = space.ownerId === app.account?.id;
+  const hasUnread = space.hasUnread();
+
+  const markAllRead = () => {
+    void space.markAsRead();
+    onClose();
+  };
 
   const openSettings = (page?: SpaceSettingsPage) => {
     onClose();
     navigate(
-      page
+      (page
         ? `/(tabs)/spaces/${space.id}/settings/${page}`
-        : `/(tabs)/spaces/${space.id}/settings`,
+        : `/(tabs)/spaces/${space.id}/settings`) as Href,
     );
   };
 
@@ -70,19 +77,21 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
 
   return (
     <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
+      open={visible}
+      onClose={onClose}
+      layout="fullscreen"
+      showCloseButton={false}
+      style={{
+        justifyContent: "flex-end",
+        alignItems: "stretch",
+        backgroundColor: "transparent",
+        paddingVertical: 0,
+      }}
     >
-      <Box
-        style={{
-          flex: 1,
-          justifyContent: "flex-end",
-          backgroundColor: "rgba(0,0,0,0.45)",
-        }}
+      <View
+        pointerEvents="box-none"
+        style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
       >
-        <Pressable style={{ flex: 1 }} onPress={onClose} />
         <Paper
           variant="elevation"
           elevation={app.settings?.preferEmbossed ? 4 : 2}
@@ -102,6 +111,24 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
             contentContainerStyle={{ gap: 8 }}
             keyboardShouldPersistTaps="handled"
           >
+            {hasUnread ? (
+              <Button
+                variant="soft"
+                horizontalAlign="left"
+                startDecorator={
+                  <CheckCircleIcon
+                    size={20}
+                    weight="fill"
+                    color={navIconColor}
+                  />
+                }
+                fullWidth
+                onPress={markAllRead}
+              >
+                Mark all as read
+              </Button>
+            ) : null}
+
             {canManage ? (
               <Button
                 variant="soft"
@@ -109,6 +136,7 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
                 startDecorator={
                   <GearIcon size={20} weight="fill" color={navIconColor} />
                 }
+                fullWidth
                 onPress={() => openSettings()}
               >
                 Space settings
@@ -122,6 +150,7 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
                 </Typography>
                 {pages.map((page) => (
                   <Button
+                    fullWidth
                     key={page.label}
                     variant="plain"
                     horizontalAlign="left"
@@ -148,6 +177,7 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
                     color={dangerIconColor}
                   />
                 }
+                fullWidth
                 onPress={confirmLeave}
               >
                 Leave space
@@ -157,6 +187,7 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
                 variant="plain"
                 color="danger"
                 horizontalAlign="left"
+                fullWidth
                 startDecorator={
                   <TrashIcon size={20} weight="fill" color={dangerIconColor} />
                 }
@@ -167,11 +198,11 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
             )}
           </ScrollView>
 
-          <Button variant="plain" color="neutral" onPress={onClose}>
+          <Button variant="plain" fullWidth onPress={onClose}>
             Cancel
           </Button>
         </Paper>
-      </Box>
+      </View>
     </Modal>
   );
 });

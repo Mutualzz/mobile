@@ -81,16 +81,20 @@ export class ExpressionsStore {
     }
 
     add(expression: APIExpression) {
-        const newExpression = new Expression(this.app, expression);
-
         if (expression.spaceId) {
             const space = this.app.spaces.get(expression.spaceId);
             if (space) {
-                space.addExpression(expression);
-                return newExpression;
+                return space.addExpression(expression);
             }
         }
 
+        const existing = this.expressions.get(expression.id);
+        if (existing) {
+            existing.update(expression);
+            return existing;
+        }
+
+        const newExpression = new Expression(this.app, expression);
         this.expressions.set(newExpression.id, newExpression);
 
         return newExpression;

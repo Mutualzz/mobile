@@ -1,0 +1,63 @@
+import { MediaPostCard } from "@components/Feed/MediaPostCard";
+import { PostCard } from "@components/Feed/PostCard";
+import { Screen } from "@components/Screen/Screen";
+import { useAppStore } from "@hooks/useStores";
+import { Box, Typography } from "@mutualzz/ui-native";
+import { useQuery } from "@tanstack/react-query";
+import { useLocalSearchParams } from "expo-router";
+import { observer } from "mobx-react-lite";
+import { ActivityIndicator, ScrollView } from "react-native";
+
+const FeedPostDetailScreen = () => {
+  const app = useAppStore();
+  const { postId } = useLocalSearchParams<{ postId: string }>();
+
+  const { isLoading, isError } = useQuery({
+    queryKey: ["post", postId],
+    queryFn: () => app.posts.resolve(postId!, true),
+    enabled: !!postId,
+  });
+
+  const post = postId ? app.posts.get(postId) : undefined;
+
+  return (
+    <Screen
+      style={{
+        flexDirection: "column",
+        borderTopWidth: 0,
+        borderBottomWidth: 0,
+        borderLeftWidth: 0,
+        borderRightWidth: 0,
+      }}
+    >
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: 12,
+          paddingVertical: 16,
+        }}
+      >
+        {isLoading ? (
+          <Box style={{ padding: 24, alignItems: "center" }}>
+            <ActivityIndicator />
+          </Box>
+        ) : null}
+
+        {isError && !post ? (
+          <Typography level="body-sm" textColor="muted">
+            This post doesn&apos;t exist, or is no longer available.
+          </Typography>
+        ) : null}
+
+        {post ? (
+          post.attachments.length > 0 ? (
+            <MediaPostCard post={post} defaultCommentsOpen />
+          ) : (
+            <PostCard post={post} defaultCommentsOpen />
+          )
+        ) : null}
+      </ScrollView>
+    </Screen>
+  );
+};
+
+export default observer(FeedPostDetailScreen);

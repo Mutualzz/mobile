@@ -1,3 +1,4 @@
+import { clearRegisteredPushTokens } from "@utils/pushNotifications";
 import { Logger } from "@mutualzz/logger";
 import type {
   APIPrivateUser,
@@ -25,11 +26,13 @@ import { NavigationStore } from "@stores/Navigation.store";
 import { ExpressionsStore } from "@stores/Expressions.store";
 import { ReadStateStore } from "@stores/ReadState.store";
 import { RelationshipStore } from "@stores/Relationship.store";
+import { PostStore } from "@stores/Post.store";
 import { ProfileStore } from "@stores/Profile.store";
 import { TypingStore } from "@stores/Typing.store";
 import { PresenceStore } from "@stores/Presence.store";
 import { CustomStatusStore } from "@stores/CustomStatus.store";
 import { VoiceStore } from "@stores/Voice.store";
+import type { Message } from "@stores/objects/Message";
 import { VoiceStatesStore } from "@stores/VoiceStates.store";
 import type { User } from "@stores/objects/User";
 
@@ -56,6 +59,7 @@ export class AppStore {
   expressions = new ExpressionsStore(this);
   readStates = new ReadStateStore(this);
   relationships = new RelationshipStore(this);
+  posts = new PostStore(this);
   profiles = new ProfileStore(this);
   typing = new TypingStore(this);
   settings: AccountSettingsStore | null = null;
@@ -68,6 +72,8 @@ export class AppStore {
   dontShowLinkWarning = false;
   spacesDrawerOpen = true;
   dmDrawerOpen = true;
+  replyingTo: Message | null = null;
+  replyMention = true;
 
   private readonly logger = new Logger({
     tag: "AppStore",
@@ -106,6 +112,7 @@ export class AppStore {
   getSuggestedGroupDMRecipients(): User[] {
     const relationships = new Set(
       this.relationships.all
+        .filter((rel) => rel.isFriend)
         .map((rel) => rel.otherUser)
         .filter((user): user is User => !!user),
     );
@@ -128,7 +135,7 @@ export class AppStore {
 
     return Array.from(
       new Set([...relationships, ...otherUsers, ...mutualSpaceUsers]),
-    );
+    ).filter((user) => !this.relationships.isBlocked(user.id));
   }
 
   setDontShowLinkWarning(val: boolean) {
@@ -162,6 +169,15 @@ export class AppStore {
 
   setDMDrawerOpen(val: boolean) {
     this.dmDrawerOpen = val;
+  }
+
+  setReplyingTo(message: Message | null) {
+    this.replyingTo = message;
+    this.replyMention = true;
+  }
+
+  setReplyMention(val: boolean) {
+    this.replyMention = val;
   }
 
   setUser(user: APIPrivateUser, settings?: APIUserSettings) {
@@ -203,6 +219,9 @@ export class AppStore {
   }
 
   logout() {
+    void clearRegisteredPushTokens(this.rest).catch(() => undefined);
+    void this.gateway.disconnect();
+
     this.token = null;
     this.isAppLoading = false;
     this.isGatewayReady = true;
@@ -216,7 +235,16 @@ export class AppStore {
     this.relationships.clear();
     this.presence.clear();
     this.customStatus.clear();
+    this.voice.clear();
     this.voiceStates.clear();
+    this.spaces.clear();
+    this.channels.clear();
+    this.users.clear();
+    this.queue.clear();
+    this.typing.clear();
+    this.navigation.clear();
+    this.profiles.clear();
+    this.posts.clear();
     secureStorageAdapter.clear();
   }
 

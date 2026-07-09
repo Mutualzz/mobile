@@ -1,3 +1,4 @@
+import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
 import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
@@ -7,7 +8,6 @@ import { useMutation } from "@tanstack/react-query";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform } from "react-native";
 
 const ResetPassword = () => {
   const app = useAppStore();
@@ -36,13 +36,12 @@ const ResetPassword = () => {
   if (!token) return <Redirect href="/login" />;
 
   return (
-    <KeyboardAvoidingView
+    <AppKeyboardAvoidingView
       style={{
         flex: 1,
         justifyContent: "center",
         paddingHorizontal: 24,
       }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <Paper
         style={{
@@ -81,7 +80,7 @@ const ResetPassword = () => {
           </Button>
         </Box>
       </Paper>
-    </KeyboardAvoidingView>
+    </AppKeyboardAvoidingView>
   );
 };
 

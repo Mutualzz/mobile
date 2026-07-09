@@ -13,6 +13,8 @@ import {
   type APIChannel,
   type APIInvite,
   type APIMemberRole,
+  type APIPost,
+  type APIPostComment,
   type APIPrivateUser,
   type APIRole,
   type APIRelationship,
@@ -84,6 +86,8 @@ export class GatewayStore {
   private identifyStartTime?: number;
   private reconnectTimeout = 0;
   private reconnecting = false;
+  private reconnectTimer: Timer | null = null;
+  private shouldReconnect = true;
   private readonly dispatchHandlers = new Map<
     string,
     (...args: any[]) => any
@@ -197,6 +201,7 @@ export class GatewayStore {
       this.url = newUrl.href;
     }
 
+    this.shouldReconnect = true;
     this.logger.debug(`[Connect] Gateway URL ${this.url}`);
     this.connectionStartTime = Date.now();
     this.socket = openWebSocket(this.url, {
@@ -214,19 +219,36 @@ export class GatewayStore {
     this.setupDispatchHandlers();
   }
 
-  async disconnect(code?: number, reason?: string) {
-    if (!this.socket) return;
+  async disconnect(code = 1000, reason?: string) {
+    // Intentional disconnect (e.g. logout): stop any pending/future reconnects.
+    this.shouldReconnect = false;
+    this.clearReconnect();
 
-    this.readyState = GatewayStatus.CLOSING;
-    this.logger.debug(`[Disconnect] ${this.url}`);
-    this.socket.close(code, reason);
+    if (this.socket) {
+      this.readyState = GatewayStatus.CLOSING;
+      this.logger.debug(`[Disconnect] ${this.url}`);
+      this.socket.close(code, reason);
+    }
+
+    this.url = undefined;
+    this.reset();
   }
 
+  private clearReconnect = () => {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    this.reconnecting = false;
+  };
+
   startReconnect() {
+    if (!this.shouldReconnect) return;
     if (this.reconnecting) return;
 
     this.reconnecting = true;
-    setTimeout(() => {
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
       this.reconnecting = false;
       this.logger.debug(`[Reconnect] ${this.url}`);
       this.connect(this.url);
@@ -244,7 +266,7 @@ export class GatewayStore {
         [channelId]: [[0, 99]],
       },
     };
-    this.lazyRequestChannels.set(spaceId, [channelId]);
+    this.lazyRequestChannels.set(spaceId, [...spaceChannels, channelId]);
 
     this.send({
       op: GatewayOpcodes.LazyRequest,
@@ -314,6 +336,35 @@ export class GatewayStore {
       },
       { persist: Boolean(opts?.persist) },
     );
+  }
+
+  scheduleStatus(opts: { status: PresenceStatus; durationMs: number }) {
+    this.send({
+      op: GatewayOpcodes.PresenceScheduleSet,
+      d: {
+        status: opts.status,
+        durationMs: opts.durationMs,
+      },
+    });
+  }
+
+  clearScheduledStatus() {
+    this.send({
+      op: GatewayOpcodes.PresenceScheduleClear,
+      d: {},
+    });
+  }
+
+  sendVoiceStateUpdate(payload: {
+    spaceId: Snowflake | null;
+    channelId: Snowflake | null;
+    selfMute: boolean;
+    selfDeaf: boolean;
+  }) {
+    this.send({
+      op: GatewayOpcodes.VoiceStateUpdate,
+      d: payload,
+    });
   }
 
   setCustomStatus(
@@ -580,12 +631,57 @@ export class GatewayStore {
       this.onCustomStatusScheduleUpdate,
     );
     this.dispatchHandlers.set(
+      GatewayDispatchEvents.VoiceServerUpdate,
+      this.onVoiceServerUpdate,
+    );
+    this.dispatchHandlers.set(
       GatewayDispatchEvents.VoiceStateSync,
       this.onVoiceStateSync,
     );
     this.dispatchHandlers.set(
       GatewayDispatchEvents.VoiceStateUpdate,
       this.onVoiceStateUpdate,
+    );
+
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.PostCreate,
+      this.onPostCreate,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.PostUpdate,
+      this.onPostUpdate,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.PostDelete,
+      this.onPostDelete,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.PostCommentCreate,
+      this.onPostCommentCreate,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.PostCommentUpdate,
+      this.onPostCommentUpdate,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.PostCommentDelete,
+      this.onPostCommentDelete,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.PostLikeAdd,
+      this.onPostLikeAdd,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.PostLikeRemove,
+      this.onPostLikeRemove,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.PostShareAdd,
+      this.onPostShareAdd,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.PostShareRemove,
+      this.onPostShareRemove,
     );
   }
 
@@ -777,6 +873,8 @@ export class GatewayStore {
     }
 
     if (code === GatewayCloseCodes.NotAuthenticated) return;
+
+    if (!this.shouldReconnect) return;
 
     if (this.reconnectTimeout === 0) this.reconnectTimeout = RECONNECT_TIMEOUT;
     else this.reconnectTimeout += RECONNECT_TIMEOUT;
@@ -1175,9 +1273,7 @@ export class GatewayStore {
 
     if (payload.id === this.app.account?.id) {
       if (
-        BitField.fromString(userFlags, payload.flags.toString()).has(
-          "Disabled",
-        )
+        BitField.fromString(userFlags, payload.flags.toString()).has("Disabled")
       ) {
         void this.app.logout();
         return;
@@ -1333,7 +1429,7 @@ export class GatewayStore {
   };
 
   private onRelationshipCreate = (payload: APIRelationship) => {
-    this.app.relationships.add(payload);
+    this.app.relationships.update(payload);
   };
 
   private onRelationshipUpdate = (payload: APIRelationship) => {
@@ -1495,7 +1591,98 @@ export class GatewayStore {
     this.app.voice.onVoiceStateSync(payload);
   };
 
+  private onVoiceServerUpdate = (payload: {
+    roomId?: string;
+    spaceId?: Snowflake | null;
+    channelId: Snowflake;
+    voiceEndpoint: string;
+    voiceToken: string;
+    sessionId: string;
+  }) => {
+    this.app.voice.onVoiceServerUpdate(payload);
+  };
+
   private onVoiceStateUpdate = (payload: any) => {
     this.app.voice.onVoiceStateUpdate(payload);
+  };
+
+  private onPostCreate = (payload: APIPost) => {
+    this.app.posts.add(payload);
+  };
+
+  private onPostUpdate = (payload: APIPost) => {
+    this.app.posts.update(payload);
+  };
+
+  private onPostDelete = (payload: Pick<APIPost, "id">) => {
+    this.app.posts.remove(payload.id);
+  };
+
+  private onPostCommentCreate = (payload: APIPostComment) => {
+    const post = this.app.posts.get(payload.postId);
+    if (!post) return;
+
+    const alreadyHave = post.comments.has(payload.id);
+    post.comments.add(payload);
+    if (!alreadyHave) post.bumpCommentCount(1);
+  };
+
+  private onPostCommentUpdate = (payload: APIPostComment) => {
+    const post = this.app.posts.get(payload.postId);
+    if (!post) return;
+
+    post.comments.update(payload);
+  };
+
+  private onPostCommentDelete = (
+    payload: Pick<APIPostComment, "id" | "postId">,
+  ) => {
+    const post = this.app.posts.get(payload.postId);
+    if (!post) return;
+
+    if (post.comments.has(payload.id)) post.bumpCommentCount(-1);
+    post.comments.remove(payload.id);
+  };
+
+  private onPostLikeAdd = (payload: { postId: string; userId: string }) => {
+    if (payload.userId === this.app.account?.id) return;
+
+    const post = this.app.posts.get(payload.postId);
+    if (!post) return;
+
+    post.bumpLikeCount(1);
+  };
+
+  private onPostLikeRemove = (payload: {
+    postId: string;
+    userId: string;
+  }) => {
+    if (payload.userId === this.app.account?.id) return;
+
+    const post = this.app.posts.get(payload.postId);
+    if (!post) return;
+
+    post.bumpLikeCount(-1);
+  };
+
+  private onPostShareAdd = (payload: { postId: string; userId: string }) => {
+    if (payload.userId === this.app.account?.id) return;
+
+    const post = this.app.posts.get(payload.postId);
+    if (!post) return;
+
+    post.bumpShareCount(1);
+  };
+
+  private onPostShareRemove = (payload: {
+    postId: string;
+    userId: string;
+  }) => {
+    if (payload.userId === this.app.account?.id) return;
+
+    const post = this.app.posts.get(payload.postId);
+    if (!post) return;
+
+    post.bumpShareCount(-1);
   };
 }

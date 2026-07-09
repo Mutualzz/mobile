@@ -7,11 +7,13 @@ import {
 } from "@components/UserSettings/CustomStatusSheet";
 import { useAppStore } from "@hooks/useStores";
 import type { PresenceStatus } from "@mutualzz/types";
-import { Box, Divider, Typography, useTheme } from "@mutualzz/ui-native";
+import { STATUS_DURATION_OPTIONS } from "@utils/statusDurations";
+import { useScaledSquareSize } from "@utils/accessibilityLayout";
+import { Box, Divider, Modal, Typography, useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { CheckIcon, SmileyIcon, XIcon } from "phosphor-react-native";
 import { useState } from "react";
-import { Modal, Pressable } from "react-native";
+import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface Props {
@@ -50,14 +52,30 @@ export const ChangeOnlineStatusModal = observer(
     const app = useAppStore();
     const { theme } = useTheme();
     const insets = useSafeAreaInsets();
+    const statusEmojiBoxSize = useScaledSquareSize(32);
     const account = app.account;
     const effectiveStatus = app.presence.get(account?.id ?? "")?.status;
     const customStatusText = app.customStatus.effectiveText;
     const customStatusEmoji = app.customStatus.effectiveEmoji;
     const [customStatusSheetOpen, setCustomStatusSheetOpen] = useState(false);
+    const [selectedStatus, setSelectedStatus] = useState<PresenceStatus | null>(
+      null,
+    );
+    const [selectedDurationMs, setSelectedDurationMs] = useState<number | null>(
+      STATUS_DURATION_OPTIONS[1]?.durationMs ?? null,
+    );
 
     const selectStatus = (status: PresenceStatus) => {
-      app.gateway.setStatus(status, { persist: true });
+      if (selectedDurationMs == null) {
+        app.gateway.clearScheduledStatus();
+        app.gateway.setStatus(status, { persist: true });
+      } else {
+        app.gateway.scheduleStatus({
+          status,
+          durationMs: selectedDurationMs,
+        });
+      }
+      setSelectedStatus(status);
       onDone();
     };
 
@@ -66,19 +84,18 @@ export const ChangeOnlineStatusModal = observer(
     return (
       <>
         <Modal
-          visible={visible}
-          animationType="slide"
-          transparent
-          onRequestClose={onClose}
+          open={visible}
+          onClose={onClose}
+          layout="fullscreen"
+          showCloseButton={false}
+          style={{
+            justifyContent: "flex-end",
+            alignItems: "stretch",
+            backgroundColor: "transparent",
+            paddingVertical: 0,
+          }}
         >
-          <Box
-            style={{
-              flex: 1,
-              justifyContent: "flex-end",
-              backgroundColor: "rgba(0,0,0,0.45)",
-            }}
-          >
-            <Pressable style={{ flex: 1 }} onPress={onClose} />
+          <View pointerEvents="box-none" style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}>
             <Pressable onPress={() => undefined}>
               <Paper
                 elevation={app.settings?.preferEmbossed ? 4 : 2}
@@ -112,7 +129,9 @@ export const ChangeOnlineStatusModal = observer(
                 </Box>
 
                 {STATUS_OPTIONS.map((option) => {
-                  const active = effectiveStatus === option.status;
+                  const active =
+                    selectedStatus === option.status ||
+                    effectiveStatus === option.status;
 
                   return (
                     <Pressable
@@ -145,7 +164,7 @@ export const ChangeOnlineStatusModal = observer(
                           <Typography
                             level="body-xs"
                             textColor="muted"
-                            numberOfLines={1}
+                            truncate="single"
                           >
                             {option.description}
                           </Typography>
@@ -164,6 +183,46 @@ export const ChangeOnlineStatusModal = observer(
 
                 <Divider style={{ marginVertical: 8 }} />
 
+                <Box style={{ gap: 8, paddingHorizontal: 8, paddingBottom: 8 }}>
+                  <Typography level="body-xs" textColor="muted">
+                    Clear status after
+                  </Typography>
+                  <Box
+                    style={{
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: 8,
+                    }}
+                  >
+                    {STATUS_DURATION_OPTIONS.map((option) => {
+                      const active = selectedDurationMs === option.durationMs;
+                      return (
+                        <Pressable
+                          key={option.label}
+                          onPress={() => setSelectedDurationMs(option.durationMs)}
+                          style={{
+                            paddingHorizontal: 10,
+                            paddingVertical: 6,
+                            borderRadius: 999,
+                            backgroundColor: active
+                              ? `${theme.colors.primary}18`
+                              : theme.colors.surface,
+                          }}
+                        >
+                          <Typography
+                            level="body-xs"
+                            weight={active ? 700 : 500}
+                          >
+                            {option.label}
+                          </Typography>
+                        </Pressable>
+                      );
+                    })}
+                  </Box>
+                </Box>
+
+                <Divider style={{ marginBottom: 8 }} />
+
                 <Pressable
                   onPress={() => setCustomStatusSheetOpen(true)}
                   style={{
@@ -178,9 +237,9 @@ export const ChangeOnlineStatusModal = observer(
                 >
                   <Box
                     style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 16,
+                      width: statusEmojiBoxSize,
+                      height: statusEmojiBoxSize,
+                      borderRadius: statusEmojiBoxSize / 2,
                       alignItems: "center",
                       justifyContent: "center",
                       backgroundColor: `${theme.colors.neutral}18`,
@@ -198,7 +257,7 @@ export const ChangeOnlineStatusModal = observer(
                   <Typography
                     level="body-sm"
                     textColor={customStatusText ? undefined : "muted"}
-                    numberOfLines={1}
+                    truncate="single"
                     style={{ flex: 1 }}
                   >
                     {customStatusText || "Set a custom status..."}
@@ -206,7 +265,7 @@ export const ChangeOnlineStatusModal = observer(
                 </Pressable>
               </Paper>
             </Pressable>
-          </Box>
+          </View>
         </Modal>
 
         <CustomStatusSheet

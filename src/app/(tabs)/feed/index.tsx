@@ -1,15 +1,19 @@
+import { FeedHeader } from "@components/Feed/FeedHeader";
+import { PostList } from "@components/Feed/PostList";
 import { Screen } from "@components/Screen/Screen";
 import { useTabBarContentInset } from "@hooks/useTabBarContentInset";
-import { Stack, Typography } from "@mutualzz/ui-native";
+import { Box } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
+import { useState } from "react";
 
-export default observer(() => {
+const FeedIndexScreen = () => {
   const tabBarInset = useTabBarContentInset();
+  const [listHeight, setListHeight] = useState(0);
 
   return (
     <Screen
       style={{
-        flexDirection: "row",
+        flexDirection: "column",
         paddingBottom: tabBarInset,
         borderTopWidth: 0,
         borderBottomWidth: 0,
@@ -17,19 +21,20 @@ export default observer(() => {
         borderRightWidth: 0,
       }}
     >
-      <Stack
-        flex={1}
-        justifyContent="center"
-        alignItems="center"
-        style={{
-          paddingHorizontal: 20,
+      <FeedHeader />
+      <Box
+        style={{ flex: 1 }}
+        onLayout={(event) => {
+          const nextHeight = Math.round(event.nativeEvent.layout.height);
+          if (nextHeight !== listHeight) setListHeight(nextHeight);
         }}
       >
-        <Typography style={{ textAlign: "center" }} textColor="muted">
-          Your feed is coming soon. Use the sidebar to view your public profile
-          or customize your page.
-        </Typography>
-      </Stack>
+        {listHeight > 0 ? (
+          <PostList variant="for-you" snap listHeight={listHeight} />
+        ) : null}
+      </Box>
     </Screen>
   );
-});
+};
+
+export default observer(FeedIndexScreen);

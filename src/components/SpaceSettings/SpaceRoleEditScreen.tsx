@@ -1,12 +1,18 @@
 import { Button } from "@components/Button";
 import { SpaceRoleEditDisplay } from "@components/SpaceSettings/SpaceRoleEditDisplay";
+import { SpaceRoleEditManageMembers } from "@components/SpaceSettings/SpaceRoleEditManageMembers";
 import type { RoleEditable } from "@components/SpaceSettings/SpaceRoleEditDisplay";
 import { SpaceRoleEditPermissions } from "@components/SpaceSettings/SpaceRoleEditPermissions";
+import { RoleHierarchyAssignLock } from "@components/SpaceSettings/RoleHierarchyLock";
+import {
+  canAssignRole,
+  getHierarchyContext,
+} from "@components/SpaceSettings/roleHierarchy.utils";
 import { SpaceSettingsScreen } from "@components/SpaceSettings/SpaceSettingsScreen";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import type { APIRole } from "@mutualzz/types";
-import { Box, Typography } from "@mutualzz/ui-native";
+import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Role } from "@stores/objects/Role";
 import type { Space } from "@stores/objects/Space";
 import { normalizeJSON } from "@utils/JSON";
@@ -14,7 +20,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView } from "react-native";
 
-type RoleTab = "display" | "permissions";
+type RoleTab = "display" | "permissions" | "members";
 
 interface Props {
   space: Space;
@@ -35,6 +41,7 @@ const pickEditable = (role: Role): RoleEditable => {
 
 export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
   const app = useAppStore();
+  const { theme } = useTheme();
   const { back } = useAppNavigation();
   const isEveryone = role.id === space.id;
   const [tab, setTab] = useState<RoleTab>(
@@ -61,8 +68,13 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
     );
   }, [base, changes]);
 
+  const hierarchyContext = getHierarchyContext(space, space.members.me);
+  const canEditRole = isEveryone
+    ? hierarchyContext.canManageRoles
+    : canAssignRole(hierarchyContext, role);
+
   const saveRole = async () => {
-    if (!dirty || saving) return;
+    if (!canEditRole || !dirty || saving) return;
 
     setSaving(true);
     setError(null);
@@ -127,6 +139,17 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
             Permissions
           </Typography>
         </Pressable>
+        {!isEveryone ? (
+          <Pressable onPress={() => setTab("members")}>
+            <Typography
+              level="body-sm"
+              weight={tab === "members" ? 700 : 400}
+              textColor={tab === "members" ? undefined : "muted"}
+            >
+              Members
+            </Typography>
+          </Pressable>
+        ) : null}
       </Box>
 
       <ScrollView
@@ -138,11 +161,34 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
         }}
         keyboardShouldPersistTaps="handled"
       >
+        {!canEditRole ? (
+          <Box
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              padding: 12,
+              borderRadius: 10,
+              backgroundColor: `${theme.colors.neutral}14`,
+            }}
+          >
+            <RoleHierarchyAssignLock />
+            <Typography level="body-sm" textColor="muted" style={{ flex: 1 }}>
+              You can't edit this role because it's at or above your highest
+              role.
+            </Typography>
+          </Box>
+        ) : null}
+
         {tab === "display" && !isEveryone ? (
           <SpaceRoleEditDisplay changes={changes} setChanges={setChanges} />
-        ) : (
+        ) : null}
+        {tab === "permissions" && (
           <SpaceRoleEditPermissions changes={changes} setChanges={setChanges} />
         )}
+        {tab === "members" && !isEveryone ? (
+          <SpaceRoleEditManageMembers role={role} />
+        ) : null}
 
         {error ? (
           <Typography level="body-sm" color="danger" variant="plain">
@@ -162,7 +208,7 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
           </Button>
           <Button
             expand
-            disabled={!dirty || saving}
+            disabled={!dirty || saving || !canEditRole}
             onPress={() => void saveRole()}
           >
             {saving ? "Saving..." : "Save changes"}

@@ -1,16 +1,21 @@
+import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
 import { Button } from "@components/Button";
 import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
+import { ProfileMarkdownField } from "@components/Profile/shared/ProfileMarkdownField";
 import {
   ProfileDrawCanvas,
   renderStrokesToSvg,
   type DrawCanvasState,
 } from "@components/Profile/widgets/editor/ProfileDrawCanvas";
+import { PROFILE_DRAW_CANVAS_SIZE } from "@components/Profile/widgets/editor/drawCanvas.constants";
+import { parseDrawCanvasState } from "@components/Profile/widgets/editor/drawCanvas.utils";
 import { ProfileWidgetMusicPicker } from "@components/Profile/widgets/editor/ProfileWidgetMusicPicker";
 import { useAppStore } from "@hooks/useStores";
 import type { UserProfile } from "@stores/objects/UserProfile";
 import type { APIMobileProfileBlock, ProfileLinkItem } from "@mutualzz/types";
-import { Box, Input, Switch, Slider, Typography, useTheme } from "@mutualzz/ui-native";
+import { Box, Input, Modal, Switch, Slider, Typography, useTheme } from "@mutualzz/ui-native";
+import { useScaledProfilePreviewHeight } from "@utils/accessibilityLayout";
 import * as DocumentPicker from "expo-document-picker";
 import {
   ArrowLeftIcon,
@@ -19,8 +24,12 @@ import {
   UploadSimpleIcon,
 } from "phosphor-react-native";
 import type { ReactNode } from "react";
-import { useState } from "react";
-import { Image, Modal, Pressable, ScrollView } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  Image,
+  Pressable,
+  ScrollView,
+} from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SvgXml } from "react-native-svg";
@@ -44,14 +53,47 @@ export function ProfileWidgetContentEditorSheet({
 }: Props) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const [drawMode, setDrawMode] = useState(false);
+
+  useEffect(() => {
+    if (!visible) setDrawMode(false);
+  }, [visible]);
+
+  useEffect(() => {
+    setDrawMode(false);
+  }, [block?.id]);
 
   if (!block) return null;
 
   const update = (patch: Record<string, unknown>) => onUpdate(block.id, patch);
+  const isDrawBlock = block.type === "draw";
+  const drawBlock = block.type === "draw" ? block : null;
+
+  const handleDrawSave = (state: DrawCanvasState) => {
+    update({
+      paths: JSON.stringify({
+        ...state,
+        canvasSize: state.canvasSize ?? PROFILE_DRAW_CANVAS_SIZE,
+      }),
+      svgData: renderStrokesToSvg(state),
+      backgroundColor: state.backgroundColor,
+    });
+    setDrawMode(false);
+  };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <Box style={{ flex: 1, backgroundColor: theme.colors.background, paddingTop: insets.top }}>
+    <Modal
+      open={visible}
+      onClose={onClose}
+      layout="fullscreen"
+      hideBackdrop
+      showCloseButton={false}
+      disableBackdropClick
+      style={{ paddingVertical: 0 }}
+    >
+      <AppKeyboardAvoidingView
+        style={{ flex: 1, backgroundColor: theme.colors.background, paddingTop: insets.top }}
+      >
         <Box
           style={{
             flexDirection: "row",
@@ -61,31 +103,67 @@ export function ProfileWidgetContentEditorSheet({
             paddingVertical: 10,
           }}
         >
-          <IconButton padding={6} onPress={onClose} accessibilityLabel="Back">
+          <IconButton
+            padding={6}
+            onPress={() => (drawMode ? setDrawMode(false) : onClose())}
+            accessibilityLabel="Back"
+          >
             <ArrowLeftIcon size={20} />
           </IconButton>
           <Typography level="title-md" weight="bold">
-            Edit Widget
+            {drawMode ? "Draw" : "Edit Widget"}
           </Typography>
         </Box>
 
-        <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
-          <ProfileWidgetContentFields block={block} profile={profile} update={update} />
-        </ScrollView>
-
-        <Box style={{ padding: 16, paddingBottom: insets.bottom + 16 }}>
-          <Button
-            variant="soft"
-            color="danger"
-            onPress={() => {
-              onDelete(block.id);
-              onClose();
+        {isDrawBlock && drawMode && drawBlock ? (
+          <Box
+            style={{
+              flex: 1,
+              paddingHorizontal: 16,
+              paddingBottom: insets.bottom + 16,
             }}
           >
-            Delete widget
-          </Button>
-        </Box>
-      </Box>
+            <ProfileDrawCanvas
+              key={`${drawBlock.id}-${drawBlock.paths ?? "new"}-${drawBlock.svgData ?? ""}`}
+              initial={parseDrawCanvasState(
+                drawBlock.paths,
+                drawBlock.backgroundColor,
+              )}
+              onCancel={() => setDrawMode(false)}
+              onSave={handleDrawSave}
+            />
+          </Box>
+        ) : (
+          <>
+            <ScrollView
+              contentContainerStyle={{ padding: 16, gap: 16 }}
+              keyboardShouldPersistTaps="handled"
+            >
+              <ProfileWidgetContentFields
+                block={block}
+                profile={profile}
+                update={update}
+                onStartDrawing={
+                  isDrawBlock ? () => setDrawMode(true) : undefined
+                }
+              />
+            </ScrollView>
+
+            <Box style={{ padding: 16, paddingBottom: insets.bottom + 16 }}>
+              <Button
+                variant="soft"
+                color="danger"
+                onPress={() => {
+                  onDelete(block.id);
+                  onClose();
+                }}
+              >
+                Delete widget
+              </Button>
+            </Box>
+          </>
+        )}
+      </AppKeyboardAvoidingView>
     </Modal>
   );
 }
@@ -154,10 +232,12 @@ function ProfileWidgetContentFields({
   block,
   profile,
   update,
+  onStartDrawing,
 }: {
   block: APIMobileProfileBlock;
   profile: UserProfile;
   update: (patch: Record<string, unknown>) => void;
+  onStartDrawing?: () => void;
 }) {
   switch (block.type) {
     case "header":
@@ -181,13 +261,12 @@ function ProfileWidgetContentFields({
     case "text":
       return (
         <FieldSection title="Text">
-          <Input
+          <ProfileMarkdownField
             value={block.content}
-            onChangeText={(content) => update({ content })}
+            onChange={(content) => update({ content })}
             placeholder="Write something..."
-            multiline
             maxLength={2000}
-            style={{ minHeight: 100, textAlignVertical: "top" }}
+            minHeight={100}
           />
         </FieldSection>
       );
@@ -278,13 +357,12 @@ function ProfileWidgetContentFields({
       return (
         <>
           <FieldSection title="Quote">
-            <Input
+            <ProfileMarkdownField
               value={block.content}
-              onChangeText={(content) => update({ content })}
+              onChange={(content) => update({ content })}
               placeholder="Write a quote..."
-              multiline
               maxLength={1000}
-              style={{ minHeight: 80, textAlignVertical: "top" }}
+              minHeight={100}
             />
           </FieldSection>
           <FieldSection title="Style">
@@ -306,7 +384,9 @@ function ProfileWidgetContentFields({
         </>
       );
     case "draw":
-      return <ProfileDrawFields block={block} update={update} />;
+      return (
+        <ProfileDrawFields block={block} onStartDrawing={onStartDrawing} />
+      );
     default:
       return null;
   }
@@ -314,81 +394,35 @@ function ProfileWidgetContentFields({
 
 function ProfileDrawFields({
   block,
-  update,
+  onStartDrawing,
 }: {
   block: Extract<APIMobileProfileBlock, { type: "draw" }>;
-  update: (patch: Record<string, unknown>) => void;
+  onStartDrawing?: () => void;
 }) {
-  const [canvasOpen, setCanvasOpen] = useState(false);
-  const { theme } = useTheme();
-  const insets = useSafeAreaInsets();
-
-  const initialCanvasState: DrawCanvasState | null = (() => {
-    if (!block.paths) return null;
-    try {
-      return JSON.parse(block.paths) as DrawCanvasState;
-    } catch {
-      return null;
-    }
-  })();
-
-  const handleSave = (state: DrawCanvasState) => {
-    update({
-      paths: JSON.stringify(state),
-      svgData: renderStrokesToSvg(state),
-      backgroundColor: state.backgroundColor,
-    });
-    setCanvasOpen(false);
-  };
+  const drawPreviewHeight = useScaledProfilePreviewHeight(160);
 
   return (
     <FieldSection title="Drawing">
       {block.svgData ? (
-        <Box style={{ width: "100%", height: 160, borderRadius: 8, overflow: "hidden" }}>
+        <Box
+          style={{
+            width: "100%",
+            height: drawPreviewHeight,
+            borderRadius: 8,
+            overflow: "hidden",
+            backgroundColor: block.backgroundColor ?? "#1a1a2e",
+          }}
+        >
           <SvgXml xml={block.svgData} width="100%" height="100%" />
         </Box>
-      ) : null}
-      <Button color="neutral" onPress={() => setCanvasOpen(true)}>
+      ) : (
+        <Typography level="body-sm" textColor="muted">
+          No drawing yet. Open the canvas to sketch something for this widget.
+        </Typography>
+      )}
+      <Button color="neutral" onPress={onStartDrawing} disabled={!onStartDrawing}>
         {block.svgData ? "Edit drawing" : "Start drawing"}
       </Button>
-
-      <Modal
-        visible={canvasOpen}
-        animationType="slide"
-        onRequestClose={() => setCanvasOpen(false)}
-      >
-        <Box
-          style={{ flex: 1, backgroundColor: theme.colors.background, paddingTop: insets.top }}
-        >
-          <Box
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-            }}
-          >
-            <IconButton
-              padding={6}
-              onPress={() => setCanvasOpen(false)}
-              accessibilityLabel="Back"
-            >
-              <ArrowLeftIcon size={20} />
-            </IconButton>
-            <Typography level="title-md" weight="bold">
-              Draw
-            </Typography>
-          </Box>
-          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 16, gap: 16 }}>
-            <ProfileDrawCanvas
-              initial={initialCanvasState}
-              onCancel={() => setCanvasOpen(false)}
-              onSave={handleSave}
-            />
-          </ScrollView>
-        </Box>
-      </Modal>
     </FieldSection>
   );
 }
@@ -407,6 +441,7 @@ function ProfileImageFields({
   const app = useAppStore();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const imagePreviewHeight = useScaledProfilePreviewHeight(140);
 
   const previewUrl = src
     ? src.startsWith("http")
@@ -449,7 +484,7 @@ function ProfileImageFields({
         <FieldSection title="Preview">
           <Image
             source={{ uri: previewUrl }}
-            style={{ width: "100%", height: 140, borderRadius: 8 }}
+            style={{ width: "100%", height: imagePreviewHeight, borderRadius: 8 }}
             resizeMode="cover"
           />
         </FieldSection>

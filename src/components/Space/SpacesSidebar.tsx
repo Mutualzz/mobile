@@ -1,5 +1,6 @@
 import { IconButton } from "@components/IconButton";
 import { AppLogo } from "@components/Logo/AppLogo";
+import { ReorderableVerticalList } from "@components/Reorder/ReorderableVerticalList";
 import { Screen } from "@components/Screen/Screen";
 import { type PillType, SidebarPill } from "@components/SidebarPill";
 import { SpaceIcon } from "@components/Space/SpaceIcon";
@@ -12,6 +13,7 @@ import { Box } from "@mutualzz/ui-native";
 import type { Space } from "@stores/objects/Space";
 import { useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
+import { useCallback } from "react";
 import { Pressable } from "react-native";
 
 const SidebarSpace = observer(
@@ -43,6 +45,9 @@ const SidebarSpace = observer(
             app.spaces.setMostRecentSpace(space.id);
             router.replace(`/spaces/${space.id}`);
           }}
+          accessibilityRole="button"
+          accessibilityLabel={`${space.name}${pillType === "unread" ? ", unread" : ""}`}
+          accessibilityState={{ selected: active }}
         >
           <SpaceIcon selected={active} space={space} />
         </Pressable>
@@ -62,6 +67,16 @@ export const SpacesSidebar = observer(() => {
     ? "unread"
     : "none";
 
+  const spaces = app.spaces.positioned;
+  const canReorderSpaces = spaces.length > 1;
+
+  const handleReorderSpaces = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      app.settings?.moveSpace(fromIndex, toIndex);
+    },
+    [app.settings],
+  );
+
   return (
     <Screen
       fill={false}
@@ -76,6 +91,7 @@ export const SpacesSidebar = observer(() => {
         borderRightWidth: 0,
         width: 64,
         flexShrink: 0,
+        overflow: "visible",
       }}
       elevation={app.settings?.preferEmbossed ? 2 : 0}
     >
@@ -97,13 +113,21 @@ export const SpacesSidebar = observer(() => {
         />
       </Box>
 
-      {app.spaces.positioned.map((space) => (
-        <SidebarSpace
-          active={space.id === app.spaces.activeId}
-          key={space.id}
-          space={space}
-        />
-      ))}
+      <ReorderableVerticalList
+        items={spaces}
+        onReorder={handleReorderSpaces}
+        enabled={canReorderSpaces}
+        dragTarget="row"
+        rowGap={12}
+        estimatedRowHeight={48}
+        style={{ width: "100%" }}
+        renderItem={(space) => (
+          <SidebarSpace
+            active={space.id === app.spaces.activeId}
+            space={space}
+          />
+        )}
+      />
       <IconButton
         shape="circle"
         color="success"

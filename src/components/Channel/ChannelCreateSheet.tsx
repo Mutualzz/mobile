@@ -12,14 +12,16 @@ import {
   Box,
   ButtonGroup,
   InputDefault,
+  Modal,
   Typography,
 } from "@mutualzz/ui-native";
+import { MODAL_SHEET_WRAPPER_STYLE, useModalSheetMaxHeight } from "@utils/modalSheet";
 import type { Channel } from "@stores/objects/Channel";
 import type { Space } from "@stores/objects/Space";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Modal, ScrollView } from "react-native";
+import { ScrollView, View } from "react-native";
 
 interface Props {
   visible: boolean;
@@ -35,6 +37,7 @@ export const ChannelCreateSheet = observer(
     const [name, setName] = useState("");
     const [type, setType] = useState<ChannelType>(ChannelType.Text);
     const [error, setError] = useState<string | null>(null);
+    const maxSheetHeight = useModalSheetMaxHeight(0.85);
 
     const { mutate: createChannel, isPending } = useMutation({
       mutationKey: ["create-channel", space.id, name, type],
@@ -60,14 +63,19 @@ export const ChannelCreateSheet = observer(
     });
 
     return (
-      <Modal visible={visible} animationType="slide" transparent>
-        <Box
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            backgroundColor: "rgba(0,0,0,0.45)",
-          }}
-        >
+      <Modal
+        open={visible}
+        onClose={onClose}
+        layout="fullscreen"
+        showCloseButton={false}
+        style={{
+          justifyContent: "flex-end",
+          alignItems: "stretch",
+          backgroundColor: "transparent",
+          paddingVertical: 0,
+        }}
+      >
+        <View pointerEvents="box-none" style={MODAL_SHEET_WRAPPER_STYLE}>
           <Paper
             elevation={app.settings?.preferEmbossed ? 4 : 2}
             style={{
@@ -75,7 +83,7 @@ export const ChannelCreateSheet = observer(
               borderTopRightRadius: 16,
               padding: 20,
               gap: 16,
-              maxHeight: "80%",
+              maxHeight: maxSheetHeight,
             }}
           >
             <Typography level="body-lg" weight="bold">
@@ -134,7 +142,7 @@ export const ChannelCreateSheet = observer(
               </Button>
             </Box>
           </Paper>
-        </Box>
+        </View>
       </Modal>
     );
   },

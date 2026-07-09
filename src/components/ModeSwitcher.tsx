@@ -3,7 +3,7 @@ import { PlanetIcon, ScribbleIcon } from "phosphor-react-native";
 import { useAppStore } from "@hooks/useStores";
 import { type AppMode } from "@mutualzz/types";
 import { useTheme } from "@mutualzz/ui-native";
-import { getFloatingTabBarInset } from "@utils/layout";
+import { getFloatingTabBarInset, shouldShowVoiceUserBarPill } from "@utils/layout";
 import { switchMode } from "@utils/index";
 import { usePathname, useRouter } from "expo-router";
 import { TabTrigger } from "expo-router/ui";
@@ -43,13 +43,14 @@ export const ModeSwitcher = observer(({ withTrigger = true }: Props) => {
   };
 
   const iconColor = theme.typography.colors.primary;
+  const showVoicePill = shouldShowVoiceUserBarPill(app.voice);
 
   const button = (
     <IconButton
       color="primary"
       style={{
         position: "absolute",
-        bottom: getFloatingTabBarInset(insets) + 8,
+        bottom: getFloatingTabBarInset(insets, showVoicePill) + 8,
         right: 16,
         borderRadius: 9999,
         zIndex: theme.zIndex.fab,

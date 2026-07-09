@@ -6,6 +6,7 @@ import {
   Box,
   ButtonGroup,
   InputDefault,
+  Modal,
   Typography,
 } from "@mutualzz/ui-native";
 import type { SpaceMember } from "@stores/objects/SpaceMember";
@@ -13,7 +14,6 @@ import type { Space } from "@stores/objects/Space";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Modal } from "react-native";
 
 const TIMEFRAMES = [
   { label: "Don't delete", value: 0 },
@@ -48,56 +48,62 @@ export const MemberBanSheet = observer(
     });
 
     return (
-      <Modal visible={visible} animationType="fade" transparent>
+      <Modal
+        open={visible}
+        onClose={onClose}
+        layout="center"
+        showCloseButton={false}
+      >
         <Box
+          pointerEvents="box-none"
           style={{
             flex: 1,
             justifyContent: "center",
             padding: 24,
-            backgroundColor: "rgba(0,0,0,0.45)",
           }}
         >
-          <Paper
-            elevation={app.settings?.preferEmbossed ? 4 : 2}
-            style={{ padding: 20, borderRadius: 12, gap: 12 }}
-          >
-            <Typography weight="bold">
-              Ban {member.user?.displayName}?
-            </Typography>
-            <InputDefault
-              fullWidth
-              placeholder="Reason"
-              value={reason}
-              onChangeText={setReason}
-            />
-            <ButtonGroup orientation="vertical" spacing={6}>
-              {TIMEFRAMES.map((entry) => (
-                <Button
-                  key={entry.label}
-                  variant={timeframe === entry.value ? "soft" : "plain"}
-                  onPress={() => setTimeframe(entry.value)}
-                >
-                  {entry.label}
-                </Button>
-              ))}
-            </ButtonGroup>
-            {error && (
-              <Typography color="danger" level="body-sm">
-                {error}
-              </Typography>
-            )}
-            <Button
-              color="danger"
-              disabled={isPending || !reason.trim()}
-              onPress={() => mutate()}
+            <Paper
+              elevation={app.settings?.preferEmbossed ? 4 : 2}
+              style={{ padding: 20, borderRadius: 12, gap: 12 }}
             >
-              Ban
-            </Button>
-            <Button variant="plain" onPress={onClose}>
-              Cancel
-            </Button>
-          </Paper>
-        </Box>
+              <Typography weight="bold">
+                Ban {member.user?.displayName}?
+              </Typography>
+              <InputDefault
+                fullWidth
+                placeholder="Reason"
+                accessibilityLabel="Ban reason"
+                value={reason}
+                onChangeText={setReason}
+              />
+              <ButtonGroup orientation="vertical" spacing={6}>
+                {TIMEFRAMES.map((entry) => (
+                  <Button
+                    key={entry.label}
+                    variant={timeframe === entry.value ? "soft" : "plain"}
+                    onPress={() => setTimeframe(entry.value)}
+                  >
+                    {entry.label}
+                  </Button>
+                ))}
+              </ButtonGroup>
+              {error && (
+                <Typography color="danger" level="body-sm" accessibilityLiveRegion="polite">
+                  {error}
+                </Typography>
+              )}
+              <Button
+                color="danger"
+                disabled={isPending || !reason.trim()}
+                onPress={() => mutate()}
+              >
+                Ban
+              </Button>
+              <Button variant="plain" onPress={onClose}>
+                Cancel
+              </Button>
+            </Paper>
+          </Box>
       </Modal>
     );
   },

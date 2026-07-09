@@ -88,7 +88,6 @@ export class SpaceStore {
 
     get positioned() {
         const positions = this.app.settings?.spacePositions;
-
         if (!positions || positions.size === 0) return this.all;
 
         const positionedSpaces = positions
@@ -115,6 +114,17 @@ export class SpaceStore {
         if (this.has(id) && !force) return this.get(id);
         const space = await this.app.rest.get<APISpace>(`/spaces/${id}`);
         if (!space) return undefined;
+        if (this.has(space.id)) {
+            this.update(space);
+            return this.get(space.id);
+        }
         return this.add(space);
+    }
+
+    clear() {
+        this.spaces.clear();
+        this.active = null;
+        this.activeId = undefined;
+        this.mostRecentSpaceId = null;
     }
 }

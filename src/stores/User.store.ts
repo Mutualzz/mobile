@@ -52,6 +52,10 @@ export class UserStore {
         if (this.has(id) && !force) return this.get(id);
         const user = await this.app.rest.get<APIUser>(`/users/${id}`);
         if (!user) return undefined;
+        if (this.has(user.id)) {
+            this.update(user);
+            return this.get(user.id);
+        }
         return this.add(user);
     }
 
@@ -68,6 +72,10 @@ export class UserStore {
             `/users/${encodeURIComponent(normalized)}`,
         );
         if (!user) return undefined;
+        if (this.has(user.id)) {
+            this.update(user);
+            return this.get(user.id);
+        }
         return this.add(user);
     }
 
@@ -77,5 +85,9 @@ export class UserStore {
         const user = await this.app.rest.get<APIUser>(`/users/${id}`);
         if (!user) return undefined;
         return this.add(user);
+    }
+
+    clear() {
+        this.users.clear();
     }
 }

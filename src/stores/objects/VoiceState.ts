@@ -16,7 +16,7 @@ export class VoiceState {
 
   constructor(
     private readonly app: AppStore,
-    state: MzVoiceState
+    state: MzVoiceState & { disconnectedAt?: number | null }
   ) {
     this.userId = state.userId;
     this.spaceId = state.spaceId ?? null;
@@ -27,6 +27,7 @@ export class VoiceState {
     this.spaceDeaf = state.spaceDeaf;
     this.sessionId = state.sessionId;
     this.updatedAt = state.updatedAt;
+    this.disconnectedAt = state.disconnectedAt ?? null;
 
     makeAutoObservable(this, {}, { autoBind: true });
   }

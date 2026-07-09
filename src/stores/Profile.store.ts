@@ -102,4 +102,9 @@ export class ProfileStore {
             formData,
         );
     }
+
+    clear() {
+        this.profiles.clear();
+        this.pending.clear();
+    }
 }

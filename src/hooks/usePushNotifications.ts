@@ -1,11 +1,19 @@
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
+import {
+  DM_REPLY_ACTION_ID,
+  ensureDmReplyNotificationCategory,
+} from "@utils/pushNotificationCategories";
+import {
+  registerPushToken,
+  sendNotificationReply,
+  unregisterPushToken,
+} from "@utils/pushNotifications";
 import * as Device from "expo-device";
 import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
 import type { Href } from "expo-router";
-import { useEffect } from "react";
-import { Platform } from "react-native";
+import { useEffect, useRef } from "react";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -39,9 +47,54 @@ function navigateFromNotificationUrl(
   }
 }
 
+function getNotificationData(
+  response: Notifications.NotificationResponse,
+): Record<string, unknown> {
+  const data = response.notification.request.content.data;
+  return data && typeof data === "object" ? data : {};
+}
+
+async function handleNotificationResponse(
+  response: Notifications.NotificationResponse,
+  navigate: ReturnType<typeof useAppNavigation>["navigate"],
+  rest: ReturnType<typeof useAppStore>["rest"],
+) {
+  const data = getNotificationData(response);
+
+  if (response.actionIdentifier === DM_REPLY_ACTION_ID) {
+    const content = response.userText?.trim();
+    const channelId = data.channelId;
+
+    if (!content || typeof channelId !== "string") return;
+
+    try {
+      await sendNotificationReply(rest, channelId, content);
+    } catch (error) {
+      console.warn("[push] reply failed", error);
+    }
+    return;
+  }
+
+  const url = data.url;
+  if (typeof url === "string") {
+    navigateFromNotificationUrl(navigate, url);
+  }
+}
+
 export function usePushNotifications(enabled: boolean) {
   const app = useAppStore();
   const { navigate } = useAppNavigation();
+  const navigateRef = useRef(navigate);
+  const restRef = useRef(app.rest);
+  const pushTokenRef = useRef<string | null>(null);
+  navigateRef.current = navigate;
+  restRef.current = app.rest;
+
+  useEffect(() => {
+    void ensureDmReplyNotificationCategory().catch((error) => {
+      console.warn("[push] failed to register reply category", error);
+    });
+  }, []);
 
   useEffect(() => {
     if (!enabled || !app.token) return;
@@ -65,24 +118,31 @@ export function usePushNotifications(enabled: boolean) {
         })
       ).data;
 
-      await app.rest.post("/@me/push-token", {
-        token,
-        platform: Platform.OS,
-      });
-    })().catch(() => undefined);
+      pushTokenRef.current = token;
+      await registerPushToken(app.rest, token);
+    })().catch((error) => {
+      console.warn("[push] registration failed", error);
+    });
 
     const responseSub = Notifications.addNotificationResponseReceivedListener(
       (response) => {
-        const url = response.notification.request.content.data?.url;
-        if (typeof url === "string") {
-          navigateFromNotificationUrl(navigate, url);
-        }
+        void handleNotificationResponse(
+          response,
+          navigateRef.current,
+          restRef.current,
+        );
       },
     );
 
     return () => {
       mounted = false;
       responseSub.remove();
+
+      const token = pushTokenRef.current;
+      pushTokenRef.current = null;
+      if (!token) return;
+
+      void unregisterPushToken(app.rest, token).catch(() => undefined);
     };
-  }, [app.rest, app.token, enabled, navigate]);
+  }, [app.rest, app.token, enabled]);
 }

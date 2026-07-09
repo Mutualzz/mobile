@@ -1,7 +1,8 @@
 import type { ProfileBlockSize, ProfileBlockType } from "@mutualzz/types";
 import { Typography, useTheme } from "@mutualzz/ui-native";
+import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import { Pressable } from "react-native";
-import { WIDGET_SUPPORTED_SIZES } from "@components/Profile/widgets/profileWidget.constants";
+import { getSupportedWidgetSizes } from "@components/Profile/widgets/profileWidget.constants";
 
 const LABEL: Record<ProfileBlockSize, string> = { s: "S", m: "M", l: "L" };
 
@@ -13,7 +14,8 @@ interface Props {
 
 export function ProfileWidgetSizePill({ type, size, onChange }: Props) {
   const { theme } = useTheme();
-  const supported = WIDGET_SUPPORTED_SIZES[type];
+  const pillSize = useScaledSquareSize(28);
+  const supported = getSupportedWidgetSizes(type);
 
   const cycle = () => {
     const index = supported.indexOf(size);
@@ -27,10 +29,10 @@ export function ProfileWidgetSizePill({ type, size, onChange }: Props) {
     <Pressable
       onPress={cycle}
       style={{
-        minWidth: 28,
-        height: 28,
+        minWidth: pillSize,
+        height: pillSize,
         paddingHorizontal: 8,
-        borderRadius: 14,
+        borderRadius: pillSize / 2,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: theme.colors.primary,

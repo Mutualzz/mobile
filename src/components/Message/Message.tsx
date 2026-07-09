@@ -2,8 +2,8 @@ import { MarkdownRenderer } from "@components/Markdown/MarkdownRenderer/Markdown
 import { UserProfileTrigger } from "@components/Profile/UserProfileTrigger";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppStore } from "@hooks/useStores";
-import { ExpressionType } from "@mutualzz/types";
-import { Box, useTheme } from "@mutualzz/ui-native";
+import { ExpressionType, MessageType } from "@mutualzz/types";
+import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { type MessageLike } from "@stores/objects/Message";
 import { QueuedMessageStatus } from "@stores/objects/QueuedMessage";
 import { GIF_ONLY_URL_PATTERN } from "@utils/gifs";
@@ -11,8 +11,10 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Pressable } from "react-native";
 import { MessageActionSheet } from "./MessageActionSheet";
+import { QueuedMessageActionSheet } from "./QueuedMessageActionSheet";
 import { MessageAuthor } from "./MessageAuthor";
 import {
+  EditedIndicator,
   MessageBase,
   MessageContent,
   MessageContentText,
@@ -22,7 +24,9 @@ import {
 import { MessageEmbed } from "./MessageEmbed";
 import { MessageReactions } from "./MessageReactions";
 import { MessageSticker } from "./MessageSticker";
+import { MessageAttachment } from "./MessageAttachment";
 import { Message as MessageModel } from "@stores/objects/Message";
+import { QueuedMessage } from "@stores/objects/QueuedMessage";
 
 interface Props {
   message: MessageLike;
@@ -35,6 +39,8 @@ export const Message = observer(({ message, header }: Props) => {
   const space = message.spaceId ? app.spaces.get(message.spaceId) : null;
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
   const isSent = message instanceof MessageModel;
+  const isQueued = message instanceof QueuedMessage;
+  const isEdited = isSent && message.edited;
 
   const hasGifEmbed =
     "embeds" in message &&
@@ -53,13 +59,21 @@ export const Message = observer(({ message, header }: Props) => {
         )
       : [];
 
+  const repliedMessage =
+    isSent && message.type === MessageType.Reply ? message.repliedTo : null;
+
   return (
     <>
       <Pressable
-        disabled={!isSent || (isSent && message.editing)}
+        disabled={
+          (!isSent &&
+            !(isQueued && message.status === QueuedMessageStatus.Failed)) ||
+          (isSent && message.editing)
+        }
         onLongPress={() => {
-          if (!isSent || message.editing) return;
-          setActionSheetOpen(true);
+          if (isSent && !message.editing) setActionSheetOpen(true);
+          else if (isQueued && message.status === QueuedMessageStatus.Failed)
+            setActionSheetOpen(true);
         }}
         delayLongPress={350}
       >
@@ -95,7 +109,8 @@ export const Message = observer(({ message, header }: Props) => {
             {header && (
               <Box
                 style={{
-                  flexShrink: 0,
+                  flexShrink: 1,
+                  minWidth: 0,
                   flexDirection: "row",
                   alignItems: "center",
                 }}
@@ -104,6 +119,43 @@ export const Message = observer(({ message, header }: Props) => {
                 <MessageDetails message={message} />
               </Box>
             )}
+
+            {header && message.type === MessageType.Reply ? (
+              <Box
+                style={{
+                  flexDirection: "row",
+                  gap: 8,
+                  marginBottom: 6,
+                  paddingLeft: 4,
+                  borderLeftWidth: 2,
+                  borderLeftColor: `${theme.typography.colors.muted}66`,
+                }}
+              >
+                <Box style={{ flex: 1, gap: 2 }}>
+                  {repliedMessage ? (
+                    <>
+                      <Typography level="body-xs" textColor="muted">
+                        {repliedMessage.author?.displayName ?? "Unknown"}
+                      </Typography>
+                      <MarkdownRenderer
+                        variant="plain"
+                        textColor="muted"
+                        spaceId={message.spaceId}
+                        value={repliedMessage.content ?? ""}
+                      />
+                    </>
+                  ) : (
+                    <Typography
+                      level="body-xs"
+                      textColor="muted"
+                      style={{ fontStyle: "italic" }}
+                    >
+                      Could not find the replied message
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            ) : null}
 
             <MessageContentText
               sending={
@@ -130,14 +182,32 @@ export const Message = observer(({ message, header }: Props) => {
                 </Box>
               )}
 
-              {message.content && !isOnlyGifUrl && (
-                <MarkdownRenderer
-                  variant="plain"
-                  textColor="primary"
-                  spaceId={message.spaceId}
-                  value={message.content}
-                />
-              )}
+              {message.content && !isOnlyGifUrl ? (
+                !header && isEdited ? (
+                  <Box
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <MarkdownRenderer
+                      variant="plain"
+                      textColor="primary"
+                      spaceId={message.spaceId}
+                      value={message.content}
+                    />
+                    <EditedIndicator />
+                  </Box>
+                ) : (
+                  <MarkdownRenderer
+                    variant="plain"
+                    textColor="primary"
+                    spaceId={message.spaceId}
+                    value={message.content}
+                  />
+                )
+              ) : null}
             </MessageContentText>
 
             {"embeds" in message && message.embeds.length > 0 && (
@@ -152,6 +222,19 @@ export const Message = observer(({ message, header }: Props) => {
               </Box>
             )}
 
+            {isSent &&
+              "attachments" in message &&
+              (message.attachments?.length ?? 0) > 0 && (
+                <Box style={{ gap: 8, paddingBottom: 4 }}>
+                  {message.attachments.map((attachment) => (
+                    <MessageAttachment
+                      key={attachment.id}
+                      attachment={attachment}
+                    />
+                  ))}
+                </Box>
+              )}
+
             {isSent && <MessageReactions message={message} />}
           </MessageContent>
         </MessageBase>
@@ -159,6 +242,14 @@ export const Message = observer(({ message, header }: Props) => {
 
       {isSent && (
         <MessageActionSheet
+          message={message}
+          visible={actionSheetOpen}
+          onClose={() => setActionSheetOpen(false)}
+        />
+      )}
+
+      {isQueued && (
+        <QueuedMessageActionSheet
           message={message}
           visible={actionSheetOpen}
           onClose={() => setActionSheetOpen(false)}

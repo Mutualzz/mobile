@@ -4,6 +4,7 @@ import type {
   ProfileBlockSize,
 } from "@mutualzz/types";
 import { Stack, Typography, useTheme } from "@mutualzz/ui-native";
+import { useScaledProfileMusicSizes } from "@utils/accessibilityLayout";
 import {
   setAudioModeAsync,
   useAudioPlayer,
@@ -21,6 +22,7 @@ interface Props {
 
 export function ProfileMusicWidgetView({ block, size, profile }: Props) {
   const { theme } = useTheme();
+  const musicSizes = useScaledProfileMusicSizes();
 
   const audioHash = block.audioHash ?? null;
   const title = audioHash
@@ -75,8 +77,8 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
   const art = (
     <View
       style={{
-        width: size === "s" ? "100%" : 52,
-        height: size === "s" ? "100%" : 52,
+        width: size === "s" ? "100%" : musicSizes.art,
+        height: size === "s" ? "100%" : musicSizes.art,
         borderRadius: 12,
         overflow: "hidden",
         backgroundColor: theme.colors.surface,
@@ -90,7 +92,7 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
           style={{ width: "100%", height: "100%" }}
         />
       ) : (
-        <MusicNotesIcon size={22} color={theme.typography.colors.muted} />
+        <MusicNotesIcon size={musicSizes.miniPlayButton} color={theme.typography.colors.muted} />
       )}
     </View>
   );
@@ -109,15 +111,15 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
               position: "absolute",
               bottom: 4,
               right: 4,
-              width: 22,
-              height: 22,
-              borderRadius: 11,
+              width: musicSizes.miniPlayButton,
+              height: musicSizes.miniPlayButton,
+              borderRadius: musicSizes.miniPlayButton / 2,
               alignItems: "center",
               justifyContent: "center",
               backgroundColor: theme.colors.primary,
             }}
           >
-            <PlaybackIcon playSize={11} />
+            <PlaybackIcon playSize={musicSizes.miniPlayIcon} />
           </View>
         ) : null}
       </Pressable>
@@ -132,11 +134,11 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
     >
       {art}
       <Stack direction="column" style={{ flex: 1, minWidth: 0, gap: 2 }}>
-        <Typography level="body-sm" weight="bold" numberOfLines={2}>
+        <Typography level="body-sm" weight="bold" truncate="double">
           {title}
         </Typography>
         {artists ? (
-          <Typography level="body-xs" textColor="accent" numberOfLines={1}>
+          <Typography level="body-xs" textColor="accent" truncate="single">
             {artists}
           </Typography>
         ) : null}
@@ -150,15 +152,15 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
         <Pressable
           onPress={togglePlay}
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
+            width: musicSizes.playButton,
+            height: musicSizes.playButton,
+            borderRadius: musicSizes.playButton / 2,
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: theme.colors.primary,
           }}
         >
-          <PlaybackIcon playSize={16} />
+          <PlaybackIcon playSize={musicSizes.playIcon} />
         </Pressable>
       ) : null}
     </Stack>

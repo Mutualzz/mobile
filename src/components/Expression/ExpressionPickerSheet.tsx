@@ -1,3 +1,4 @@
+import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
 import { EmojiPickerContent } from "@components/Expression/EmojiPickerContent";
 import { GifPickerContent } from "@components/Expression/GifPicker";
 import { StickerPickerContent } from "@components/Expression/StickerPickerContent";
@@ -5,7 +6,7 @@ import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import { GifIcon, SmileyIcon, StickerIcon, XIcon } from "phosphor-react-native";
-import { Box, Typography, useTheme } from "@mutualzz/ui-native";
+import { Box, Modal, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import type { Expression } from "@stores/objects/Expression";
 import type { GifResult } from "@utils/gifs";
@@ -13,9 +14,6 @@ import type { PickerEmoji, SkinTone } from "@utils/emojis/emojiPickerData";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
   View,
   useWindowDimensions,
@@ -27,7 +25,7 @@ export type ExpressionPickerTab = "emoji" | "gifs" | "stickers";
 interface Props {
   visible: boolean;
   onClose: () => void;
-  channel: Channel;
+  channel?: Channel | null;
   initialTab?: ExpressionPickerTab;
   showStickers?: boolean;
   onSelectEmoji: (emoji: PickerEmoji, skinTone: SkinTone) => void;
@@ -75,140 +73,137 @@ export const ExpressionPickerSheet = observer(
 
     return (
       <Modal
-        visible={visible}
-        transparent
-        animationType="slide"
-        onRequestClose={onClose}
+        open={visible}
+        onClose={onClose}
+        layout="fullscreen"
+        showCloseButton={false}
+        style={{
+          justifyContent: "flex-end",
+          alignItems: "stretch",
+          backgroundColor: "transparent",
+          paddingVertical: 0,
+        }}
       >
-        <Pressable
-          style={{
-            flex: 1,
-            justifyContent: "flex-end",
-            backgroundColor: "rgba(0, 0, 0, 0.4)",
-          }}
-          onPress={onClose}
+        <View
+          pointerEvents="box-none"
+          style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-          >
-            <View onStartShouldSetResponder={() => true}>
-              <Paper
-                elevation={app.settings?.preferEmbossed ? 4 : 2}
+          <AppKeyboardAvoidingView>
+            <Paper
+              elevation={app.settings?.preferEmbossed ? 4 : 2}
+              style={{
+                height: height * 0.62,
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16,
+                backgroundColor: theme.colors.background,
+                paddingTop: 12,
+                paddingBottom: insets.bottom + 8,
+              }}
+            >
+              <Box
                 style={{
-                  height: height * 0.62,
-                  borderTopLeftRadius: 16,
-                  borderTopRightRadius: 16,
-                  backgroundColor: theme.colors.background,
-                  paddingTop: 12,
-                  paddingBottom: insets.bottom + 8,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingHorizontal: 12,
+                  paddingBottom: 8,
+                  gap: 8,
                 }}
               >
                 <Box
                   style={{
+                    flex: 1,
                     flexDirection: "row",
-                    alignItems: "center",
-                    paddingHorizontal: 12,
-                    paddingBottom: 8,
-                    gap: 8,
+                    gap: 4,
                   }}
                 >
-                  <Box
-                    style={{
-                      flex: 1,
-                      flexDirection: "row",
-                      gap: 4,
-                    }}
-                  >
-                    {tabs.map(({ id, label, Icon }) => {
-                      const active = tab === id;
-                      return (
-                        <Pressable
-                          key={id}
-                          onPress={() => setTab(id)}
-                          style={{
-                            flex: 1,
-                            flexDirection: "row",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 6,
-                            paddingVertical: 8,
-                            borderRadius: 8,
-                            borderBottomWidth: 2,
-                            borderBottomColor: active
+                  {tabs.map(({ id, label, Icon }) => {
+                    const active = tab === id;
+                    return (
+                      <Pressable
+                        key={id}
+                        onPress={() => setTab(id)}
+                        style={{
+                          flex: 1,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 6,
+                          paddingVertical: 8,
+                          borderRadius: 8,
+                          borderBottomWidth: 2,
+                          borderBottomColor: active
+                            ? theme.colors.primary
+                            : "transparent",
+                          backgroundColor: active
+                            ? `${theme.colors.primary}14`
+                            : "transparent",
+                        }}
+                      >
+                        <Icon
+                          size={18}
+                          color={
+                            active
                               ? theme.colors.primary
-                              : "transparent",
-                            backgroundColor: active
-                              ? `${theme.colors.primary}14`
-                              : "transparent",
+                              : theme.typography.colors.muted
+                          }
+                          weight="fill"
+                        />
+                        <Typography
+                          level="body-sm"
+                          weight={active ? "bold" : undefined}
+                          truncate="single"
+                          style={{
+                            color: active
+                              ? theme.colors.primary
+                              : theme.typography.colors.muted,
                           }}
                         >
-                          <Icon
-                            size={18}
-                            color={
-                              active
-                                ? theme.colors.primary
-                                : theme.typography.colors.muted
-                            }
-                            weight="fill"
-                          />
-                          <Typography
-                            level="body-sm"
-                            weight={active ? "bold" : undefined}
-                            numberOfLines={1}
-                            maxFontSizeMultiplier={1.3}
-                            style={{
-                              color: active
-                                ? theme.colors.primary
-                                : theme.typography.colors.muted,
-                            }}
-                          >
-                            {label}
-                          </Typography>
-                        </Pressable>
-                      );
-                    })}
-                  </Box>
-                  <IconButton padding={6} color="neutral" onPress={onClose}>
-                    <XIcon size={20} />
-                  </IconButton>
+                          {label}
+                        </Typography>
+                      </Pressable>
+                    );
+                  })}
                 </Box>
+                <IconButton padding={6} color="neutral" onPress={onClose}>
+                  <XIcon size={20} />
+                </IconButton>
+              </Box>
 
-                <Box style={{ flex: 1, minHeight: 0 }}>
-                  {tab === "emoji" ? (
-                    <EmojiPickerContent
-                      channel={channel}
-                      onSelectEmoji={(emoji, skinTone) => {
-                        onSelectEmoji(emoji, skinTone);
-                        onClose();
-                      }}
-                      onSelectCustomEmoji={(expression) => {
-                        onSelectCustomEmoji(expression);
-                        onClose();
-                      }}
-                    />
-                  ) : null}
+              <Box style={{ flex: 1, minHeight: 0 }}>
+                {tab === "emoji" ? (
+                  <EmojiPickerContent
+                    channel={channel}
+                    onSelectEmoji={(emoji, skinTone) => {
+                      onSelectEmoji(emoji, skinTone);
+                      onClose();
+                    }}
+                    onSelectCustomEmoji={(expression) => {
+                      onSelectCustomEmoji(expression);
+                      onClose();
+                    }}
+                  />
+                ) : null}
 
-                  {tab === "gifs" ? (
-                    <GifPickerContent
-                      active={visible && tab === "gifs"}
-                      onSelectGif={(gif) => {
-                        onSelectGif(gif);
-                        onClose();
-                      }}
-                    />
-                  ) : null}
+                {tab === "gifs" ? (
+                  <GifPickerContent
+                    active={visible && tab === "gifs"}
+                    onSelectGif={(gif) => {
+                      onSelectGif(gif);
+                      onClose();
+                    }}
+                  />
+                ) : null}
 
-                  {tab === "stickers" && showStickers ? (
-                    <StickerPickerContent
-                      channel={channel}
-                      onSelectSticker={onSelectSticker}
-                    />
-                  ) : null}
-                </Box>
-              </Paper>
-            </View>
-          </KeyboardAvoidingView>
-        </Pressable>
+                {tab === "stickers" && showStickers ? (
+                  <StickerPickerContent
+                    channel={channel}
+                    onSelectSticker={onSelectSticker}
+                  />
+                ) : null}
+              </Box>
+            </Paper>
+          </AppKeyboardAvoidingView>
+        </View>
       </Modal>
     );
   },

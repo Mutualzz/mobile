@@ -19,12 +19,17 @@ function processTokens(tokens: Token[]) {
     for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];
 
-        if (token.type === "text" && urlRegex.test(token.content)) {
+        if (token.type === "text") {
+            const content = token.content;
+            urlRegex.lastIndex = 0;
+            if (!urlRegex.test(content)) {
+                continue;
+            }
+
             let lastIndex = 0;
             let match;
 
             const newTokens: Token[] = [];
-            const content = token.content;
             urlRegex.lastIndex = 0;
 
             while ((match = urlRegex.exec(content))) {
@@ -38,11 +43,19 @@ function processTokens(tokens: Token[]) {
                 const linkToken = new Token("link", "", 0);
                 const rawUrl = match[0];
                 const url = stripMarkdownSuffix(rawUrl);
+                const strippedSuffix = rawUrl.slice(url.length);
 
                 linkToken.content = url;
                 linkToken.attrSet("href", url);
                 linkToken.level = token.level;
                 newTokens.push(linkToken);
+
+                if (strippedSuffix) {
+                    const suffixToken = new Token("text", "", 0);
+                    suffixToken.content = strippedSuffix;
+                    suffixToken.level = token.level;
+                    newTokens.push(suffixToken);
+                }
 
                 lastIndex = match.index + rawUrl.length;
             }

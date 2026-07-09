@@ -10,6 +10,7 @@ export type UserSettingsSidebarPage =
     | "profile"
     | "expressions"
     | "appearance"
+    | "notifications"
     | "voice_and_video";
 export type UserSettingsSidebarCategories = "user-settings" | "app-settings";
 

@@ -15,6 +15,8 @@ export class AccountSettingsStore {
   currentIcon?: string | null;
   preferredMode: AppMode;
   preferEmbossed = false;
+  preferredSelfMute = false;
+  preferredSelfDeaf = false;
   spacePositions: ObservableOrderedSet<string>;
   favoriteEmojis = observable.array<string>([]);
   favoriteGifs = observable.array<string>([]);
@@ -24,6 +26,7 @@ export class AccountSettingsStore {
   private syncIntervalId?: ReturnType<typeof setInterval>;
   private debounceTimerId?: ReturnType<typeof setTimeout>;
   private appStateSubscription: { remove: () => void };
+  private disposeReaction: () => void;
 
   constructor(
     private readonly app: AppStore,
@@ -36,6 +39,8 @@ export class AccountSettingsStore {
       settings.spacePositions.map(String),
     );
     this.preferEmbossed = settings.preferEmbossed;
+    this.preferredSelfMute = settings.preferredSelfMute ?? false;
+    this.preferredSelfDeaf = settings.preferredSelfDeaf ?? false;
     this.favoriteEmojis = observable.array(settings.favoriteEmojis ?? []);
     this.favoriteGifs = observable.array(settings.favoriteGifs ?? []);
     this.updatedAt = new Date(settings.updatedAt);
@@ -51,6 +56,8 @@ export class AccountSettingsStore {
         "currentIcon",
         "preferredMode",
         "preferEmbossed",
+        "preferredSelfMute",
+        "preferredSelfDeaf",
         {
           key: "favoriteEmojis",
           serialize: (v: unknown) => (Array.isArray(v) ? [...v] : []),
@@ -86,7 +93,7 @@ export class AccountSettingsStore {
       storage: AsyncStorage,
     });
 
-    reaction(
+    this.disposeReaction = reaction(
       () => this.getSyncPayload(),
       () => this.scheduleSync(),
       {
@@ -116,6 +123,7 @@ export class AccountSettingsStore {
 
   dispose() {
     this.stopSyncing();
+    this.disposeReaction();
     this.appStateSubscription.remove();
   }
 
@@ -126,8 +134,8 @@ export class AccountSettingsStore {
       preferEmbossed: this.preferEmbossed,
       currentTheme: this.currentTheme,
       currentIcon: this.currentIcon,
-      preferredSelfMute: false,
-      preferredSelfDeaf: false,
+      preferredSelfMute: this.preferredSelfMute,
+      preferredSelfDeaf: this.preferredSelfDeaf,
       favoriteEmojis: [...this.favoriteEmojis],
       favoriteGifs: [...this.favoriteGifs],
       favoriteStickers: [],
@@ -177,6 +185,14 @@ export class AccountSettingsStore {
     this.currentIcon = icon;
   }
 
+  setPreferredSelfMute(value: boolean) {
+    this.preferredSelfMute = value;
+  }
+
+  setPreferredSelfDeaf(value: boolean) {
+    this.preferredSelfDeaf = value;
+  }
+
   getPendingOverrides(): SettingsPatch | null {
     return this.isDirty ? this.getSyncPayload() : null;
   }
@@ -187,6 +203,8 @@ export class AccountSettingsStore {
     this.currentIcon = payload.currentIcon;
     this.preferredMode = payload.preferredMode;
     this.preferEmbossed = payload.preferEmbossed;
+    this.preferredSelfMute = payload.preferredSelfMute ?? false;
+    this.preferredSelfDeaf = payload.preferredSelfDeaf ?? false;
     this.favoriteEmojis = observable.array(payload.favoriteEmojis ?? []);
     this.favoriteGifs = observable.array(payload.favoriteGifs ?? []);
   }
@@ -204,11 +222,20 @@ export class AccountSettingsStore {
     if (settings.preferredMode != undefined)
       this.preferredMode = settings.preferredMode;
 
+    if (settings.preferEmbossed != undefined)
+      this.preferEmbossed = settings.preferEmbossed;
+
     if (settings.favoriteEmojis != undefined)
       this.favoriteEmojis = observable.array(settings.favoriteEmojis);
 
     if (settings.favoriteGifs != undefined)
       this.favoriteGifs = observable.array(settings.favoriteGifs);
+
+    if (settings.preferredSelfMute != undefined)
+      this.preferredSelfMute = settings.preferredSelfMute;
+
+    if (settings.preferredSelfDeaf != undefined)
+      this.preferredSelfDeaf = settings.preferredSelfDeaf;
 
     if (settings.updatedAt != undefined)
       this.updatedAt = new Date(settings.updatedAt);

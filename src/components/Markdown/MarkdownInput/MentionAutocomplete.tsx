@@ -6,6 +6,7 @@ import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
+import { useScaledAutocompleteMaxHeight, useScaledSquareSize } from "@utils/accessibilityLayout";
 import { Pressable, ScrollView } from "react-native";
 
 interface Candidate {
@@ -26,6 +27,8 @@ export const MentionAutocomplete = observer(
     ({ channel, search, onSelect }: Props) => {
         const app = useAppStore();
         const { theme } = useTheme();
+        const autocompleteMaxHeight = useScaledAutocompleteMaxHeight();
+        const avatarSize = useScaledSquareSize(24);
 
         const space = channel.spaceId
             ? app.spaces.get(channel.spaceId)
@@ -121,7 +124,7 @@ export const MentionAutocomplete = observer(
                     right: 0,
                     bottom: "100%",
                     marginBottom: 6,
-                    maxHeight: 220,
+                    maxHeight: autocompleteMaxHeight,
                     zIndex: 20,
                     borderRadius: 12,
                     overflow: "hidden",
@@ -160,13 +163,13 @@ export const MentionAutocomplete = observer(
                                 <UserAvatar
                                     user={app.users.get(candidate.userId)}
                                     size="sm"
-                                    style={{ width: 24, height: 24 }}
+                                    style={{ width: avatarSize, height: avatarSize }}
                                 />
                             ) : null}
                             <Typography
                                 level="body-sm"
                                 style={{ flex: 1 }}
-                                numberOfLines={1}
+                                truncate="single"
                             >
                                 {candidate.displayName}
                             </Typography>

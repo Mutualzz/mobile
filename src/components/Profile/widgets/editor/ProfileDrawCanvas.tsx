@@ -1,5 +1,5 @@
 import { Button } from "@components/Button";
-import type { ColorLike } from "@mutualzz/ui-core";
+import { type ColorLike } from "@mutualzz/ui-core";
 import {
   Box,
   IconButton,
@@ -7,6 +7,7 @@ import {
   Slider,
   Typography,
 } from "@mutualzz/ui-native";
+import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import {
   ArrowCounterClockwiseIcon,
   ArrowClockwiseIcon,
@@ -14,11 +15,22 @@ import {
   PencilSimpleIcon,
   TrashIcon,
 } from "phosphor-react-native";
-import { useState } from "react";
-import { View } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  PanResponder,
+  Pressable,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import Svg, { Path, Rect } from "react-native-svg";
-import { scheduleOnRN } from "react-native-worklets";
+import { PROFILE_DRAW_CANVAS_SIZE } from "./drawCanvas.constants";
+import {
+  brushContrastsWithBackground,
+  getDefaultBrushColor,
+  normalizeHexColor,
+  resolveInitialBrushColor,
+  visibleBrushColors,
+} from "./drawCanvas.utils";
 
 export interface DrawStroke {
   d: string;
@@ -29,12 +41,13 @@ export interface DrawStroke {
 export interface DrawCanvasState {
   strokes: DrawStroke[];
   backgroundColor: string;
+  canvasSize?: number;
 }
 
-const CANVAS_SIZE = 320;
 const DEFAULT_BACKGROUND = "#1a1a2e";
 
 export function renderStrokesToSvg(state: DrawCanvasState): string {
+  const canvasSize = state.canvasSize ?? PROFILE_DRAW_CANVAS_SIZE;
   const paths = state.strokes
     .map(
       (s) =>
@@ -42,138 +55,213 @@ export function renderStrokesToSvg(state: DrawCanvasState): string {
     )
     .join("");
 
-  return `<svg viewBox="0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}" xmlns="http://www.w3.org/2000/svg"><rect width="${CANVAS_SIZE}" height="${CANVAS_SIZE}" fill="${state.backgroundColor}" />${paths}</svg>`;
+  return `<svg viewBox="0 0 ${canvasSize} ${canvasSize}" xmlns="http://www.w3.org/2000/svg"><rect width="${canvasSize}" height="${canvasSize}" fill="${state.backgroundColor}" />${paths}</svg>`;
 }
 
 interface Props {
   initial: DrawCanvasState | null;
   onCancel: () => void;
   onSave: (state: DrawCanvasState) => void;
+  onSaveDraft?: (state: DrawCanvasState) => void;
+  canvasSize?: number;
+  maskShape?: "square" | "circle";
+  saveLabel?: string;
+  saveDraftLabel?: string;
+  disableActions?: boolean;
+  defaultBackgroundColor?: string;
 }
 
-const BRUSH_COLORS = [
-  "#ffffff",
-  "#f4f4f5",
-  "#ef4444",
-  "#f59e0b",
-  "#22c55e",
-  "#3b82f6",
-  "#a855f7",
-];
+export function ProfileDrawCanvas({
+  initial,
+  onCancel,
+  onSave,
+  onSaveDraft,
+  canvasSize = PROFILE_DRAW_CANVAS_SIZE,
+  maskShape = "square",
+  saveLabel = "Save Drawing",
+  saveDraftLabel = "Save draft",
+  disableActions = false,
+  defaultBackgroundColor = DEFAULT_BACKGROUND,
+}: Props) {
+  const { width: windowWidth } = useWindowDimensions();
+  const brushButtonSize = useScaledSquareSize(28);
+  const layoutSize = Math.min(canvasSize, Math.max(240, windowWidth - 48));
 
-export function ProfileDrawCanvas({ initial, onCancel, onSave }: Props) {
   const [strokes, setStrokes] = useState<DrawStroke[]>(initial?.strokes ?? []);
   const [redoStack, setRedoStack] = useState<DrawStroke[]>([]);
-  const [backgroundColor, setBackgroundColor] = useState(
-    initial?.backgroundColor ?? DEFAULT_BACKGROUND,
+  const [backgroundColor, setBackgroundColor] = useState(() =>
+    normalizeHexColor(
+      initial?.backgroundColor ?? defaultBackgroundColor,
+      normalizeHexColor(defaultBackgroundColor),
+    ),
   );
-  const [brushColor, setBrushColor] = useState(BRUSH_COLORS[0]);
+  const [brushColor, setBrushColor] = useState(() =>
+    resolveInitialBrushColor(
+      normalizeHexColor(
+        initial?.backgroundColor ?? defaultBackgroundColor,
+        normalizeHexColor(defaultBackgroundColor),
+      ),
+      initial,
+    ),
+  );
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [erasing, setErasing] = useState(false);
   const [currentPath, setCurrentPath] = useState<string | null>(null);
+  const currentPathRef = useRef<string | null>(null);
 
   const activeColor = erasing ? backgroundColor : brushColor;
+  const activeColorRef = useRef(activeColor);
+  const strokeWidthRef = useRef(strokeWidth);
+  const layoutSizeRef = useRef(layoutSize);
 
-  const appendPoint = (x: number, y: number, start: boolean) => {
-    setCurrentPath((prev) => {
-      const clampedX = Math.max(0, Math.min(CANVAS_SIZE, x));
-      const clampedY = Math.max(0, Math.min(CANVAS_SIZE, y));
-      if (start || !prev) return `M ${clampedX} ${clampedY}`;
-      return `${prev} L ${clampedX} ${clampedY}`;
-    });
-  };
+  useEffect(() => {
+    activeColorRef.current = activeColor;
+  }, [activeColor]);
 
-  const commitStroke = () => {
-    setCurrentPath((prev) => {
-      if (prev) {
-        setStrokes((s) => [
-          ...s,
-          { d: prev, color: activeColor, width: strokeWidth },
-        ]);
-        setRedoStack([]);
-      }
-      return null;
-    });
-  };
+  useEffect(() => {
+    strokeWidthRef.current = strokeWidth;
+  }, [strokeWidth]);
 
-  const panGesture = Gesture.Pan()
-    .onStart((e) => {
-      scheduleOnRN(appendPoint, e.x, e.y, true);
-    })
-    .onUpdate((e) => {
-      scheduleOnRN(appendPoint, e.x, e.y, false);
-    })
-    .onEnd(() => {
-      scheduleOnRN(commitStroke);
-    });
+  useEffect(() => {
+    layoutSizeRef.current = layoutSize;
+  }, [layoutSize]);
+
+  const appendPoint = useCallback(
+    (x: number, y: number, start: boolean) => {
+      const size = layoutSizeRef.current;
+      const scale = size / canvasSize;
+
+      setCurrentPath((prev) => {
+        const logicalX = Math.max(0, Math.min(canvasSize, x / scale));
+        const logicalY = Math.max(0, Math.min(canvasSize, y / scale));
+        const next =
+          start || !prev
+            ? `M ${logicalX} ${logicalY}`
+            : `${prev} L ${logicalX} ${logicalY}`;
+        currentPathRef.current = next;
+        return next;
+      });
+    },
+    [canvasSize],
+  );
+
+  const commitStroke = useCallback(() => {
+    const path = currentPathRef.current;
+    if (!path) return;
+
+    setStrokes((current) => [
+      ...current,
+      {
+        d: path,
+        color: activeColorRef.current,
+        width: strokeWidthRef.current,
+      },
+    ]);
+    setRedoStack([]);
+    currentPathRef.current = null;
+    setCurrentPath(null);
+  }, []);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (event) => {
+          const { locationX, locationY } = event.nativeEvent;
+          appendPoint(locationX, locationY, true);
+        },
+        onPanResponderMove: (event) => {
+          const { locationX, locationY } = event.nativeEvent;
+          appendPoint(locationX, locationY, false);
+        },
+        onPanResponderRelease: commitStroke,
+        onPanResponderTerminate: commitStroke,
+      }),
+    [appendPoint, commitStroke],
+  );
 
   const undo = () => {
-    setStrokes((s) => {
-      if (s.length === 0) return s;
-      setRedoStack((r) => [...r, s[s.length - 1]]);
-      return s.slice(0, -1);
+    setStrokes((current) => {
+      if (current.length === 0) return current;
+      setRedoStack((redo) => [...redo, current[current.length - 1]]);
+      return current.slice(0, -1);
     });
   };
 
   const redo = () => {
-    setRedoStack((r) => {
-      if (r.length === 0) return r;
-      setStrokes((s) => [...s, r[r.length - 1]]);
-      return r.slice(0, -1);
+    setRedoStack((redo) => {
+      if (redo.length === 0) return redo;
+      setStrokes((current) => [...current, redo[redo.length - 1]]);
+      return redo.slice(0, -1);
     });
   };
 
   const clear = () => {
     setStrokes([]);
     setRedoStack([]);
+    currentPathRef.current = null;
+    setCurrentPath(null);
   };
 
+  const exportState = (): DrawCanvasState => ({
+    strokes,
+    backgroundColor,
+    canvasSize,
+  });
+
+  const brushPalette = useMemo(
+    () => visibleBrushColors(backgroundColor),
+    [backgroundColor],
+  );
+
   return (
-    <Box style={{ gap: 12 }}>
-      <GestureDetector gesture={panGesture}>
-        <View
-          style={{
-            width: CANVAS_SIZE,
-            height: CANVAS_SIZE,
-            alignSelf: "center",
-            borderRadius: 12,
-            overflow: "hidden",
-          }}
+    <Box style={{ gap: 12, flex: 1 }}>
+      <View
+        accessible
+        accessibilityRole="none"
+        accessibilityLabel="Drawing canvas"
+        accessibilityHint="Draw by dragging a finger across this area."
+        collapsable={false}
+        {...panResponder.panHandlers}
+        style={{
+          width: layoutSize,
+          height: layoutSize,
+          alignSelf: "center",
+          borderRadius: maskShape === "circle" ? layoutSize / 2 : 12,
+          overflow: "hidden",
+        }}
+      >
+        <Svg
+          pointerEvents="none"
+          width={layoutSize}
+          height={layoutSize}
+          viewBox={`0 0 ${canvasSize} ${canvasSize}`}
         >
-          <Svg
-            width={CANVAS_SIZE}
-            height={CANVAS_SIZE}
-            viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
-          >
-            <Rect
-              width={CANVAS_SIZE}
-              height={CANVAS_SIZE}
-              fill={backgroundColor}
+          <Rect width={canvasSize} height={canvasSize} fill={backgroundColor} />
+          {strokes.map((stroke, index) => (
+            <Path
+              key={`${index}-${stroke.d}`}
+              d={stroke.d}
+              stroke={stroke.color}
+              strokeWidth={stroke.width}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
-            {strokes.map((s, i) => (
-              <Path
-                key={i}
-                d={s.d}
-                stroke={s.color}
-                strokeWidth={s.width}
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            ))}
-            {currentPath ? (
-              <Path
-                d={currentPath}
-                stroke={activeColor}
-                strokeWidth={strokeWidth}
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            ) : null}
-          </Svg>
-        </View>
-      </GestureDetector>
+          ))}
+          {currentPath ? (
+            <Path
+              d={currentPath}
+              stroke={activeColor}
+              strokeWidth={strokeWidth}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ) : null}
+        </Svg>
+      </View>
 
       <Box
         style={{
@@ -183,27 +271,30 @@ export function ProfileDrawCanvas({ initial, onCancel, onSave }: Props) {
           justifyContent: "center",
         }}
       >
-        {BRUSH_COLORS.map((color) => (
-          <IconButton
-            key={color}
-            variant={!erasing && brushColor === color ? "solid" : "plain"}
-            color="neutral"
-            padding={4}
-            accessibilityLabel={`Brush color ${color}`}
-            onPress={() => {
-              setErasing(false);
-              setBrushColor(color);
-            }}
-            style={{
-              backgroundColor: color,
-              borderRadius: 999,
-              width: 28,
-              height: 28,
-            }}
-          >
-            <></>
-          </IconButton>
-        ))}
+        {brushPalette.map((swatchColor) => {
+          const selected = !erasing && brushColor === swatchColor;
+
+          return (
+            <Pressable
+              key={swatchColor}
+              accessibilityRole="button"
+              accessibilityLabel={`Brush color ${swatchColor}`}
+              accessibilityState={{ selected }}
+              onPress={() => {
+                setErasing(false);
+                setBrushColor(swatchColor);
+              }}
+              style={{
+                backgroundColor: swatchColor,
+                borderRadius: 999,
+                width: brushButtonSize,
+                height: brushButtonSize,
+                borderWidth: selected ? 2 : 1,
+                borderColor: selected ? "#ffffff" : "rgba(255,255,255,0.25)",
+              }}
+            />
+          );
+        })}
         <IconButton
           variant={erasing ? "solid" : "plain"}
           color="neutral"
@@ -227,11 +318,14 @@ export function ProfileDrawCanvas({ initial, onCancel, onSave }: Props) {
       <Box style={{ gap: 4 }}>
         <Typography level="body-xs">Stroke width ({strokeWidth}px)</Typography>
         <Slider
+          size={18}
           min={1}
           max={24}
           step={1}
           value={strokeWidth}
-          onChange={(v) => setStrokeWidth(v as number)}
+          onChange={(value) =>
+            setStrokeWidth(Array.isArray(value) ? value[0] : value)
+          }
         />
       </Box>
 
@@ -241,7 +335,15 @@ export function ProfileDrawCanvas({ initial, onCancel, onSave }: Props) {
         </Typography>
         <InputColor
           value={backgroundColor as ColorLike}
-          onChange={(next) => setBackgroundColor(next)}
+          onChange={(next) => {
+            const nextBackground = normalizeHexColor(String(next));
+            setBackgroundColor(nextBackground);
+            setBrushColor((current) =>
+              brushContrastsWithBackground(current, nextBackground)
+                ? current
+                : getDefaultBrushColor(nextBackground),
+            );
+          }}
           fullWidth
         />
       </Box>
@@ -276,16 +378,25 @@ export function ProfileDrawCanvas({ initial, onCancel, onSave }: Props) {
         </IconButton>
       </Box>
 
-      <Box style={{ flexDirection: "row", gap: 8 }}>
-        <Button color="neutral" style={{ flex: 1 }} onPress={onCancel}>
+      <Box style={{ flexDirection: "row", gap: 8, marginTop: "auto" }}>
+        <Button color="neutral" disabled={disableActions} onPress={onCancel}>
           Cancel
         </Button>
+        {onSaveDraft ? (
+          <Button
+            color="neutral"
+            disabled={disableActions || strokes.length === 0}
+            onPress={() => onSaveDraft(exportState())}
+          >
+            {saveDraftLabel}
+          </Button>
+        ) : null}
         <Button
           color="primary"
-          style={{ flex: 1 }}
-          onPress={() => onSave({ strokes, backgroundColor })}
+          disabled={disableActions || strokes.length === 0}
+          onPress={() => onSave(exportState())}
         >
-          Save Drawing
+          {saveLabel}
         </Button>
       </Box>
     </Box>

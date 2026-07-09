@@ -6,7 +6,7 @@ import { asAcronym } from "@utils/index";
 import { observer } from "mobx-react-lite";
 
 interface Props extends AvatarProps {
-  space: Space | APISpacePartial;
+  space?: Space | APISpacePartial | null;
   selected?: boolean;
 }
 
@@ -26,7 +26,7 @@ export const SpaceIcon = observer(({ space, selected, ...props }: Props) => {
         shape={selected ? 15 : 10}
         {...props}
       >
-        <Typography level="body-sm">{asAcronym(space.name)}</Typography>
+        <Typography level="body-sm">{asAcronym(space?.name ?? "Private Space")}</Typography>
       </Avatar>
     );
 
@@ -46,7 +46,7 @@ export const SpaceIcon = observer(({ space, selected, ...props }: Props) => {
         shape={selected ? 15 : 10}
         {...props}
       >
-        <Typography level="body-sm">{asAcronym(space.name)}</Typography>
+       <Typography level="body-sm">{asAcronym(space?.name ?? "Private Space")}</Typography>
       </Avatar>
     </Paper>
   );

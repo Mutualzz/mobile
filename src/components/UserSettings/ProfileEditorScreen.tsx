@@ -10,6 +10,7 @@ import {
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Input, Typography } from "@mutualzz/ui-native";
+import { useScaledProfilePreviewHeight } from "@utils/accessibilityLayout";
 import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -45,6 +46,8 @@ export const ProfileEditorScreen = observer(() => {
   );
   const [bannerHash, setBannerHash] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const bannerPreviewHeight = useScaledProfilePreviewHeight(120);
+  const bioMinHeight = useScaledProfilePreviewHeight(120);
   const [mobileBlocks, setMobileBlocks] = useState<APIMobileProfileBlock[]>([]);
   const [widgetEditorOpen, setWidgetEditorOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -251,7 +254,7 @@ export const ProfileEditorScreen = observer(() => {
                 source={{ uri: bannerPreview }}
                 style={{
                   width: "100%",
-                  height: 120,
+                  height: bannerPreviewHeight,
                   borderRadius: 8,
                 }}
                 resizeMode="cover"
@@ -259,7 +262,7 @@ export const ProfileEditorScreen = observer(() => {
             ) : (
               <Box
                 style={{
-                  height: 120,
+                  height: bannerPreviewHeight,
                   borderRadius: 8,
                   alignItems: "center",
                   justifyContent: "center",
@@ -300,7 +303,7 @@ export const ProfileEditorScreen = observer(() => {
               enableEmojiAutocomplete
               placeholder="Tell people about yourself"
               elevation={0}
-              style={{ minHeight: 120 }}
+              style={{ minHeight: bioMinHeight }}
             />
           </Paper>
 

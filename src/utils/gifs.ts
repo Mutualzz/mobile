@@ -25,6 +25,18 @@ export function resolveGifSendUrl(gif: GifResult): string {
 export const GIF_ONLY_URL_PATTERN =
     /^https?:\/\/(klipy\.com\/gifs\/|tenor\.com\/|c\.tenor\.com\/|media\.tenor\.com\/|giphy\.com\/|media\.giphy\.com\/|i\.giphy\.com\/|imgur\.com\/|i\.imgur\.com\/|redgifs\.com\/|.*\.gif(\?\S*)?$)\S*$/i;
 
+export function isGifOnlyContent(
+    content: string | null | undefined,
+    hasGifEmbed: boolean,
+): boolean {
+    return (
+        hasGifEmbed &&
+        !!content &&
+        GIF_ONLY_URL_PATTERN.test(content.trim()) &&
+        content.trim().split(/\s+/).length === 1
+    );
+}
+
 export const MESSAGE_GIF_MAX_WIDTH = 400;
 export const MESSAGE_GIF_MAX_HEIGHT = 300;
 export const MESSAGE_GIF_HORIZONTAL_INSET = 142;

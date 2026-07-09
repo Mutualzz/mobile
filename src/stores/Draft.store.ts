@@ -1,84 +1,87 @@
 import { Logger } from "@mutualzz/logger";
+import type { DrawCanvasState } from "@components/Profile/widgets/editor/ProfileDrawCanvas";
 import type { APITheme } from "@mutualzz/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { type IObservableArray, makeAutoObservable, observable } from "mobx";
 import { makePersistable } from "mobx-persist-store";
-import { type CanvasPath } from "react-sketch-canvas";
 
-interface AvatarDraft {
-    image: string;
-    paths: CanvasPath[];
+export interface AvatarDraft {
+  id: string;
+  svgData: string;
+  state: DrawCanvasState;
 }
 
 export class DraftStore {
-    themes: IObservableArray<APITheme>;
-    avatars: IObservableArray<AvatarDraft>;
-    private readonly logger = new Logger({
-        tag: "DraftStore",
+  themes: IObservableArray<APITheme>;
+  avatars: IObservableArray<AvatarDraft>;
+  private readonly logger = new Logger({
+    tag: "DraftStore",
+  });
+
+  constructor() {
+    makeAutoObservable(this);
+
+    this.themes = observable.array([]);
+    this.avatars = observable.array([]);
+
+    makePersistable(this, {
+      name: "DraftStore",
+      properties: ["avatars", "themes"],
+      storage: AsyncStorage,
     });
+  }
 
-    constructor() {
-        makeAutoObservable(this);
+  saveAvatarDraft(svgData: string, state: DrawCanvasState) {
+    const id = `${Date.now()}`;
+    this.avatars.unshift({ id, svgData, state });
+    return id;
+  }
 
-        this.themes = observable.array([]);
-        this.avatars = observable.array([]);
+  getAvatarDraft(id: string) {
+    return this.avatars.find((draft) => draft.id === id) ?? null;
+  }
 
-        makePersistable(this, {
-            name: "DraftStore",
-            properties: ["avatars", "themes"],
-            storage: AsyncStorage,
-        });
+  deleteAvatarDraft(id: string) {
+    const index = this.avatars.findIndex((draft) => draft.id === id);
+    if (index === -1) {
+      this.logger.warn("Avatar draft does not exist");
+      return;
     }
 
-    saveAvatarDraft(image: string, paths: CanvasPath[]) {
-        if (this.avatars.some((avatar) => avatar.paths === paths)) {
-            this.logger.warn("Avatar draft already exists");
-            return;
-        }
+    this.avatars.splice(index, 1);
+  }
 
-        this.avatars.unshift({ image, paths });
+  saveThemeDraft(theme: APITheme) {
+    const existing = this.themes.some((t) => t.name === theme.name);
+    if (existing) {
+      this.logger.warn("Theme draft already exists");
+      return;
     }
 
-    deleteAvatarDraft(index: number) {
-        if (!this.avatars[index]) {
-            this.logger.warn("Avatar draft does not exist");
-            return;
-        }
+    this.themes.unshift(theme);
+  }
 
-        this.avatars.splice(index, 1);
+  updateThemeDraft(theme: APITheme) {
+    const index = this.themes.findIndex((t) => t.name === theme.name);
+    if (index === -1) {
+      this.logger.warn("Theme draft does not exist");
+      return;
     }
 
-    saveThemeDraft(theme: APITheme) {
-        const existing = this.themes.some((t) => t.name === theme.name);
-        if (existing) {
-            this.logger.warn("Theme draft already exists");
-            return;
-        }
+    this.themes[index] = theme;
+  }
 
-        this.themes.unshift(theme);
+  existsThemeDraft(theme: APITheme) {
+    return this.themes.some((t) => t.name === theme.name);
+  }
+
+  deleteThemeDraft(theme: APITheme) {
+    const existing = this.themes.some((t) => t.name === theme.name);
+    if (!existing) {
+      this.logger.warn("Theme draft does not exist");
+      return;
     }
 
-    updateThemeDraft(theme: APITheme) {
-        const index = this.themes.findIndex((t) => t.name === theme.name);
-        if (index === -1) {
-            this.logger.warn("Theme draft does not exist");
-            return;
-        }
-
-        this.themes[index] = theme;
-    }
-
-    existsThemeDraft(theme: APITheme) {
-        return this.themes.some((t) => t.name === theme.name);
-    }
-
-    deleteThemeDraft(theme: APITheme) {
-        const existing = this.themes.some((t) => t.name === theme.name);
-        if (!existing) {
-            this.logger.warn("Theme draft does not exist");
-            return;
-        }
-
-        this.themes.replace(this.themes.filter((t) => t.name !== theme.name));
-    }
+    this.themes.replace(this.themes.filter((t) => t.name !== theme.name));
+  }
 }

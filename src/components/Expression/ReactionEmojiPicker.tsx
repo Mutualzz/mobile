@@ -1,17 +1,14 @@
+import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
 import { EmojiPickerContent } from "@components/Expression/EmojiPickerContent";
 import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
-import { Box, Typography } from "@mutualzz/ui-native";
+import { Box, Modal, Typography } from "@mutualzz/ui-native";
 import type { Expression } from "@stores/objects/Expression";
 import type { PickerEmoji, SkinTone } from "@utils/emojis/emojiPickerData";
 import { XIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -49,22 +46,26 @@ export const ReactionEmojiPicker = observer(
 
     return (
       <Modal
-        visible={visible}
-        transparent
-        animationType="slide"
-        onRequestClose={onClose}
+        open={visible}
+        onClose={onClose}
+        layout="fullscreen"
+        showCloseButton={false}
+        style={{
+          justifyContent: "flex-end",
+          alignItems: "stretch",
+          backgroundColor: "transparent",
+          paddingVertical: 0,
+        }}
       >
-        <Pressable
+        <View
+          pointerEvents="box-none"
           style={{
             flex: 1,
             justifyContent: "flex-end",
-            backgroundColor: "rgba(0, 0, 0, 0.4)",
+            width: "100%",
           }}
-          onPress={onClose}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-          >
+          <AppKeyboardAvoidingView>
             <View onStartShouldSetResponder={() => true}>
               <Paper
                 elevation={app.settings?.preferEmbossed ? 4 : 2}
@@ -88,8 +89,7 @@ export const ReactionEmojiPicker = observer(
                   <Typography
                     level="body-md"
                     weight="bold"
-                    numberOfLines={1}
-                    maxFontSizeMultiplier={1.3}
+                    truncate="single"
                     style={{ flex: 1 }}
                   >
                     {title}
@@ -105,8 +105,8 @@ export const ReactionEmojiPicker = observer(
                 />
               </Paper>
             </View>
-          </KeyboardAvoidingView>
-        </Pressable>
+          </AppKeyboardAvoidingView>
+        </View>
       </Modal>
     );
   },

@@ -9,7 +9,7 @@ import { computed, type AnnotationsMap, observable } from "mobx";
 
 export const messageBaseMobxAnnotations: AnnotationsMap<
     MessageBase,
-    "_author" | "_space" | "_channel"
+    "_author" | "_space" | "_channel" | "_repliedTo"
 > = {
     id: observable,
     content: observable,
@@ -18,15 +18,18 @@ export const messageBaseMobxAnnotations: AnnotationsMap<
     authorId: observable,
     spaceId: observable,
     channelId: observable,
+    repliedToId: observable,
 
     _author: observable.ref,
     _space: observable.ref,
     _channel: observable.ref,
+    _repliedTo: observable.ref,
 
     author: computed,
     space: computed,
     channel: computed,
     member: computed,
+    repliedTo: computed,
 };
 
 export class MessageBase {
@@ -37,11 +40,13 @@ export class MessageBase {
     authorId: Snowflake;
     spaceId?: Snowflake | null;
     channelId: Snowflake | null;
+    repliedToId?: Snowflake | null;
     protected app: AppStore;
 
     _author!: User | null;
     _space!: Space | null;
     _channel!: Channel | null;
+    _repliedTo: MessageBase | null = null;
 
     constructor(app: AppStore, data: MessageLikeData) {
         this.app = app;
@@ -56,6 +61,8 @@ export class MessageBase {
 
         this.spaceId = data.spaceId;
         this.channelId = data.channelId;
+        this.repliedToId =
+            "repliedToId" in data ? (data.repliedToId ?? null) : null;
 
         this.authorId = data.authorId;
         if (isLoadedRelation(data.author)) {
@@ -68,6 +75,11 @@ export class MessageBase {
 
         if ("space" in data && isLoadedRelation(data.space)) {
             this._space = this.app.spaces.add(data.space);
+        }
+
+        if ("repliedTo" in data && isLoadedRelation(data.repliedTo)) {
+            this._repliedTo =
+                this.channel?.messages.add(data.repliedTo) ?? null;
         }
     }
 
@@ -91,5 +103,11 @@ export class MessageBase {
 
     get member() {
         return this.space?.members.get(this.authorId);
+    }
+
+    get repliedTo(): MessageBase | null | undefined {
+        return (
+            this.channel?.messages.get(this.repliedToId ?? "") || this._repliedTo
+        );
     }
 }

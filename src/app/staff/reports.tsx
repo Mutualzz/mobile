@@ -84,6 +84,7 @@ const StaffReportsScreen = () => {
             lastPage.length === PAGE_LIMIT
                 ? lastPage[lastPage.length - 1].id
                 : undefined,
+        enabled: isStaff,
     });
 
     const reports = data?.pages.flat() ?? [];

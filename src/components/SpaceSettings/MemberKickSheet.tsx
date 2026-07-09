@@ -2,13 +2,12 @@ import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import { HttpException } from "@mutualzz/types";
-import { Box, InputDefault, Typography } from "@mutualzz/ui-native";
+import { Box, InputDefault, Modal, Typography } from "@mutualzz/ui-native";
 import type { SpaceMember } from "@stores/objects/SpaceMember";
 import type { Space } from "@stores/objects/Space";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Modal } from "react-native";
 
 interface Props {
   visible: boolean;
@@ -33,45 +32,51 @@ export const MemberKickSheet = observer(
     });
 
     return (
-      <Modal visible={visible} animationType="fade" transparent>
+      <Modal
+        open={visible}
+        onClose={onClose}
+        layout="center"
+        showCloseButton={false}
+      >
         <Box
+          pointerEvents="box-none"
           style={{
             flex: 1,
             justifyContent: "center",
             padding: 24,
-            backgroundColor: "rgba(0,0,0,0.45)",
           }}
         >
-          <Paper
-            elevation={app.settings?.preferEmbossed ? 4 : 2}
-            style={{ padding: 20, borderRadius: 12, gap: 12 }}
-          >
-            <Typography weight="bold">
-              Kick {member.user?.displayName}?
-            </Typography>
-            <InputDefault
-              fullWidth
-              placeholder="Reason (optional)"
-              value={reason}
-              onChangeText={setReason}
-            />
-            {error && (
-              <Typography color="danger" level="body-sm">
-                {error}
-              </Typography>
-            )}
-            <Button
-              color="danger"
-              disabled={isPending}
-              onPress={() => mutate()}
+            <Paper
+              elevation={app.settings?.preferEmbossed ? 4 : 2}
+              style={{ padding: 20, borderRadius: 12, gap: 12 }}
             >
-              Kick
-            </Button>
-            <Button variant="plain" onPress={onClose}>
-              Cancel
-            </Button>
-          </Paper>
-        </Box>
+              <Typography weight="bold">
+                Kick {member.user?.displayName}?
+              </Typography>
+              <InputDefault
+                fullWidth
+                placeholder="Reason (optional)"
+                accessibilityLabel="Kick reason"
+                value={reason}
+                onChangeText={setReason}
+              />
+              {error && (
+                <Typography color="danger" level="body-sm" accessibilityLiveRegion="polite">
+                  {error}
+                </Typography>
+              )}
+              <Button
+                color="danger"
+                disabled={isPending}
+                onPress={() => mutate()}
+              >
+                Kick
+              </Button>
+              <Button variant="plain" onPress={onClose}>
+                Cancel
+              </Button>
+            </Paper>
+          </Box>
       </Modal>
     );
   },

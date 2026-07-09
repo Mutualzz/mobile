@@ -1,4 +1,3 @@
-import { UserProfileSheet } from "@components/Profile/UserProfileSheet";
 import { ProfileWidgetGrid } from "@components/Profile/widgets/ProfileWidgetGrid";
 import { ProfileWidgetsEmptyViewer } from "@components/Profile/widgets/ProfileWidgetsEmptyViewer";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";

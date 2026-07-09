@@ -1,4 +1,5 @@
 import { Typography, useTheme } from "@mutualzz/ui-native";
+import { useScaledWidgetPaletteItemWidth } from "@utils/accessibilityLayout";
 import type { ProfileBlockType } from "@mutualzz/types";
 import {
   ImageIcon,
@@ -39,6 +40,7 @@ interface Props {
 
 export function ProfileWidgetPalette({ onAddWidget }: Props) {
   const { theme } = useTheme();
+  const itemWidth = useScaledWidgetPaletteItemWidth();
 
   return (
     <ScrollView
@@ -59,7 +61,7 @@ export function ProfileWidgetPalette({ onAddWidget }: Props) {
             alignItems: "center",
             justifyContent: "center",
             gap: 4,
-            width: 64,
+            width: itemWidth,
             paddingVertical: 8,
             borderRadius: 10,
             borderWidth: 1,
@@ -67,7 +69,7 @@ export function ProfileWidgetPalette({ onAddWidget }: Props) {
           }}
         >
           <Icon size={20} color={theme.typography.colors.primary} />
-          <Typography level="body-xs" numberOfLines={1}>
+          <Typography level="body-xs" truncate="single">
             {label}
           </Typography>
         </Pressable>

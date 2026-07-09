@@ -1,35 +1,28 @@
-import styled from "@emotion/native";
-import { Box } from "@mutualzz/ui-native";
+import { Box, scaledLayoutSize, useFontScale, useTheme } from "@mutualzz/ui-native";
 
 export type PillType = "none" | "unread" | "hover" | "active";
-
-const Pill = styled.View<{ type: PillType }>(({ theme, type }) => ({
-    width: 4,
-    borderRadius: "0 4px 4px 0",
-    background: theme.colors.neutral,
-    marginLeft: -16,
-    transition: "height 0.3s ease, background 0.3s ease",
-
-    ...(type === "none" && {
-        height: 0,
-    }),
-    ...(type === "unread" && {
-        height: 8,
-        background: theme.colors.warning,
-    }),
-    ...(type === "hover" && {
-        height: 20,
-    }),
-    ...(type === "active" && {
-        height: 40,
-    }),
-}));
 
 interface Props {
     type: PillType;
 }
 
 export const SidebarPill = ({ type }: Props) => {
+    const { theme } = useTheme();
+    const fontScale = useFontScale();
+    const containerHeight = scaledLayoutSize(48, fontScale, 1.3);
+
+    const pillHeight =
+        type === "none"
+            ? 0
+            : type === "unread"
+              ? scaledLayoutSize(8, fontScale, 1.3)
+              : type === "hover"
+                ? scaledLayoutSize(20, fontScale, 1.3)
+                : scaledLayoutSize(40, fontScale, 1.3);
+
+    const pillColor =
+        type === "unread" ? theme.colors.warning : theme.colors.neutral;
+
     return (
         <Box
             style={{
@@ -38,11 +31,20 @@ export const SidebarPill = ({ type }: Props) => {
                 position: "absolute",
                 left: 0,
                 width: 8,
-                height: 48,
+                height: containerHeight,
                 pointerEvents: "none",
             }}
         >
-            <Pill type={type} />
+            <Box
+                style={{
+                    width: 4,
+                    height: pillHeight,
+                    borderTopRightRadius: 4,
+                    borderBottomRightRadius: 4,
+                    marginLeft: -16,
+                    backgroundColor: pillColor,
+                }}
+            />
         </Box>
     );
 };

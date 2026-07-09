@@ -67,7 +67,7 @@ export function ProfileHeaderWidgetView({ block, size, user, profile }: Props) {
       >
         <UserAvatar user={user} size={AVATAR_SIZE} />
         <Stack direction="column" flex={1} minWidth={0} style={{ gap: 2 }}>
-          <Typography level="title-sm" numberOfLines={1}>
+          <Typography level="title-sm" truncate="single">
             {user.displayName}
           </Typography>
           {size === "l" && profile.bio ? (

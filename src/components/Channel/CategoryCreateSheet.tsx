@@ -2,13 +2,13 @@ import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType, type HttpException } from "@mutualzz/types";
-import { Box, InputDefault, Typography } from "@mutualzz/ui-native";
+import { Box, InputDefault, Modal, Typography } from "@mutualzz/ui-native";
 import type { Space } from "@stores/objects/Space";
 import { useMutation } from "@tanstack/react-query";
 import { FolderSimpleIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Modal } from "react-native";
+import { View } from "react-native";
 
 interface Props {
   visible: boolean;
@@ -43,25 +43,25 @@ export const CategoryCreateSheet = observer(
 
     return (
       <Modal
-        visible={visible}
-        animationType="slide"
-        transparent
-        onRequestClose={onClose}
+        open={visible}
+        onClose={onClose}
+        layout="fullscreen"
+        showCloseButton={false}
+        style={{
+          justifyContent: "flex-end",
+          alignItems: "stretch",
+          backgroundColor: "transparent",
+          paddingVertical: 0,
+        }}
       >
-        <Box
-          style={{
-            flex: 1,
-            justifyContent: "flex-end",
-            backgroundColor: "rgba(0,0,0,0.45)",
-          }}
-        >
+        <View pointerEvents="box-none" style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}>
           <Paper
             variant="elevation"
             elevation={app.settings?.preferEmbossed ? 4 : 2}
             style={{
-              borderRadius: 16,
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
               padding: 20,
-              paddingBottom: 36,
               gap: 16,
             }}
           >
@@ -100,7 +100,7 @@ export const CategoryCreateSheet = observer(
               </Button>
             </Box>
           </Paper>
-        </Box>
+        </View>
       </Modal>
     );
   },

@@ -1,38 +1,39 @@
+import { InlineTwemoji, Twemoji } from "@components/emojis/Twemoji";
 import { Box } from "@mutualzz/ui-native";
-import { Image } from "react-native";
-import { SvgUri } from "react-native-svg";
 
 interface EmojiProps {
-    url: string;
-    isEmojiOnly: boolean;
-    name?: string;
-    unicode?: string;
+  url: string;
+  isEmojiOnly: boolean;
+  name?: string;
+  unicode?: string;
+  inline?: boolean;
 }
 
-export const Emoji = ({ isEmojiOnly, url }: EmojiProps) => {
-    const size = isEmojiOnly ? 36 : 22;
+export const Emoji = ({
+  isEmojiOnly,
+  unicode,
+  inline = false,
+}: EmojiProps) => {
+  const size = isEmojiOnly ? 36 : 22;
+  const value = unicode ?? "";
 
-    const image = url.endsWith(".svg") ? (
-        <SvgUri uri={url} width={size} height={size} />
-    ) : (
-        <Image
-            source={{ uri: url }}
-            style={{ width: size, height: size }}
-            resizeMode="contain"
-        />
-    );
+  if (!value) return null;
 
-    return (
-        <Box
-            style={{
-                width: size,
-                height: size,
-                justifyContent: "center",
-                alignItems: "center",
-                overflow: "visible",
-            }}
-        >
-            {image}
-        </Box>
-    );
+  if (inline) {
+    return <InlineTwemoji value={value} size={size} />;
+  }
+
+  return (
+    <Box
+      style={{
+        width: size,
+        height: size,
+        justifyContent: "center",
+        alignItems: "center",
+        overflow: "visible",
+      }}
+    >
+      <Twemoji value={value} size={size} />
+    </Box>
+  );
 };

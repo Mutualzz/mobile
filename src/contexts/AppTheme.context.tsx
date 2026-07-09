@@ -34,7 +34,14 @@ export const AppTheme = observer(({ children }: PropsWithChildren) => {
                 const selectedTheme =
                     pick(userThemeRemote) || pick(app.themes.currentTheme);
 
-                if (!selectedTheme) return;
+                if (!selectedTheme) {
+                    if (themeProviderRef.current?.type !== null) {
+                        isUpdatingFromServer.current = true;
+                        themeProviderRef.current?.changeTheme(null);
+                        isUpdatingFromServer.current = false;
+                    }
+                    return;
+                }
 
                 if (selectedTheme.id === themeProviderRef.current?.theme.id)
                     return;

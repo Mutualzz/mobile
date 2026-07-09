@@ -21,8 +21,9 @@ const RoleChip = ({ name, color }: { name: string; color?: string | null }) => (
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 999,
+      backgroundColor: "rgba(255,255,255,0.08)",
       borderWidth: 1,
-      borderColor: color || "rgba(128,128,128,0.3)",
+      borderColor: color || "rgba(255,255,255,0.14)",
     }}
   >
     <Typography level="body-xs" weight="bold" style={{ color: color || undefined }}>
@@ -57,11 +58,18 @@ export const ProfileRolesWidgetView = observer(({ block, size, userId }: Props) 
           {member ? "No roles to show" : "Join a shared space to display roles"}
         </Typography>
       ) : (
-        <Stack direction="row" style={{ gap: 6, flexWrap: "wrap" }}>
-          {visible.map((role) => (
-            <RoleChip key={role.id} name={role.name} color={role.color} />
-          ))}
-        </Stack>
+        <>
+          <Stack direction="row" style={{ gap: 6, flexWrap: "wrap" }}>
+            {visible.map((role) => (
+              <RoleChip key={role.id} name={role.name} color={role.color} />
+            ))}
+          </Stack>
+          {roles.length > visible.length ? (
+            <Typography level="body-xs" textColor="muted">
+              +{roles.length - visible.length} more
+            </Typography>
+          ) : null}
+        </>
       )}
     </View>
   );

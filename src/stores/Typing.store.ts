@@ -59,4 +59,11 @@ export class TypingStore {
     isUserTyping(channelId: string, userId: string): boolean {
         return this.typing.has(`${channelId}:${userId}`);
     }
+
+    clear() {
+        for (const entry of this.typing.values()) {
+            clearTimeout(entry.timeoutId);
+        }
+        this.typing.clear();
+    }
 }

@@ -40,10 +40,10 @@ const BanRow = observer(({ ban, space }: { ban: SpaceBan; space: Space }) => {
             >
                 <UserAvatar user={ban.user} size="md" />
                 <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                    <Typography level="body-sm" weight={700} numberOfLines={1}>
+                    <Typography level="body-sm" weight={700} truncate="single">
                         {ban.user?.displayName ?? ban.userId}
                     </Typography>
-                    <Typography level="body-xs" textColor="muted" numberOfLines={1}>
+                    <Typography level="body-xs" textColor="muted" truncate="single">
                         @{ban.user?.username ?? ban.userId}
                     </Typography>
                 </Box>
@@ -81,6 +81,7 @@ export const SpaceBansSettings = observer(({ space }: Props) => {
                 paddingBottom: 32,
                 gap: 16,
             }}
+            keyboardShouldPersistTaps="handled"
         >
             <Box style={{ gap: 8 }}>
                 <Typography level="body-md" weight={700}>

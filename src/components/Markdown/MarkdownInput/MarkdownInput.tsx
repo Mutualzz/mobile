@@ -8,7 +8,7 @@ import type {
 } from "@expensify/react-native-live-markdown";
 import { normalizeTypography } from "@mutualzz/ui-core";
 import type { MentionType, Snowflake } from "@mutualzz/types";
-import { type PaperProps, useTheme } from "@mutualzz/ui-native";
+import { type PaperProps, MAX_FONT_SCALE_MULTIPLIER, useFontScale, useTheme } from "@mutualzz/ui-native";
 import type { Expression } from "@stores/objects/Expression";
 import {
   detectColonQuery,
@@ -45,13 +45,6 @@ const MarkdownTextInput: MarkdownTextInputComponent =
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require("@expensify/react-native-live-markdown/src/MarkdownTextInput").default;
 
-const addedSingleNewline = (prev: string, next: string) => {
-  if (next.length !== prev.length + 1) return false;
-  const index = next.indexOf("\n");
-  if (index === -1) return false;
-  return next.slice(0, index) + next.slice(index + 1) === prev;
-};
-
 interface Props extends Omit<PaperProps, "onChange"> {
   value: string;
   onChange: (next: string) => void;
@@ -75,7 +68,6 @@ interface Props extends Omit<PaperProps, "onChange"> {
   placeholder?: string;
   editable?: boolean;
   endAdornment?: ReactNode;
-  onSubmit?: () => void;
 }
 
 export const MarkdownInput = observer(
@@ -93,7 +85,6 @@ export const MarkdownInput = observer(
     placeholder,
     editable = true,
     endAdornment,
-    onSubmit,
 
     paddingLeft,
     paddingRight,
@@ -104,8 +95,7 @@ export const MarkdownInput = observer(
   }: Props) => {
     const app = useAppStore();
     const { theme } = useTheme();
-    const submitLockRef = useRef(false);
-    const ignoreChangeRef = useRef(false);
+    const fontScale = useFontScale();
     const inputRef = useRef<TextInput>(null);
 
     const [uncontrolledEntities, setUncontrolledEntities] = useState<
@@ -114,17 +104,6 @@ export const MarkdownInput = observer(
     const entities = controlledEntities ?? uncontrolledEntities;
     const onChangeEntities =
       controlledOnChangeEntities ?? setUncontrolledEntities;
-
-    const submit = useCallback(() => {
-      if (!onSubmit || submitLockRef.current) return;
-      submitLockRef.current = true;
-      ignoreChangeRef.current = true;
-      onSubmit();
-      setTimeout(() => {
-        submitLockRef.current = false;
-        ignoreChangeRef.current = false;
-      }, 100);
-    }, [onSubmit]);
 
     const channel = channelId ? app.channels.get(channelId) : null;
 
@@ -145,6 +124,7 @@ export const MarkdownInput = observer(
         paddingTop,
         theme.typography.fontFamily,
         theme.typography.levels,
+        fontScale,
       ],
     );
 
@@ -318,20 +298,14 @@ export const MarkdownInput = observer(
         <MarkdownTextInput
           ref={inputRef}
           multiline
+          blurOnSubmit={false}
+          allowFontScaling
+          maxFontSizeMultiplier={MAX_FONT_SCALE_MULTIPLIER}
           value={value}
           parser={parser}
           markdownStyle={markdownStyle}
-          returnKeyType="send"
-          enablesReturnKeyAutomatically
           onChangeText={(next) => {
-            if (ignoreChangeRef.current) return;
-
             const prevValue = value;
-
-            if (onSubmit && addedSingleNewline(prevValue, next)) {
-              submit();
-              return;
-            }
 
             let nextText = next;
             let nextSel = selectionRef.current;
@@ -364,11 +338,6 @@ export const MarkdownInput = observer(
 
             onChange(nextText);
             onChangeEntities(nextEntities);
-          }}
-          onKeyPress={(event) => {
-            if (event.nativeEvent.key === "Enter") {
-              submit();
-            }
           }}
           selection={selection}
           onSelectionChange={(e) => {

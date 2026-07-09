@@ -11,6 +11,10 @@ import {
   Typography,
   useTheme,
 } from "@mutualzz/ui-native";
+import {
+  useScaledFeedPreviewSizes,
+  useScaledSpaceCreateCardHeight,
+} from "@utils/accessibilityLayout";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -29,6 +33,8 @@ interface Props {
 export const SpaceCreate = observer(({ setCreating }: Props) => {
   const app = useAppStore();
   const { theme } = useTheme();
+  const cardHeight = useScaledSpaceCreateCardHeight();
+  const feedSizes = useScaledFeedPreviewSizes();
 
   const { closeAllModals } = useModal();
 
@@ -138,7 +144,7 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
         justifyContent: "space-between",
         alignItems: "center",
         padding: 16,
-        height: 300,
+        height: cardHeight,
       }}
     >
       <Typography level="h5" weight="bold">
@@ -161,8 +167,8 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
               source={{
                 uri: imageFile,
               }}
-              width={72}
-              height={72}
+              width={feedSizes.sticker}
+              height={feedSizes.sticker}
               style={{
                 borderRadius: 9999,
               }}
@@ -174,8 +180,8 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
                 justifyContent: "center",
                 flexDirection: "column",
                 borderRadius: 9999,
-                width: 72,
-                height: 72,
+                width: feedSizes.sticker,
+                height: feedSizes.sticker,
                 borderStyle: "dashed",
                 borderWidth: 1,
                 borderColor: theme.colors.neutral,
@@ -213,9 +219,7 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
           fullWidth
           value={name}
           onChangeText={handleName}
-          autoCorrect={false}
-          autoCapitalize="none"
-          autoComplete="off"
+          accessibilityLabel="Space name"
         />
         {error && (
           <Typography variant="plain" color="danger" level="body-sm">

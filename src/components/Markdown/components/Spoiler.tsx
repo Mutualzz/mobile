@@ -1,23 +1,32 @@
 import styled from "@emotion/native";
 import { dynamicElevation } from "@mutualzz/ui-core";
-import { Typography } from "@mutualzz/ui-native";
-import { useState, type PropsWithChildren } from "react";
+import { Box, Typography } from "@mutualzz/ui-native";
+import { useState, type PropsWithChildren, type ReactNode } from "react";
 import { Pressable } from "react-native";
 
-const SpoilerWrapper = styled(Typography)<{ revealed: boolean }>(
-    ({ theme, revealed }) => ({
-        borderRadius: 4,
-        paddingHorizontal: 4,
+const SpoilerWrapper = styled(Box)<{ revealed: boolean }>(({ theme, revealed }) => ({
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    alignSelf: "flex-start",
 
-        backgroundColor: revealed
-            ? dynamicElevation(theme.colors.surface, 5)
-            : theme.typography.colors.muted,
+    backgroundColor: revealed
+        ? dynamicElevation(theme.colors.surface, 5)
+        : theme.typography.colors.muted,
+}));
 
-        ...(!revealed && {
-            color: theme.typography.colors.muted,
-        }),
+const SpoilerText = styled(Typography)<{ revealed: boolean }>(({ theme, revealed }) => ({
+    ...(!revealed && {
+        color: theme.typography.colors.muted,
     }),
-);
+}));
+
+const isTextOnly = (children: ReactNode) =>
+    typeof children === "string" ||
+    (Array.isArray(children) &&
+        children.every((child) => typeof child === "string"));
 
 export const Spoiler = ({ children }: PropsWithChildren) => {
     const [revealed, setRevealed] = useState(false);
@@ -30,7 +39,15 @@ export const Spoiler = ({ children }: PropsWithChildren) => {
                 pressed && !revealed ? { opacity: 0.9 } : null,
             ]}
         >
-            <SpoilerWrapper revealed={revealed}>{children}</SpoilerWrapper>
+            <SpoilerWrapper revealed={revealed}>
+                {isTextOnly(children) ? (
+                    <SpoilerText revealed={revealed} level="body-sm">
+                        {children}
+                    </SpoilerText>
+                ) : (
+                    children
+                )}
+            </SpoilerWrapper>
         </Pressable>
     );
 };

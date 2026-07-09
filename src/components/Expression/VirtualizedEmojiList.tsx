@@ -4,6 +4,7 @@ import { Typography, useTheme } from "@mutualzz/ui-native";
 import type { Expression } from "@stores/objects/Expression";
 import type { PickerEmoji, SkinTone } from "@utils/emojis/emojiPickerData";
 import { unifiedToEmoji } from "@utils/emojis/unified";
+import { useScaledEmojiHeaderHeights } from "@utils/accessibilityLayout";
 import { FlashList, type FlashListRef } from "@shopify/flash-list";
 import { memo, useCallback, useMemo, type ReactNode, type Ref } from "react";
 import { Image, Pressable, View } from "react-native";
@@ -48,11 +49,16 @@ const EmojiCellButton = memo(
       [cellSize, theme.colors.neutral],
     );
 
+    const hitSlop = Math.max(0, (44 - cellSize) / 2);
+
     if (cell.kind === "custom") {
       return (
         <Pressable
           onPress={() => onSelectCustomEmoji(cell.emoji)}
           style={cellStyle}
+          hitSlop={hitSlop}
+          accessibilityRole="button"
+          accessibilityLabel={cell.emoji.name}
         >
           <Image
             source={{ uri: cell.emoji.url }}
@@ -74,8 +80,16 @@ const EmojiCellButton = memo(
 
     return (
       <Pressable
-        onPress={() => onSelectEmoji(cell.emoji, skinTone)}
+        onPress={() =>
+          onSelectEmoji(
+            cell.emoji,
+            cell.skinTone !== undefined ? cell.skinTone : skinTone,
+          )
+        }
         style={cellStyle}
+        hitSlop={hitSlop}
+        accessibilityRole="button"
+        accessibilityLabel={cell.emoji.name}
       >
         <UnicodeEmoji value={unifiedToEmoji(unified)} size={imageSize} />
       </Pressable>
@@ -127,6 +141,8 @@ const EmojiRow = memo(
 
 const SectionHeader = memo(
   ({ title, space }: { title: string; space?: Space }) => {
+    const { headerHeight, spaceHeaderHeight } = useScaledEmojiHeaderHeights();
+
     if (space) {
       return (
         <View
@@ -135,15 +151,14 @@ const SectionHeader = memo(
             alignItems: "center",
             gap: 6,
             paddingHorizontal: 8,
-            height: EMOJI_SPACE_HEADER_HEIGHT,
+            minHeight: spaceHeaderHeight,
           }}
         >
           <SpaceIcon space={space} size={16} />
           <Typography
             level="body-xs"
             textColor="muted"
-            numberOfLines={1}
-            maxFontSizeMultiplier={1.15}
+            truncate="single"
             style={{ textTransform: "uppercase", letterSpacing: 0.5 }}
           >
             {title}
@@ -156,12 +171,10 @@ const SectionHeader = memo(
       <Typography
         level="body-xs"
         textColor="muted"
-        numberOfLines={1}
-        maxFontSizeMultiplier={1.15}
+        truncate="single"
         style={{
           paddingHorizontal: 8,
-          height: EMOJI_HEADER_HEIGHT,
-          lineHeight: EMOJI_HEADER_HEIGHT,
+          minHeight: headerHeight,
           textTransform: "uppercase",
           letterSpacing: 0.5,
         }}

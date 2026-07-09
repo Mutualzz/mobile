@@ -1,6 +1,6 @@
 import type { Expression } from "@stores/objects/Expression";
 import type { Space } from "@stores/objects/Space";
-import type { PickerEmoji } from "@utils/emojis/emojiPickerData";
+import type { PickerEmoji, SkinTone } from "@utils/emojis/emojiPickerData";
 
 export const EMOJI_CELL_SIZE = 34;
 export const EMOJI_HEADER_HEIGHT = 24;
@@ -8,7 +8,7 @@ export const EMOJI_SPACE_HEADER_HEIGHT = 28;
 export const EMOJI_CELL_GAP = 2;
 
 export type EmojiCell =
-  | { kind: "standard"; emoji: PickerEmoji; unified?: string }
+  | { kind: "standard"; emoji: PickerEmoji; unified?: string; skinTone?: SkinTone }
   | { kind: "custom"; emoji: Expression };
 
 export interface EmojiListHeader {

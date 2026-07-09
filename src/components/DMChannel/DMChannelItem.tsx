@@ -1,12 +1,18 @@
 import { useOpenUserProfile } from "@hooks/useOpenUserProfile";
+import { GroupDMActionSheet } from "@components/DMChannel/GroupDMActionSheet";
+import { GroupDMManageSheet } from "@components/DMChannel/GroupDMManageSheet";
+import { UserActionSheet } from "@components/User/UserActionSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { Paper } from "@components/Paper";
+import { useUserRowStyle } from "@components/userRowStyle";
+import { useScaledMentionBadgeStyle, useScaledSquareSize } from "@utils/accessibilityLayout";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
-import { Channel } from "@stores/objects/Channel";
+import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
+import { useState } from "react";
 import { Pressable } from "react-native";
 
 interface Props {
@@ -18,6 +24,12 @@ export const DMChannelItem = observer(({ channel }: Props) => {
   const { navigate } = useAppNavigation();
   const openProfile = useOpenUserProfile();
   const { theme } = useTheme();
+  const rowStyle = useUserRowStyle();
+  const mentionBadgeStyle = useScaledMentionBadgeStyle();
+  const unreadDotSize = useScaledSquareSize(8);
+  const [actionSheetOpen, setActionSheetOpen] = useState(false);
+  const [groupActionOpen, setGroupActionOpen] = useState(false);
+  const [manageGroupOpen, setManageGroupOpen] = useState(false);
 
   const active = app.channels.activeId === channel.id;
   const meId = app.account?.id;
@@ -66,17 +78,27 @@ export const DMChannelItem = observer(({ channel }: Props) => {
     app.setDMDrawerOpen(false);
   };
 
+  const accessibilityLabel = `${title}${mentionCount > 0 ? `, ${mentionCount} mentions` : isUnread ? ", unread" : ""}`;
+
   return (
-    <Pressable onPress={openChannel}>
+    <>
+      <Pressable
+        onPress={openChannel}
+        onLongPress={
+          channel.type === ChannelType.DM && recipient
+            ? () => setActionSheetOpen(true)
+            : channel.isGroupDM
+              ? () => setGroupActionOpen(true)
+              : undefined
+        }
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ selected: active }}
+      >
       <Paper
         variant={active ? "soft" : "plain"}
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 10,
-          paddingVertical: 8,
-          paddingHorizontal: 10,
-          borderRadius: 10,
+          ...rowStyle,
           marginBottom: 4,
           opacity: iBlockedThem ? 0.6 : active ? 1 : 0.94,
         }}
@@ -93,12 +115,12 @@ export const DMChannelItem = observer(({ channel }: Props) => {
           <Typography
             level="body-sm"
             weight={active ? "bold" : "medium"}
-            numberOfLines={1}
+            truncate="single"
           >
             {title}
           </Typography>
           {preview ? (
-            <Typography level="body-xs" textColor="muted" numberOfLines={1}>
+            <Typography level="body-xs" textColor="muted" truncate="single">
               {preview}
             </Typography>
           ) : null}
@@ -115,19 +137,17 @@ export const DMChannelItem = observer(({ channel }: Props) => {
             {mentionCount > 0 ? (
               <Box
                 style={{
-                  minWidth: 16,
-                  height: 16,
+                  ...mentionBadgeStyle,
                   borderRadius: 9999,
                   backgroundColor: theme.colors.danger,
-                  paddingHorizontal: 4,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
                 <Typography
+                  level="body-xs"
                   style={{
                     color: "#fff",
-                    fontSize: 10,
                     fontWeight: "600",
                   }}
                 >
@@ -137,8 +157,8 @@ export const DMChannelItem = observer(({ channel }: Props) => {
             ) : isUnread ? (
               <Box
                 style={{
-                  width: 8,
-                  height: 8,
+                  width: unreadDotSize,
+                  height: unreadDotSize,
                   borderRadius: 9999,
                   backgroundColor: theme.typography.colors.primary,
                 }}
@@ -148,5 +168,31 @@ export const DMChannelItem = observer(({ channel }: Props) => {
         )}
       </Paper>
     </Pressable>
+
+      {recipient && channel.type === ChannelType.DM ? (
+        <UserActionSheet
+          user={recipient}
+          visible={actionSheetOpen}
+          onClose={() => setActionSheetOpen(false)}
+          insideDMs
+        />
+      ) : null}
+
+      {channel.isGroupDM ? (
+        <>
+          <GroupDMActionSheet
+            channel={channel}
+            visible={groupActionOpen}
+            onClose={() => setGroupActionOpen(false)}
+            onOpenManage={() => setManageGroupOpen(true)}
+          />
+          <GroupDMManageSheet
+            visible={manageGroupOpen}
+            onClose={() => setManageGroupOpen(false)}
+            channel={channel}
+          />
+        </>
+      ) : null}
+    </>
   );
 });

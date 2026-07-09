@@ -1,26 +1,19 @@
 import { VoiceChannelView } from "@components/Views/VoiceChannelView";
 import { ChannelIcon } from "@components/Channel/ChannelIcon";
+import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
 import { MemberListModal } from "@components/MemberList/MemberListModal";
 import { MessageInput } from "@components/Message/MessageInput";
 import { MessageList } from "@components/Message/MessageList";
 import { TypingIndicator } from "@components/TypingIndicator";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
 import { ArrowLeftIcon, HashIcon, UsersIcon } from "phosphor-react-native";
-import { useKeyboardOffset } from "@hooks/useKeyboardOffset";
 import { useScreenComposer } from "@hooks/useScreenComposer";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, useState } from "react";
-import {
-    Animated,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useEffect, useState } from "react";
+import { Keyboard, Pressable, View } from "react-native";
 
 const EmptyChannelState = () => {
     const { theme } = useTheme();
@@ -47,25 +40,9 @@ const EmptyChannelState = () => {
 
 export const ChannelContentPane = observer(() => {
     const app = useAppStore();
-    const insets = useSafeAreaInsets();
     const { theme } = useTheme();
-    const keyboardHeight = useKeyboardOffset();
-    const translateY = useRef(new Animated.Value(0)).current;
     const composerVisible = useScreenComposer();
     const [memberListOpen, setMemberListOpen] = useState(false);
-
-    useEffect(() => {
-        if (Platform.OS !== "android") return;
-
-        const height =
-            keyboardHeight === 0 ? 0 : -keyboardHeight - insets.bottom;
-
-        Animated.timing(translateY, {
-            toValue: height,
-            duration: 150,
-            useNativeDriver: true,
-        }).start();
-    }, [keyboardHeight, translateY, insets.bottom]);
 
     useEffect(() => {
         if (app.spacesDrawerOpen) Keyboard.dismiss();
@@ -79,11 +56,7 @@ export const ChannelContentPane = observer(() => {
     }
 
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-            keyboardVerticalOffset={0}
-        >
+        <AppKeyboardAvoidingView style={{ flex: 1 }}>
             <Screen
                 style={{
                     flexDirection: "column",
@@ -116,18 +89,17 @@ export const ChannelContentPane = observer(() => {
                         />
                     </Pressable>
                 </ScreenHeader>
-                <Animated.View
+                <View
                     style={{
                         flexDirection: "column",
                         flex: 1,
                         minHeight: 0,
-                        transform: [{ translateY }],
                     }}
                 >
                     <MessageList channel={channel} />
                     <TypingIndicator channelId={channel.id} />
                     {composerVisible && <MessageInput channel={channel} />}
-                </Animated.View>
+                </View>
             </Screen>
 
             <MemberListModal
@@ -135,6 +107,6 @@ export const ChannelContentPane = observer(() => {
                 visible={memberListOpen}
                 onClose={() => setMemberListOpen(false)}
             />
-        </KeyboardAvoidingView>
+        </AppKeyboardAvoidingView>
     );
 });

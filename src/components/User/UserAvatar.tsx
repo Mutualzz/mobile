@@ -25,6 +25,7 @@ interface UserAvatarProps extends AvatarProps {
   user?: AccountStore | User | null;
   badge?: boolean;
   showInvisible?: boolean;
+  speaking?: boolean;
 }
 
 const baseSizeMap: Record<Size, number> = {
@@ -34,7 +35,7 @@ const baseSizeMap: Record<Size, number> = {
 };
 
 export const UserAvatar = observer(
-  ({ user, badge = false, showInvisible, ...props }: UserAvatarProps) => {
+  ({ user, badge = false, showInvisible, speaking = false, ...props }: UserAvatarProps) => {
     const app = useAppStore();
     const { theme } = useTheme();
 
@@ -55,7 +56,7 @@ export const UserAvatar = observer(
 
     const hasAvatar = useMemo(() => user && user.avatar != null, [user]);
 
-    const avatarContent = !user ? (
+    const avatarBody = !user ? (
       <MAvatar
         elevation={5}
         shape="circle"
@@ -90,6 +91,23 @@ export const UserAvatar = observer(
           size={size}
         />
       </Paper>
+    );
+
+    const avatarContent = (
+      <Box
+        style={
+          speaking
+            ? {
+                borderRadius: 9999,
+                padding: 2,
+                borderWidth: 2,
+                borderColor: theme.colors.success,
+              }
+            : undefined
+        }
+      >
+        {avatarBody}
+      </Box>
     );
 
     if (!badge || !status) return avatarContent;

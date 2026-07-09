@@ -37,7 +37,7 @@ export const StaffHeader = observer(({ title, showBack = false }: Props) => {
             <Typography
                 level="body-lg"
                 weight="bold"
-                numberOfLines={1}
+                truncate="single"
                 style={{ flex: 1 }}
             >
                 {title}

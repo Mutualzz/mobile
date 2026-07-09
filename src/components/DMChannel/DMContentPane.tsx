@@ -1,22 +1,19 @@
+import { DMChannelHeader } from "@components/DMChannel/DMChannelHeader";
+import { GroupDMAddRecipientSheet } from "@components/DMChannel/GroupDMAddRecipientSheet";
+import { GroupDMManageSheet } from "@components/DMChannel/GroupDMManageSheet";
+import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
 import { MessageInput } from "@components/Message/MessageInput";
 import { MessageList } from "@components/Message/MessageList";
 import { TypingIndicator } from "@components/TypingIndicator";
-import { Screen, ScreenHeader } from "@components/Screen/Screen";
-import { ArrowLeftIcon, ChatCircleIcon } from "phosphor-react-native";
-import { useKeyboardOffset } from "@hooks/useKeyboardOffset";
+import { Screen } from "@components/Screen/Screen";
+import { UserActionSheet } from "@components/User/UserActionSheet";
+import { ChatCircleIcon } from "phosphor-react-native";
 import { useScreenComposer } from "@hooks/useScreenComposer";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef } from "react";
-import {
-  Animated,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useEffect, useState } from "react";
+import { Keyboard, View } from "react-native";
 
 const EmptyDMState = () => {
   const { theme } = useTheme();
@@ -43,23 +40,10 @@ const EmptyDMState = () => {
 
 export const DMContentPane = observer(() => {
   const app = useAppStore();
-  const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
-  const keyboardHeight = useKeyboardOffset();
-  const translateY = useRef(new Animated.Value(0)).current;
   const composerVisible = useScreenComposer();
-
-  useEffect(() => {
-    if (Platform.OS !== "android") return;
-
-    const height = keyboardHeight === 0 ? 0 : -keyboardHeight - insets.bottom;
-
-    Animated.timing(translateY, {
-      toValue: height,
-      duration: 150,
-      useNativeDriver: true,
-    }).start();
-  }, [keyboardHeight, translateY, insets.bottom]);
+  const [addRecipientOpen, setAddRecipientOpen] = useState(false);
+  const [manageGroupOpen, setManageGroupOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   useEffect(() => {
     if (app.dmDrawerOpen) Keyboard.dismiss();
@@ -68,34 +52,60 @@ export const DMContentPane = observer(() => {
   const channel = app.channels.active;
   if (!channel) return <EmptyDMState />;
 
+  const dmRecipient = channel.dmRecipient;
+
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
+    <AppKeyboardAvoidingView style={{ flex: 1 }}>
       <Screen style={{ flexDirection: "column" }}>
-        <ScreenHeader safeHorizontal={false} style={{ paddingHorizontal: 12 }}>
-          <Pressable hitSlop={8} onPress={() => app.setDMDrawerOpen(true)}>
-            <ArrowLeftIcon
-              size={22}
-              weight="bold"
-              color={theme.typography.colors.primary}
-            />
-          </Pressable>
-        </ScreenHeader>
-        <Animated.View
+        <DMChannelHeader
+          channel={channel}
+          onBack={() => app.setDMDrawerOpen(true)}
+          onOpenAddRecipient={
+            channel.isGroupDM ? () => setAddRecipientOpen(true) : undefined
+          }
+          onOpenManage={
+            channel.isGroupDM ? () => setManageGroupOpen(true) : undefined
+          }
+          onOpenUserMenu={
+            !channel.isGroupDM && dmRecipient
+              ? () => setUserMenuOpen(true)
+              : undefined
+          }
+        />
+        <View
           style={{
             flex: 1,
             minHeight: 0,
             flexDirection: "column",
-            transform: [{ translateY }],
           }}
         >
           <MessageList channel={channel} />
           <TypingIndicator channelId={channel.id} />
           {composerVisible && <MessageInput channel={channel} />}
-        </Animated.View>
+        </View>
+
+        {channel.isGroupDM ? (
+          <>
+            <GroupDMAddRecipientSheet
+              visible={addRecipientOpen}
+              onClose={() => setAddRecipientOpen(false)}
+              channel={channel}
+            />
+            <GroupDMManageSheet
+              visible={manageGroupOpen}
+              onClose={() => setManageGroupOpen(false)}
+              channel={channel}
+            />
+          </>
+        ) : dmRecipient ? (
+          <UserActionSheet
+            user={dmRecipient}
+            visible={userMenuOpen}
+            onClose={() => setUserMenuOpen(false)}
+            insideDMs
+          />
+        ) : null}
       </Screen>
-    </KeyboardAvoidingView>
+    </AppKeyboardAvoidingView>
   );
 });

@@ -13,6 +13,7 @@ import {
   useSpaceSettingsAccess,
 } from "@hooks/useSpaceFromRoute";
 import { ButtonGroup, Divider, Typography } from "@mutualzz/ui-native";
+import type { Href } from "expo-router";
 import startCase from "lodash-es/startCase";
 import { observer } from "mobx-react-lite";
 import { Fragment } from "react";
@@ -89,7 +90,9 @@ const SpaceSettingsIndex = () => {
                     <page.Icon weight="fill" size={20} color={navIconColor} />
                   }
                   onPress={() =>
-                    navigate(`/(tabs)/spaces/${spaceId}/settings/${page.label}`)
+                    navigate(
+                      `/(tabs)/spaces/${spaceId}/settings/${page.label}` as Href,
+                    )
                   }
                 >
                   {startCase(page.label)}

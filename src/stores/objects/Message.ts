@@ -1,5 +1,6 @@
 import type {
   APIMessage,
+  APIAttachment,
   APIMessageEmbed,
   APIMessageReaction,
   APIMessageReactionEmoji,
@@ -31,6 +32,7 @@ export class Message extends MessageBase {
 
   nonce?: Snowflake | null;
   embeds: APIMessageEmbed[];
+  attachments: APIAttachment[];
   expressions = observable.array<Expression>();
   reactions: APIMessageReaction[] = [];
 
@@ -49,16 +51,18 @@ export class Message extends MessageBase {
     this.nonce = data.nonce;
     this.edited = data.edited ?? false;
     this.embeds = data.embeds ?? [];
+    this.attachments = data.attachments ?? [];
     this.expressions = observable.array<Expression>(
       this.app.expressions.addAll(data.expressions ?? []),
     );
     this.reactions = data.reactions ?? [];
 
-    makeObservable<Message, "_author" | "_space" | "_channel">(this, {
-      ...messageBaseMobxAnnotations,
+        makeObservable<Message, "_author" | "_space" | "_channel" | "_repliedTo">(this, {
+            ...messageBaseMobxAnnotations,
       updatedAt: observable,
       nonce: observable,
       embeds: observable.shallow,
+      attachments: observable.shallow,
       expressions: observable,
       reactions: observable.shallow,
       edited: observable,
@@ -90,6 +94,7 @@ export class Message extends MessageBase {
     this.content = message.content;
     this.nonce = message.nonce ?? null;
     this.embeds = message.embeds ?? this.embeds ?? [];
+    this.attachments = message.attachments ?? this.attachments ?? [];
     this.expressions = observable.array<Expression>(
       this.app.expressions.addAll(
         message.expressions ??
@@ -103,6 +108,11 @@ export class Message extends MessageBase {
     this.updatedAt = message.updatedAt ? new Date(message.updatedAt) : null;
 
     this.edited = message.edited ?? this.edited;
+    this.type = message.type;
+    this.repliedToId = message.repliedToId ?? null;
+    if (isLoadedRelation(message.repliedTo)) {
+      this._repliedTo = this.channel?.messages.add(message.repliedTo) ?? null;
+    }
   }
 
   setEditing(value: boolean) {

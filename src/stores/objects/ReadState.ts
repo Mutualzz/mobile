@@ -74,7 +74,9 @@ export class ReadState {
     if (data.badgeCount !== undefined) this.badgeCount = data.badgeCount;
 
     if (data.lastPinTimestamp !== undefined)
-      this.lastPinTimestamp = data.lastPinTimestamp;
+      this.lastPinTimestamp = data.lastPinTimestamp
+        ? new Date(data.lastPinTimestamp)
+        : data.lastPinTimestamp;
 
     if (data.flags !== undefined)
       this.flags = BitField.fromString(readStateFlags, data.flags.toString());

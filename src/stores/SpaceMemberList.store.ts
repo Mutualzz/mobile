@@ -12,14 +12,22 @@ export class SpaceMemberListStore {
   list: { name: string; items: SpaceMember[] }[] = [];
   groups: any[] = [];
   private readonly logger = new Logger({
-    tag: "SpaceMemberListStore"
+    tag: "SpaceMemberListStore",
   });
   private readonly space: Space;
+  // Maps the server's group index (as referenced by op `range`/`index`
+  // fields, which are positions in the server's full, unfiltered group
+  // ordering) to the index of that group in `this.list`, or null if that
+  // server group was filtered out of the rendered list (empty group, or a
+  // large "offline" group). Without this translation, ops addressing groups
+  // positionally would be applied against the wrong local group whenever
+  // any group has been filtered out.
+  private groupIndexMap: (number | null)[] = [];
 
   constructor(
     private readonly app: AppStore,
     space: Space,
-    data: any
+    data: any,
   ) {
     this.space = space;
 
@@ -55,7 +63,7 @@ export class SpaceMemberListStore {
   }
 
   private computeListData(ops: any) {
-    for (const i of ops) {
+    for (const i of ops ?? []) {
       const { op, items, range, item, index } = i;
 
       switch (op) {
@@ -71,7 +79,7 @@ export class SpaceMemberListStore {
               listData.push({
                 id: entry.group.id,
                 title: this.getGroupName(entry.group),
-                data: []
+                data: [],
               });
               continue;
             }
@@ -95,16 +103,18 @@ export class SpaceMemberListStore {
 
             listData[listData.length - 1].data.push({
               member,
-              index: entry.index
+              index: entry.index,
             });
           }
+
+          const rawGroupIds = listData.map((x) => x.id);
 
           listData = listData.filter((x) => x.data.length > 0);
 
           listData = listData.map((x) => ({
             ...x,
             id: x.id,
-            title: `${x.title} - ${x.data.length}`
+            title: `${x.title} - ${x.data.length}`,
           }));
 
           // hide offline group if it has more than 100 members
@@ -112,8 +122,14 @@ export class SpaceMemberListStore {
             (x) =>
               !(
                 x.id.toLowerCase().startsWith("offline") && x.data.length >= 100
-              )
+              ),
           );
+
+          const finalGroupIds = listData.map((x) => x.id);
+          this.groupIndexMap = rawGroupIds.map((id) => {
+            const localIndex = finalGroupIds.indexOf(id);
+            return localIndex === -1 ? null : localIndex;
+          });
 
           this.list = listData.map((x) => ({
             name: x.title,
@@ -123,43 +139,53 @@ export class SpaceMemberListStore {
                 const ua = a.member.displayName ?? "";
                 const ub = b.member.displayName ?? "";
                 return ua.localeCompare(ub, undefined, {
-                  sensitivity: "base"
+                  sensitivity: "base",
                 });
               })
-              .map((y) => y.member)
+              .map((y) => y.member),
           }));
 
           this.logger.debug("SYNC built list", {
             groups: this.list.length,
-            total: this.list.reduce((n, g) => n + g.items.length, 0)
+            total: this.list.reduce((n, g) => n + g.items.length, 0),
           });
 
           break;
         }
 
         case "DELETE": {
-          const groupIndex = range?.[0];
+          const serverGroupIndex = range?.[0];
           const memberIndex = range?.[1];
 
-          if (typeof groupIndex !== "number" || !this.list[groupIndex]) break;
+          if (typeof serverGroupIndex !== "number") break;
 
           const entry = (items ?? [])[0];
           if (!entry) break;
 
+          const groupIndex = this.groupIndexMap[serverGroupIndex];
+
           if ("group" in entry) {
             this.logger.debug(
               `Delete group ${entry.group.id} from ${this.id}`,
-              i
+              i,
             );
-            this.list.splice(groupIndex, 1);
+
+            if (groupIndex != null && this.list[groupIndex]) {
+              this.list.splice(groupIndex, 1);
+              this.groupIndexMap = this.groupIndexMap.map((li) =>
+                li != null && li > groupIndex ? li - 1 : li,
+              );
+            }
+            this.groupIndexMap.splice(serverGroupIndex, 1);
             break;
           }
 
+          if (groupIndex == null || !this.list[groupIndex]) break;
           if (typeof memberIndex !== "number") break;
 
           this.logger.debug(
             `Delete member ${entry.member.user?.username} from ${this.id}`,
-            i
+            i,
           );
           this.list[groupIndex].items.splice(memberIndex, 1);
 
@@ -167,10 +193,17 @@ export class SpaceMemberListStore {
         }
 
         case "UPDATE": {
-          const groupIndex = range?.[0];
+          const serverGroupIndex = range?.[0];
           const memberIndex = range?.[1];
 
-          if (typeof groupIndex !== "number" || !this.list[groupIndex]) {
+          if (typeof serverGroupIndex !== "number") {
+            this.logger.warn("UPDATE: invalid group index", i);
+            break;
+          }
+
+          const groupIndex = this.groupIndexMap[serverGroupIndex];
+
+          if (groupIndex == null || !this.list[groupIndex]) {
             this.logger.warn("UPDATE: invalid group index", i);
             break;
           }
@@ -182,7 +215,7 @@ export class SpaceMemberListStore {
             this.list[groupIndex].name = first.group.id;
             this.logger.debug(
               `Update group ${first.group.id} from ${this.id}`,
-              i
+              i,
             );
             break;
           }
@@ -205,7 +238,7 @@ export class SpaceMemberListStore {
               visibleMember.update?.(memberWithoutPresence);
             } else {
               const idx = this.list[groupIndex].items.findIndex(
-                (x) => x.userId === memberKey
+                (x) => x.userId === memberKey,
               );
               if (idx !== -1) this.list[groupIndex].items[idx].update?.(m);
             }
@@ -213,29 +246,39 @@ export class SpaceMemberListStore {
 
           this.logger.debug(
             `Update member ${m.user?.username} from ${this.id}`,
-            i
+            i,
           );
           break;
         }
 
         case "INSERT": {
           if ("group" in item) {
-            const at =
+            const serverAt =
               typeof index === "number"
                 ? index
-                : (range?.[0] ?? this.list.length);
+                : (range?.[0] ?? this.groupIndexMap.length);
+            const localAt = this.list.length;
 
-            this.list.splice(at, 0, {
+            this.list.splice(localAt, 0, {
               name: `${capitalize(item.group.id)}`,
-              items: []
+              items: [],
             });
+
+            this.groupIndexMap = this.groupIndexMap.map((li) =>
+              li != null && li >= localAt ? li + 1 : li,
+            );
+            this.groupIndexMap.splice(serverAt, 0, localAt);
             break;
           }
 
-          const groupIndex = range?.[0] ?? index;
+          const serverGroupIndex = range?.[0] ?? index;
           const memberIndex = range?.[1] ?? 0;
 
-          if (typeof groupIndex !== "number" || !this.list[groupIndex]) break;
+          if (typeof serverGroupIndex !== "number") break;
+
+          const groupIndex = this.groupIndexMap[serverGroupIndex];
+
+          if (groupIndex == null || !this.list[groupIndex]) break;
 
           let memberObj: SpaceMember | undefined;
 
@@ -248,10 +291,10 @@ export class SpaceMemberListStore {
               item.member;
 
             memberObj = this.space.members.get(memberKey);
-            memberObj?.update?.(memberWithoutPresence);
-
-            if (!memberObj) {
-              memberObj = new SpaceMember(this.app, memberWithoutPresence);
+            if (memberObj) {
+              memberObj.update?.(memberWithoutPresence);
+            } else {
+              memberObj = this.space.members.add(memberWithoutPresence);
             }
           }
 
@@ -259,7 +302,7 @@ export class SpaceMemberListStore {
             memberObj = new SpaceMember(
               this.app,
 
-              item.member
+              item.member,
             );
           }
 

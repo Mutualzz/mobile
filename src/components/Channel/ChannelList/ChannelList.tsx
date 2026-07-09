@@ -1,3 +1,4 @@
+import { ChannelActionSheet } from "@components/Channel/ChannelActionSheet";
 import { SpaceMenuSheet } from "@components/Space/SpaceMenuSheet";
 import { ChannelCreateSheet } from "@components/Channel/ChannelCreateSheet";
 import { CategoryCreateSheet } from "@components/Channel/CategoryCreateSheet";
@@ -6,35 +7,16 @@ import { ChannelSettingsSheet } from "@components/ChannelSettings/ChannelSetting
 import { IconButton } from "@components/IconButton";
 import { ChannelListItem } from "@components/Channel/ChannelListItem/ChannelListItem";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
-import { SpaceCreateInviteSheet } from "@components/SpaceSettings/SpaceCreateInviteSheet";
+import { SpaceInviteToSpaceSheet } from "@components/Space/SpaceInviteToSpaceSheet";
 import { CaretDownIcon, PlusIcon, UserPlusIcon } from "phosphor-react-native";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
-import { Box, ButtonGroup, Typography } from "@mutualzz/ui-native";
+import { Box, ButtonGroup, Modal, Typography } from "@mutualzz/ui-native";
 import { type Channel } from "@stores/objects/Channel";
+import { flattenChannels } from "@utils/channelReorder";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Modal, Pressable } from "react-native";
-
-function flattenChannels(channels: Channel[]) {
-  const childIds = new Set(channels.filter((c) => c.parent).map((c) => c.id));
-
-  const result: Channel[] = [];
-  for (const channel of channels) {
-    if (childIds.has(channel.id)) continue;
-
-    result.push(channel);
-
-    if (channel.type === ChannelType.Category) {
-      const children = channels.filter((c) => c.parent?.id === channel.id);
-
-      children.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-      result.push(...children);
-    }
-  }
-
-  return result;
-}
+import { Pressable, View } from "react-native";
 
 export const ChannelList = observer(() => {
   const app = useAppStore();
@@ -43,6 +25,7 @@ export const ChannelList = observer(() => {
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
   const [deleteCategory, setDeleteCategory] = useState<Channel | null>(null);
   const [settingsChannel, setSettingsChannel] = useState<Channel | null>(null);
+  const [actionChannel, setActionChannel] = useState<Channel | null>(null);
   const [createParent, setCreateParent] = useState<Channel | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [spaceMenuOpen, setSpaceMenuOpen] = useState(false);
@@ -90,7 +73,7 @@ export const ChannelList = observer(() => {
           style={{ flex: 1, minWidth: 0 }}
           onPress={() => setSpaceMenuOpen(true)}
         >
-          <Typography level="body-lg" numberOfLines={1}>
+          <Typography level="body-lg" truncate="single">
             {space.name}
           </Typography>
         </Pressable>
@@ -152,22 +135,18 @@ export const ChannelList = observer(() => {
                 ? () => openCreateChannel(channel)
                 : undefined
             }
-            onLongPress={
-              canManageChannels
-                ? () => {
-                    if (channel.type === ChannelType.Category) {
-                      setDeleteCategory(channel);
-                      return;
-                    }
-                    if (
-                      channel.type === ChannelType.Text ||
-                      channel.type === ChannelType.Voice
-                    ) {
-                      setSettingsChannel(channel);
-                    }
-                  }
-                : undefined
-            }
+            onLongPress={() => {
+              if (channel.type === ChannelType.Category) {
+                if (canManageChannels) setActionChannel(channel);
+                return;
+              }
+              if (
+                channel.type === ChannelType.Text ||
+                channel.type === ChannelType.Voice
+              ) {
+                setActionChannel(channel);
+              }
+            }}
           />
         ))}
       </Box>
@@ -204,6 +183,27 @@ export const ChannelList = observer(() => {
         />
       )}
 
+      {actionChannel && (
+        <ChannelActionSheet
+          space={space}
+          channel={actionChannel}
+          visible
+          onClose={() => setActionChannel(null)}
+          onOpenSettings={() => {
+            setSettingsChannel(actionChannel);
+            setActionChannel(null);
+          }}
+          onDeleteCategory={
+            actionChannel.type === ChannelType.Category
+              ? () => {
+                  setDeleteCategory(actionChannel);
+                  setActionChannel(null);
+                }
+              : undefined
+          }
+        />
+      )}
+
       <SpaceMenuSheet
         space={space}
         visible={spaceMenuOpen}
@@ -211,19 +211,30 @@ export const ChannelList = observer(() => {
       />
 
       <Modal
-        visible={inviteOpen}
-        animationType="slide"
-        onRequestClose={() => setInviteOpen(false)}
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        layout="fullscreen"
+        showCloseButton={false}
+        style={{
+          justifyContent: "flex-end",
+          alignItems: "stretch",
+          backgroundColor: "transparent",
+          paddingVertical: 0,
+        }}
       >
-        <Screen
-          variant="elevation"
-          style={{ flexDirection: "column", padding: 16 }}
-        >
-          <SpaceCreateInviteSheet
+        <View pointerEvents="box-none" style={{ width: "100%" }}>
+          <Screen
+            variant="elevation"
+            fill={false}
+            style={{ flexDirection: "column", padding: 16 }}
+          >
+          <SpaceInviteToSpaceSheet
             space={space}
+            channel={activeChannel}
             onClose={() => setInviteOpen(false)}
           />
         </Screen>
+        </View>
       </Modal>
     </Screen>
   );

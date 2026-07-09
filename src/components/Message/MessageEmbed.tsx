@@ -1,8 +1,10 @@
 import { Paper } from "@components/Paper";
+import { PostEmbedPreview } from "@components/Feed/PostEmbedPreview";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppStore } from "@hooks/useStores";
 import type { APIMessageEmbed } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
+import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
 import { Image, Linking, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import WebView from "react-native-webview";
@@ -19,11 +21,12 @@ export const MessageEmbed = observer(
         const { theme } = useTheme();
         const { width } = useWindowDimensions();
         const maxEmbedWidth = Math.min(width - 80, 560);
+        const spotifyEmbedHeight = useScaledSquareSize(80);
         const youtubeHeight = Math.round(maxEmbedWidth * (9 / 16));
 
         if (embed.spotify) {
             return (
-                <View style={[styles.webviewWrap, { width: maxEmbedWidth, height: 80 }]}>
+                <View style={[styles.webviewWrap, { width: maxEmbedWidth, height: spotifyEmbedHeight }]}>
                     <WebView
                         testID="embed-webview"
                         source={{ uri: embed.spotify.embedUrl }}
@@ -57,6 +60,10 @@ export const MessageEmbed = observer(
                     />
                 </View>
             );
+        }
+
+        if (embed.type === "post" && embed.post) {
+            return <PostEmbedPreview post={embed.post} />;
         }
 
         if (embed.type === "gifv") {

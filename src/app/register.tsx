@@ -1,31 +1,28 @@
+import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
 import { Button } from "@components/Button";
 import { DOBInput } from "@components/DOBInput";
 import { Paper } from "@components/Paper";
-import { useKeyboardOffset } from "@hooks/useKeyboardOffset";
 import { useAppStore } from "@hooks/useStores";
-import { HttpException } from "@mutualzz/types";
+import { type HttpException } from "@mutualzz/types";
 import {
   Box,
   IconButton,
   InputDefault,
   InputPassword,
-  InputPasswordProps,
-  InputRootProps,
+  type InputPasswordProps,
+  type InputRootProps,
   Typography,
 } from "@mutualzz/ui-native";
 import { validateRegister } from "@mutualzz/validators";
-import { AnyFieldApi, revalidateLogic } from "@tanstack/form-core";
+import { type AnyFieldApi, revalidateLogic } from "@tanstack/form-core";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
+import dayjs from "dayjs";
 import { Redirect, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-} from "react-native";
+import { forwardRef, useRef, useState } from "react";
+import type { TextInput } from "react-native";
+import { Pressable } from "react-native";
 
 interface ApiErrors {
   email?: string;
@@ -36,20 +33,16 @@ interface ApiErrors {
   dateOfBirth?: string;
 }
 
-const InputWithLabel = ({
-  apiErrors,
-  field,
-  label,
-  type,
-  ...props
-}: InputRootProps &
-  InputPasswordProps & {
-    field: AnyFieldApi;
-    label: string;
-    apiErrors: ApiErrors;
-    required?: boolean;
-    type?: string;
-  }) => (
+const InputWithLabel = forwardRef<
+  TextInput,
+  InputRootProps &
+    InputPasswordProps & {
+      field: AnyFieldApi;
+      label: string;
+      apiErrors: ApiErrors;
+      required?: boolean;
+    }
+>(({ apiErrors, field, label, type, ...props }, ref) => (
   <Box
     style={{
       width: "100%",
@@ -66,42 +59,43 @@ const InputWithLabel = ({
       )}
     </Typography>
     {type === "password" ? (
-      <InputPassword {...props} fullWidth />
+      <InputPassword {...props} ref={ref} fullWidth />
     ) : (
-      <InputDefault {...props} fullWidth autoCapitalize="none" />
+      <InputDefault autoCapitalize="none" {...props} ref={ref} fullWidth />
     )}
     {!field.state.meta.isValid && field.state.meta.isTouched && (
-      <Typography variant="plain" color="danger" level="body-sm">
+      <Typography
+        variant="plain"
+        color="danger"
+        level="body-sm"
+        accessibilityLiveRegion="polite"
+      >
         {field.state.meta.errors[0].message}
       </Typography>
     )}
     {apiErrors[field.name as keyof ApiErrors] && (
-      <Typography variant="plain" color="danger" level="body-sm">
+      <Typography
+        variant="plain"
+        color="danger"
+        level="body-sm"
+        accessibilityLiveRegion="polite"
+      >
         {apiErrors[field.name as keyof ApiErrors]}
       </Typography>
     )}
   </Box>
-);
+));
+InputWithLabel.displayName = "InputWithLabel";
 
 const Register = () => {
   const app = useAppStore();
   const router = useRouter();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [apiErrors, setApiErrors] = useState<ApiErrors>({});
-  const keyboardHeight = useKeyboardOffset();
-  const translateY = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (Platform.OS !== "android") return;
-
-    const height = keyboardHeight === 0 ? 0 : -keyboardHeight / 2.5;
-
-    Animated.timing(translateY, {
-      toValue: height,
-      duration: 150,
-      useNativeDriver: true,
-    }).start();
-  }, [keyboardHeight, translateY]);
+  const usernameRef = useRef<TextInput>(null);
+  const globalNameRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
 
   const { mutate: register, isPending } = useMutation({
     mutationFn: async (values: any) =>
@@ -110,11 +104,11 @@ const Register = () => {
       app.setToken(token);
     },
     onError: (error: HttpException) => {
+      const errors: ApiErrors = {};
       error.errors.forEach((err) => {
-        setApiErrors({
-          [err.path]: err.message,
-        });
+        errors[err.path as keyof ApiErrors] = err.message;
       });
+      setApiErrors(errors);
     },
   });
 
@@ -125,7 +119,7 @@ const Register = () => {
       username: "",
       password: "",
       confirmPassword: "",
-      dateOfBirth: new Date(),
+      dateOfBirth: dayjs().subtract(13, "year").toDate(),
     },
     validationLogic: revalidateLogic(),
     validators: {
@@ -139,19 +133,18 @@ const Register = () => {
   if (app.token) return <Redirect href="/" />;
 
   return (
-    <KeyboardAvoidingView
+    <AppKeyboardAvoidingView
       style={{
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
         padding: 24,
       }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <Animated.View style={{ width: "100%", transform: [{ translateY }] }}>
-        <Paper
-          style={{
-            paddingVertical: 20,
+      <Paper
+        style={{
+          width: "100%",
+          paddingVertical: 20,
             paddingHorizontal: 24,
             borderRadius: 12,
             gap: 16,
@@ -187,6 +180,8 @@ const Register = () => {
                   onBlur={field.handleBlur}
                   value={field.state.value}
                   inputMode="email"
+                  returnKeyType="next"
+                  onSubmitEditing={() => usernameRef.current?.focus()}
                   endDecorator={
                     <IconButton
                       padding={0}
@@ -207,6 +202,7 @@ const Register = () => {
               name="username"
               children={(field) => (
                 <InputWithLabel
+                  ref={usernameRef}
                   field={field}
                   label="Username"
                   apiErrors={apiErrors}
@@ -214,6 +210,8 @@ const Register = () => {
                   onChangeText={field.handleChange}
                   onBlur={field.handleBlur}
                   value={field.state.value}
+                  returnKeyType="next"
+                  onSubmitEditing={() => globalNameRef.current?.focus()}
                   endDecorator={
                     <IconButton
                       padding={0}
@@ -233,14 +231,18 @@ const Register = () => {
               name="globalName"
               children={(field) => (
                 <InputWithLabel
+                  ref={globalNameRef}
                   field={field}
                   label="Display Name"
                   apiErrors={apiErrors}
+                  autoCapitalize="words"
                   onChangeText={(text) =>
                     field.handleChange(text.length > 0 ? text : undefined)
                   }
                   onBlur={field.handleBlur}
                   value={field.state.value ?? ""}
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
                   endDecorator={
                     <IconButton
                       padding={0}
@@ -260,6 +262,7 @@ const Register = () => {
               name="password"
               children={(field) => (
                 <InputWithLabel
+                  ref={passwordRef}
                   field={field}
                   label="Password"
                   apiErrors={apiErrors}
@@ -269,6 +272,8 @@ const Register = () => {
                   value={field.state.value}
                   visible={passwordVisible}
                   onTogglePassword={() => setPasswordVisible((prev) => !prev)}
+                  returnKeyType="next"
+                  onSubmitEditing={() => confirmPasswordRef.current?.focus()}
                   required
                 />
               )}
@@ -277,6 +282,7 @@ const Register = () => {
               name="confirmPassword"
               children={(field) => (
                 <InputWithLabel
+                  ref={confirmPasswordRef}
                   field={field}
                   label="Confirm Password"
                   apiErrors={apiErrors}
@@ -286,6 +292,7 @@ const Register = () => {
                   value={field.state.value}
                   visible={passwordVisible}
                   onTogglePassword={() => setPasswordVisible((prev) => !prev)}
+                  returnKeyType="done"
                   required
                 />
               )}
@@ -308,6 +315,10 @@ const Register = () => {
                   fullWidth
                   onPress={Form.handleSubmit}
                   disabled={isSubmitting || isPending}
+                  style={{
+                    marginTop: 16,
+                    marginBottom: 16,
+                  }}
                 >
                   {isSubmitting ? "..." : "Create Account"}
                 </Button>
@@ -323,8 +334,7 @@ const Register = () => {
             </Typography>
           </Pressable>
         </Paper>
-      </Animated.View>
-    </KeyboardAvoidingView>
+    </AppKeyboardAvoidingView>
   );
 };
 

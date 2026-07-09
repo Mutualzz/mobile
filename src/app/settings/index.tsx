@@ -8,6 +8,7 @@ import {
   type UserSettingsSidebarPage,
 } from "@contexts/UserSettingsSidebar.context";
 import {
+  BellIcon,
   MicrophoneIcon,
   PaletteIcon,
   PaintBrushIcon,
@@ -38,6 +39,7 @@ const settingsPages: SettingsPages = {
   ],
   "app-settings": [
     { label: "appearance", Icon: PaletteIcon },
+    { label: "notifications", Icon: BellIcon },
     { label: "voice_and_video", Icon: MicrophoneIcon },
   ],
 };

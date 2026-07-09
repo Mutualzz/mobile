@@ -122,7 +122,7 @@ export function prepareMobileBlocksForSave(
   return blocks.filter((block) => {
     if (block.type === "image") return block.src.trim() !== "";
     if (block.type === "links")
-      return block.links.some((link) => link.url.trim() !== "");
+      return (block.links ?? []).some((link) => link.url.trim() !== "");
     return true;
   });
 }
@@ -140,7 +140,7 @@ export function validateMobileBlocksForSave(
   const emptyLinksCount = blocks.filter(
     (block) =>
       block.type === "links" &&
-      block.links.every(
+      (block.links ?? []).every(
         (link) => link.url.trim() === "" || link.label.trim() === "",
       ),
   ).length;

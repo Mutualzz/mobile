@@ -1,11 +1,11 @@
 import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
-import { Box, ButtonGroup, Typography } from "@mutualzz/ui-native";
+import { Box, ButtonGroup, Modal, Typography } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
-import { Modal } from "react-native";
+import { View } from "react-native";
 
 interface Props {
   visible: boolean;
@@ -23,20 +23,25 @@ export const CategoryDeleteSheet = observer(
     });
 
     return (
-      <Modal visible={visible} animationType="fade" transparent>
-        <Box
-          style={{
-            flex: 1,
-            justifyContent: "flex-end",
-            backgroundColor: "rgba(0,0,0,0.45)",
-          }}
-        >
+      <Modal
+        open={visible}
+        onClose={onClose}
+        layout="fullscreen"
+        showCloseButton={false}
+        style={{
+          justifyContent: "flex-end",
+          alignItems: "stretch",
+          backgroundColor: "transparent",
+          paddingVertical: 0,
+        }}
+      >
+        <View pointerEvents="box-none" style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}>
           <Paper
             elevation={app.settings?.preferEmbossed ? 4 : 2}
             style={{
               padding: 24,
-              paddingBottom: 36,
-              borderRadius: 16,
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
               gap: 16,
             }}
           >
@@ -67,7 +72,7 @@ export const CategoryDeleteSheet = observer(
               </Button>
             </ButtonGroup>
           </Paper>
-        </Box>
+        </View>
       </Modal>
     );
   },

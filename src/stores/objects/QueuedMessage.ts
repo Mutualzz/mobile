@@ -1,7 +1,7 @@
 import type { APIExpression, APIUser, MessageType, Snowflake } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
 import { action, makeObservable, observable } from "mobx";
-import { Expression } from "./Expression";
+import type { Expression } from "./Expression";
 import { MessageBase, messageBaseMobxAnnotations } from "./MessageBase";
 
 export enum QueuedMessageStatus {
@@ -20,6 +20,8 @@ export interface QueuedMessageData {
     author?: APIUser;
     expressionIds?: Snowflake[];
     expressions?: APIExpression[];
+    repliedToId?: Snowflake | null;
+    repliedTo?: import("@mutualzz/types").APIMessage;
 }
 
 export class QueuedMessage extends MessageBase {
@@ -47,7 +49,7 @@ export class QueuedMessage extends MessageBase {
             data.expressions ? app.expressions.addAll(data.expressions) : [],
         );
 
-        makeObservable<QueuedMessage, "_author" | "_space" | "_channel">(this, {
+        makeObservable<QueuedMessage, "_author" | "_space" | "_channel" | "_repliedTo">(this, {
             ...messageBaseMobxAnnotations,
             progress: observable,
             status: observable,
@@ -58,6 +60,7 @@ export class QueuedMessage extends MessageBase {
             setAbortCallback: action.bound,
             abort: action.bound,
             fail: action.bound,
+            retry: action.bound,
         });
     }
 
@@ -78,6 +81,35 @@ export class QueuedMessage extends MessageBase {
     fail(error: string) {
         this.error = error;
         this.status = QueuedMessageStatus.Failed;
+    }
+
+    async retry() {
+        const channel = this.channel;
+        if (!channel) return;
+
+        this.status = QueuedMessageStatus.Sending;
+        this.error = undefined;
+
+        const expressionIds = this.expressions.map((expression) => expression.id);
+
+        try {
+            await channel.sendMessage(
+                {
+                    content: this.content ?? "",
+                    nonce: this.id,
+                    ...(expressionIds.length ? { expressionIds } : {}),
+                },
+                this,
+            );
+        } catch (e) {
+            const error =
+                e instanceof Error
+                    ? e.message
+                    : typeof e === "string"
+                      ? e
+                      : "Unknown error";
+            this.fail(error);
+        }
     }
 
     delete() {

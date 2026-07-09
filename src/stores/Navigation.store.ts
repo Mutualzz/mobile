@@ -29,6 +29,11 @@ export class NavigationStore {
         if (!this.app.account) return;
         if (this.current?.href === href) return;
 
+        // Drop any "forward" entries when navigating to a new page after going
+        // back, matching standard browser back/forward semantics.
+        if (this.index < this.entries.length - 1)
+            this.entries.splice(this.index + 1);
+
         this.entries.push({ href, timestamp: Date.now() });
         this.index = this.entries.length - 1;
 
@@ -66,5 +71,10 @@ export class NavigationStore {
         if (!this.canForward) return;
         this.index += 1;
         navigate({ to: this.entries[this.index].href });
+    }
+
+    clear() {
+        this.entries.clear();
+        this.index = -1;
     }
 }

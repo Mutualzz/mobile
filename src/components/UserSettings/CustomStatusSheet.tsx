@@ -13,13 +13,15 @@ import {
   Box,
   IconButton,
   InputDefault,
+  Modal,
   Typography,
   useTheme,
 } from "@mutualzz/ui-native";
+import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import { CaretDownIcon, CheckIcon, XIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Image, Modal, Pressable } from "react-native";
+import { Image, Pressable, View } from "react-native";
 
 interface Props {
   visible: boolean;
@@ -32,6 +34,7 @@ const toDurationValue = (durationMs: number | null) =>
 export const EmojiPreview = observer(
   ({ emoji }: { emoji: PresenceActivityEmoji }) => {
     const app = useAppStore();
+    const emojiSize = useScaledSquareSize(22);
 
     if (emoji.id) {
       const expression = app.expressions.get(emoji.id);
@@ -39,13 +42,13 @@ export const EmojiPreview = observer(
         return (
           <Image
             source={{ uri: expression.url }}
-            style={{ width: 22, height: 22 }}
+            style={{ width: emojiSize, height: emojiSize }}
           />
         );
       }
     }
 
-    return <UnicodeEmoji value={emoji.name} size={22} />;
+    return <UnicodeEmoji value={emoji.name} size={emojiSize} />;
   },
 );
 
@@ -93,18 +96,32 @@ export const CustomStatusSheet = observer(({ visible, onClose }: Props) => {
     setText("");
     setEmoji(null);
     setDurationValue(
-      toDurationValue(STATUS_DURATION_OPTIONS[4]?.durationMs ?? 24 * 60 * 60_000),
+      toDurationValue(
+        STATUS_DURATION_OPTIONS[4]?.durationMs ?? 24 * 60 * 60_000,
+      ),
     );
     onClose();
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <Box
+    <Modal
+      open={visible}
+      onClose={onClose}
+      layout="fullscreen"
+      showCloseButton={false}
+      style={{
+        justifyContent: "flex-end",
+        alignItems: "stretch",
+        backgroundColor: "transparent",
+        paddingVertical: 0,
+      }}
+    >
+      <View
+        pointerEvents="box-none"
         style={{
           flex: 1,
           justifyContent: "flex-end",
-          backgroundColor: "rgba(0,0,0,0.45)",
+          width: "100%",
         }}
       >
         <Paper
@@ -114,7 +131,7 @@ export const CustomStatusSheet = observer(({ visible, onClose }: Props) => {
             borderTopRightRadius: 16,
             padding: 20,
             gap: 12,
-            maxHeight: "80%",
+            height: "35%",
           }}
         >
           <Box
@@ -218,7 +235,7 @@ export const CustomStatusSheet = observer(({ visible, onClose }: Props) => {
                 borderColor: `${theme.typography.colors.muted}48`,
               }}
             >
-              <Typography level="body-sm" numberOfLines={1}>
+              <Typography level="body-sm" truncate="single">
                 {formatCustomStatusClearLabel(
                   selectedDurationOption?.durationMs ?? null,
                 )}
@@ -231,89 +248,78 @@ export const CustomStatusSheet = observer(({ visible, onClose }: Props) => {
             </Pressable>
           </Box>
 
-          <Button onPress={save} fullWidth>
-            Save
-          </Button>
-
-          {canClear && (
-            <Button
-              variant="plain"
-              color="danger"
-              fullWidth
-              onPress={clearStatus}
-            >
-              Clear status
+          <Box style={{ flexDirection: "row", gap: 6 }}>
+            <Button expand onPress={save}>
+              Save
             </Button>
-          )}
+
+            {canClear && (
+              <Button
+                expand
+                variant="plain"
+                color="danger"
+                onPress={clearStatus}
+              >
+                Clear status
+              </Button>
+            )}
+          </Box>
         </Paper>
-      </Box>
+      </View>
 
       <Modal
-        visible={durationPickerOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setDurationPickerOpen(false)}
+        open={durationPickerOpen}
+        onClose={() => setDurationPickerOpen(false)}
+        layout="center"
+        showCloseButton={false}
       >
-        <Pressable
+        <Paper
+          elevation={app.settings?.preferEmbossed ? 4 : 2}
           style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "rgba(0,0,0,0.45)",
-            padding: 24,
+            width: "100%",
+            maxWidth: 280,
+            borderRadius: 16,
+            padding: 8,
+            gap: 2,
           }}
-          onPress={() => setDurationPickerOpen(false)}
         >
-          <Pressable
-            onPress={() => undefined}
-            style={{ width: "100%", maxWidth: 280 }}
-          >
-            <Paper
-              elevation={app.settings?.preferEmbossed ? 4 : 2}
-              style={{ borderRadius: 16, padding: 8, gap: 2 }}
-            >
-              {STATUS_DURATION_OPTIONS.map((option) => {
-                const value = toDurationValue(option.durationMs);
-                const active = durationValue === value;
+          {STATUS_DURATION_OPTIONS.map((option) => {
+            const value = toDurationValue(option.durationMs);
+            const active = durationValue === value;
 
-                return (
-                  <Pressable
-                    key={option.label}
-                    onPress={() => {
-                      setDurationValue(value);
-                      setDurationPickerOpen(false);
-                    }}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      paddingVertical: 10,
-                      paddingHorizontal: 12,
-                      borderRadius: 8,
-                      backgroundColor: active
-                        ? `${theme.colors.primary}18`
-                        : undefined,
-                    }}
-                  >
-                    <Typography
-                      level="body-sm"
-                      weight={active ? 600 : undefined}
-                    >
-                      {formatCustomStatusClearLabel(option.durationMs)}
-                    </Typography>
-                    {active ? (
-                      <CheckIcon
-                        size={16}
-                        weight="bold"
-                        color={theme.colors.success}
-                      />
-                    ) : null}
-                  </Pressable>
-                );
-              })}
-            </Paper>
-          </Pressable>
-        </Pressable>
+            return (
+              <Pressable
+                key={option.label}
+                onPress={() => {
+                  setDurationValue(value);
+                  setDurationPickerOpen(false);
+                }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 8,
+                  backgroundColor: active
+                    ? `${theme.colors.primary}18`
+                    : undefined,
+                }}
+              >
+                <Typography level="body-sm" weight={active ? 600 : undefined}>
+                  {formatCustomStatusClearLabel(option.durationMs)}
+                </Typography>
+                {active ? (
+                  <CheckIcon
+                    size={16}
+                    weight="bold"
+                    color={theme.colors.success}
+                  />
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </Paper>
       </Modal>
 
       <ReactionEmojiPicker

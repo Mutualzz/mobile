@@ -82,6 +82,7 @@ export class Expression {
     this.spaceId = data.spaceId;
     this.animated = data.animated;
     this.createdAt = new Date(data.createdAt);
+    this.flags = BitField.fromString(expressionFlags, data.flags.toString());
   }
 
   delete() {

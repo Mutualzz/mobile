@@ -1,4 +1,5 @@
 import "react-native-get-random-values";
+import "@setup/webrtc";
 
 import { NativeBaseline } from "@components/NativeBaseline/NativeBaseline";
 import { NavigationWithTheme } from "@components/NavigationWithTheme";
@@ -20,6 +21,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 
 dayjs.extend(relativeTime);
 dayjs.extend(calendar, calendarStrings);
@@ -76,31 +78,33 @@ const Root = () => {
 
   return (
     <QueryClientProvider client={app.queryClient}>
-      <AppTheme>
-        <NavigationWithTheme>
-          <NativeBaseline>
-            <ModalProvider>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen
-                  name="settings"
-                  options={{
-                    presentation: "modal",
-                    animation: "slide_from_bottom",
-                  }}
-                />
-                <Stack.Screen
-                  name="staff"
-                  options={{
-                    presentation: "modal",
-                    animation: "slide_from_bottom",
-                  }}
-                />
-              </Stack>
-            </ModalProvider>
-          </NativeBaseline>
-        </NavigationWithTheme>
-      </AppTheme>
+      <KeyboardProvider>
+        <AppTheme>
+          <NavigationWithTheme>
+            <NativeBaseline>
+              <ModalProvider>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen
+                    name="settings"
+                    options={{
+                      presentation: "modal",
+                      animation: "slide_from_bottom",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="staff"
+                    options={{
+                      presentation: "modal",
+                      animation: "slide_from_bottom",
+                    }}
+                  />
+                </Stack>
+              </ModalProvider>
+            </NativeBaseline>
+          </NavigationWithTheme>
+        </AppTheme>
+      </KeyboardProvider>
     </QueryClientProvider>
   );
 };

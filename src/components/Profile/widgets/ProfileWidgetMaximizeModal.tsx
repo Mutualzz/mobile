@@ -1,8 +1,8 @@
 import { IconButton } from "@components/IconButton";
-import { Box, Typography, useTheme } from "@mutualzz/ui-native";
+import { Box, Modal, Typography, useTheme } from "@mutualzz/ui-native";
 import { XIcon } from "phosphor-react-native";
 import type { ReactNode } from "react";
-import { Modal, ScrollView } from "react-native";
+import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface Props {
@@ -23,16 +23,23 @@ export function ProfileWidgetMaximizeModal({
 
   return (
     <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
+      open={visible}
+      onClose={onClose}
+      layout="fullscreen"
+      showCloseButton={false}
+      style={{
+        justifyContent: "flex-end",
+        alignItems: "stretch",
+        backgroundColor: "transparent",
+        paddingVertical: 0,
+      }}
     >
-      <Box
+      <View
+        pointerEvents="box-none"
         style={{
           flex: 1,
           justifyContent: "flex-end",
-          backgroundColor: "rgba(0,0,0,0.5)",
+          width: "100%",
         }}
       >
         <Box
@@ -65,7 +72,7 @@ export function ProfileWidgetMaximizeModal({
             {children}
           </ScrollView>
         </Box>
-      </Box>
+      </View>
     </Modal>
   );
 }

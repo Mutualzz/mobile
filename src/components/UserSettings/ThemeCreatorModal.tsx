@@ -6,6 +6,7 @@ import { baseDarkTheme, baseLightTheme } from "@mutualzz/ui-core";
 import {
   Box,
   IconButton,
+  Modal,
   Switch,
   Typography,
   useTheme,
@@ -24,7 +25,7 @@ import {
 } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Modal, Pressable, ScrollView, useColorScheme } from "react-native";
+import { Pressable, ScrollView, useColorScheme, View } from "react-native";
 import { ThemeCreatorAdaptivePage } from "./ThemeCreatorPages/ThemeCreatorAdaptivePage";
 import { ThemeCreatorBasePage } from "./ThemeCreatorPages/ThemeCreatorBasePage";
 import { ThemeCreatorDetailsPage } from "./ThemeCreatorPages/ThemeCreatorDetailsPage";
@@ -186,17 +187,20 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
 
   return (
     <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
+      open={visible}
+      onClose={onClose}
+      layout="fullscreen"
+      showCloseButton={false}
+      style={{
+        justifyContent: "flex-end",
+        alignItems: "stretch",
+        backgroundColor: "transparent",
+        paddingVertical: 0,
+      }}
     >
-      <Box
-        style={{
-          flex: 1,
-          justifyContent: "flex-end",
-          backgroundColor: "rgba(0,0,0,0.45)",
-        }}
+      <View
+        pointerEvents="box-none"
+        style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
       >
         <Paper
           style={{
@@ -229,7 +233,10 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
             </IconButton>
           </Box>
 
-          <Box
+          <Pressable
+            accessibilityRole="switch"
+            accessibilityState={{ checked: values.adaptive }}
+            onPress={() => handleAdaptiveToggle(!values.adaptive)}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -246,7 +253,7 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
               </Typography>
             </Box>
             <Switch checked={values.adaptive} onChange={handleAdaptiveToggle} />
-          </Box>
+          </Pressable>
 
           <Box style={{ flexDirection: "row", gap: 4, flexWrap: "wrap" }}>
             {tabs.map(({ id, label, Icon }) => (
@@ -353,7 +360,7 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
             Close
           </Button>
         </Paper>
-      </Box>
+      </View>
     </Modal>
   );
 });

@@ -4,15 +4,17 @@ import {
   resolveProfileUrl,
 } from "@components/Profile/widgets/blocks/profileLink.utils";
 import type { MobileProfileLinksBlock, ProfileBlockSize } from "@mutualzz/types";
-import { Stack, Typography, useTheme } from "@mutualzz/ui-native";
+import { Stack, Typography } from "@mutualzz/ui-native";
 import { ArrowSquareOutIcon } from "phosphor-react-native";
 import { Linking, Pressable, View } from "react-native";
 
 const VISIBLE_COUNT: Record<ProfileBlockSize, number> = { s: 1, m: 3, l: 5 };
 
 const LinkRow = ({ label, url }: { label: string; url: string }) => {
-  const { theme } = useTheme();
   const resolved = resolveProfileUrl(url);
+  const kind = resolved?.kind ?? "website";
+  const accent = resolved?.color ?? "#6366F1";
+  const subtitle = resolved ? formatProfileUrlLabel(resolved) : url;
 
   return (
     <Pressable
@@ -20,24 +22,40 @@ const LinkRow = ({ label, url }: { label: string; url: string }) => {
       style={{
         flexDirection: "row",
         alignItems: "center",
-        gap: 8,
-        padding: 8,
+        gap: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 10,
         borderRadius: 10,
-        backgroundColor: theme.colors.surface,
+        backgroundColor: `${accent}18`,
+        borderWidth: 1,
+        borderColor: `${accent}44`,
       }}
     >
-      {resolved ? (
-        <ProfileLinkKindIcon kind={resolved.kind} size={16} color={resolved.color} />
-      ) : null}
-      <Stack direction="column" style={{ flex: 1, minWidth: 0 }}>
-        <Typography level="body-sm" weight="bold" numberOfLines={1}>
+      <View
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 8,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: `${accent}22`,
+          borderWidth: 1,
+          borderColor: `${accent}55`,
+        }}
+      >
+        <ProfileLinkKindIcon kind={kind} size={18} color={accent} />
+      </View>
+      <Stack direction="column" style={{ flex: 1, minWidth: 0, gap: 1 }}>
+        <Typography level="body-sm" weight="bold" truncate="single">
           {label}
         </Typography>
-        <Typography level="body-xs" textColor="muted" numberOfLines={1}>
-          {resolved ? formatProfileUrlLabel(resolved) : url}
-        </Typography>
+        {resolved ? (
+          <Typography level="body-xs" textColor="muted" truncate="single">
+            {subtitle}
+          </Typography>
+        ) : null}
       </Stack>
-      <ArrowSquareOutIcon size={14} color={theme.colors.primary} />
+      <ArrowSquareOutIcon size={14} color={accent} style={{ opacity: 0.75 }} />
     </Pressable>
   );
 };
@@ -48,7 +66,7 @@ interface Props {
 }
 
 export function ProfileLinksWidgetView({ block, size }: Props) {
-  const links = block.links.filter((link) => link.label.trim() && link.url.trim());
+  const links = (block.links ?? []).filter((link) => link.label.trim() && link.url.trim());
   const visible = links.slice(0, VISIBLE_COUNT[size]);
   const remaining = links.length - visible.length;
 
@@ -79,7 +97,7 @@ export function ProfileLinksWidgetExpandedContent({
 }: {
   block: MobileProfileLinksBlock;
 }) {
-  const links = block.links.filter((link) => link.label.trim() && link.url.trim());
+  const links = (block.links ?? []).filter((link) => link.label.trim() && link.url.trim());
 
   return (
     <View style={{ gap: 6 }}>

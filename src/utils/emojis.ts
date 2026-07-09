@@ -39,28 +39,52 @@ export function searchShortcodeEmojis(query: string, limit = 7): Emoji[] {
     return results;
 }
 
+const normalizeShortcode = (name: string) =>
+    name.trim().toLowerCase().replace(/\s+/g, "_");
+
+const compactShortcode = (name: string) => name.replace(/_/g, "");
+
+function findEmoji(query: string): Emoji | undefined {
+    const emoji = emojis.find(
+        (e) =>
+            e.shortcodes?.includes(query) ||
+            e.emoji === query ||
+            e.skins?.some(
+                (skin) =>
+                    skin.shortcodes?.includes(query) ||
+                    skin.emoji === query,
+            ) ||
+            e.emoticon === query,
+    );
+
+    return (
+        emoji?.skins?.find(
+            (skin) =>
+                skin.shortcodes?.includes(query) ||
+                skin.emoji === query ||
+                skin.emoticon === query,
+        ) ?? emoji
+    );
+}
+
 export function getEmoji(
     shortcodeOrUnicodeOrEmoticon: string,
 ): Emoji | undefined {
-    const emoji = emojis.find(
-        (e) =>
-            e.shortcodes?.includes(shortcodeOrUnicodeOrEmoticon) ||
-            e.emoji === shortcodeOrUnicodeOrEmoticon ||
-            e.skins?.some(
-                (skin) =>
-                    skin.shortcodes?.includes(shortcodeOrUnicodeOrEmoticon) ||
-                    skin.emoji === shortcodeOrUnicodeOrEmoticon,
-            ) ||
-            e.emoticon === shortcodeOrUnicodeOrEmoticon,
+    const direct = findEmoji(shortcodeOrUnicodeOrEmoticon);
+    if (direct) return direct;
+
+    const normalized = normalizeShortcode(shortcodeOrUnicodeOrEmoticon);
+    if (normalized !== shortcodeOrUnicodeOrEmoticon) {
+        const normalizedMatch = findEmoji(normalized);
+        if (normalizedMatch) return normalizedMatch;
+    }
+
+    const compact = compactShortcode(normalized);
+    if (!compact) return undefined;
+
+    return emojis.find((emoji) =>
+        emoji.shortcodes?.some(
+            (shortcode) => compactShortcode(shortcode) === compact,
+        ),
     );
-
-    const target =
-        emoji?.skins?.find(
-            (skin) =>
-                skin.shortcodes?.includes(shortcodeOrUnicodeOrEmoticon) ||
-                skin.emoji === shortcodeOrUnicodeOrEmoticon ||
-                skin.emoticon === shortcodeOrUnicodeOrEmoticon,
-        ) ?? emoji;
-
-    return target;
 }

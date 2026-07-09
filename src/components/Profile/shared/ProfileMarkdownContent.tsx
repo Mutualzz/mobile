@@ -1,30 +1,41 @@
 import { MarkdownRenderer } from "@components/Markdown/MarkdownRenderer/MarkdownRenderer";
-import { Box } from "@mutualzz/ui-native";
+import type { ColorLike, TypographyColor } from "@mutualzz/ui-core";
+import { Box, scaledMaxHeight } from "@mutualzz/ui-native";
 import { PixelRatio } from "react-native";
 
 interface Props {
     value: string;
     lineClamp?: number;
+    textColor?: TypographyColor | ColorLike;
 }
 
 const LINE_HEIGHT_PX = 22;
 
-export const ProfileMarkdownContent = ({ value, lineClamp }: Props) => (
+export const ProfileMarkdownContent = ({
+    value,
+    lineClamp,
+    textColor = "primary",
+}: Props) => (
     <Box
         style={
             lineClamp
                 ? {
-                      maxHeight:
-                          lineClamp * LINE_HEIGHT_PX * PixelRatio.getFontScale(),
+                      maxHeight: scaledMaxHeight(
+                          lineClamp,
+                          LINE_HEIGHT_PX,
+                          PixelRatio.getFontScale(),
+                      ),
                       overflow: "hidden",
                   }
-                : undefined
+                : { flex: 1, minHeight: 0 }
         }
     >
         <MarkdownRenderer
             value={value}
-            textColor="primary"
+            textColor={textColor}
             enlargeEmojiOnly={false}
+            variant="plain"
+            color="neutral"
         />
     </Box>
 );

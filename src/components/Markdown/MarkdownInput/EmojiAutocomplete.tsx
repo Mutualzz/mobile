@@ -12,6 +12,7 @@ import {
 import { searchShortcodeEmojis } from "@utils/emojis";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
+import { useScaledAutocompleteMaxHeight, useScaledSquareSize } from "@utils/accessibilityLayout";
 import { Image, Pressable, ScrollView } from "react-native";
 import type { Emoji } from "emojibase";
 
@@ -45,6 +46,8 @@ export const EmojiAutocomplete = observer(
   ({ channel, search, onSelectStandard, onSelectCustom }: Props) => {
     const app = useAppStore();
     const { theme } = useTheme();
+    const autocompleteMaxHeight = useScaledAutocompleteMaxHeight();
+    const emojiSize = useScaledSquareSize(22);
 
     const suggestions = useMemo(() => {
       if (search.length < MIN_QUERY_LENGTH) return [];
@@ -113,7 +116,7 @@ export const EmojiAutocomplete = observer(
           right: 0,
           bottom: "100%",
           marginBottom: 6,
-          maxHeight: 220,
+          maxHeight: autocompleteMaxHeight,
           zIndex: 20,
           borderRadius: 12,
           overflow: "hidden",
@@ -148,15 +151,15 @@ export const EmojiAutocomplete = observer(
               })}
             >
               {suggestion.kind === "standard" ? (
-                <UnicodeEmoji value={suggestion.emoji.emoji} size={22} />
+                <UnicodeEmoji value={suggestion.emoji.emoji} size={emojiSize} />
               ) : (
                 <Image
                   source={{ uri: suggestion.expression.url }}
-                  style={{ width: 22, height: 22 }}
+                  style={{ width: emojiSize, height: emojiSize }}
                   resizeMode="contain"
                 />
               )}
-              <Typography level="body-sm" style={{ flex: 1 }} numberOfLines={1}>
+              <Typography level="body-sm" style={{ flex: 1 }} truncate="single">
                 {suggestion.label}
               </Typography>
             </Pressable>

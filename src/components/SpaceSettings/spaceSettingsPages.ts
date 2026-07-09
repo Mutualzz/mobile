@@ -3,12 +3,16 @@ import type { ComponentType } from "react";
 import type { IconProps } from "phosphor-react-native";
 import {
     GavelIcon,
+    HashIcon,
     PaperPlaneTiltIcon,
+    PencilSimpleIcon,
     SmileyIcon,
     TreeStructureIcon,
 } from "phosphor-react-native";
 
 export type SpaceSettingsPage =
+    | "profile"
+    | "channels"
     | "invites"
     | "roles"
     | "expressions"
@@ -28,14 +32,24 @@ export const spaceSettingsPages: Record<
 > = {
     people: [
         {
+            label: "profile",
+            Icon: PencilSimpleIcon,
+            permissions: ["ManageSpace"],
+        },
+        {
             label: "roles",
             Icon: TreeStructureIcon,
             permissions: ["ManageRoles"],
         },
         {
+            label: "channels",
+            Icon: HashIcon,
+            permissions: ["ManageChannels"],
+        },
+        {
             label: "invites",
             Icon: PaperPlaneTiltIcon,
-            permissions: ["ManageSpace"],
+            permissions: ["ManageChannels", "CreateInvites"],
         },
         {
             label: "expressions",

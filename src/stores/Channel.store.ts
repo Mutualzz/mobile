@@ -37,8 +37,9 @@ export class ChannelStore {
           key: "collapsedCategories",
           serialize: (map: ObservableMap<string, Set<string>>) => {
             const obj: Record<string, string[]> = {};
+            if (!map) return obj;
             map.forEach((set, key) => {
-              obj[key] = Array.from(set);
+              obj[key] = Array.from(set ?? []);
             });
             return obj;
           },
@@ -54,6 +55,7 @@ export class ChannelStore {
           key: "mostRecentBySpace",
           serialize: (map: ObservableMap<string, Snowflake | null>) => {
             const obj: Record<string, Snowflake | null> = {};
+            if (!map) return obj;
             map.forEach((value, key) => {
               obj[key] = value;
             });
@@ -257,6 +259,58 @@ export class ChannelStore {
     return channel;
   }
 
+  leaveGroupDM(channelId: Snowflake) {
+    this.remove(channelId);
+
+    if (this.activeId === channelId) this.setActive();
+
+    return this.app.rest.delete(`/channels/@me/group/${channelId}`);
+  }
+
+  async addGroupDMRecipient(channelId: Snowflake, recipientId: Snowflake) {
+    await this.app.rest.put(
+      `/channels/@me/group/${channelId}/recipients`,
+      { recipientId },
+    );
+
+    const fresh = await this.app.rest.get<APIChannel>(`/channels/${channelId}`);
+    const existing = this.get(channelId);
+    if (existing) existing.update(fresh);
+    else this.add(fresh);
+    return this.get(channelId) ?? this.add(fresh);
+  }
+
+  async removeGroupDMRecipient(channelId: Snowflake, userId: Snowflake) {
+    await this.app.rest.delete(
+      `/channels/@me/group/${channelId}/recipients/${userId}`,
+    );
+
+    const fresh = await this.app.rest.get<APIChannel>(`/channels/${channelId}`);
+    const existing = this.get(channelId);
+    if (existing) existing.update(fresh);
+    else this.add(fresh);
+    return this.get(channelId) ?? this.add(fresh);
+  }
+
+  async updateGroupDM(channelId: Snowflake, formData: FormData) {
+    const data = await this.app.rest.patchFormData<APIChannel>(
+      `/channels/${channelId}`,
+      formData,
+    );
+    const existing = this.get(channelId);
+    if (existing) existing.update(data);
+    else this.add(data);
+    return this.get(channelId) ?? this.add(data);
+  }
+
+  deleteGroupDM(channelId: Snowflake) {
+    this.remove(channelId);
+
+    if (this.activeId === channelId) this.setActive();
+
+    return this.app.rest.delete(`/channels/@me/group/${channelId}/delete`);
+  }
+
   clear() {
     this.active = null;
     this.activeId = undefined;
@@ -371,10 +425,12 @@ export class ChannelStore {
       id: channel.id,
       parentId: channel.parentId ? channel.parentId : null,
       position: channel.position,
-      spaceId: spaceId,
     }));
 
-    this.app.rest.patch(`/channels/bulk`, payload);
+    this.app.rest.patch(`/channels/bulk`, {
+      spaceId,
+      channels: payload,
+    });
   }
 
   private findParentCategoryId(allChannels: Channel[], channelIndex: number) {
@@ -398,6 +454,10 @@ export class ChannelStore {
     if (this.has(id) && !force) return this.get(id);
     const channel = await this.app.rest.get<APIChannel>(`/channels/${id}`);
     if (!channel) return undefined;
+    if (this.has(channel.id)) {
+      this.update(channel);
+      return this.get(channel.id);
+    }
     return this.add(channel);
   }
 }

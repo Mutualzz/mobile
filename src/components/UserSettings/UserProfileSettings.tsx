@@ -1,4 +1,5 @@
 import { Paper } from "@components/Paper";
+import { AvatarStudioMethodCards } from "@components/Avatar/AvatarStudioMethodCards";
 import { Button } from "@components/Button";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useSettingsIconColor } from "@components/UserSettings/settingsTheme";
@@ -6,48 +7,22 @@ import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import type { APIPrivateUser } from "@mutualzz/types";
 import { Box, Divider, Input, Typography } from "@mutualzz/ui-native";
+import { useScaledSettingsProfileCardMetrics } from "@utils/accessibilityLayout";
 import type { ColorLike } from "@mutualzz/ui-core";
 import { observer } from "mobx-react-lite";
 import {
-  CaretRightIcon,
-  ImagesIcon,
-  PaintBrushIcon,
   PaletteIcon,
-  UploadSimpleIcon,
 } from "phosphor-react-native";
 import { useEffect, useState } from "react";
-import { Pressable } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
-
-const METHOD_CARDS = [
-  {
-    method: "upload",
-    title: "Upload",
-    description: "Use a photo or GIF from your library.",
-    icon: UploadSimpleIcon,
-  },
-  {
-    method: "draw",
-    title: "Draw",
-    description: "Sketch a custom avatar on the canvas.",
-    icon: PaintBrushIcon,
-  },
-  {
-    method: "avatars",
-    title: "Avatars",
-    description: "Pick a default style or restore a previous one.",
-    icon: ImagesIcon,
-  },
-] as const;
 
 export const UserProfileSettings = observer(() => {
   const app = useAppStore();
   const { navigate } = useAppNavigation();
-  const iconColor = useSettingsIconColor();
-  const mutedIconColor = useSettingsIconColor("neutral");
   const primaryIconColor = useSettingsIconColor("primary");
   const account = app.account;
   const embossed = app.settings?.preferEmbossed;
+  const cardMetrics = useScaledSettingsProfileCardMetrics();
 
   const [globalName, setGlobalName] = useState(account?.globalName ?? "");
   const [savingName, setSavingName] = useState(false);
@@ -165,7 +140,7 @@ export const UserProfileSettings = observer(() => {
           variant="solid"
           color={account.accentColor as ColorLike}
           style={{
-            height: 72,
+            height: cardMetrics.bannerHeight,
             width: "100%",
             borderRadius: 0,
           }}
@@ -177,10 +152,10 @@ export const UserProfileSettings = observer(() => {
             gap: 12,
             paddingHorizontal: 16,
             paddingBottom: 16,
-            marginTop: -44,
+            marginTop: -cardMetrics.avatarOverlap,
           }}
         >
-          <UserAvatar user={account} size={88} />
+          <UserAvatar user={account} size={cardMetrics.avatarSize} />
           <Box style={{ flex: 1, minWidth: 0, paddingBottom: 4, gap: 2 }}>
             <Typography level="title-md" weight={700}>
               {account.displayName}
@@ -218,66 +193,12 @@ export const UserProfileSettings = observer(() => {
         </Button>
       </Paper>
 
-      <Box style={{ gap: 8 }}>
-        {METHOD_CARDS.map((card) => {
-          const Icon = card.icon;
-
-          return (
-            <Pressable
-              key={card.method}
-              onPress={() =>
-                card.method === "upload"
-                  ? uploadAvatar()
-                  : navigate("/settings/avatar-editor")
-              }
-            >
-              <Paper
-                variant="soft"
-                style={{
-                  padding: 12,
-                  borderRadius: 12,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 12,
-                  minWidth: 0,
-                }}
-                elevation={embossed ? 1 : 0}
-              >
-                <Paper
-                  variant="plain"
-                  style={{
-                    padding: 8,
-                    borderRadius: 10,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Icon size={22} weight="fill" color={iconColor} />
-                </Paper>
-                <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                  <Typography level="body-sm" weight={700}>
-                    {card.title}
-                  </Typography>
-                  <Typography
-                    level="body-xs"
-                    textColor="muted"
-                    numberOfLines={2}
-                  >
-                    {card.description}
-                  </Typography>
-                </Box>
-                <CaretRightIcon
-                  size={18}
-                  weight="bold"
-                  color={mutedIconColor}
-                  style={{ flexShrink: 0 }}
-                />
-              </Paper>
-            </Pressable>
-          );
-        })}
-      </Box>
+      <AvatarStudioMethodCards
+        embossed={embossed}
+        onUpload={uploadAvatar}
+        onDraw={() => navigate("/settings/avatar-editor")}
+        onAvatars={() => navigate("/settings/avatar-editor")}
+      />
 
       <Button
         disabled={removingAvatar || !account.avatar}

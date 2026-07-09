@@ -1,6 +1,7 @@
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography } from "@mutualzz/ui-native";
 import { UserAvatar } from "@components/User/UserAvatar";
+import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 
 export const TypingIndicator = observer(({ channelId }: Props) => {
     const app = useAppStore();
+    const typingAvatarSize = useScaledSquareSize(20);
     const users = app.typing.getUsersTyping(channelId);
 
     if (users.length === 0) return null;
@@ -37,7 +39,11 @@ export const TypingIndicator = observer(({ channelId }: Props) => {
                         key={user.id}
                         user={user}
                         size="sm"
-                        style={{ width: 20, height: 20, marginRight: -6 }}
+                        style={{
+                            width: typingAvatarSize,
+                            height: typingAvatarSize,
+                            marginRight: -typingAvatarSize * 0.3,
+                        }}
                     />
                 ))}
             </Box>

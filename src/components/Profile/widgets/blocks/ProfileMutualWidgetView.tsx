@@ -51,13 +51,18 @@ export const ProfileMutualWidgetView = observer(({ block, size, userId }: Props)
       ) : (
         <Stack direction="column" style={{ gap: 6 }}>
           {visible.map((space) => (
-            <Stack key={space.id} direction="row" alignItems="center" style={{ gap: 6 }}>
-              <SpaceIcon space={space} size={22} />
-              <Typography level="body-sm" numberOfLines={1}>
+            <Stack key={space.id} direction="row" alignItems="center" style={{ gap: 8 }}>
+              <SpaceIcon space={space} size={24} />
+              <Typography level="body-sm" truncate="single" style={{ flex: 1, minWidth: 0 }}>
                 {space.name}
               </Typography>
             </Stack>
           ))}
+          {mutualSpaces.length > visible.length ? (
+            <Typography level="body-xs" textColor="muted">
+              +{mutualSpaces.length - visible.length} more
+            </Typography>
+          ) : null}
         </Stack>
       )}
     </View>
@@ -93,7 +98,7 @@ export const ProfileMutualWidgetExpandedContent = observer(
         {mutualSpaces.map((space) => (
           <Stack key={space.id} direction="row" alignItems="center" style={{ gap: 6 }}>
             <SpaceIcon space={space} size={22} />
-            <Typography level="body-sm" numberOfLines={1}>
+            <Typography level="body-sm" truncate="single">
               {space.name}
             </Typography>
           </Stack>

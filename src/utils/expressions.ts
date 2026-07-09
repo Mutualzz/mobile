@@ -90,7 +90,7 @@ export const canUseSticker = (
   if (sticker.type !== ExpressionType.Sticker) return false;
   if (!sticker.spaceId && meId !== sticker.authorId) return false;
 
-  if (!currentMember) return true;
+  if (!currentMember) return !sticker.spaceId;
 
   if (sticker.spaceId === currentMember.spaceId) return true;
 

@@ -3,6 +3,7 @@ import { ReactionEmojiPicker } from "@components/Expression/ReactionEmojiPicker"
 import { Paper } from "@components/Paper";
 import { ReportContentSheet } from "@components/Report/ReportContentSheet";
 import {
+  ArrowBendUpLeftIcon,
   CopyIcon,
   FlagIcon,
   PencilSimpleIcon,
@@ -13,7 +14,7 @@ import { useRecentEmojis } from "@hooks/useRecentEmojis";
 import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
 import { UnicodeEmoji } from "@components/emojis/UnicodeEmoji";
-import { Box, ButtonGroup, Divider, useTheme } from "@mutualzz/ui-native";
+import { Box, ButtonGroup, Divider, Modal, useTheme } from "@mutualzz/ui-native";
 import type { Expression } from "@stores/objects/Expression";
 import type { Message } from "@stores/objects/Message";
 import {
@@ -26,10 +27,14 @@ import {
   expressionToReactionEmoji,
   pickerEmojiToReactionEmoji,
 } from "@utils/reactions";
+import {
+  useScaledSquareSize,
+  useScaledTouchTarget,
+} from "@utils/accessibilityLayout";
 import * as Clipboard from "expo-clipboard";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { Image, Modal, Pressable, View } from "react-native";
+import { Image, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface Props {
@@ -46,36 +51,42 @@ const QuickReactionButton = ({
   item: QuickReactionItem;
   onPress: () => void;
   backgroundColor: string;
-}) => (
-  <Pressable
-    onPress={onPress}
-    style={{
-      flex: 1,
-      minWidth: 0,
-      minHeight: 48,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 8,
-      backgroundColor,
-    }}
-  >
-    {item.kind === "custom" ? (
-      <Image
-        source={{ uri: item.url }}
-        style={{ width: 26, height: 26 }}
-        resizeMode="contain"
-      />
-    ) : (
-      <UnicodeEmoji value={item.unicode} size={26} />
-    )}
-  </Pressable>
-);
+}) => {
+  const minHeight = useScaledTouchTarget(48);
+  const iconSize = useScaledSquareSize(26);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        flex: 1,
+        minWidth: 0,
+        minHeight,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 8,
+        backgroundColor,
+      }}
+    >
+      {item.kind === "custom" ? (
+        <Image
+          source={{ uri: item.url }}
+          style={{ width: iconSize, height: iconSize }}
+          resizeMode="contain"
+        />
+      ) : (
+        <UnicodeEmoji value={item.unicode} size={iconSize} />
+      )}
+    </Pressable>
+  );
+};
 
 export const MessageActionSheet = observer(
   ({ message, visible, onClose }: Props) => {
     const app = useAppStore();
     const { theme } = useTheme();
     const insets = useSafeAreaInsets();
+    const minHeight = useScaledTouchTarget(48);
     const { recents, addRecentStandard, addRecentCustom } = useRecentEmojis();
     const quickItems = getQuickReactionItems(app, recents, 3);
     const [pickerOpen, setPickerOpen] = useState(false);
@@ -89,8 +100,9 @@ export const MessageActionSheet = observer(
     const canEdit = message.author?.id === app.account?.id;
     const canDelete = canEdit || !!me?.hasPermission("ManageMessages");
     const canCopy = !!message.content?.trim();
+    const canReply = true;
     const canReport = message.author?.id !== app.account?.id;
-    const hasActions = canCopy || canEdit || canDelete || canReport;
+    const hasActions = canReply || canCopy || canEdit || canDelete || canReport;
 
     const handleQuickReaction = (item: QuickReactionItem) => {
       if (item.kind === "standard") {
@@ -112,6 +124,11 @@ export const MessageActionSheet = observer(
     const handleCopy = async () => {
       if (!message.content) return;
       await Clipboard.setStringAsync(message.content);
+      onClose();
+    };
+
+    const handleReply = () => {
+      app.setReplyingTo(message);
       onClose();
     };
 
@@ -161,18 +178,24 @@ export const MessageActionSheet = observer(
     return (
       <>
         <Modal
-          visible={visible && !pickerOpen}
-          transparent
-          animationType="fade"
-          onRequestClose={onClose}
+          open={visible && !pickerOpen}
+          onClose={onClose}
+          layout="fullscreen"
+          showCloseButton={false}
+          style={{
+            justifyContent: "flex-end",
+            alignItems: "stretch",
+            backgroundColor: "transparent",
+            paddingVertical: 0,
+          }}
         >
-          <Pressable
+          <View
+            pointerEvents="box-none"
             style={{
               flex: 1,
               justifyContent: "flex-end",
-              backgroundColor: "rgba(0, 0, 0, 0.4)",
+              width: "100%",
             }}
-            onPress={onClose}
           >
             <View onStartShouldSetResponder={() => true}>
               <Box
@@ -211,7 +234,7 @@ export const MessageActionSheet = observer(
                         style={{
                           flex: 1,
                           minWidth: 0,
-                          minHeight: 48,
+                          minHeight,
                           alignItems: "center",
                           justifyContent: "center",
                           borderRadius: 8,
@@ -238,6 +261,18 @@ export const MessageActionSheet = observer(
                       horizontalAlign="left"
                       spacing={0.5}
                     >
+                      {canReply && (
+                        <Button
+                          fullWidth
+                          padding={12}
+                          startDecorator={
+                            <ArrowBendUpLeftIcon size={20} weight="fill" />
+                          }
+                          onPress={handleReply}
+                        >
+                          Reply
+                        </Button>
+                      )}
                       {canCopy && (
                         <Button
                           fullWidth
@@ -303,7 +338,7 @@ export const MessageActionSheet = observer(
                 </Paper>
               </Box>
             </View>
-          </Pressable>
+          </View>
         </Modal>
 
         <ReactionEmojiPicker
