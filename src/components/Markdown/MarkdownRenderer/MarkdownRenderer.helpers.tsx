@@ -9,7 +9,6 @@ import type { Theme } from "@emotion/react";
 import type { TypographyColor } from "@mutualzz/ui-core";
 import type { ColorLike } from "@mutualzz/ui-core";
 import type { Snowflake } from "@mutualzz/types";
-import { InlineTwemoji } from "@components/emojis/Twemoji";
 import { Box, Typography } from "@mutualzz/ui-native";
 import type { ReactElement, ReactNode } from "react";
 import { isValidElement } from "react";
@@ -82,14 +81,26 @@ const createTextRunBuilder = (
     },
     pushEmoji(
       unicode: string | undefined,
-      _url: string | undefined,
+      name: string | undefined,
       isEmojiOnly: boolean,
       key: string,
     ) {
       if (!unicode) return;
-      const size = isEmojiOnly ? 36 : 22;
       activeSegments().push(
-        <InlineTwemoji key={key} value={unicode} size={size} />,
+        <Emoji
+          key={key}
+          unicode={unicode}
+          name={name}
+          url=""
+          inline={!isEmojiOnly}
+          isEmojiOnly={isEmojiOnly}
+        />,
+      );
+    },
+    pushCustomEmoji(raw: string | undefined, key: string) {
+      if (!raw) return;
+      activeSegments().push(
+        <CustomEmoji key={key} raw={raw} inline />,
       );
     },
     pushLink(content: string, href: string, key: string) {
@@ -325,7 +336,7 @@ export const renderInline = (
       } else {
         run.pushEmoji(
           token.attrGet?.("unicode"),
-          token.attrGet?.("url"),
+          token.attrGet?.("name"),
           false,
           `emoji-${i}`,
         );
@@ -334,14 +345,18 @@ export const renderInline = (
     }
 
     if (token.type === "customEmoji") {
-      run.flush(`run-${i}`);
-      pushNode(
-        <CustomEmoji
-          key={`custom-emoji-${i}`}
-          raw={token.content}
-          isEmojiOnly={isEmojiOnly}
-        />,
-      );
+      if (isEmojiOnly) {
+        run.flush(`run-${i}`);
+        pushNode(
+          <CustomEmoji
+            key={`custom-emoji-${i}`}
+            raw={token.content}
+            isEmojiOnly
+          />,
+        );
+      } else {
+        run.pushCustomEmoji(token.content, `custom-emoji-${i}`);
+      }
       continue;
     }
 

@@ -1,7 +1,8 @@
 import type { AppStore } from "@stores/App.store";
 import type { Expression } from "@stores/objects/Expression";
 
-export function parseCustomEmojiShortcode(shortcode: string) {
+export function parseCustomEmojiShortcode(shortcode: string | null | undefined) {
+    if (!shortcode) return null;
     if (!shortcode.startsWith("<") || !shortcode.endsWith(">")) return null;
 
     const inner = shortcode.slice(1, -1);
@@ -20,7 +21,7 @@ export function parseCustomEmojiShortcode(shortcode: string) {
 
 export function findCustomEmoji(
     app: AppStore,
-    shortcode: string,
+    shortcode: string | null | undefined,
 ): Expression | null {
     const parsed = parseCustomEmojiShortcode(shortcode);
     if (!parsed) return null;

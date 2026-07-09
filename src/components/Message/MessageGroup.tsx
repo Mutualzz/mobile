@@ -15,16 +15,19 @@ export const MessageGroup = observer(({ group }: Props) => {
     return (
         <Box style={{ flexDirection: "column-reverse" }}>
             {messages.map((message, index) => {
-                if (
-                    message.type === MessageType.Default ||
-                    message.type === MessageType.Reply
-                ) {
+                if (message.type === MessageType.Default) {
                     return (
                         <Message
                             key={message.id}
                             message={message}
                             header={index === messages.length - 1}
                         />
+                    );
+                }
+
+                if (message.type === MessageType.Reply) {
+                    return (
+                        <Message key={message.id} message={message} header />
                     );
                 }
 

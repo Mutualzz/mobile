@@ -15,7 +15,7 @@ import { type Channel } from "@stores/objects/Channel";
 import { type Space } from "@stores/objects/Space";
 import { useScaledMentionBadgeStyle, useScaledSquareSize } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
-import { Pressable } from "react-native";
+import { Keyboard, Pressable } from "react-native";
 
 interface Props extends PaperProps {
   space: Space;
@@ -58,6 +58,7 @@ export const ChannelListItem = observer(
         return;
       }
 
+      Keyboard.dismiss();
       app.channels.setActive(channel.id);
       app.channels.setMostRecentChannelForSpace(space.id, channel.id);
       app.setSpacesDrawerOpen(false);

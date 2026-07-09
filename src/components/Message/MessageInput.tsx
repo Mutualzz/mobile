@@ -10,9 +10,8 @@ import {
   SmileyIcon,
   XIcon,
 } from "phosphor-react-native";
-import { useKeyboardVisible } from "@hooks/useKeyboardOffset";
 import { useAppStore } from "@hooks/useStores";
-import { type APIMessage, ChannelType, MessageType } from "@mutualzz/types";
+import { useKeyboardOffset, useKeyboardVisible } from "@hooks/useKeyboardOffset";
 import {
   Box,
   scaledLayoutSize,
@@ -47,10 +46,10 @@ import { unifiedToEmoji } from "@utils/emojis/unified";
 import Snowflake from "@utils/Snowflake";
 import { createSystemMessage } from "@utils/index";
 import { messageFlags } from "@mutualzz/bitfield";
-import { HttpException, HttpStatusCode } from "@mutualzz/types";
+import { HttpException, HttpStatusCode, type APIMessage, ChannelType, MessageType } from "@mutualzz/types";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Image, Pressable } from "react-native";
+import { Image, Platform, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as DocumentPicker from "expo-document-picker";
 
@@ -77,6 +76,9 @@ export const MessageInput = observer(({ channel }: Props) => {
   const feedSizes = useScaledFeedPreviewSizes();
   const insets = useSafeAreaInsets();
   const keyboardVisible = useKeyboardVisible();
+  const keyboardHeight = useKeyboardOffset();
+  const keyboardOpen =
+    keyboardVisible || (Platform.OS === "android" && keyboardHeight > 0);
   const [content, setContent] = useState("");
   const [entities, setEntities] = useState<MentionEntity[]>([]);
   const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
@@ -511,39 +513,38 @@ export const MessageInput = observer(({ channel }: Props) => {
   return (
     <Paper
       elevation={app.settings?.preferEmbossed ? 3 : 0}
+      transparency={0}
       style={{
         flexShrink: 0,
         flexGrow: 0,
+        backgroundColor: theme.colors.surface,
         paddingHorizontal: 12,
-        paddingBottom: keyboardVisible
-          ? insets.bottom + 36
-          : insets.bottom + 12,
+        paddingBottom: keyboardOpen ? 12 : insets.bottom + 12,
         paddingTop: editingMessage ? 0 : 12,
-        borderTopWidth: keyboardVisible ? 1 : 0,
-        borderTopColor: keyboardVisible
-          ? `${theme.colors.neutral}33`
-          : "transparent",
+        borderTopWidth: 1,
+        borderTopColor: `${theme.colors.neutral}33`,
         borderLeftWidth: 0,
         borderRightWidth: 0,
         borderBottomWidth: 0,
       }}
     >
       {app.replyingTo && !editingMessage ? (
-        <Box
+        <Paper
+          elevation={app.settings?.preferEmbossed ? 3 : 0}
           style={{
             flexDirection: "row",
             alignItems: "center",
             gap: 8,
-            paddingTop: 10,
-            paddingBottom: 10,
+            paddingHorizontal: 12,
+            paddingVertical: 10,
             marginBottom: 8,
-            borderBottomWidth: 1,
-            borderBottomColor: `${theme.colors.neutral}33`,
+            borderBottomLeftRadius: 0,
+            borderBottomRightRadius: 0,
           }}
         >
-          <Typography level="body-xs" textColor="muted" style={{ flex: 1 }}>
+          <Typography level="body-xs" textColor="secondary" style={{ flex: 1 }}>
             Replying to{" "}
-            <Typography level="body-xs" weight={700}>
+            <Typography level="body-xs" weight={700} textColor="primary">
               {app.replyingTo.author?.displayName ?? "Unknown"}
             </Typography>
           </Typography>
@@ -553,7 +554,7 @@ export const MessageInput = observer(({ channel }: Props) => {
                 level="body-xs"
                 weight={700}
                 color={app.replyMention ? "info" : undefined}
-                textColor={app.replyMention ? undefined : "muted"}
+                textColor={app.replyMention ? undefined : "secondary"}
               >
                 {app.replyMention ? "@ ON" : "@ OFF"}
               </Typography>
@@ -567,7 +568,7 @@ export const MessageInput = observer(({ channel }: Props) => {
           >
             <XIcon size={20} />
           </IconButton>
-        </Box>
+        </Paper>
       ) : null}
 
       {editingMessage && (

@@ -65,7 +65,6 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
           </Typography>
           <IconButton
             padding={6}
-            color="neutral"
             accessibilityLabel="Open chat"
             onPress={() => setChatOpen(true)}
           >
@@ -201,14 +200,14 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
         onClose={() => setChatOpen(false)}
       />
 
-      {space && moderationTarget ? (
+      {space && moderationTarget && (
         <VoiceParticipantActionSheet
           state={moderationTarget}
           space={space}
           visible
           onClose={() => setModerationTarget(null)}
         />
-      ) : null}
+      )}
     </>
   );
 });

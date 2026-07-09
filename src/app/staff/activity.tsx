@@ -19,6 +19,8 @@ const PAGE_LIMIT = 50;
 const actionVerbs: Record<string, string> = {
   "user.disable": "disabled",
   "user.enable": "enabled",
+  "user.delete": "soft deleted",
+  "user.hard_delete": "hard deleted",
   "user.force_logout": "forced a logout on",
   "user.session_revoke": "revoked a session on",
   "user.profile_update": "updated the profile of",
@@ -28,9 +30,22 @@ const actionVerbs: Record<string, string> = {
   "user.restrict_lift": "lifted a restriction on",
 };
 
+const formatStaffActionTarget = (entry: APIStaffAction) => {
+  if (entry.target) {
+    return entry.target.globalName || entry.target.username;
+  }
+
+  if (entry.action === "user.hard_delete" && entry.reason) {
+    const match = entry.reason.match(/^@([^\s(]+)/);
+    if (match) return `@${match[1]} (removed)`;
+  }
+
+  return "a removed user";
+};
+
 const describeGlobalAction = (entry: APIStaffAction) => {
   const actorName = entry.actor.globalName || entry.actor.username;
-  const targetName = entry.target.globalName || entry.target.username;
+  const targetName = formatStaffActionTarget(entry);
 
   if (actionVerbs[entry.action]) {
     return `${actorName} ${actionVerbs[entry.action]} ${targetName}`;

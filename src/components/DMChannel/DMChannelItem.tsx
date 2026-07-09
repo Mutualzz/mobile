@@ -13,7 +13,7 @@ import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Pressable } from "react-native";
+import { Keyboard, Pressable } from "react-native";
 
 interface Props {
   channel: Channel;
@@ -69,6 +69,8 @@ export const DMChannelItem = observer(({ channel }: Props) => {
   }
 
   const openChannel = () => {
+    Keyboard.dismiss();
+
     if (!active) {
       app.channels.setActive(channel.id);
       app.channels.setMostRecentChannelForSpace("@me", channel.id);

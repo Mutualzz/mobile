@@ -74,6 +74,8 @@ export class AppStore {
   dmDrawerOpen = true;
   replyingTo: Message | null = null;
   replyMention = true;
+  jumpToMessage: { channelId: string; messageId: string } | null = null;
+  highlightedMessageId: string | null = null;
 
   private readonly logger = new Logger({
     tag: "AppStore",
@@ -178,6 +180,18 @@ export class AppStore {
 
   setReplyMention(val: boolean) {
     this.replyMention = val;
+  }
+
+  requestJumpToMessage(channelId: string, messageId: string) {
+    this.jumpToMessage = { channelId, messageId };
+  }
+
+  clearJumpToMessage() {
+    this.jumpToMessage = null;
+  }
+
+  setHighlightedMessageId(messageId: string | null) {
+    this.highlightedMessageId = messageId;
   }
 
   setUser(user: APIPrivateUser, settings?: APIUserSettings) {

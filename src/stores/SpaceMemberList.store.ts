@@ -15,13 +15,6 @@ export class SpaceMemberListStore {
     tag: "SpaceMemberListStore",
   });
   private readonly space: Space;
-  // Maps the server's group index (as referenced by op `range`/`index`
-  // fields, which are positions in the server's full, unfiltered group
-  // ordering) to the index of that group in `this.list`, or null if that
-  // server group was filtered out of the rendered list (empty group, or a
-  // large "offline" group). Without this translation, ops addressing groups
-  // positionally would be applied against the wrong local group whenever
-  // any group has been filtered out.
   private groupIndexMap: (number | null)[] = [];
 
   constructor(

@@ -9,7 +9,6 @@ interface Props {
 export const SidebarPill = ({ type }: Props) => {
     const { theme } = useTheme();
     const fontScale = useFontScale();
-    const containerHeight = scaledLayoutSize(48, fontScale, 1.3);
 
     const pillHeight =
         type === "none"
@@ -26,12 +25,13 @@ export const SidebarPill = ({ type }: Props) => {
     return (
         <Box
             style={{
-                justifyContent: "flex-start",
+                justifyContent: "center",
                 alignItems: "center",
                 position: "absolute",
                 left: 0,
+                top: 0,
+                bottom: 0,
                 width: 8,
-                height: containerHeight,
                 pointerEvents: "none",
             }}
         >

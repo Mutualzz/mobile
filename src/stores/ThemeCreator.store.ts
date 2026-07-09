@@ -9,6 +9,8 @@ import type { Theme as MzTheme } from "@emotion/react";
 import { type IObservableArray, makeAutoObservable, observable } from "mobx";
 import { Theme } from "@stores/objects/Theme";
 import { applyAdaptiveThemeValues } from "@utils/adaptation";
+import { ensureAppFont } from "@utils/fonts/appFontLoader";
+import { extractPrimaryFontFamily } from "@mutualzz/ui-core";
 import { Appearance } from "react-native";
 
 type ApiErrors = Record<string, string>;
@@ -158,6 +160,7 @@ export class ThemeCreatorStore {
   startPreview(
     changeTheme: (theme: MzTheme) => void,
     currentThemeValues?: APITheme,
+    ownerUserId?: string | null,
   ) {
     if (this.inPreview) return;
 
@@ -173,8 +176,17 @@ export class ThemeCreatorStore {
       this.themeBeforePreview = Theme.serialize(currentThemeValues);
     }
 
-    changeTheme(Theme.toEmotion(previewThemeValues));
-    this.inPreview = true;
+    const fontFamily =
+      extractPrimaryFontFamily(previewThemeValues.typography.fontFamily) ??
+      previewThemeValues.typography.fontFamily;
+
+    void ensureAppFont(
+      fontFamily,
+      ownerUserId ?? previewThemeValues.authorId,
+    ).finally(() => {
+      changeTheme(Theme.toEmotion(previewThemeValues));
+      this.inPreview = true;
+    });
   }
 
   stopPreview(changeTheme: (theme: MzTheme) => void) {

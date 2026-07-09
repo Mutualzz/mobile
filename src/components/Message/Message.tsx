@@ -3,6 +3,7 @@ import { UserProfileTrigger } from "@components/Profile/UserProfileTrigger";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppStore } from "@hooks/useStores";
 import { ExpressionType, MessageType } from "@mutualzz/types";
+import { formatColor } from "@mutualzz/ui-core";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { type MessageLike } from "@stores/objects/Message";
 import { QueuedMessageStatus } from "@stores/objects/QueuedMessage";
@@ -20,6 +21,13 @@ import {
   MessageContentText,
   MessageDetails,
   MessageInfo,
+  MessageRow,
+  ReplyAuthorName,
+  ReplyConnectorArea,
+  ReplyConnectorLine,
+  ReplyContent,
+  ReplyContentText,
+  ReplySection,
 } from "./MessageBase";
 import { MessageEmbed } from "./MessageEmbed";
 import { MessageReactions } from "./MessageReactions";
@@ -60,7 +68,14 @@ export const Message = observer(({ message, header }: Props) => {
       : [];
 
   const repliedMessage =
-    isSent && message.type === MessageType.Reply ? message.repliedTo : null;
+    message.type === MessageType.Reply ? (message.repliedTo ?? null) : null;
+
+  const isHighlighted = isSent && app.highlightedMessageId === message.id;
+
+  const handleJumpToReplied = () => {
+    if (!repliedMessage?.id || !message.channelId) return;
+    app.requestJumpToMessage(message.channelId, repliedMessage.id);
+  };
 
   return (
     <>
@@ -80,69 +95,56 @@ export const Message = observer(({ message, header }: Props) => {
         <MessageBase
           header={header}
           style={
-            isSent && message.editing
+            isHighlighted
               ? {
                   borderLeftWidth: 2,
-                  borderLeftColor: theme.colors.primary,
+                  borderLeftColor: theme.colors.info,
                   paddingLeft: 8,
                   marginLeft: -8,
-                  opacity: 0.65,
+                  backgroundColor: formatColor(theme.colors.info, {
+                    alpha: 50,
+                    format: "hexa",
+                  }),
                 }
-              : undefined
+              : isSent && message.editing
+                ? {
+                    borderLeftWidth: 2,
+                    borderLeftColor: theme.colors.primary,
+                    paddingLeft: 8,
+                    marginLeft: -8,
+                    opacity: 0.65,
+                  }
+                : undefined
           }
         >
-          <MessageInfo>
-            {header && message.author ? (
-              <UserProfileTrigger
-                user={message.author}
-                member={
-                  space && message.author.id
-                    ? space.members.get(message.author.id)
-                    : undefined
-                }
-              >
-                <UserAvatar user={message.author} />
-              </UserProfileTrigger>
-            ) : null}
-          </MessageInfo>
-          <MessageContent>
-            {header && (
-              <Box
-                style={{
-                  flexShrink: 1,
-                  minWidth: 0,
-                  flexDirection: "row",
-                  alignItems: "center",
-                }}
-              >
-                <MessageAuthor message={message} space={space} />
-                <MessageDetails message={message} />
-              </Box>
-            )}
-
-            {header && message.type === MessageType.Reply ? (
-              <Box
-                style={{
-                  flexDirection: "row",
-                  gap: 8,
-                  marginBottom: 6,
-                  paddingLeft: 4,
-                  borderLeftWidth: 2,
-                  borderLeftColor: `${theme.typography.colors.muted}66`,
-                }}
-              >
-                <Box style={{ flex: 1, gap: 2 }}>
+          {header && message.type === MessageType.Reply ? (
+            <Pressable
+              disabled={!repliedMessage}
+              onPress={handleJumpToReplied}
+              style={{ opacity: repliedMessage ? 1 : 0.85 }}
+            >
+              <ReplySection>
+                <ReplyConnectorArea>
+                  <ReplyConnectorLine />
+                </ReplyConnectorArea>
+                <ReplyContent>
                   {repliedMessage ? (
                     <>
-                      <Typography level="body-xs" textColor="muted">
-                        {repliedMessage.author?.displayName ?? "Unknown"}
-                      </Typography>
-                      <MarkdownRenderer
-                        variant="plain"
-                        textColor="muted"
-                        spaceId={message.spaceId}
-                        value={repliedMessage.content ?? ""}
-                      />
+                      <UserAvatar user={repliedMessage.author} size="sm" />
+                      <ReplyAuthorName>
+                        <Typography level="body-xs" textColor="muted">
+                          {repliedMessage.author?.displayName ?? "Unknown"}
+                        </Typography>
+                      </ReplyAuthorName>
+                      <ReplyContentText>
+                        <Typography
+                          level="body-xs"
+                          textColor="muted"
+                          truncate="single"
+                        >
+                          {(repliedMessage.content ?? "").replace(/\n/g, " ")}
+                        </Typography>
+                      </ReplyContentText>
                     </>
                   ) : (
                     <Typography
@@ -153,20 +155,51 @@ export const Message = observer(({ message, header }: Props) => {
                       Could not find the replied message
                     </Typography>
                   )}
-                </Box>
-              </Box>
-            ) : null}
+                </ReplyContent>
+              </ReplySection>
+            </Pressable>
+          ) : null}
 
-            <MessageContentText
-              sending={
-                "status" in message &&
-                message.status === QueuedMessageStatus.Sending
-              }
-              failed={
-                "status" in message &&
-                message.status === QueuedMessageStatus.Failed
-              }
-            >
+          <MessageRow header={header}>
+            <MessageInfo>
+              {header && message.author ? (
+                <UserProfileTrigger
+                  user={message.author}
+                  member={
+                    space && message.author.id
+                      ? space.members.get(message.author.id)
+                      : undefined
+                  }
+                >
+                  <UserAvatar user={message.author} />
+                </UserProfileTrigger>
+              ) : null}
+            </MessageInfo>
+            <MessageContent>
+              {header && (
+                <Box
+                  style={{
+                    flexShrink: 1,
+                    minWidth: 0,
+                    flexDirection: "row",
+                    alignItems: "center",
+                  }}
+                >
+                  <MessageAuthor message={message} space={space} />
+                  <MessageDetails message={message} />
+                </Box>
+              )}
+
+              <MessageContentText
+                sending={
+                  "status" in message &&
+                  message.status === QueuedMessageStatus.Sending
+                }
+                failed={
+                  "status" in message &&
+                  message.status === QueuedMessageStatus.Failed
+                }
+              >
               {stickerExpressions.length > 0 && (
                 <Box
                   style={{
@@ -236,7 +269,8 @@ export const Message = observer(({ message, header }: Props) => {
               )}
 
             {isSent && <MessageReactions message={message} />}
-          </MessageContent>
+            </MessageContent>
+          </MessageRow>
         </MessageBase>
       </Pressable>
 

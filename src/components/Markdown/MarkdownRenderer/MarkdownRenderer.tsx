@@ -45,8 +45,6 @@ export const MarkdownRenderer = observer(
       instance.disable("hr");
       instance.disable("escape");
 
-      // Formatting runs first so splitByMarker leaves inner text tokens for
-      // mentions, emojis, and links to resolve inside bold/italic/etc.
       instance.use(strikethroughPlugin);
       instance.use(emphasisPlugin);
       instance.use(underlinePlugin);

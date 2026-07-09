@@ -52,9 +52,6 @@ export const InviteRow = observer(
     const spaceMe = space.members.me;
     const canManageChannels = spaceMe?.hasPermission("ManageChannels") ?? false;
     const isInviter = invite.inviterId === app.account?.id;
-    // Only channel management or being the invite's own creator should allow
-    // deletion — CreateInvites merely grants making new invites, not deleting
-    // other members' existing ones.
     const canDelete = canManageChannels || isInviter;
 
     const copyInviteLink = async () => {

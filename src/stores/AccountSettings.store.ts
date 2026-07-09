@@ -17,6 +17,9 @@ export class AccountSettingsStore {
   preferEmbossed = false;
   preferredSelfMute = false;
   preferredSelfDeaf = false;
+  pushEnabled = true;
+  pushDirectMessages = true;
+  pushMentions = true;
   spacePositions: ObservableOrderedSet<string>;
   favoriteEmojis = observable.array<string>([]);
   favoriteGifs = observable.array<string>([]);
@@ -41,6 +44,9 @@ export class AccountSettingsStore {
     this.preferEmbossed = settings.preferEmbossed;
     this.preferredSelfMute = settings.preferredSelfMute ?? false;
     this.preferredSelfDeaf = settings.preferredSelfDeaf ?? false;
+    this.pushEnabled = settings.pushEnabled ?? true;
+    this.pushDirectMessages = settings.pushDirectMessages ?? true;
+    this.pushMentions = settings.pushMentions ?? true;
     this.favoriteEmojis = observable.array(settings.favoriteEmojis ?? []);
     this.favoriteGifs = observable.array(settings.favoriteGifs ?? []);
     this.updatedAt = new Date(settings.updatedAt);
@@ -58,6 +64,9 @@ export class AccountSettingsStore {
         "preferEmbossed",
         "preferredSelfMute",
         "preferredSelfDeaf",
+        "pushEnabled",
+        "pushDirectMessages",
+        "pushMentions",
         {
           key: "favoriteEmojis",
           serialize: (v: unknown) => (Array.isArray(v) ? [...v] : []),
@@ -136,6 +145,9 @@ export class AccountSettingsStore {
       currentIcon: this.currentIcon,
       preferredSelfMute: this.preferredSelfMute,
       preferredSelfDeaf: this.preferredSelfDeaf,
+      pushEnabled: this.pushEnabled,
+      pushDirectMessages: this.pushDirectMessages,
+      pushMentions: this.pushMentions,
       favoriteEmojis: [...this.favoriteEmojis],
       favoriteGifs: [...this.favoriteGifs],
       favoriteStickers: [],
@@ -193,6 +205,18 @@ export class AccountSettingsStore {
     this.preferredSelfDeaf = value;
   }
 
+  setPushEnabled(value: boolean) {
+    this.pushEnabled = value;
+  }
+
+  setPushDirectMessages(value: boolean) {
+    this.pushDirectMessages = value;
+  }
+
+  setPushMentions(value: boolean) {
+    this.pushMentions = value;
+  }
+
   getPendingOverrides(): SettingsPatch | null {
     return this.isDirty ? this.getSyncPayload() : null;
   }
@@ -205,6 +229,9 @@ export class AccountSettingsStore {
     this.preferEmbossed = payload.preferEmbossed;
     this.preferredSelfMute = payload.preferredSelfMute ?? false;
     this.preferredSelfDeaf = payload.preferredSelfDeaf ?? false;
+    this.pushEnabled = payload.pushEnabled ?? true;
+    this.pushDirectMessages = payload.pushDirectMessages ?? true;
+    this.pushMentions = payload.pushMentions ?? true;
     this.favoriteEmojis = observable.array(payload.favoriteEmojis ?? []);
     this.favoriteGifs = observable.array(payload.favoriteGifs ?? []);
   }
@@ -237,6 +264,15 @@ export class AccountSettingsStore {
     if (settings.preferredSelfDeaf != undefined)
       this.preferredSelfDeaf = settings.preferredSelfDeaf;
 
+    if (settings.pushEnabled != undefined)
+      this.pushEnabled = settings.pushEnabled;
+
+    if (settings.pushDirectMessages != undefined)
+      this.pushDirectMessages = settings.pushDirectMessages;
+
+    if (settings.pushMentions != undefined)
+      this.pushMentions = settings.pushMentions;
+
     if (settings.updatedAt != undefined)
       this.updatedAt = new Date(settings.updatedAt);
 
@@ -244,8 +280,6 @@ export class AccountSettingsStore {
   }
 
   startSyncing() {
-    // Backstop in case the debounced sync (see the reaction registered in the
-    // constructor) got dropped, e.g. a change was made while offline.
     this.syncIntervalId = setInterval(
       () => {
         this.sync();

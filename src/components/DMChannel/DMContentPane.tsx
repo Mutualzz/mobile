@@ -1,10 +1,9 @@
 import { DMChannelHeader } from "@components/DMChannel/DMChannelHeader";
 import { GroupDMAddRecipientSheet } from "@components/DMChannel/GroupDMAddRecipientSheet";
 import { GroupDMManageSheet } from "@components/DMChannel/GroupDMManageSheet";
-import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
+import { ComposerFooter } from "@components/Message/ComposerFooter";
 import { MessageInput } from "@components/Message/MessageInput";
 import { MessageList } from "@components/Message/MessageList";
-import { TypingIndicator } from "@components/TypingIndicator";
 import { Screen } from "@components/Screen/Screen";
 import { UserActionSheet } from "@components/User/UserActionSheet";
 import { ChatCircleIcon } from "phosphor-react-native";
@@ -44,68 +43,73 @@ export const DMContentPane = observer(() => {
   const [addRecipientOpen, setAddRecipientOpen] = useState(false);
   const [manageGroupOpen, setManageGroupOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const channel = app.channels.active;
 
   useEffect(() => {
     if (app.dmDrawerOpen) Keyboard.dismiss();
   }, [app.dmDrawerOpen]);
 
-  const channel = app.channels.active;
+  useEffect(() => {
+    return () => {
+      Keyboard.dismiss();
+    };
+  }, [channel?.id]);
+
   if (!channel) return <EmptyDMState />;
 
   const dmRecipient = channel.dmRecipient;
 
   return (
-    <AppKeyboardAvoidingView style={{ flex: 1 }}>
-      <Screen style={{ flexDirection: "column" }}>
-        <DMChannelHeader
-          channel={channel}
-          onBack={() => app.setDMDrawerOpen(true)}
-          onOpenAddRecipient={
-            channel.isGroupDM ? () => setAddRecipientOpen(true) : undefined
-          }
-          onOpenManage={
-            channel.isGroupDM ? () => setManageGroupOpen(true) : undefined
-          }
-          onOpenUserMenu={
-            !channel.isGroupDM && dmRecipient
-              ? () => setUserMenuOpen(true)
-              : undefined
-          }
-        />
-        <View
-          style={{
-            flex: 1,
-            minHeight: 0,
-            flexDirection: "column",
-          }}
-        >
-          <MessageList channel={channel} />
-          <TypingIndicator channelId={channel.id} />
-          {composerVisible && <MessageInput channel={channel} />}
-        </View>
+    <Screen style={{ flex: 1, flexDirection: "column" }}>
+      <DMChannelHeader
+        channel={channel}
+        onBack={() => app.setDMDrawerOpen(true)}
+        onOpenAddRecipient={
+          channel.isGroupDM ? () => setAddRecipientOpen(true) : undefined
+        }
+        onOpenManage={
+          channel.isGroupDM ? () => setManageGroupOpen(true) : undefined
+        }
+        onOpenUserMenu={
+          !channel.isGroupDM && dmRecipient
+            ? () => setUserMenuOpen(true)
+            : undefined
+        }
+      />
+      <View
+        style={{
+          flex: 1,
+          minHeight: 0,
+          flexDirection: "column",
+        }}
+      >
+        <MessageList channel={channel} />
+        <ComposerFooter channelId={channel.id}>
+          {composerVisible ? <MessageInput channel={channel} /> : null}
+        </ComposerFooter>
+      </View>
 
-        {channel.isGroupDM ? (
-          <>
-            <GroupDMAddRecipientSheet
-              visible={addRecipientOpen}
-              onClose={() => setAddRecipientOpen(false)}
-              channel={channel}
-            />
-            <GroupDMManageSheet
-              visible={manageGroupOpen}
-              onClose={() => setManageGroupOpen(false)}
-              channel={channel}
-            />
-          </>
-        ) : dmRecipient ? (
-          <UserActionSheet
-            user={dmRecipient}
-            visible={userMenuOpen}
-            onClose={() => setUserMenuOpen(false)}
-            insideDMs
+      {channel.isGroupDM ? (
+        <>
+          <GroupDMAddRecipientSheet
+            visible={addRecipientOpen}
+            onClose={() => setAddRecipientOpen(false)}
+            channel={channel}
           />
-        ) : null}
-      </Screen>
-    </AppKeyboardAvoidingView>
+          <GroupDMManageSheet
+            visible={manageGroupOpen}
+            onClose={() => setManageGroupOpen(false)}
+            channel={channel}
+          />
+        </>
+      ) : dmRecipient ? (
+        <UserActionSheet
+          user={dmRecipient}
+          visible={userMenuOpen}
+          onClose={() => setUserMenuOpen(false)}
+          insideDMs
+        />
+      ) : null}
+    </Screen>
   );
 });

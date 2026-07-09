@@ -18,7 +18,7 @@ interface Props {
 
 export const SystemMessage = observer(({ message }: Props) => {
     return (
-        <MessageBase header>
+        <MessageBase header system>
             <MessageInfo>
                 <UserAvatar user={message.author} size="lg" />
             </MessageInfo>

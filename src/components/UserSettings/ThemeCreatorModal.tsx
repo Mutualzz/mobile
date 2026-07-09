@@ -73,7 +73,7 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
 
   const handlePreview = (enabled: boolean) => {
     if (enabled) {
-      themeCreator.startPreview(changeTheme, Theme.serialize(activeTheme));
+      themeCreator.startPreview(changeTheme, Theme.serialize(activeTheme), app.account?.id);
       return;
     }
 

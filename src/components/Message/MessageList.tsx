@@ -266,6 +266,47 @@ export const MessageList = observer(({ channel }: Props) => {
     setShowScrollToBottom(false);
   }, []);
 
+  const scrollToMessage = useCallback(
+    async (messageId: string) => {
+      if (!channel?.id) return;
+
+      const findGroupIndex = () =>
+        listData.findIndex((group) =>
+          group.messages.some((message) => message.id === messageId),
+        );
+
+      let index = findGroupIndex();
+      if (index < 0) {
+        await channel.getMessages(false, 50, undefined, undefined, messageId);
+        index = findGroupIndex();
+      }
+
+      if (index < 0) return;
+
+      const scroll = () => {
+        listRef.current?.scrollToIndex({
+          index,
+          animated: true,
+          viewPosition: 0.5,
+        });
+      };
+
+      scroll();
+      requestAnimationFrame(scroll);
+      app.setHighlightedMessageId(messageId);
+      setTimeout(() => app.setHighlightedMessageId(null), 2000);
+    },
+    [app, channel, listData],
+  );
+
+  useEffect(() => {
+    const request = app.jumpToMessage;
+    if (!request || request.channelId !== channel?.id) return;
+
+    app.clearJumpToMessage();
+    void scrollToMessage(request.messageId);
+  }, [app, app.jumpToMessage, channel?.id, scrollToMessage]);
+
   useEffect(() => {
     isAtBottomRef.current = true;
     setShowScrollToBottom(false);

@@ -1,5 +1,7 @@
+import { GoogleFontPicker } from "@components/FontPicker/GoogleFontPicker";
 import { useAppStore } from "@hooks/useStores";
 import type { ColorLike } from "@mutualzz/ui-core";
+import { extractPrimaryFontFamily } from "@mutualzz/ui-core";
 import { Box } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { ThemeCreatorColorField } from "./ThemeCreatorColorField";
@@ -10,6 +12,21 @@ export const ThemeCreatorTypographyPage = observer(() => {
 
   return (
     <Box style={{ gap: 16 }}>
+      <GoogleFontPicker
+        fontOwnerId={app.account?.id}
+        value={
+          extractPrimaryFontFamily(values.typography.fontFamily) ??
+          values.typography.fontFamily
+        }
+        onChange={(family) =>
+          setValues({
+            typography: {
+              ...values.typography,
+              fontFamily: family ?? values.typography.fontFamily,
+            },
+          })
+        }
+      />
       <ThemeCreatorColorField
         label="Primary text color"
         description="The base color for text. Usually white-ish on dark backgrounds, black-ish on light backgrounds."

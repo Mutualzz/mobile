@@ -1,4 +1,5 @@
 import { Button } from "@components/Button";
+import { StaffUserDeleteConfirmSheet } from "@components/Staff/StaffUserDeleteConfirmSheet";
 import { StaffUserDisableConfirmSheet } from "@components/Staff/StaffUserDisableConfirmSheet";
 import { StaffUserForceLogoutConfirmSheet } from "@components/Staff/StaffUserForceLogoutConfirmSheet";
 import { StaffUserRestrictConfirmSheet } from "@components/Staff/StaffUserRestrictConfirmSheet";
@@ -27,7 +28,7 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView } from "react-native";
@@ -39,6 +40,8 @@ const NOTES_PAGE_LIMIT = 50;
 const actionLabels: Record<string, string> = {
     "user.disable": "disabled this account",
     "user.enable": "enabled this account",
+    "user.delete": "soft deleted this account",
+    "user.hard_delete": "hard deleted this account",
     "user.force_logout": "forced a logout on this account",
     "user.session_revoke": "revoked a session on this account",
     "user.profile_update": "updated this account's profile",
@@ -88,6 +91,7 @@ const StaffUserScreen = () => {
     const { openModal } = useModal();
     const queryClient = useQueryClient();
     const { userId } = useLocalSearchParams<{ userId: string }>();
+    const router = useRouter();
 
     const userQueryKey = ["staff-user", userId];
 
@@ -168,6 +172,12 @@ const StaffUserScreen = () => {
 
     const handleWarned = () => {
         queryClient.invalidateQueries({ queryKey: actionsQueryKey });
+    };
+
+    const handleHardDeleted = () => {
+        queryClient.removeQueries({ queryKey: userQueryKey });
+        queryClient.invalidateQueries({ queryKey: ["staff-all-actions"] });
+        router.back();
     };
 
     const { mutate: liftRestriction, isPending: liftingRestriction } =
@@ -328,6 +338,7 @@ const StaffUserScreen = () => {
     }
 
     const isDisabled = user.flags.has("Disabled");
+    const isDeleted = user.flags.has("Deleted");
     const isRestricted =
         !!privateUser.restrictedUntil &&
         new Date(privateUser.restrictedUntil) > new Date();
@@ -535,6 +546,14 @@ const StaffUserScreen = () => {
                     <Typography level="body-md" weight={700}>
                         Actions
                     </Typography>
+                    {isDeleted && (
+                        <Typography level="body-sm" textColor="muted">
+                            This account is soft deleted. The user cannot log
+                            in, but their data is retained.
+                        </Typography>
+                    )}
+                    {!isDeleted && (
+                        <>
                     <Button
                         color="danger"
                         onPress={() =>
@@ -609,6 +628,47 @@ const StaffUserScreen = () => {
                         >
                             Restrict User
                         </Button>
+                    )}
+                    <Button
+                        color="danger"
+                        onPress={() =>
+                            openModal(
+                                `staff-delete-user-${user.id}`,
+                                <StaffUserDeleteConfirmSheet
+                                    userId={user.id}
+                                    username={user.username}
+                                    isFounder={!!app.account?.isFounder}
+                                    onSoftDeleted={handleUpdated}
+                                    onHardDeleted={handleHardDeleted}
+                                    modalId={`staff-delete-user-${user.id}`}
+                                />,
+                            )
+                        }
+                    >
+                        Soft Delete Account
+                    </Button>
+                        </>
+                    )}
+                    {app.account?.isFounder && (
+                    <Button
+                        color="danger"
+                        onPress={() =>
+                            openModal(
+                                `staff-hard-delete-user-${user.id}`,
+                                <StaffUserDeleteConfirmSheet
+                                    userId={user.id}
+                                    username={user.username}
+                                    isFounder
+                                    allowHardDeleteOnly
+                                    onSoftDeleted={handleUpdated}
+                                    onHardDeleted={handleHardDeleted}
+                                    modalId={`staff-hard-delete-user-${user.id}`}
+                                />,
+                            )
+                        }
+                    >
+                        Hard Delete Account
+                    </Button>
                     )}
                 </Box>
 

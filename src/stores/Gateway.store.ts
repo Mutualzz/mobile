@@ -220,7 +220,6 @@ export class GatewayStore {
   }
 
   async disconnect(code = 1000, reason?: string) {
-    // Intentional disconnect (e.g. logout): stop any pending/future reconnects.
     this.shouldReconnect = false;
     this.clearReconnect();
 
@@ -1272,9 +1271,9 @@ export class GatewayStore {
     this.app.users.update(payload);
 
     if (payload.id === this.app.account?.id) {
-      if (
-        BitField.fromString(userFlags, payload.flags.toString()).has("Disabled")
-      ) {
+      const flags = BitField.fromString(userFlags, payload.flags.toString());
+
+      if (flags.has("Disabled") || flags.has("Deleted")) {
         void this.app.logout();
         return;
       }
@@ -1653,10 +1652,7 @@ export class GatewayStore {
     post.bumpLikeCount(1);
   };
 
-  private onPostLikeRemove = (payload: {
-    postId: string;
-    userId: string;
-  }) => {
+  private onPostLikeRemove = (payload: { postId: string; userId: string }) => {
     if (payload.userId === this.app.account?.id) return;
 
     const post = this.app.posts.get(payload.postId);
@@ -1674,10 +1670,7 @@ export class GatewayStore {
     post.bumpShareCount(1);
   };
 
-  private onPostShareRemove = (payload: {
-    postId: string;
-    userId: string;
-  }) => {
+  private onPostShareRemove = (payload: { postId: string; userId: string }) => {
     if (payload.userId === this.app.account?.id) return;
 
     const post = this.app.posts.get(payload.postId);
