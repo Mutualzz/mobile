@@ -1,4 +1,5 @@
 /** @type {import('@bacons/apple-targets/app.plugin').ConfigFunction} */
 module.exports = () => ({
   type: "notification-service",
+  bundleIdentifier: ".notification-service",
 });
