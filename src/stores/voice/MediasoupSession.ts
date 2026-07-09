@@ -12,6 +12,7 @@ import {
 } from "react-native-webrtc";
 
 import type { VoiceInputMode } from "@utils/voiceSettings.utils";
+import { openWebSocket } from "@utils/openWebSocket";
 import type { VoiceMediaKind } from "./types";
 import { setRemoteTrackVolume } from "./audioTrackVolume";
 import { SpeakingDetector } from "./SpeakingDetector";
@@ -26,6 +27,45 @@ import {
   toNativeMediaStreamTrack,
   toProduceTrack,
 } from "./webrtcBridge";
+
+const TRANSPORT_CONNECT_TIMEOUT_MS = 15_000;
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  message: string,
+  signal?: AbortSignal,
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new Error("Voice disconnected"));
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      reject(new Error(message));
+    }, timeoutMs);
+
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(new Error("Voice disconnected"));
+    };
+
+    signal?.addEventListener("abort", onAbort, { once: true });
+
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        signal?.removeEventListener("abort", onAbort);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        signal?.removeEventListener("abort", onAbort);
+        reject(error);
+      });
+  });
+}
 
 interface UserMix {
   muted: boolean;
@@ -356,11 +396,16 @@ export class MediasoupSession {
     }
 
     this.micTrack = audioTrack;
-    this.micProducer = await this.sendTransport.produce({
-      track: toProduceTrack(audioTrack, "audio"),
-      appData: { mediaKind: "audio" },
-      codecOptions: { opusStereo: true, opusDtx: true },
-    });
+    this.micProducer = await withTimeout(
+      this.sendTransport.produce({
+        track: toProduceTrack(audioTrack, "audio"),
+        appData: { mediaKind: "audio" },
+        codecOptions: { opusStereo: true, opusDtx: true },
+      }),
+      TRANSPORT_CONNECT_TIMEOUT_MS,
+      "Voice transport connection timed out",
+      signal,
+    );
 
     const selfId = this.getSelfUserId();
     if (selfId && this.micProducer) {
@@ -391,14 +436,19 @@ export class MediasoupSession {
     if (!videoTrack) return;
 
     this.cameraTrack = videoTrack;
-    this.cameraProducer = await this.sendTransport.produce({
-      track: toProduceTrack(videoTrack, "video"),
-      appData: { mediaKind: "camera" },
-      codecOptions: {
-        videoGoogleStartBitrate: 1000,
-        videoGoogleMaxBitrate: 9000,
-      },
-    });
+    this.cameraProducer = await withTimeout(
+      this.sendTransport.produce({
+        track: toProduceTrack(videoTrack, "video"),
+        appData: { mediaKind: "camera" },
+        codecOptions: {
+          videoGoogleStartBitrate: 1000,
+          videoGoogleMaxBitrate: 9000,
+        },
+      }),
+      TRANSPORT_CONNECT_TIMEOUT_MS,
+      "Voice transport connection timed out",
+      signal,
+    );
   }
 
   async stopCamera() {
@@ -662,7 +712,7 @@ export class MediasoupSession {
         return;
       }
 
-      const ws = new WebSocket(url);
+      const ws = openWebSocket(url);
       ws.onmessage = (event) => this.onMessage(String(event.data));
       ws.onerror = () => reject(new Error("Voice socket failed to open"));
       ws.onclose = () => reject(new Error("Voice socket closed before open"));

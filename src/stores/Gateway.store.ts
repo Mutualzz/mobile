@@ -359,6 +359,7 @@ export class GatewayStore {
     channelId: Snowflake | null;
     selfMute: boolean;
     selfDeaf: boolean;
+    refreshRtc?: boolean;
   }) {
     this.send({
       op: GatewayOpcodes.VoiceStateUpdate,

@@ -124,7 +124,9 @@ export class VoiceStore {
       callbacks: {
         onSocketClosed: (reason) => {
           const canAutoRejoin =
-            !!this.currentVoiceTarget && this.app.isGatewayReady;
+            this.connectionStatus === "connected" &&
+            !!this.currentVoiceTarget &&
+            this.app.isGatewayReady;
           runInAction(() => {
             this.connectionError = canAutoRejoin
               ? null
@@ -512,6 +514,11 @@ export class VoiceStore {
   }
 
   onVoiceServerUpdate(payload: VoiceServerUpdatePayload) {
+    if (!payload.voiceEndpoint?.trim()) {
+      this.failJoin("Voice server is not configured");
+      return;
+    }
+
     this.pendingEndpoint = payload.voiceEndpoint;
     this.pendingToken = payload.voiceToken;
 
@@ -562,6 +569,15 @@ export class VoiceStore {
 
     const channelId =
       raw.channelId === "null" || raw.channelId == null ? null : raw.channelId;
+
+    if (
+      !channelId &&
+      raw.userId === this.app.account?.id &&
+      this.connectionStatus === "connecting"
+    ) {
+      this.failJoin("Unable to join voice channel");
+      return;
+    }
 
     if (!channelId) {
       this.app.voiceStates.remove(raw.userId);
@@ -717,7 +733,13 @@ export class VoiceStore {
     });
 
     this.startJoinTimeout();
-    await this.sendVoiceStateUpdate();
+
+    if (this.pendingEndpoint?.trim() && this.pendingToken) {
+      void this.startConnection();
+    } else {
+      await this.sendVoiceStateUpdate({ refreshRtc: true });
+    }
+
     this.startKeepAlive();
   }
 
@@ -727,6 +749,7 @@ export class VoiceStore {
 
     if (!endpoint || !token) {
       this.logger.warn("startConnection called with no pending credentials");
+      this.failJoin("Voice server credentials were not provided");
       return;
     }
 
@@ -858,12 +881,13 @@ export class VoiceStore {
     this.session.setSelfDeaf(this.selfDeaf);
   }
 
-  private sendVoiceStateUpdate() {
+  private sendVoiceStateUpdate(options?: { refreshRtc?: boolean }) {
     this.app.gateway.sendVoiceStateUpdate({
       spaceId: this.currentVoiceTarget?.spaceId ?? null,
       channelId: this.currentVoiceTarget?.channelId ?? null,
       selfMute: this.effectiveSelfMute,
       selfDeaf: this.effectiveSelfDeaf,
+      refreshRtc: options?.refreshRtc === true,
     });
   }
 
