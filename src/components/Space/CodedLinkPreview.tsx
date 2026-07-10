@@ -56,7 +56,7 @@ const FriendCodedLinkPreview = observer(({ link }: { link: APICodedLink }) => {
             {displayName}
           </Typography>
           {user?.username ? (
-            <Typography level="body-xs" color="secondary">
+            <Typography level="body-xs" textColor="secondary">
               @{user.username}
             </Typography>
           ) : null}
@@ -102,7 +102,7 @@ export const CodedLinkPreview = observer(({ link }: Props) => {
             </Typography>
             {(memberCount != null && memberCount > 0) ||
             (onlineCount != null && onlineCount > 0) ? (
-              <Typography level="body-xs" color="secondary">
+              <Typography level="body-xs" textColor="secondary">
                 {onlineCount != null && onlineCount > 0
                   ? `${onlineCount.toLocaleString()} Online`
                   : ""}
@@ -121,7 +121,7 @@ export const CodedLinkPreview = observer(({ link }: Props) => {
             ) : null}
           </View>
         </View>
-        <Typography level="body-xs" color="secondary">
+        <Typography level="body-xs" textColor="secondary">
           {inviterName} invited you to join
           {link.channel?.name ? ` #${link.channel.name}` : ""}
         </Typography>

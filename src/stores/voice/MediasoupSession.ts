@@ -14,7 +14,7 @@ import {
 import type { VoiceInputMode } from "@utils/voiceSettings.utils";
 import { openWebSocket } from "@utils/openWebSocket";
 import type { VoiceMediaKind } from "./types";
-import { setRemoteTrackVolume } from "./audioTrackVolume";
+import { setConsumerAudioMix } from "./audioTrackVolume";
 import { SpeakingDetector } from "./SpeakingDetector";
 import {
   createVoiceRpcId,
@@ -218,10 +218,6 @@ export class MediasoupSession {
         shouldTransmit ? this.micProducer.resume() : this.micProducer.pause();
       } catch {}
     }
-
-    if (this.micTrack) {
-      this.micTrack.enabled = !this.isMuted && !this.spaceMuted && !this.isDeafened;
-    }
   }
 
   applyAudioForUser(userId: string, mix: UserMix) {
@@ -232,20 +228,15 @@ export class MediasoupSession {
       const consumer = this.consumersByProducerId.get(producerId);
       if (!consumer) continue;
 
-      const track = toNativeMediaStreamTrack(consumer.track);
-      const locallyMuted = mix.muted || this.isDeafened;
-
-      setRemoteTrackVolume(track, mix.volume, locallyMuted);
-
       try {
-        if (locallyMuted) {
-          consumer.pause();
-          track.enabled = false;
-        } else {
-          consumer.resume();
-          track.enabled = true;
-        }
-      } catch {}
+        setConsumerAudioMix(
+          consumer,
+          mix.volume,
+          mix.muted || this.isDeafened,
+        );
+      } catch (error) {
+        this.logger.warn("Failed to apply audio mix", error);
+      }
     }
   }
 
@@ -253,14 +244,10 @@ export class MediasoupSession {
     for (const [producerId, consumer] of this.consumersByProducerId) {
       if (this.producerKindMap.get(producerId) !== "audio") continue;
       try {
-        if (this.isDeafened) {
-          consumer.pause();
-          consumer.track.enabled = false;
-        } else {
-          consumer.resume();
-          consumer.track.enabled = true;
-        }
-      } catch {}
+        setConsumerAudioMix(consumer, 100, this.isDeafened);
+      } catch (error) {
+        this.logger.warn("Failed to apply remote audio state", error);
+      }
     }
   }
 
@@ -303,7 +290,9 @@ export class MediasoupSession {
 
     if (signal.aborted) return;
 
-    const device = new mediasoupClient.Device({ handlerName: "ReactNative106" });
+    const device = await mediasoupClient.Device.factory({
+      handlerName: "ReactNative106",
+    });
     await device.load({ routerRtpCapabilities: rtpCapabilities });
     if (signal.aborted) return;
     this.device = device;
@@ -509,6 +498,9 @@ export class MediasoupSession {
     this.setupComplete = false;
     this.consumeAbortSignal = null;
     this.pendingProducerIds.clear();
+    this.isMuted = false;
+    this.isDeafened = false;
+    this.spaceMuted = false;
     this.speakingDetector.stopAll();
     this.statsSources.clear();
 
@@ -588,7 +580,19 @@ export class MediasoupSession {
     for (const audio of attempts) {
       if (signal.aborted) throw new Error("Voice disconnected");
       try {
-        return await mediaDevices.getUserMedia({ audio, video: false });
+        const audioConstraints =
+          typeof audio === "object" && "deviceId" in audio
+            ? {
+                deviceId: audio.deviceId,
+                echoCancellation: true,
+                noiseSuppression: true,
+              }
+            : true;
+
+        return await mediaDevices.getUserMedia({
+          audio: audioConstraints,
+          video: false,
+        });
       } catch (error) {
         if (signal.aborted) throw error;
       }
@@ -651,10 +655,7 @@ export class MediasoupSession {
       this.callbacks.onRemoteCameraStream(userId, producerId, stream);
     } else {
       if (this.isDeafened) {
-        try {
-          consumer.pause();
-          consumer.track.enabled = false;
-        } catch {}
+        setConsumerAudioMix(consumer, 100, true);
       }
       this.registerAudioSpeaking(userId, producerId, consumer);
       this.callbacks.onAudioConsumerReady(userId);

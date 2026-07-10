@@ -88,5 +88,6 @@ export async function openNotificationDeepLink(
   const href = resolveNotificationHref(data);
   if (!href) return;
 
-  await Linking.openURL(Linking.createURL(href));
+  const path = typeof href === "string" ? href : href.pathname;
+  await Linking.openURL(Linking.createURL(path));
 }

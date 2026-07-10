@@ -78,7 +78,7 @@ const PublicProfileScreen = () => {
           Profile
         </Typography>
       </ScreenHeader>
-      {profile ? (
+      {profile && user ? (
         <ScrollView
           contentContainerStyle={{ padding: 16, alignItems: "center" }}
         >

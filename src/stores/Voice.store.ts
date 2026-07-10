@@ -19,6 +19,7 @@ import {
   type VoiceInputMode,
 } from "@utils/voiceSettings.utils";
 import { fixConnectionUrl } from "@utils/urls";
+import { ensureVoiceMicPermission } from "@utils/voicePermissions";
 import { AppState, type AppStateStatus } from "react-native";
 import type { MediaStream } from "react-native-webrtc";
 import { mediaDevices } from "react-native-webrtc";
@@ -310,16 +311,44 @@ export class VoiceStore {
     if (this.voiceInputMode !== "push_to_talk") return;
     if (this.pushToTalkActive === pressed) return;
     this.pushToTalkActive = pressed;
-    this.session.setPushToTalkPressed(pressed);
+    if (!this.isRtcConnected) return;
+
+    try {
+      this.session.setPushToTalkPressed(pressed);
+    } catch (error) {
+      this.logger.warn("Failed to apply push-to-talk state", error);
+    }
   }
 
   get isPushToTalkMode() {
     return this.voiceInputMode === "push_to_talk";
   }
 
+  private get isRtcConnected() {
+    return this.connectionStatus === "connected";
+  }
+
+  private applySessionVoiceFlags() {
+    if (!this.isRtcConnected) return;
+
+    try {
+      this.session.setSpaceMute(this.spaceMute);
+      this.session.setSelfMute(this.selfMute);
+      this.session.setSelfDeaf(this.selfDeaf);
+    } catch (error) {
+      this.logger.warn("Failed to apply voice flags to RTC session", error);
+    }
+  }
+
   applyVoiceSettings() {
-    this.session.setInputMode(this.voiceInputMode);
-    this.session.setSpaceMute(this.spaceMute);
+    if (!this.isRtcConnected) return;
+
+    try {
+      this.session.setInputMode(this.voiceInputMode);
+      this.session.setSpaceMute(this.spaceMute);
+    } catch (error) {
+      this.logger.warn("Failed to apply voice settings to RTC session", error);
+    }
   }
 
   private getSpeakingThreshold() {
@@ -352,6 +381,8 @@ export class VoiceStore {
   }
 
   private syncUserAudioMix(userId: string) {
+    if (!this.isRtcConnected) return;
+
     this.session.applyAudioForUser(userId, {
       muted: this.isUserVoiceMuted(userId),
       volume: this.getUserVoiceVolume(userId),
@@ -427,7 +458,17 @@ export class VoiceStore {
       this.currentVoiceTarget?.channelId === target.channelId;
     if (isSame && this.connectionStatus !== "failed") return;
 
-    await this.setupDevices();
+    await this.setupDevices(true);
+
+    const hasMicPermission = await ensureVoiceMicPermission();
+    if (!hasMicPermission) {
+      runInAction(() => {
+        this.connectionError = "Microphone permission is required for voice channels";
+        this.connectionStatus = "failed";
+        this.currentVoiceTarget = null;
+      });
+      return;
+    }
 
     const preferredSelfMute = this.app.settings?.preferredSelfMute ?? false;
     const preferredSelfDeaf = this.app.settings?.preferredSelfDeaf ?? false;
@@ -442,12 +483,6 @@ export class VoiceStore {
       this.selfMute = preferredSelfMute;
       this.selfDeaf = preferredSelfDeaf;
     });
-
-    this.session.setInputDeviceId(this.currentInputDeviceId);
-    this.session.setCameraDeviceId(this.currentCameraDeviceId);
-    this.session.setSelfMute(this.selfMute);
-    this.session.setSelfDeaf(this.selfDeaf);
-    this.session.setSpaceMute(this.spaceMute);
 
     this.startJoinTimeout();
     await this.sendVoiceStateUpdate();
@@ -607,8 +642,7 @@ export class VoiceStore {
       });
       this.app.settings?.setPreferredSelfDeaf(false);
       this.app.settings?.setPreferredSelfMute(false);
-      this.session.setSelfDeaf(false);
-      this.session.setSelfMute(false);
+      this.applySessionVoiceFlags();
       void this.sendVoiceStateUpdate();
       return;
     }
@@ -617,7 +651,7 @@ export class VoiceStore {
       this.selfMute = value;
     });
     this.app.settings?.setPreferredSelfMute(value);
-    this.session.setSelfMute(value);
+    this.applySessionVoiceFlags();
     void this.sendVoiceStateUpdate();
   }
 
@@ -631,14 +665,18 @@ export class VoiceStore {
       }
     });
 
+    if (value && this.app.account?.id) {
+      this.setUserSpeaking(this.app.account.id, false);
+    }
+
     this.app.settings?.setPreferredSelfDeaf(value);
     if (value) {
       this.app.settings?.setPreferredSelfMute(true);
     }
 
-    this.session.setSelfDeaf(this.selfDeaf);
-    this.session.setSelfMute(this.selfMute);
-    if (!value && this.currentChannelId) {
+    this.applySessionVoiceFlags();
+
+    if (!value && this.isRtcConnected && this.currentChannelId) {
       for (const member of this.app.voiceStates.getAllByChannel(
         this.currentChannelId,
       )) {
@@ -769,13 +807,18 @@ export class VoiceStore {
       this.session.setCameraDeviceId(
         this.cameraEnabled ? this.currentCameraDeviceId : null,
       );
+      this.session.setSpaceMute(this.spaceMute);
       this.session.setSelfMute(this.selfMute);
       this.session.setSelfDeaf(this.selfDeaf);
-      this.session.setSpaceMute(this.spaceMute);
       this.applyVoiceSettings();
 
       await this.session.connect(fixConnectionUrl(endpoint), token, signal);
       if (signal.aborted) return;
+
+      const hasMicPermission = await ensureVoiceMicPermission();
+      if (!hasMicPermission) {
+        throw new Error("Microphone permission is required for voice channels");
+      }
 
       try {
         await this.session.startMic(signal);
@@ -801,6 +844,7 @@ export class VoiceStore {
       runInAction(() => {
         this.connectionStatus = "connected";
       });
+      this.applySessionVoiceFlags();
       this.clearJoinTimeout();
       this.startKeepAlive();
     } catch (error) {
@@ -876,9 +920,7 @@ export class VoiceStore {
     this.selfMute = this.spaceMute ? true : raw.selfMute;
     this.selfDeaf = this.spaceDeaf ? true : raw.selfDeaf;
 
-    this.session.setSpaceMute(this.spaceMute);
-    this.session.setSelfMute(this.selfMute);
-    this.session.setSelfDeaf(this.selfDeaf);
+    this.applySessionVoiceFlags();
   }
 
   private sendVoiceStateUpdate(options?: { refreshRtc?: boolean }) {

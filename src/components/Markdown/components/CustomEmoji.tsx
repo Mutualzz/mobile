@@ -38,7 +38,6 @@ export const CustomEmoji = observer(
             transform: [{ translateY: 2 }],
           }}
           resizeMode="contain"
-          onPress={handlePress}
           accessibilityLabel={expression.name}
         />
       );

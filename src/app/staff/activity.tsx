@@ -111,7 +111,10 @@ const StaffActivityScreen = () => {
         {actions.map((entry) => (
           <Pressable
             key={entry.id}
-            onPress={() => navigate(`/staff/users/${entry.target.id}` as Href)}
+            onPress={() => {
+              if (!entry.target) return;
+              navigate(`/staff/users/${entry.target.id}` as Href);
+            }}
           >
             <Paper
               variant="plain"

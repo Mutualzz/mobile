@@ -57,7 +57,6 @@ export const InlineTwemoji = ({
   value,
   size = 22,
   accessibilityLabel,
-  onPress,
 }: Props) => {
   const candidates = useTwemojiCandidates(value);
   const [candidateIndex, setCandidateIndex] = useState(0);
@@ -83,7 +82,6 @@ export const InlineTwemoji = ({
         transform: [{ translateY: 2 }],
       }}
       resizeMode="contain"
-      onPress={onPress}
       onError={() => {
         setCandidateIndex((index) =>
           index + 1 < candidates.length ? index + 1 : index,

@@ -190,7 +190,7 @@ const StaffReportDetailScreen = () => {
                 )}
 
                 {error && (
-                    <Typography level="body-sm" textColor="danger">
+                    <Typography level="body-sm" color="danger">
                         Failed to load report
                     </Typography>
                 )}

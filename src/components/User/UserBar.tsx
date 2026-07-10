@@ -12,9 +12,9 @@ import { shouldShowVoiceUserBarPill } from "@utils/layout";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Pressable } from "react-native";
+import { HeadphonesOffIcon } from "@components/icons/HeadphonesOffIcon";
 import {
   HeadphonesIcon,
-  HeadphonesSlashIcon,
   MicrophoneIcon,
   MicrophoneSlashIcon,
   PhoneXIcon,
@@ -326,7 +326,7 @@ export const UserBar = observer(() => {
               }
             >
               {app.voice.effectiveSelfDeaf ? (
-                <HeadphonesSlashIcon
+                <HeadphonesOffIcon
                   size={18}
                   weight="fill"
                   color={
