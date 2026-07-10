@@ -1,8 +1,8 @@
 import { FeedHeader } from "@components/Feed/FeedHeader";
 import { PostList } from "@components/Feed/PostList";
-import { KeyboardAwareView } from "@components/Keyboard/KeyboardAwareView";
 import { Screen } from "@components/Screen/Screen";
 import { useTabBarContentInset } from "@hooks/useTabBarContentInset";
+import { Box } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 
 const FeedFriendsScreen = () => {
@@ -20,9 +20,9 @@ const FeedFriendsScreen = () => {
       }}
     >
       <FeedHeader />
-      <KeyboardAwareView>
+      <Box style={{ flex: 1 }}>
         <PostList variant="friends" showComposer />
-      </KeyboardAwareView>
+      </Box>
     </Screen>
   );
 };

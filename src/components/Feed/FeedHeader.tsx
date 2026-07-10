@@ -1,17 +1,17 @@
 import { IconButton } from "@components/IconButton";
 import { PostComposer } from "@components/Feed/PostComposer";
-import { KeyboardAwareView } from "@components/Keyboard/KeyboardAwareView";
+import { BottomSheet } from "@components/Keyboard/BottomSheet";
 import { Paper } from "@components/Paper";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
-import { Box, Modal, Typography, useTheme } from "@mutualzz/ui-native";
+import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { usePathname } from "expo-router";
 import { HouseIcon, PaletteIcon, PlusIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView } from "react-native";
 
 const TABS = [
   { label: "For You", href: "/(tabs)/feed" as Href },
@@ -123,54 +123,23 @@ export const FeedHeader = observer(() => {
         ) : null}
       </Box>
 
-      <Modal
+      <BottomSheet
         open={composeOpen}
         onClose={() => setComposeOpen(false)}
-        layout="fullscreen"
-        showCloseButton={false}
-        style={{
-          justifyContent: "flex-end",
-          alignItems: "stretch",
-          backgroundColor: "transparent",
-          paddingVertical: 0,
-        }}
+        title="Create post"
+        maxHeight="85%"
+        scrollable
+        elevation={app.settings?.preferEmbossed ? 4 : 2}
       >
-        <View
-          pointerEvents="box-none"
-          style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
-        >
-          <KeyboardAwareView style={{ justifyContent: "flex-end", width: "100%" }}>
-            <Paper
-              style={{
-                maxHeight: "85%",
-                borderTopLeftRadius: 16,
-                borderTopRightRadius: 16,
-                padding: 16,
-                gap: 12,
-              }}
-              elevation={app.settings?.preferEmbossed ? 4 : 2}
-            >
-              <Typography level="body-lg" weight={700}>
-                Create post
-              </Typography>
-              <ScrollView
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ gap: 12 }}
-              >
-                <PostComposer
-                  onPosted={() => {
-                    void queryClient.invalidateQueries({
-                      queryKey: ["posts", "for-you"],
-                    });
-                    setComposeOpen(false);
-                  }}
-                />
-              </ScrollView>
-            </Paper>
-          </KeyboardAwareView>
-        </View>
-      </Modal>
+        <PostComposer
+          onPosted={() => {
+            void queryClient.invalidateQueries({
+              queryKey: ["posts", "for-you"],
+            });
+            setComposeOpen(false);
+          }}
+        />
+      </BottomSheet>
     </Box>
   );
 });

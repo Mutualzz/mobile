@@ -1,4 +1,4 @@
-import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
+import { KeyboardAwareView } from "@components/Keyboard/KeyboardAwareView";
 import { Button } from "@components/Button";
 import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
@@ -35,8 +35,8 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import {
   Pressable,
-  ScrollView,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SvgXml } from "react-native-svg";
 
@@ -97,7 +97,7 @@ export function ProfileWidgetContentEditorSheet({
       disableBackdropClick
       style={{ paddingVertical: 0 }}
     >
-      <AppKeyboardAvoidingView
+      <KeyboardAwareView
         style={{ flex: 1, backgroundColor: theme.colors.background, paddingTop: insets.top }}
       >
         <Box
@@ -141,7 +141,7 @@ export function ProfileWidgetContentEditorSheet({
           </Box>
         ) : (
           <>
-            <ScrollView
+            <KeyboardAwareScrollView
               contentContainerStyle={{ padding: 16, gap: 16 }}
               keyboardShouldPersistTaps="handled"
             >
@@ -153,7 +153,7 @@ export function ProfileWidgetContentEditorSheet({
                   isDrawBlock ? () => setDrawMode(true) : undefined
                 }
               />
-            </ScrollView>
+            </KeyboardAwareScrollView>
 
             <Box style={{ padding: 16, paddingBottom: insets.bottom + 16 }}>
               <Button
@@ -169,7 +169,7 @@ export function ProfileWidgetContentEditorSheet({
             </Box>
           </>
         )}
-      </AppKeyboardAvoidingView>
+      </KeyboardAwareView>
     </Modal>
   );
 }

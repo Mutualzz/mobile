@@ -1,11 +1,11 @@
-import { isAnimatedProfileAsset } from "@utils/profileImagePicker";
 import type { ProfileImageCrop } from "@mutualzz/types";
-import { Image as ExpoImage } from "expo-image";
+import { Image as ExpoImage, type ImageContentFit } from "expo-image";
+import { useState } from "react";
 import {
-  Image,
   View,
   type ImageResizeMode,
   type ImageStyle,
+  type LayoutChangeEvent,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
@@ -22,31 +22,33 @@ interface CroppedProps extends Props {
   containerStyle?: StyleProp<ViewStyle>;
 }
 
-function isAnimatedProfileImage(uri: string, assetHash?: string | null) {
-  return (
-    isAnimatedProfileAsset(assetHash) ||
-    uri.includes("animated=true") ||
-    /\.gif(\?|$)/i.test(uri)
-  );
+function toContentFit(resizeMode: ImageResizeMode): ImageContentFit {
+  switch (resizeMode) {
+    case "contain":
+      return "contain";
+    case "stretch":
+      return "fill";
+    case "center":
+      return "none";
+    default:
+      return "cover";
+  }
 }
 
 export function ProfileBlockImage({
   uri,
-  assetHash,
   style,
   resizeMode = "cover",
 }: Props) {
-  if (isAnimatedProfileImage(uri, assetHash)) {
-    return (
-      <ExpoImage
-        source={{ uri }}
-        style={style}
-        contentFit={resizeMode === "contain" ? "contain" : "cover"}
-      />
-    );
-  }
-
-  return <Image source={{ uri }} style={style} resizeMode={resizeMode} />;
+  return (
+    <ExpoImage
+      source={{ uri }}
+      style={style}
+      contentFit={toContentFit(resizeMode)}
+      cachePolicy="memory-disk"
+      recyclingKey={uri}
+    />
+  );
 }
 
 export function ProfileBlockCroppedImage({
@@ -57,6 +59,10 @@ export function ProfileBlockCroppedImage({
   containerStyle,
   resizeMode = "cover",
 }: CroppedProps) {
+  const [layout, setLayout] = useState<{ width: number; height: number } | null>(
+    null,
+  );
+
   if (!crop || resizeMode === "contain") {
     return (
       <ProfileBlockImage
@@ -68,23 +74,40 @@ export function ProfileBlockCroppedImage({
     );
   }
 
-  const widthPercent = 100 / crop.width;
-  const heightPercent = 100 / crop.height;
-  const leftPercent = -(crop.x / crop.width) * 100;
-  const topPercent = -(crop.y / crop.height) * 100;
+  const onLayout = (event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    if (width > 0 && height > 0) {
+      setLayout((current) =>
+        current?.width === width && current.height === height
+          ? current
+          : { width, height },
+      );
+    }
+  };
+
+  const croppedStyle = layout
+    ? {
+        position: "absolute" as const,
+        width: layout.width / crop.width,
+        height: layout.height / crop.height,
+        left: -(layout.width * crop.x) / crop.width,
+        top: -(layout.height * crop.y) / crop.height,
+      }
+    : {
+        position: "absolute" as const,
+        width: "100%" as const,
+        height: "100%" as const,
+      };
 
   return (
-    <View style={[{ overflow: "hidden" }, containerStyle, style]}>
+    <View
+      style={[{ overflow: "hidden" }, containerStyle, style]}
+      onLayout={onLayout}
+    >
       <ProfileBlockImage
         uri={uri}
         assetHash={assetHash}
-        style={{
-          position: "absolute",
-          width: `${widthPercent}%`,
-          height: `${heightPercent}%`,
-          left: `${leftPercent}%`,
-          top: `${topPercent}%`,
-        }}
+        style={croppedStyle}
         resizeMode="stretch"
       />
     </View>

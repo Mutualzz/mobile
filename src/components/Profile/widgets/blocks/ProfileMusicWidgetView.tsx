@@ -12,7 +12,8 @@ import {
 } from "expo-audio";
 import { MusicNotesIcon, PauseIcon, PlayIcon } from "phosphor-react-native";
 import { useEffect } from "react";
-import { ActivityIndicator, Image, Pressable, View } from "react-native";
+import { Image } from "expo-image";
+import { ActivityIndicator, Pressable, View } from "react-native";
 
 interface Props {
   block: MobileProfileMusicBlock;
@@ -90,6 +91,9 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
         <Image
           source={{ uri: image }}
           style={{ width: "100%", height: "100%" }}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          recyclingKey={image}
         />
       ) : (
         <MusicNotesIcon size={musicSizes.miniPlayButton} color={theme.typography.colors.muted} />

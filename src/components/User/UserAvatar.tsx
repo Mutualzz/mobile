@@ -110,33 +110,35 @@ export const UserAvatar = observer(
       </Paper>
     );
 
-    const avatarContent = (
-      <Box
-        style={
-          speaking
-            ? {
-                borderRadius: 9999,
-                padding: 2,
-                borderWidth: 2,
-                borderColor: theme.colors.success,
-              }
-            : undefined
-        }
-      >
-        {avatarBody}
-      </Box>
-    );
+    const showBadge = badge && !!status;
 
-    if (!badge || !status) return avatarContent;
+    if (!showBadge && !speaking) return avatarBody;
 
     return (
       <Box style={{ position: "relative", width: size, height: size }}>
-        {avatarContent}
-        <StatusBadge
-          status={status}
-          size={size}
-          showInvisible={showInvisible}
-        />
+        {avatarBody}
+        {speaking ? (
+          <Box
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: -2,
+              left: -2,
+              width: size + 4,
+              height: size + 4,
+              borderRadius: 9999,
+              borderWidth: 2,
+              borderColor: theme.colors.success,
+            }}
+          />
+        ) : null}
+        {showBadge ? (
+          <StatusBadge
+            status={status}
+            size={size}
+            showInvisible={showInvisible}
+          />
+        ) : null}
       </Box>
     );
   },

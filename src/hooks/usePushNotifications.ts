@@ -10,15 +10,14 @@ import {
   DM_REPLY_ACTION_ID,
   ensureDmReplyNotificationCategory,
 } from "@utils/pushNotificationCategories";
+import { resolveNotificationHref } from "@utils/pushNotificationNavigation";
 import {
   registerPushToken,
   sendNotificationReply,
   unregisterPushToken,
 } from "@utils/pushNotifications";
 import * as Device from "expo-device";
-import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
-import type { Href } from "expo-router";
 import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
 
@@ -54,28 +53,6 @@ Notifications.setNotificationHandler({
   },
 });
 
-function navigateFromNotificationUrl(
-  navigate: ReturnType<typeof useAppNavigation>["navigate"],
-  url: string,
-) {
-  const parsed = Linking.parse(url);
-  const path = parsed.path ?? "";
-
-  if (path.startsWith("spaces/channel/")) {
-    navigate(`/${path}` as Href);
-    return;
-  }
-
-  if (path.startsWith("@me/")) {
-    navigate(`/${path}` as Href);
-    return;
-  }
-
-  if (path.startsWith("invite/")) {
-    navigate(`/${path}` as Href);
-  }
-}
-
 function getNotificationData(
   response: Notifications.NotificationResponse,
 ): Record<string, unknown> {
@@ -83,10 +60,31 @@ function getNotificationData(
   return data && typeof data === "object" ? data : {};
 }
 
+async function navigateToNotificationTarget(
+  data: Record<string, unknown>,
+  navigate: ReturnType<typeof useAppNavigation>["navigate"],
+  app: ReturnType<typeof useAppStore>,
+) {
+  const href = resolveNotificationHref(data);
+  if (!href) return;
+
+  const channelId = data.channelId;
+  if (typeof channelId === "string") {
+    try {
+      await app.channels.resolve(channelId);
+    } catch {
+      // Route sync will retry once gateway data arrives.
+    }
+  }
+
+  navigate(href);
+}
+
 async function handleNotificationResponse(
   response: Notifications.NotificationResponse,
   navigate: ReturnType<typeof useAppNavigation>["navigate"],
   rest: ReturnType<typeof useAppStore>["rest"],
+  app: ReturnType<typeof useAppStore>,
 ) {
   const data = getNotificationData(response);
 
@@ -104,16 +102,14 @@ async function handleNotificationResponse(
     return;
   }
 
-  const url = data.url;
-  if (typeof url === "string") {
-    navigateFromNotificationUrl(navigate, url);
-  }
+  await navigateToNotificationTarget(data, navigate, app);
 }
 
 async function handleNotifeePress(
   data: Record<string, unknown> | undefined,
   navigate: ReturnType<typeof useAppNavigation>["navigate"],
   rest: ReturnType<typeof useAppStore>["rest"],
+  app: ReturnType<typeof useAppStore>,
   actionId?: string,
   input?: string,
 ) {
@@ -132,10 +128,7 @@ async function handleNotifeePress(
     return;
   }
 
-  const url = data.url;
-  if (typeof url === "string") {
-    navigateFromNotificationUrl(navigate, url);
-  }
+  await navigateToNotificationTarget(data, navigate, app);
 }
 
 export function usePushNotifications(enabled: boolean) {
@@ -143,9 +136,11 @@ export function usePushNotifications(enabled: boolean) {
   const { navigate } = useAppNavigation();
   const navigateRef = useRef(navigate);
   const restRef = useRef(app.rest);
+  const appRef = useRef(app);
   const pushTokenRef = useRef<string | null>(null);
   navigateRef.current = navigate;
   restRef.current = app.rest;
+  appRef.current = app;
 
   useEffect(() => {
     void ensureDmReplyNotificationCategory().catch((error) => {
@@ -174,6 +169,7 @@ export function usePushNotifications(enabled: boolean) {
         detail.notification?.data,
         navigateRef.current,
         restRef.current,
+        appRef.current,
         detail.pressAction?.id,
         detail.input,
       );
@@ -183,12 +179,34 @@ export function usePushNotifications(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
 
-    void notifee.getInitialNotification().then((initial) => {
-      const url = initial?.notification?.data?.url;
-      if (typeof url === "string") {
-        navigateFromNotificationUrl(navigateRef.current, url);
+    const openInitialNotification = async () => {
+      const initial = await notifee.getInitialNotification();
+      const initialData = initial?.notification?.data;
+      if (initialData && typeof initialData === "object") {
+        await navigateToNotificationTarget(
+          initialData,
+          navigateRef.current,
+          appRef.current,
+        );
+        return;
       }
-    });
+
+      if (Platform.OS === "ios") {
+        const response = await Notifications.getLastNotificationResponseAsync();
+        if (!response) return;
+
+        const data = getNotificationData(response);
+        if (response.actionIdentifier === DM_REPLY_ACTION_ID) return;
+
+        await navigateToNotificationTarget(
+          data,
+          navigateRef.current,
+          appRef.current,
+        );
+      }
+    };
+
+    void openInitialNotification();
   }, [enabled]);
 
   useEffect(() => {
@@ -240,6 +258,7 @@ export function usePushNotifications(enabled: boolean) {
           response,
           navigateRef.current,
           restRef.current,
+          appRef.current,
         );
       },
     );

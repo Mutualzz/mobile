@@ -14,6 +14,7 @@ import { useState } from "react";
 import { Pressable } from "react-native";
 import {
   HeadphonesIcon,
+  HeadphonesSlashIcon,
   MicrophoneIcon,
   MicrophoneSlashIcon,
   PhoneXIcon,
@@ -324,17 +325,19 @@ export const UserBar = observer(() => {
                     : "Deafen"
               }
             >
-              <HeadphonesIcon
-                size={18}
-                weight="fill"
-                color={
-                  app.voice.effectiveSelfDeaf
-                    ? app.voice.spaceDeaf
+              {app.voice.effectiveSelfDeaf ? (
+                <HeadphonesSlashIcon
+                  size={18}
+                  weight="fill"
+                  color={
+                    app.voice.spaceDeaf
                       ? theme.colors.danger
                       : theme.typography.colors.muted
-                    : undefined
-                }
-              />
+                  }
+                />
+              ) : (
+                <HeadphonesIcon size={18} weight="fill" />
+              )}
             </IconButton>
           </Box>
         </Box>

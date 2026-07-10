@@ -33,20 +33,19 @@ export function ProfileWidgetTile({ type, size, onMaximize, children }: Props) {
 
       {onMaximize ? (
         <View
-          pointerEvents="none"
+          pointerEvents="box-none"
           style={{
             position: "absolute",
             left: 0,
             right: 0,
             bottom: 0,
             height: fadeBandHeight,
-            justifyContent: "flex-end",
-            alignItems: "center",
           }}
         >
           {FADE_ALPHAS.map((alpha, i) => (
             <View
               key={alpha}
+              pointerEvents="none"
               style={{
                 position: "absolute",
                 left: 0,
@@ -57,27 +56,28 @@ export function ProfileWidgetTile({ type, size, onMaximize, children }: Props) {
               }}
             />
           ))}
-          <CaretDownIcon
-            size={12}
-            color={theme.typography.colors.muted}
-            style={{ marginBottom: 3 }}
-          />
+          <Pressable
+            onPress={onMaximize}
+            accessibilityRole="button"
+            accessibilityLabel={`Expand ${type} widget`}
+            accessibilityHint="Opens the full widget content"
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: fadeBandHeight,
+              alignItems: "center",
+              justifyContent: "flex-end",
+              paddingBottom: 3,
+            }}
+          >
+            <CaretDownIcon size={12} color={theme.typography.colors.muted} />
+          </Pressable>
         </View>
       ) : null}
     </Paper>
   );
 
-  if (!onMaximize) return content;
-
-  return (
-    <Pressable
-      onPress={onMaximize}
-      style={{ width: "100%" }}
-      accessibilityRole="button"
-      accessibilityLabel={`${type} widget`}
-      accessibilityHint="Opens the full widget content"
-    >
-      {content}
-    </Pressable>
-  );
+  return content;
 }
