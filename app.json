@@ -9,7 +9,6 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.mutualzz.app",
-      "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
       },
