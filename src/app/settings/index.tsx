@@ -9,9 +9,11 @@ import {
 } from "@contexts/UserSettingsSidebar.context";
 import {
   BellIcon,
+  LifebuoyIcon,
   MicrophoneIcon,
   PaletteIcon,
   PaintBrushIcon,
+  ShieldIcon,
   SignOutIcon,
   SmileyIcon,
   UserGearIcon,
@@ -19,6 +21,7 @@ import {
 import { useAppStore } from "@hooks/useStores";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { ButtonGroup, Divider, Typography } from "@mutualzz/ui-native";
+import { type Href } from "expo-router";
 import startCase from "lodash-es/startCase";
 import { observer } from "mobx-react-lite";
 import { Fragment, type ComponentType } from "react";
@@ -99,11 +102,13 @@ const SettingsIndex = () => {
                   key={`user-settings-sidebar-${page.label}`}
                   padding={4}
                   style={{ minWidth: 0 }}
-                  onPress={() => navigate(`/settings/${page.label}`)}
+                  onPress={() => navigate(`/settings/${page.label}` as Href)}
                 >
                   {page.label === "voice_and_video"
                     ? "Voice & Video"
-                    : startCase(page.label)}
+                    : page.label === "support"
+                      ? "Help & Support"
+                      : startCase(page.label)}
                 </Button>
               ))}
             </ButtonGroup>
@@ -119,6 +124,56 @@ const SettingsIndex = () => {
           )}
         </Fragment>
       ))}
+
+      <Paper
+        elevation={app.settings?.preferEmbossed ? 3 : 0}
+        style={{
+          marginHorizontal: 12,
+          borderRadius: 12,
+          flexDirection: "column",
+          minWidth: 0,
+        }}
+      >
+        <Button
+          variant="plain"
+          fullWidth
+          padding={12}
+          horizontalAlign="left"
+          style={{ borderRadius: 12, minWidth: 0 }}
+          startDecorator={
+            <LifebuoyIcon weight="fill" size={20} color={navIconColor} />
+          }
+          onPress={() => navigate("/settings/support" as Href)}
+        >
+          Help & Support
+        </Button>
+      </Paper>
+
+      {app.account?.isStaff ? (
+        <Paper
+          elevation={app.settings?.preferEmbossed ? 3 : 0}
+          style={{
+            marginHorizontal: 12,
+            borderRadius: 12,
+            flexDirection: "column",
+            minWidth: 0,
+          }}
+        >
+          <Button
+            variant="plain"
+            fullWidth
+            padding={12}
+            horizontalAlign="left"
+            style={{ borderRadius: 12, minWidth: 0 }}
+            startDecorator={
+              <ShieldIcon weight="fill" size={20} color={navIconColor} />
+            }
+            onPress={() => navigate("/staff" as Href)}
+          >
+            Staff Panel
+          </Button>
+        </Paper>
+      ) : null}
 
       <Paper
         elevation={app.settings?.preferEmbossed ? 3 : 0}

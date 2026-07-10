@@ -4,7 +4,7 @@ import { UserAvatar } from "@components/User/UserAvatar";
 import { HashIcon, ArrowDownIcon } from "phosphor-react-native";
 import { Logger } from "@mutualzz/logger";
 import { useAppStore } from "@hooks/useStores";
-import { useKeyboardVisible } from "@hooks/useKeyboardOffset";
+import { useKeyboardOffset } from "@hooks/useKeyboardOffset";
 import { ChannelType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
@@ -158,7 +158,7 @@ const ScrollToBottomFab = ({
 export const MessageList = observer(({ channel }: Props) => {
   const app = useAppStore();
   const { theme } = useTheme();
-  const keyboardVisible = useKeyboardVisible();
+  const keyboardHeight = useKeyboardOffset();
   const listRef = useRef<FlashListRef<MessageGroupType>>(null);
   const isAtBottomRef = useRef(true);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
@@ -221,7 +221,7 @@ export const MessageList = observer(({ channel }: Props) => {
     if (!lastMessage || "status" in lastMessage) return;
 
     const readState = app.readStates.get(channel.id);
-    if (readState?.lastMessageId === lastMessage.id) return;
+    if (readState?.isReadUpTo(lastMessage.id)) return;
 
     void app.readStates.ack(channel.id, lastMessage.id);
   }, [app.readStates, channel?.id, channel?.lastMessage?.id]);
@@ -326,11 +326,16 @@ export const MessageList = observer(({ channel }: Props) => {
   }, [latestMessageId, scrollToBottom]);
 
   useEffect(() => {
-    if (!keyboardVisible || !isAtBottomRef.current) return;
+    if (keyboardHeight <= 0 || !isAtBottomRef.current) return;
     requestAnimationFrame(() => {
       scrollToBottom(true);
     });
-  }, [keyboardVisible, scrollToBottom]);
+    // Re-scroll after layout settles when the keyboard finishes opening.
+    const timeout = setTimeout(() => {
+      if (isAtBottomRef.current) scrollToBottom(false);
+    }, 120);
+    return () => clearTimeout(timeout);
+  }, [keyboardHeight, scrollToBottom]);
 
   const fetchMore = useCallback(() => {
     if (!channel?.messages.count) {

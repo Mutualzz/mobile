@@ -13,7 +13,8 @@ import { useSpaceSettingsAccess } from "@hooks/useSpaceFromRoute";
 import { Box, Modal, Typography } from "@mutualzz/ui-native";
 import type { Href } from "expo-router";
 import type { Space } from "@stores/objects/Space";
-import { GearIcon, SignOutIcon, TrashIcon, CheckCircleIcon } from "phosphor-react-native";
+import { GearIcon, SignOutIcon, TrashIcon, CheckCircleIcon, FlagIcon } from "phosphor-react-native";
+import { ReportContentSheet } from "@components/Report/ReportContentSheet";
 import startCase from "lodash-es/startCase";
 import { observer } from "mobx-react-lite";
 import { ScrollView, View } from "react-native";
@@ -48,6 +49,19 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
       (page
         ? `/(tabs)/spaces/${space.id}/settings/${page}`
         : `/(tabs)/spaces/${space.id}/settings`) as Href,
+    );
+  };
+
+  const confirmReport = () => {
+    onClose();
+    openModal(
+      `report-space-${space.id}`,
+      <ReportContentSheet
+        targetType="space"
+        targetId={space.id}
+        contentLabel="this space"
+        modalId={`report-space-${space.id}`}
+      />,
     );
   };
 
@@ -166,22 +180,40 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
             ))}
 
             {!isOwner ? (
-              <Button
-                variant="plain"
-                color="danger"
-                horizontalAlign="left"
-                startDecorator={
-                  <SignOutIcon
-                    size={20}
-                    weight="fill"
-                    color={dangerIconColor}
-                  />
-                }
-                fullWidth
-                onPress={confirmLeave}
-              >
-                Leave space
-              </Button>
+              <>
+                <Button
+                  variant="plain"
+                  color="danger"
+                  horizontalAlign="left"
+                  startDecorator={
+                    <FlagIcon
+                      size={20}
+                      weight="fill"
+                      color={dangerIconColor}
+                    />
+                  }
+                  fullWidth
+                  onPress={confirmReport}
+                >
+                  Report space
+                </Button>
+                <Button
+                  variant="plain"
+                  color="danger"
+                  horizontalAlign="left"
+                  startDecorator={
+                    <SignOutIcon
+                      size={20}
+                      weight="fill"
+                      color={dangerIconColor}
+                    />
+                  }
+                  fullWidth
+                  onPress={confirmLeave}
+                >
+                  Leave space
+                </Button>
+              </>
             ) : (
               <Button
                 variant="plain"

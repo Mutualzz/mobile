@@ -6,7 +6,39 @@ import {
   HeartIcon,
   RepeatIcon,
 } from "phosphor-react-native";
-import { Pressable } from "react-native";
+import type { ReactNode } from "react";
+import { Pressable, type TextStyle } from "react-native";
+
+const OVERLAY_CHIP_BG = "rgba(0,0,0,0.32)";
+
+const overlayCountStyle: TextStyle = {
+  textShadowColor: "rgba(0,0,0,0.55)",
+  textShadowOffset: { width: 0, height: 1 },
+  textShadowRadius: 3,
+};
+
+export function FeedOverlayChip({
+  children,
+  size = 40,
+}: {
+  children: ReactNode;
+  size?: number;
+}) {
+  return (
+    <Box
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: OVERLAY_CHIP_BG,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
 
 interface ActionProps {
   icon: React.ReactNode;
@@ -15,6 +47,7 @@ interface ActionProps {
   active?: boolean;
   layout?: "row" | "rail";
   labelColor?: string;
+  overlay?: boolean;
 }
 
 export function PostRailAction({
@@ -24,8 +57,10 @@ export function PostRailAction({
   active,
   layout = "row",
   labelColor,
+  overlay = false,
 }: ActionProps) {
   const isRail = layout === "rail";
+  const chipSize = isRail ? 44 : 36;
 
   return (
     <Pressable
@@ -34,18 +69,27 @@ export function PostRailAction({
         flexDirection: isRail ? "column" : "row",
         alignItems: "center",
         gap: isRail ? 4 : 6,
-        paddingVertical: 4,
-        paddingHorizontal: 2,
+        paddingVertical: overlay ? 0 : 4,
+        paddingHorizontal: overlay ? 0 : 2,
         minWidth: isRail ? 44 : undefined,
       }}
       accessibilityRole="button"
     >
-      <Box style={{ opacity: active ? 1 : 0.85 }}>{icon}</Box>
+      <Box style={{ opacity: active ? 1 : 0.92 }}>
+        {overlay ? (
+          <FeedOverlayChip size={chipSize}>{icon}</FeedOverlayChip>
+        ) : (
+          icon
+        )}
+      </Box>
       {count != null && count > 0 ? (
         <Typography
           level="body-xs"
           weight={600}
-          style={labelColor ? { color: labelColor } : undefined}
+          style={{
+            ...(labelColor ? { color: labelColor } : undefined),
+            ...(overlay ? overlayCountStyle : undefined),
+          }}
         >
           {count}
         </Typography>
@@ -68,6 +112,7 @@ interface PostActionsProps {
   onSave: () => void;
   iconColor?: string;
   layout?: "row" | "rail";
+  overlay?: boolean;
 }
 
 export function PostActions({
@@ -84,6 +129,7 @@ export function PostActions({
   onSave,
   iconColor,
   layout = "row",
+  overlay = false,
 }: PostActionsProps) {
   const weight = (active: boolean) => (active ? "fill" : "regular");
   const isRail = layout === "rail";
@@ -97,6 +143,7 @@ export function PostActions({
         count={likeCount}
         onPress={onLike}
         labelColor={iconColor}
+        overlay={overlay}
         icon={
           <HeartIcon
             size={iconSize}
@@ -111,6 +158,7 @@ export function PostActions({
         count={commentCount}
         onPress={onComment}
         labelColor={iconColor}
+        overlay={overlay}
         icon={
           <ChatCircleIcon
             size={iconSize}
@@ -125,6 +173,7 @@ export function PostActions({
         count={shareCount}
         onPress={onShare}
         labelColor={iconColor}
+        overlay={overlay}
         icon={
           <RepeatIcon
             size={iconSize}
@@ -136,15 +185,25 @@ export function PostActions({
       {isRail ? (
         <Pressable
           onPress={onSave}
-          style={{ alignItems: "center", gap: 4, paddingVertical: 4 }}
+          style={{ alignItems: "center", gap: 4 }}
           accessibilityRole="button"
           accessibilityLabel={saved ? "Unsave post" : "Save post"}
         >
-          <BookmarkSimpleIcon
-            size={iconSize}
-            color={iconColor}
-            weight={weight(saved)}
-          />
+          {overlay ? (
+            <FeedOverlayChip size={44}>
+              <BookmarkSimpleIcon
+                size={iconSize}
+                color={iconColor}
+                weight={weight(saved)}
+              />
+            </FeedOverlayChip>
+          ) : (
+            <BookmarkSimpleIcon
+              size={iconSize}
+              color={iconColor}
+              weight={weight(saved)}
+            />
+          )}
         </Pressable>
       ) : (
         <IconButton

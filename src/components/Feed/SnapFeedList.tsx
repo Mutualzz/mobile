@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  RefreshControl,
   View,
   type ViewToken,
 } from "react-native";
@@ -17,7 +18,8 @@ interface Props {
 }
 
 export const SnapFeedList = observer(({ itemHeight }: Props) => {
-  const { posts, fetchMore, isFetchingNextPage } = useFeedPosts("for-you");
+  const { posts, fetchMore, isFetchingNextPage, refetch, isRefetching } =
+    useFeedPosts("for-you");
   const [activePostId, setActivePostId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,6 +80,9 @@ export const SnapFeedList = observer(({ itemHeight }: Props) => {
       viewabilityConfig={viewabilityConfig}
       onEndReached={fetchMore}
       onEndReachedThreshold={0.6}
+      refreshControl={
+        <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />
+      }
       ListEmptyComponent={
         !isFetchingNextPage ? (
           <Box

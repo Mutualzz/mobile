@@ -532,7 +532,7 @@ export const MessageInput = observer(({ channel }: Props) => {
         flexGrow: 0,
         backgroundColor: theme.colors.surface,
         paddingHorizontal: 12,
-        paddingBottom: keyboardOpen ? 12 : insets.bottom + 12,
+        paddingBottom: keyboardOpen ? 0 : insets.bottom + 12,
         paddingTop: editingMessage ? 0 : 12,
         borderTopWidth: 1,
         borderTopColor: `${theme.colors.neutral}33`,

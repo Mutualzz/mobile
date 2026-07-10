@@ -44,7 +44,7 @@
     "expo-splash-screen": "~56.0.12",
     "expo-status-bar": "~56.0.4",
     "expo-system-ui": "~56.0.5",
-    "expo-task-manager": "^57.0.2",
+    "expo-task-manager": "^56.0.21",
     "expo-video": "~56.1.4",
     "html-entities": "2.5.3",
     "imurmurhash": "^0.1.4",

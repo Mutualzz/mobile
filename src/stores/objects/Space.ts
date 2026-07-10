@@ -105,6 +105,10 @@ export class Space {
     return asAcronym(this.name);
   }
 
+  get isInLockdown() {
+    return this.flags.has("Lockdown");
+  }
+
   get banList() {
     return Array.from(this.bans.values());
   }

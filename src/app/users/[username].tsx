@@ -19,11 +19,12 @@ const PublicProfileScreen = () => {
   const {
     data: user,
     isLoading,
-    error,
+    isFetched,
   } = useQuery({
     queryKey: ["public-profile", username],
     enabled: !!username,
     queryFn: () => app.users.resolveByIdentifier(username, true),
+    retry: false,
   });
 
   useEffect(() => {
@@ -45,7 +46,7 @@ const PublicProfileScreen = () => {
     );
   }
 
-  if (!user || error) {
+  if (!user && isFetched) {
     return (
       <Screen style={{ justifyContent: "center", padding: 24 }}>
         <Typography style={{ textAlign: "center" }}>User not found</Typography>

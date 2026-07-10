@@ -10,7 +10,7 @@ export type FeedVariant = "friends" | "for-you" | "saved";
 export function useFeedPosts(variant: FeedVariant) {
   const app = useAppStore();
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } =
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, refetch, isRefetching } =
     useInfiniteQuery({
       queryKey: ["posts", variant],
       initialPageParam: variant === "for-you" ? 1 : undefined,
@@ -74,5 +74,6 @@ export function useFeedPosts(variant: FeedVariant) {
     hasNextPage,
     isFetchingNextPage,
     refetch,
+    isRefetching,
   };
 }

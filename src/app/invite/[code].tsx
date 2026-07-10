@@ -1,9 +1,11 @@
 import { Paper } from "@components/Paper";
 import { Button } from "@components/Button";
 import { SpaceIcon } from "@components/Space/SpaceIcon";
+import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import type { APIInvite } from "@mutualzz/types";
+import { InviteType } from "@mutualzz/types";
 import { Box, Typography } from "@mutualzz/ui-native";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Redirect } from "expo-router";
@@ -22,16 +24,31 @@ const InviteScreen = () => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["space-invite", code],
+    queryKey: ["invite", code],
     queryFn: () => app.rest.get<APIInvite>(`/invites/${code}`),
     retry: 1,
     enabled: !!code,
   });
 
+  const isFriendInvite =
+    invite != null && Number(invite.type) === InviteType.Friend;
+  const inviteUser = invite?.user ?? invite?.inviter;
+  const inviteUserId = invite?.userId ?? invite?.inviterId;
+  const relationship = inviteUserId
+    ? app.relationships.getForMe(inviteUserId)
+    : undefined;
+  const isSelf = inviteUserId === app.account?.id;
+
   useEffect(() => {
     if (!invite) return;
+
+    if (isFriendInvite) {
+      app.setJoining(code ?? null, null);
+      return;
+    }
+
     app.setJoining(code ?? null, invite.space);
-  }, [app, code, invite]);
+  }, [app, code, invite, isFriendInvite]);
 
   const isInSpace =
     !!invite?.space?.members &&
@@ -56,6 +73,21 @@ const InviteScreen = () => {
       }),
     onSuccess: goToSpace,
   });
+
+  const { mutate: acceptFriendInvite, isPending: isAddingFriend } = useMutation({
+    mutationKey: ["accept-friend-invite", code],
+    mutationFn: () => app.relationships.acceptFriendInvite(code!),
+    onSuccess: () => {
+      app.setJoining(null, null);
+      navigate("/");
+    },
+  });
+
+  const friendActionLabel = relationship?.isFriend
+    ? "Friends"
+    : relationship?.isOutgoingRequest
+      ? "Pending"
+      : "Add Friend";
 
   if (!code) return <Redirect href="/" />;
 
@@ -101,7 +133,34 @@ const InviteScreen = () => {
         }}
       >
         {isLoading && <ActivityIndicator />}
-        {!isLoading && invite?.space && (
+
+        {!isLoading && invite && isFriendInvite && (
+          <>
+            {inviteUser ? (
+              <UserAvatar user={inviteUser} size={64} />
+            ) : null}
+            <Typography style={{ textAlign: "center" }}>
+              {inviteUser?.globalName ?? inviteUser?.username ?? "Friend invite"}
+            </Typography>
+            <Typography textColor="muted" style={{ textAlign: "center" }}>
+              Wants to be your friend
+            </Typography>
+            <Button
+              fullWidth
+              disabled={
+                isAddingFriend ||
+                isSelf ||
+                relationship?.isFriend ||
+                relationship?.isOutgoingRequest
+              }
+              onPress={() => acceptFriendInvite()}
+            >
+              {isSelf ? "This is your invite link" : friendActionLabel}
+            </Button>
+          </>
+        )}
+
+        {!isLoading && invite?.space && !isFriendInvite && (
           <>
             <SpaceIcon space={invite.space} size={64} />
             <Typography style={{ textAlign: "center" }}>

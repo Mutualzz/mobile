@@ -1,7 +1,7 @@
 import { makeAutoObservable, observable } from "mobx";
 import type { AppStore } from "@stores/App.store";
 import { Relationship } from "@stores/objects/Relationship";
-import type { APIRelationship, Snowflake } from "@mutualzz/types";
+import type { APIInvite, APIRelationship, Snowflake } from "@mutualzz/types";
 
 function relationshipKey(userId: Snowflake, otherUserId: Snowflake) {
     return BigInt(userId) < BigInt(otherUserId)
@@ -155,5 +155,22 @@ export class RelationshipStore {
 
     async unblockUser(userId: Snowflake) {
         return this.app.rest.delete(`/@me/relationships/${userId}/block`);
+    }
+
+    async getFriendInvite() {
+        return this.app.rest.get<APIInvite | null>(`/@me/invites/friend`);
+    }
+
+    async createFriendInvite() {
+        return this.app.rest.post<APIInvite>(`/@me/invites/friend`, {});
+    }
+
+    async acceptFriendInvite(code: string) {
+        const response = await this.app.rest.put<APIRelationship>(
+            `/invites/${code}/friend`,
+            {},
+        );
+        if (response) this.update(response);
+        return response;
     }
 }

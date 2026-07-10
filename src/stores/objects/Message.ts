@@ -1,4 +1,5 @@
 import type {
+  APICodedLink,
   APIMessage,
   APIAttachment,
   APIMessageEmbed,
@@ -32,6 +33,7 @@ export class Message extends MessageBase {
 
   nonce?: Snowflake | null;
   embeds: APIMessageEmbed[];
+  codedLinks: APICodedLink[];
   attachments: APIAttachment[];
   expressions = observable.array<Expression>();
   reactions: APIMessageReaction[] = [];
@@ -51,6 +53,7 @@ export class Message extends MessageBase {
     this.nonce = data.nonce;
     this.edited = data.edited ?? false;
     this.embeds = data.embeds ?? [];
+    this.codedLinks = data.codedLinks ?? [];
     this.attachments = data.attachments ?? [];
     this.expressions = observable.array<Expression>(
       this.app.expressions.addAll(data.expressions ?? []),
@@ -62,6 +65,7 @@ export class Message extends MessageBase {
       updatedAt: observable,
       nonce: observable,
       embeds: observable.shallow,
+      codedLinks: observable.shallow,
       attachments: observable.shallow,
       expressions: observable,
       reactions: observable.shallow,
@@ -94,6 +98,7 @@ export class Message extends MessageBase {
     this.content = message.content;
     this.nonce = message.nonce ?? null;
     this.embeds = message.embeds ?? this.embeds ?? [];
+    this.codedLinks = message.codedLinks ?? this.codedLinks ?? [];
     this.attachments = message.attachments ?? this.attachments ?? [];
     this.expressions = observable.array<Expression>(
       this.app.expressions.addAll(

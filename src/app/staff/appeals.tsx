@@ -93,7 +93,7 @@ const StaffAppealsScreen = () => {
 
   return (
     <Screen style={{ flexDirection: "column", gap: 12, paddingBottom: 16 }}>
-      <StaffHeader title="Appeals" showBack />
+      <StaffHeader title="Appeals" showBack backHref="/staff" />
 
       <ScrollView
         horizontal

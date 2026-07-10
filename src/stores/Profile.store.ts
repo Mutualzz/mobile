@@ -3,6 +3,7 @@ import type {
     APIUserProfile,
     Snowflake,
 } from "@mutualzz/types";
+import { HttpStatusCode } from "@mutualzz/types";
 import { makeAutoObservable, observable, type ObservableMap } from "mobx";
 import type { AppStore } from "./App.store";
 import { UserProfile } from "./objects/UserProfile";
@@ -49,6 +50,21 @@ export class ProfileStore {
             .then((profile) => {
                 if (!profile) return undefined;
                 return this.add(profile);
+            })
+            .catch((err: unknown) => {
+                const info =
+                    err && typeof err === "object"
+                        ? (err as { status?: number; message?: string })
+                        : {};
+                const isNotFound =
+                    info.status === HttpStatusCode.NotFound ||
+                    info.message === "User not found";
+
+                if (isNotFound) {
+                    this.profiles.delete(userId);
+                }
+
+                return undefined;
             })
             .finally(() => {
                 this.pending.delete(userId);

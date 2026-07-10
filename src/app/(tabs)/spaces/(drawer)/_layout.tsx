@@ -1,6 +1,7 @@
 import { ChannelContentPane } from "@components/Channel/ChannelContentPane";
 import { ChannelList } from "@components/Channel/ChannelList/ChannelList";
 import { SwipeableDrawer } from "@components/Navigation/SwipeableDrawer";
+import { SpaceLockdownOverlay } from "@components/Space/SpaceLockdownOverlay";
 import { SpacesSidebar } from "@components/Space/SpacesSidebar";
 import { useTabBarContentInset } from "@hooks/useTabBarContentInset";
 import { useAppStore } from "@hooks/useStores";
@@ -14,6 +15,7 @@ import { BackHandler } from "react-native";
 const SpacesDrawerLayout = () => {
   const app = useAppStore();
   const tabBarInset = useTabBarContentInset();
+  const activeSpace = app.spaces.active;
   const { spaceId, channelId } = useLocalSearchParams<{
     spaceId?: string;
     channelId?: string;
@@ -102,11 +104,19 @@ const SpacesDrawerLayout = () => {
           }}
         >
           <SpacesSidebar />
-          <ChannelList />
+          <Box style={{ flex: 1, position: "relative" }}>
+            <ChannelList />
+            {activeSpace && (
+              <SpaceLockdownOverlay space={activeSpace} showMessage={false} />
+            )}
+          </Box>
         </Box>
       }
     >
-      <ChannelContentPane />
+      <Box style={{ flex: 1, position: "relative" }}>
+        <ChannelContentPane />
+        {activeSpace && <SpaceLockdownOverlay space={activeSpace} />}
+      </Box>
     </SwipeableDrawer>
   );
 };

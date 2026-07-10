@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mutualzz",
     "slug": "mutualzz",
-    "version": "3.1.1",
+    "version": "3.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "com.mutualzz.app",

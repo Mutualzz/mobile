@@ -1,5 +1,6 @@
 import {
     ChangePasswordSheet } from "@components/UserSettings/ChangePasswordSheet";
+import { DeleteAccountSheet } from "@components/UserSettings/DeleteAccountSheet";
 import { Button } from "@components/Button";
 import { EmailChangeSheet } from "@components/UserSettings/EmailChangeSheet";
 import { EmailVerifySheet } from "@components/UserSettings/EmailVerifySheet";
@@ -22,6 +23,7 @@ const MyAccountSettings = () => {
   const [usernameOpen, setUsernameOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [verifyOpen, setVerifyOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   if (!account) return null;
 
@@ -86,6 +88,21 @@ const MyAccountSettings = () => {
         </Button>
       </Box>
 
+      <Box style={{ gap: 8, marginTop: 8 }}>
+        <Typography level="body-xs" textColor="muted">
+          Danger zone
+        </Typography>
+        <Button
+          size="sm"
+          color="danger"
+          variant="soft"
+          style={{ alignSelf: "flex-start" }}
+          onPress={() => setDeleteOpen(true)}
+        >
+          Delete account
+        </Button>
+      </Box>
+
       <ChangePasswordSheet
         visible={passwordOpen}
         onClose={() => setPasswordOpen(false)}
@@ -101,6 +118,10 @@ const MyAccountSettings = () => {
       <EmailVerifySheet
         visible={verifyOpen}
         onClose={() => setVerifyOpen(false)}
+      />
+      <DeleteAccountSheet
+        visible={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
       />
     </SettingsScreen>
   );

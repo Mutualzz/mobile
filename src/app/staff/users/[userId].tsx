@@ -306,7 +306,7 @@ const StaffUserScreen = () => {
     if (isLoading) {
         return (
             <Screen style={{ flexDirection: "column" }}>
-                <StaffHeader title="Staff" showBack />
+                <StaffHeader title="Staff" showBack backHref="/staff" />
                 <Box
                     style={{
                         flex: 1,
@@ -323,7 +323,7 @@ const StaffUserScreen = () => {
     if (isError || !user || !privateUser) {
         return (
             <Screen style={{ flexDirection: "column" }}>
-                <StaffHeader title="Staff" showBack />
+                <StaffHeader title="Staff" showBack backHref="/staff" />
                 <Box
                     style={{
                         flex: 1,
@@ -345,7 +345,7 @@ const StaffUserScreen = () => {
 
     return (
         <Screen style={{ flexDirection: "column" }}>
-            <StaffHeader title={user.displayName} showBack />
+            <StaffHeader title={user.displayName} showBack backHref="/staff" />
             <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
                 <Box
                     style={{

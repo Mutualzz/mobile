@@ -1,8 +1,7 @@
-import { PostActions } from "@components/Feed/PostActions";
+import { PostActions, FeedOverlayChip } from "@components/Feed/PostActions";
 import { PostAttachment } from "@components/Feed/PostAttachment";
 import { PostCommentsSheet } from "@components/Feed/PostCommentsSheet";
 import { SharePostSheet } from "@components/Feed/SharePostSheet";
-import { IconButton } from "@components/IconButton";
 import { MarkdownRenderer } from "@components/Markdown/MarkdownRenderer/MarkdownRenderer";
 import { MessageSticker } from "@components/Message/MessageSticker";
 import { Paper } from "@components/Paper";
@@ -14,6 +13,7 @@ import { ExpressionType } from "@mutualzz/types";
 import { Box, Typography } from "@mutualzz/ui-native";
 import type { Post } from "@stores/objects/Post";
 import { useScaledFeedPreviewSizes } from "@utils/accessibilityLayout";
+import { MODE_SWITCHER_SNAP_CLEARANCE } from "@utils/layout";
 import { FlagIcon, TrashIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
@@ -62,6 +62,7 @@ export const MediaPostCard = observer(
       (e) => e.type === ExpressionType.Sticker,
     );
     const isOwner = post.authorId === app.account?.id;
+    const snapActionsBottom = MODE_SWITCHER_SNAP_CLEARANCE + 12;
 
     const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const index = Math.round(event.nativeEvent.contentOffset.x / cardWidth);
@@ -79,18 +80,17 @@ export const MediaPostCard = observer(
           }}
         >
           {isOwner ? (
-            <IconButton
-              variant="plain"
-              padding={6}
+            <Pressable
               onPress={() => void post.delete()}
               accessibilityLabel="Delete post"
+              accessibilityRole="button"
             >
-              <TrashIcon size={18} color="#fff" />
-            </IconButton>
+              <FeedOverlayChip size={36}>
+                <TrashIcon size={18} color="#fff" />
+              </FeedOverlayChip>
+            </Pressable>
           ) : (
-            <IconButton
-              variant="plain"
-              padding={6}
+            <Pressable
               onPress={() =>
                 openModal(
                   `report-post-${post.id}`,
@@ -103,9 +103,12 @@ export const MediaPostCard = observer(
                 )
               }
               accessibilityLabel="Report post"
+              accessibilityRole="button"
             >
-              <FlagIcon size={18} color="#fff" />
-            </IconButton>
+              <FeedOverlayChip size={36}>
+                <FlagIcon size={18} color="#fff" />
+              </FeedOverlayChip>
+            </Pressable>
           )}
         </Box>
 
@@ -152,12 +155,13 @@ export const MediaPostCard = observer(
           style={{
             position: "absolute",
             right: isSnap ? 10 : 8,
-            bottom: isSnap ? 24 : 16,
+            bottom: isSnap ? snapActionsBottom : 16,
             zIndex: 2,
           }}
         >
           <PostActions
             layout={isSnap ? "rail" : "row"}
+            overlay
             liked={post.liked}
             saved={post.saved}
             shared={post.shared}
@@ -203,7 +207,7 @@ export const MediaPostCard = observer(
         <Box
           style={{
             position: "absolute",
-            bottom: isSnap ? 88 : 12,
+            bottom: isSnap ? snapActionsBottom + 64 : 12,
             left: 0,
             right: 0,
             flexDirection: "row",

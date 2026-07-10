@@ -1,5 +1,6 @@
 import { IconButton } from "@components/IconButton";
 import { PostComposer } from "@components/Feed/PostComposer";
+import { KeyboardAwareView } from "@components/Keyboard/KeyboardAwareView";
 import { Paper } from "@components/Paper";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
@@ -138,28 +139,36 @@ export const FeedHeader = observer(() => {
           pointerEvents="box-none"
           style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
         >
-          <Paper
-            style={{
-              maxHeight: "85%",
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
-              padding: 16,
-              gap: 12,
-            }}
-            elevation={app.settings?.preferEmbossed ? 4 : 2}
-          >
-            <Typography level="body-lg" weight={700}>
-              Create post
-            </Typography>
-            <PostComposer
-              onPosted={() => {
-                void queryClient.invalidateQueries({
-                  queryKey: ["posts", "for-you"],
-                });
-                setComposeOpen(false);
+          <KeyboardAwareView style={{ justifyContent: "flex-end", width: "100%" }}>
+            <Paper
+              style={{
+                maxHeight: "85%",
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16,
+                padding: 16,
+                gap: 12,
               }}
-            />
-          </Paper>
+              elevation={app.settings?.preferEmbossed ? 4 : 2}
+            >
+              <Typography level="body-lg" weight={700}>
+                Create post
+              </Typography>
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ gap: 12 }}
+              >
+                <PostComposer
+                  onPosted={() => {
+                    void queryClient.invalidateQueries({
+                      queryKey: ["posts", "for-you"],
+                    });
+                    setComposeOpen(false);
+                  }}
+                />
+              </ScrollView>
+            </Paper>
+          </KeyboardAwareView>
         </View>
       </Modal>
     </Box>

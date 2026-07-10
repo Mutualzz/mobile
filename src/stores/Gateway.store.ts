@@ -621,6 +621,10 @@ export class GatewayStore {
       GatewayDispatchEvents.SpaceDelete,
       this.onSpaceDelete,
     );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.SpaceUpdate,
+      this.onSpaceUpdate,
+    );
 
     // Channels
     this.dispatchHandlers.set(
@@ -1242,6 +1246,16 @@ export class GatewayStore {
     this.app.channels.setPreferredActive();
   };
 
+  private onSpaceUpdate = (payload: APISpace) => {
+    const space = this.app.spaces.get(payload.id);
+    if (space) {
+      space.update(payload);
+      return;
+    }
+
+    this.app.spaces.add(payload);
+  };
+
   private onChannelCreate = (payload: APIChannel) => {
     if (!payload.spaceId) {
       this.app.channels.add(payload);
@@ -1343,7 +1357,15 @@ export class GatewayStore {
     channel.updateLastMessage(message);
     this.app.queue.handleIncomingMessage(payload);
 
-    if (this.app.channels.activeId === payload.channelId) return;
+    if (payload.authorId === this.app.account?.id) {
+      this.app.readStates.updateLocal(payload.channelId, payload.id);
+      return;
+    }
+
+    if (this.app.channels.activeId === payload.channelId) {
+      this.app.readStates.updateLocal(payload.channelId, payload.id);
+      return;
+    }
 
     const isMentioned = payload.mentions?.some((m) => {
       if (m.type === "user") return m.id === this.app.account?.id;
@@ -1410,12 +1432,14 @@ export class GatewayStore {
   private onMessageAck = (payload: {
     channelId: string;
     lastMessageId: string;
+    lastAckedId?: string;
     mentionCount: number;
   }) => {
     const readState = this.app.readStates.get(payload.channelId);
     if (readState) {
       readState.update({
         lastMessageId: payload.lastMessageId,
+        lastAckedId: payload.lastAckedId ?? payload.lastMessageId,
         mentionCount: payload.mentionCount ?? 0,
       });
     } else {
@@ -1427,6 +1451,7 @@ export class GatewayStore {
     payload: {
       channelId: string;
       lastMessageId: string;
+      lastAckedId?: string;
       mentionCount: number;
     }[],
   ) => {
@@ -1435,6 +1460,7 @@ export class GatewayStore {
       if (readState) {
         readState.update({
           lastMessageId: state.lastMessageId,
+          lastAckedId: state.lastAckedId ?? state.lastMessageId,
           mentionCount: state.mentionCount ?? 0,
         });
       } else {

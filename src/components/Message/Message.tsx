@@ -30,6 +30,8 @@ import {
   ReplySection,
 } from "./MessageBase";
 import { MessageEmbed } from "./MessageEmbed";
+import { CodedLinkPreview } from "@components/Space/CodedLinkPreview";
+import { shouldHideInviteUrlContent } from "@utils/inviteLinks";
 import { MessageReactions } from "./MessageReactions";
 import { MessageSticker } from "./MessageSticker";
 import { MessageAttachment } from "./MessageAttachment";
@@ -59,6 +61,13 @@ export const Message = observer(({ message, header }: Props) => {
     !!message.content &&
     GIF_ONLY_URL_PATTERN.test(message.content.trim()) &&
     message.content.trim().split(/\s+/).length === 1;
+
+  const hideInviteUrl =
+    "codedLinks" in message &&
+    shouldHideInviteUrlContent(
+      message.content,
+      message.codedLinks?.length ?? 0,
+    );
 
   const stickerExpressions =
     "expressions" in message
@@ -215,7 +224,7 @@ export const Message = observer(({ message, header }: Props) => {
                 </Box>
               )}
 
-              {message.content && !isOnlyGifUrl ? (
+              {message.content && !isOnlyGifUrl && !hideInviteUrl ? (
                 !header && isEdited ? (
                   <Box
                     style={{
@@ -251,6 +260,14 @@ export const Message = observer(({ message, header }: Props) => {
               >
                 {message.embeds.map((embed, index) => (
                   <MessageEmbed key={index} embed={embed} />
+                ))}
+              </Box>
+            )}
+
+            {"codedLinks" in message && message.codedLinks.length > 0 && (
+              <Box style={{ gap: 8, paddingBottom: 4 }}>
+                {message.codedLinks.map((link) => (
+                  <CodedLinkPreview key={link.code} link={link} />
                 ))}
               </Box>
             )}

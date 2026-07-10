@@ -6,6 +6,12 @@ import { useSegments } from "expo-router";
 export const FLOATING_USER_BAR_HEIGHT = 72;
 export const FLOATING_USER_BAR_VOICE_PILL_HEIGHT = 98;
 export const TAB_BAR_VERTICAL_GAP = 12;
+export const MODE_SWITCHER_SIZE = 36;
+export const MODE_SWITCHER_BOTTOM_OFFSET = 8;
+
+/** How far the mode switcher FAB intrudes above the snap feed card bottom edge. */
+export const MODE_SWITCHER_SNAP_CLEARANCE =
+  MODE_SWITCHER_BOTTOM_OFFSET + MODE_SWITCHER_SIZE;
 
 interface VoiceUserBarState {
   channel: unknown;

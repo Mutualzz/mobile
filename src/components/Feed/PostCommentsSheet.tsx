@@ -1,8 +1,7 @@
 import { PostComments } from "@components/Feed/PostComments";
-import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
+import { KeyboardAwareView } from "@components/Keyboard/KeyboardAwareView";
 import { Paper } from "@components/Paper";
 import {
-  MODAL_SHEET_KEYBOARD_STYLE,
   MODAL_SHEET_WRAPPER_STYLE,
   useModalSheetMaxHeight,
 } from "@utils/modalSheet";
@@ -34,7 +33,7 @@ export function PostCommentsSheet({ open, onClose, post }: Props) {
       }}
     >
       <View pointerEvents="box-none" style={MODAL_SHEET_WRAPPER_STYLE}>
-        <AppKeyboardAvoidingView style={MODAL_SHEET_KEYBOARD_STYLE}>
+        <KeyboardAwareView style={{ justifyContent: "flex-end", width: "100%" }}>
           <Paper
             style={{
               height: sheetHeight,
@@ -54,7 +53,7 @@ export function PostCommentsSheet({ open, onClose, post }: Props) {
               <PostComments post={post} />
             </View>
           </Paper>
-        </AppKeyboardAvoidingView>
+        </KeyboardAwareView>
       </View>
     </Modal>
   );

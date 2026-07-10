@@ -1,7 +1,7 @@
 import { Paper } from "@components/Paper";
 import { StatusBadge } from "@components/StatusBadge";
 import { UserIcon } from "phosphor-react-native";
-import { Sizes } from "@mutualzz/types";
+import { type APIUser, Sizes } from "@mutualzz/types";
 import {
   createColor,
   resolveSize,
@@ -21,8 +21,14 @@ import type { User } from "@stores/objects/User";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 
+type UserLike = AccountStore | User | APIUser;
+
+function isStoreUser(user: UserLike): user is AccountStore | User {
+  return "constructAvatarUrl" in user && typeof user.constructAvatarUrl === "function";
+}
+
 interface UserAvatarProps extends AvatarProps {
-  user?: AccountStore | User | null;
+  user?: UserLike | null;
   badge?: boolean;
   showInvisible?: boolean;
   speaking?: boolean;
@@ -39,24 +45,35 @@ export const UserAvatar = observer(
     const app = useAppStore();
     const { theme } = useTheme();
 
-    const version = useMemo(() => {
-      if (!user) return theme.type === "light" ? "dark" : "light";
+    const resolvedUser = user
+      ? isStoreUser(user)
+        ? user
+        : app.users.add(user)
+      : null;
 
-      return user.defaultAvatar.color
-        ? createColor(user.defaultAvatar.color as ColorLike).isLight()
+    const version = useMemo(() => {
+      if (!resolvedUser) return theme.type === "light" ? "dark" : "light";
+
+      return resolvedUser.defaultAvatar.color
+        ? createColor(resolvedUser.defaultAvatar.color as ColorLike).isLight()
           ? "dark"
           : "light"
         : theme.type === "light"
           ? "dark"
           : "light";
-    }, [theme.type, user]);
+    }, [theme.type, resolvedUser]);
 
     const size = resolveSize(theme, props.size || "md", baseSizeMap) as Sizes;
-    const status = user ? app.presence.get(user.id)?.status : null;
+    const status = resolvedUser
+      ? app.presence.get(resolvedUser.id)?.status
+      : null;
 
-    const hasAvatar = useMemo(() => user && user.avatar != null, [user]);
+    const hasAvatar = useMemo(
+      () => resolvedUser && resolvedUser.avatar != null,
+      [resolvedUser]
+    );
 
-    const avatarBody = !user ? (
+    const avatarBody = !resolvedUser ? (
       <MAvatar
         elevation={5}
         shape="circle"
@@ -68,13 +85,13 @@ export const UserAvatar = observer(
       </MAvatar>
     ) : hasAvatar ? (
       <MAvatar
-        src={user.constructAvatarUrl(true, version, size)}
+        src={resolvedUser.constructAvatarUrl(true, version, size)}
         {...props}
         size={size}
       />
     ) : (
       <Paper
-        variant={user.defaultAvatar.color ? "solid" : "elevation"}
+        variant={resolvedUser.defaultAvatar.color ? "solid" : "elevation"}
         elevation={5}
         transparency={0}
         style={{
@@ -83,10 +100,10 @@ export const UserAvatar = observer(
           flexDirection: "column",
           borderRadius: 9999,
         }}
-        color={(user.defaultAvatar.color as Hex) || "neutral"}
+        color={(resolvedUser.defaultAvatar.color as Hex) || "neutral"}
       >
         <MAvatar
-          src={user.constructAvatarUrl(false, version, size)}
+          src={resolvedUser.constructAvatarUrl(false, version, size)}
           {...props}
           size={size}
         />

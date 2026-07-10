@@ -4,6 +4,17 @@ import { makeAutoObservable } from "mobx";
 import type { AppStore } from "@stores/App.store";
 import { BitField, readStateFlags, ReadStateFlags } from "@mutualzz/bitfield";
 
+function maxSnowflake(
+  ...ids: (Snowflake | null | undefined)[]
+): Snowflake | null {
+  let max: Snowflake | null = null;
+  for (const id of ids) {
+    if (!id) continue;
+    if (!max || BigInt(id) > BigInt(max)) max = id;
+  }
+  return max;
+}
+
 export class ReadState {
   id: Snowflake;
   lastMessageId: Snowflake | null;
@@ -37,13 +48,20 @@ export class ReadState {
     return this.app.channels.get(this.id) ?? null;
   }
 
+  get readCursor(): Snowflake | null {
+    return maxSnowflake(this.lastMessageId, this.lastAckedId);
+  }
+
+  isReadUpTo(messageId: Snowflake): boolean {
+    const cursor = this.readCursor;
+    if (!cursor) return false;
+    return BigInt(messageId) <= BigInt(cursor);
+  }
+
   get isUnread(): boolean {
     const lastChannelMessageId = this.channel?.lastMessage?.id;
     if (!lastChannelMessageId) return false;
-    if (!this.lastMessageId && !this.lastAckedId) return false;
-
-    const readUpTo = this.lastMessageId ?? this.lastAckedId;
-    return BigInt(lastChannelMessageId) > BigInt(readUpTo!);
+    return !this.isReadUpTo(lastChannelMessageId);
   }
 
   get hasMentions(): boolean {
@@ -80,5 +98,27 @@ export class ReadState {
 
     if (data.flags !== undefined)
       this.flags = BitField.fromString(readStateFlags, data.flags.toString());
+  }
+
+  mergeFromServer(data: APIReadState) {
+    const localCursor = this.readCursor;
+    const serverCursor = maxSnowflake(data.lastMessageId, data.lastAckedId);
+    const localAhead =
+      localCursor &&
+      serverCursor &&
+      BigInt(localCursor) > BigInt(serverCursor);
+
+    this.update({
+      lastMessageId: maxSnowflake(this.lastMessageId, data.lastMessageId),
+      lastAckedId: maxSnowflake(this.lastAckedId, data.lastAckedId),
+      notificationsCursor: maxSnowflake(
+        this.notificationsCursor,
+        data.notificationsCursor
+      ),
+      mentionCount: localAhead ? this.mentionCount : data.mentionCount,
+      badgeCount: data.badgeCount,
+      lastPinTimestamp: data.lastPinTimestamp,
+      flags: data.flags
+    });
   }
 }

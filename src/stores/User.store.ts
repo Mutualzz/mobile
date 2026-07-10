@@ -1,4 +1,4 @@
-import { type APIUser } from "@mutualzz/types";
+import { type APIUser, HttpStatusCode } from "@mutualzz/types";
 import { makeAutoObservable, observable, type ObservableMap } from "mobx";
 import type { AppStore } from "./App.store";
 import { User } from "./objects/User";
@@ -68,15 +68,36 @@ export class UserStore {
         );
         if (cached && !force) return cached;
 
-        const user = await this.app.rest.get<APIUser>(
-            `/users/${encodeURIComponent(normalized)}`,
-        );
-        if (!user) return undefined;
-        if (this.has(user.id)) {
-            this.update(user);
-            return this.get(user.id);
+        try {
+            const user = await this.app.rest.get<APIUser>(
+                `/users/${encodeURIComponent(normalized)}`,
+            );
+            if (!user) return undefined;
+            if (this.has(user.id)) {
+                this.update(user);
+                return this.get(user.id);
+            }
+            return this.add(user);
+        } catch (err: unknown) {
+            const info =
+                err && typeof err === "object"
+                    ? (err as { status?: number; message?: string })
+                    : {};
+            const isNotFound =
+                info.status === HttpStatusCode.NotFound ||
+                info.message === "User not found";
+
+            if (isNotFound) {
+                const stale = this.all.find(
+                    (user) =>
+                        user.id === normalized ||
+                        user.username.toLowerCase() === normalized,
+                );
+                if (stale) this.remove(stale.id);
+            }
+
+            return undefined;
         }
-        return this.add(user);
     }
 
     async resolveSystem() {

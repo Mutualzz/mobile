@@ -94,7 +94,7 @@ const StaffActivityScreen = () => {
 
   return (
     <Screen style={{ flexDirection: "column" }}>
-      <StaffHeader title="Staff Activity" showBack />
+      <StaffHeader title="Staff Activity" showBack backHref="/staff" />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
         {isFetching && !isFetchingNextPage && (
           <Typography level="body-sm" textColor="muted">

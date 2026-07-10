@@ -179,7 +179,9 @@ export const UserProfileSheet = observer(
 
     const openStaffPanel = () => {
       close();
-      navigate(`/staff/users/${user.id}` as Href);
+      navigate(
+        (isSelf ? "/staff" : `/staff/users/${user.id}`) as Href,
+      );
     };
 
     const openReport = () => {
@@ -496,6 +498,16 @@ export const UserProfileSheet = observer(
                       <Button
                         size="sm"
                         color="danger"
+                        variant="soft"
+                        onPress={openStaffPanel}
+                      >
+                        Open in Staff Panel
+                      </Button>
+                    ) : null}
+                    {isViewerStaff && isSelf ? (
+                      <Button
+                        size="sm"
+                        color="neutral"
                         variant="soft"
                         onPress={openStaffPanel}
                       >

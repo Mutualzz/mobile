@@ -8,6 +8,7 @@ import { ReportContentSheet } from "@components/Report/ReportContentSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
+import { useKeyboardOffset } from "@hooks/useKeyboardOffset";
 import { ExpressionType } from "@mutualzz/types";
 import { Box, Typography } from "@mutualzz/ui-native";
 import type { Post } from "@stores/objects/Post";
@@ -26,7 +27,7 @@ import {
   XIcon,
 } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Image, Keyboard, Pressable, ScrollView } from "react-native";
 
 interface Props {
@@ -152,6 +153,8 @@ function CommentRow({
 export const PostComments = observer(({ post }: Props) => {
   const app = useAppStore();
   const feedSizes = useScaledFeedPreviewSizes();
+  const keyboardHeight = useKeyboardOffset();
+  const scrollRef = useRef<ScrollView>(null);
   const [content, setContent] = useState("");
   const [stickers, setStickers] = useState<Expression[]>([]);
   const [replyingTo, setReplyingTo] = useState<PostComment | null>(null);
@@ -182,6 +185,14 @@ export const PostComments = observer(({ post }: Props) => {
     setStickers([]);
     setReplyingTo(null);
   }, [post.id]);
+
+  useEffect(() => {
+    if (keyboardHeight <= 0) return;
+
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
+  }, [keyboardHeight]);
 
   const handleSelectSticker = (sticker: Expression) => {
     setStickers((prev) => {
@@ -229,6 +240,7 @@ export const PostComments = observer(({ post }: Props) => {
   return (
     <Box style={{ flex: 1, minHeight: 0 }}>
       <ScrollView
+        ref={scrollRef}
         style={{ flex: 1 }}
         contentContainerStyle={{ gap: 12, paddingBottom: 8 }}
         onTouchStart={() => Keyboard.dismiss()}

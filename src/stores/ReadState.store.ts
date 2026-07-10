@@ -19,7 +19,7 @@ export class ReadStateStore {
     addAll(states: APIReadState[]) {
         for (const state of states) {
             const existing = this.states.get(state.id);
-            if (existing) existing.update(state);
+            if (existing) existing.mergeFromServer(state);
             else this.states.set(state.id, new ReadState(this.app, state));
         }
     }
@@ -31,14 +31,18 @@ export class ReadStateStore {
     updateLocal(channelId: Snowflake, lastMessageId: Snowflake) {
         const existing = this.states.get(channelId);
         if (existing) {
-            existing.update({ lastMessageId, mentionCount: 0 });
+            existing.update({
+                lastMessageId,
+                lastAckedId: lastMessageId,
+                mentionCount: 0,
+            });
         } else {
             this.states.set(
                 channelId,
                 new ReadState(this.app, {
                     id: channelId,
                     lastMessageId,
-                    lastAckedId: null,
+                    lastAckedId: lastMessageId,
                     notificationsCursor: null,
                     mentionCount: 0,
                     badgeCount: 0,

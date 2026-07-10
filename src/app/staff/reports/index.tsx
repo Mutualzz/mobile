@@ -35,6 +35,7 @@ const targetTypeOptions = [
     { value: "post", label: "Post" },
     { value: "comment", label: "Comment" },
     { value: "user", label: "User" },
+    { value: "space", label: "Space" },
 ];
 
 const reasonLabels: Record<string, string> = {
@@ -47,6 +48,14 @@ const reasonLabels: Record<string, string> = {
     misinformation: "Misinformation",
     other: "Other",
 };
+
+function getTakedownLabel(targetType: string) {
+    return targetType === "space" ? "Shut Down Space" : "Take Down";
+}
+
+function getLockdownLabel(targetType: string) {
+    return targetType === "space" ? "Lock Down Space" : "";
+}
 
 const StaffReportsScreen = () => {
     const { isStaff } = useRequireStaffAccess();
@@ -118,11 +127,25 @@ const StaffReportsScreen = () => {
         },
     });
 
+    const { mutate: lockdownSpace, isPending: lockingDown } = useMutation({
+        mutationKey: ["staff-report-lockdown"],
+        mutationFn: (reportId: string) =>
+            app.rest.post<{ report: APIReport; contentRemoved: boolean }>(
+                `/staff/reports/${reportId}/lockdown`,
+                {},
+            ),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["staff-reports"] });
+        },
+    });
+
+    const acting = takingDown || lockingDown;
+
     if (!isStaff) return null;
 
     return (
         <Screen style={{ flexDirection: "column" }}>
-            <StaffHeader title="Reports" showBack />
+            <StaffHeader title="Reports" showBack backHref="/staff" />
             <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <Box style={{ flexDirection: "row", gap: 8 }}>
@@ -223,20 +246,18 @@ const StaffReportsScreen = () => {
                                 </Typography>
                             )}
 
-                            {report.targetType === "user" && (
-                                <Button
-                                    size="sm"
-                                    color="neutral"
-                                    variant="soft"
-                                    onPress={() =>
-                                        navigate(
-                                            `/staff/users/${report.targetId}` as Href,
-                                        )
-                                    }
-                                >
-                                    View Account
-                                </Button>
-                            )}
+                            <Button
+                                size="sm"
+                                color="neutral"
+                                variant="soft"
+                                onPress={() =>
+                                    navigate(
+                                        `/staff/reports/${report.id}` as Href,
+                                    )
+                                }
+                            >
+                                View Details
+                            </Button>
 
                             {report.status === "pending" && (
                                 <Box
@@ -246,28 +267,45 @@ const StaffReportsScreen = () => {
                                         gap: 8,
                                     }}
                                 >
+                                    {report.targetType === "space" && (
+                                        <Button
+                                            size="sm"
+                                            color="warning"
+                                            variant="solid"
+                                            disabled={acting || updatingStatus}
+                                            onPress={() =>
+                                                lockdownSpace(report.id)
+                                            }
+                                        >
+                                            {lockingDown
+                                                ? "Working..."
+                                                : getLockdownLabel(
+                                                      report.targetType,
+                                                  )}
+                                        </Button>
+                                    )}
                                     {report.targetType !== "user" && (
                                         <Button
                                             size="sm"
                                             color="danger"
                                             variant="solid"
-                                            disabled={
-                                                takingDown || updatingStatus
-                                            }
+                                            disabled={acting || updatingStatus}
                                             onPress={() =>
                                                 takedownContent(report.id)
                                             }
                                         >
                                             {takingDown
-                                                ? "Removing..."
-                                                : "Take Down"}
+                                                ? "Working..."
+                                                : getTakedownLabel(
+                                                      report.targetType,
+                                                  )}
                                         </Button>
                                     )}
                                     <Button
                                         size="sm"
                                         color="success"
                                         variant="soft"
-                                        disabled={updatingStatus || takingDown}
+                                        disabled={updatingStatus || acting}
                                         onPress={() =>
                                             updateStatus({
                                                 reportId: report.id,
@@ -281,7 +319,7 @@ const StaffReportsScreen = () => {
                                         size="sm"
                                         color="danger"
                                         variant="soft"
-                                        disabled={updatingStatus || takingDown}
+                                        disabled={updatingStatus || acting}
                                         onPress={() =>
                                             updateStatus({
                                                 reportId: report.id,
@@ -295,7 +333,7 @@ const StaffReportsScreen = () => {
                                         size="sm"
                                         color="neutral"
                                         variant="soft"
-                                        disabled={updatingStatus || takingDown}
+                                        disabled={updatingStatus || acting}
                                         onPress={() =>
                                             updateStatus({
                                                 reportId: report.id,

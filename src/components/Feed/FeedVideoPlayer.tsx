@@ -1,6 +1,7 @@
 import { useVideoPlayer, VideoView } from "expo-video";
-import { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
+import { PlayIcon } from "phosphor-react-native";
+import { useEffect, useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 
 interface Props {
   uri: string;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function FeedVideoPlayer({ uri, isActive, muted = true }: Props) {
+  const [userPaused, setUserPaused] = useState(false);
   const player = useVideoPlayer(uri, (instance) => {
     instance.loop = true;
     instance.muted = muted;
@@ -16,19 +18,40 @@ export function FeedVideoPlayer({ uri, isActive, muted = true }: Props) {
 
   useEffect(() => {
     if (isActive) {
-      player.play();
+      setUserPaused(false);
+    }
+  }, [isActive]);
+
+  useEffect(() => {
+    if (!isActive) {
+      player.pause();
       return;
     }
 
-    player.pause();
-  }, [isActive, player]);
+    if (userPaused) {
+      player.pause();
+      return;
+    }
+
+    player.play();
+  }, [isActive, userPaused, player]);
 
   useEffect(() => {
     player.muted = muted;
   }, [muted, player]);
 
+  const showPlayOverlay = isActive && userPaused;
+
   return (
-    <View style={styles.container}>
+    <Pressable
+      style={styles.container}
+      onPress={() => {
+        if (!isActive) return;
+        setUserPaused((paused) => !paused);
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={userPaused ? "Play video" : "Pause video"}
+    >
       <VideoView
         player={player}
         style={styles.video}
@@ -36,7 +59,12 @@ export function FeedVideoPlayer({ uri, isActive, muted = true }: Props) {
         nativeControls={false}
         allowsPictureInPicture={false}
       />
-    </View>
+      {showPlayOverlay ? (
+        <View style={styles.playOverlay} pointerEvents="none">
+          <PlayIcon size={56} color="#fff" weight="fill" />
+        </View>
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -49,5 +77,11 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     height: "100%",
+  },
+  playOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.25)",
   },
 });

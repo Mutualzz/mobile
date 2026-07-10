@@ -11,7 +11,8 @@ export type UserSettingsSidebarPage =
     | "expressions"
     | "appearance"
     | "notifications"
-    | "voice_and_video";
+    | "voice_and_video"
+    | "support";
 export type UserSettingsSidebarCategories = "user-settings" | "app-settings";
 
 interface UserSettingsSidebarContextProps {
