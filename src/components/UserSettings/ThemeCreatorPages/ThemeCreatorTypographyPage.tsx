@@ -11,7 +11,7 @@ export const ThemeCreatorTypographyPage = observer(() => {
   const { values, setValues } = app.themeCreator;
 
   return (
-    <Box style={{ gap: 16 }}>
+    <Box style={{ gap: 10 }}>
       <GoogleFontPicker
         fontOwnerId={app.account?.id}
         value={
@@ -28,8 +28,7 @@ export const ThemeCreatorTypographyPage = observer(() => {
         }
       />
       <ThemeCreatorColorField
-        label="Primary text color"
-        description="The base color for text. Usually white-ish on dark backgrounds, black-ish on light backgrounds."
+        label="Primary text"
         value={values.typography.colors.primary}
         onChange={(color: ColorLike) =>
           setValues({
@@ -41,8 +40,7 @@ export const ThemeCreatorTypographyPage = observer(() => {
         }
       />
       <ThemeCreatorColorField
-        label="Secondary text color"
-        description="Used for less important text"
+        label="Secondary text"
         value={values.typography.colors.secondary}
         onChange={(color: ColorLike) =>
           setValues({
@@ -54,8 +52,7 @@ export const ThemeCreatorTypographyPage = observer(() => {
         }
       />
       <ThemeCreatorColorField
-        label="Accent text color"
-        description="Used for accentuating important text"
+        label="Accent text"
         value={values.typography.colors.accent}
         onChange={(color: ColorLike) =>
           setValues({
@@ -67,8 +64,7 @@ export const ThemeCreatorTypographyPage = observer(() => {
         }
       />
       <ThemeCreatorColorField
-        label="Muted text color"
-        description="Used for muted text"
+        label="Muted text"
         value={values.typography.colors.muted}
         onChange={(color: ColorLike) =>
           setValues({

@@ -46,7 +46,8 @@ export const VoiceChannelChatSheet = observer(
         }}
       >
         <View pointerEvents="box-none" style={MODAL_SHEET_WRAPPER_STYLE}>
-          <Paper
+          <View style={{ justifyContent: "flex-end", width: "100%" }}>
+            <Paper
             elevation={app.settings?.preferEmbossed ? 4 : 2}
             style={{
               height: sheetHeight,
@@ -88,6 +89,7 @@ export const VoiceChannelChatSheet = observer(
               composerVisible={composerVisible}
             />
           </Paper>
+          </View>
         </View>
       </Modal>
     );

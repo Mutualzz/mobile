@@ -127,6 +127,36 @@ export function useScaledThemeSwatchSize(base = 64) {
     return scaledLayoutSize(base, fontScale, 1.25);
 }
 
+export function useScaledProfileHeaderWidgetMetrics() {
+    const fontScale = useFontScale();
+
+    const avatarSizeM = scaledLayoutSize(44, fontScale, 1.25);
+    const avatarSizeL = scaledLayoutSize(52, fontScale, 1.25);
+
+    return {
+        avatarSizeM,
+        avatarSizeL,
+        bannerHeightM: scaledLayoutSize(56, fontScale, 1.2),
+        bannerHeightL: scaledLayoutSize(80, fontScale, 1.2),
+        padding: scaledLayoutSize(12, fontScale, 1.25),
+        gap: scaledLayoutSize(8, fontScale, 1.2),
+        avatarOverlapM: avatarSizeM / 2,
+        avatarOverlapL: avatarSizeL / 2,
+    };
+}
+
+export function useScaledProfileWidgetLinkMetrics() {
+    const fontScale = useFontScale();
+
+    return {
+        iconSize: scaledLayoutSize(28, fontScale, 1.25),
+        iconGlyph: scaledLayoutSize(16, fontScale, 1.2),
+        rowPaddingV: scaledLayoutSize(6, fontScale, 1.25),
+        rowPaddingH: scaledLayoutSize(8, fontScale, 1.2),
+        rowGap: scaledLayoutSize(6, fontScale, 1.2),
+    };
+}
+
 export function useScaledProfileMusicSizes() {
     const fontScale = useFontScale();
 

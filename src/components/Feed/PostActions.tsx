@@ -82,7 +82,7 @@ export function PostRailAction({
           icon
         )}
       </Box>
-      {count != null && count > 0 ? (
+      {count != null && count > 0 && (
         <Typography
           level="body-xs"
           weight={600}
@@ -93,7 +93,7 @@ export function PostRailAction({
         >
           {count}
         </Typography>
-      ) : null}
+      )}
     </Pressable>
   );
 }
@@ -145,11 +145,7 @@ export function PostActions({
         labelColor={iconColor}
         overlay={overlay}
         icon={
-          <HeartIcon
-            size={iconSize}
-            color={iconColor}
-            weight={weight(liked)}
-          />
+          <HeartIcon size={iconSize} color={iconColor} weight={weight(liked)} />
         }
       />
       <PostRailAction

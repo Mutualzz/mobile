@@ -136,16 +136,24 @@ export const MediaPostCard = observer(
             </Typography>
           </Box>
 
-          {post.content ? (
-            <Box style={{ maxHeight: isSnap ? feedSizes.snapStickerMaxHeight : undefined }}>
+          {post.content && (
+            <Box
+              style={{
+                maxHeight: isSnap ? feedSizes.snapStickerMaxHeight : undefined,
+              }}
+            >
               <MarkdownRenderer value={post.content} />
             </Box>
-          ) : null}
+          )}
 
           {stickerExpressions.length > 0 && (
             <Box style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {stickerExpressions.map((sticker) => (
-                <MessageSticker key={sticker.id} sticker={sticker} size={feedSizes.commentSticker} />
+                <MessageSticker
+                  key={sticker.id}
+                  sticker={sticker}
+                  size={feedSizes.commentSticker}
+                />
               ))}
             </Box>
           )}
@@ -202,37 +210,36 @@ export const MediaPostCard = observer(
       />
     );
 
-    const pageIndicators =
-      media.length > 1 ? (
-        <Box
-          style={{
-            position: "absolute",
-            bottom: isSnap ? snapActionsBottom + 64 : 12,
-            left: 0,
-            right: 0,
-            flexDirection: "row",
-            justifyContent: "center",
-            gap: 6,
-            zIndex: 2,
-          }}
-        >
-          {media.map((attachment, index) => (
-            <Pressable
-              key={attachment.id}
-              onPress={() =>
-                listRef.current?.scrollToIndex({ index, animated: true })
-              }
-              style={{
-                width: feedSizes.pageDot,
-                height: feedSizes.pageDot,
-                borderRadius: feedSizes.pageDot / 2,
-                backgroundColor:
-                  index === activeIndex ? "#fff" : "rgba(255,255,255,0.45)",
-              }}
-            />
-          ))}
-        </Box>
-      ) : null;
+    const pageIndicators = media.length > 1 && (
+      <Box
+        style={{
+          position: "absolute",
+          bottom: isSnap ? snapActionsBottom + 64 : 12,
+          left: 0,
+          right: 0,
+          flexDirection: "row",
+          justifyContent: "center",
+          gap: 6,
+          zIndex: 2,
+        }}
+      >
+        {media.map((attachment, index) => (
+          <Pressable
+            key={attachment.id}
+            onPress={() =>
+              listRef.current?.scrollToIndex({ index, animated: true })
+            }
+            style={{
+              width: feedSizes.pageDot,
+              height: feedSizes.pageDot,
+              borderRadius: feedSizes.pageDot / 2,
+              backgroundColor:
+                index === activeIndex ? "#fff" : "rgba(255,255,255,0.45)",
+            }}
+          />
+        ))}
+      </Box>
+    );
 
     return (
       <>

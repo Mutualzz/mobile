@@ -131,13 +131,13 @@ export const MemberActionSheet = observer(
                   justifyContent: "center",
                 }}
               >
-                {hasRole ? (
+                {hasRole && (
                   <CheckIcon
                     size={12}
                     weight="bold"
                     color={theme.colors.primary}
                   />
-                ) : null}
+                )}
               </Box>
             ) : hasRole ? (
               <CheckIcon
@@ -189,30 +189,32 @@ export const MemberActionSheet = observer(
                     maxHeight: "70%",
                   }}
                 >
-                  <Box style={{ alignItems: "center", paddingVertical: 4, gap: 2 }}>
+                  <Box
+                    style={{ alignItems: "center", paddingVertical: 4, gap: 2 }}
+                  >
                     <Typography level="body-md" weight={700}>
                       {member.displayName}
                     </Typography>
-                    {member.user ? (
+                    {member.user && (
                       <Typography level="body-xs" textColor="muted">
                         @{member.user.username}
                       </Typography>
-                    ) : null}
+                    )}
                   </Box>
 
                   <Divider lineColor="muted" />
 
                   <ScrollView keyboardShouldPersistTaps="handled">
-                    {showRoles ? (
+                    {showRoles && (
                       <Box style={{ gap: 8, paddingBottom: 8 }}>
                         <Typography level="body-sm" weight={700}>
                           Roles
                         </Typography>
-                        {!canManageRoles && assignedRoles.length === 0 ? (
+                        {!canManageRoles && assignedRoles.length === 0 && (
                           <Typography level="body-sm" textColor="muted">
                             No roles assigned.
                           </Typography>
-                        ) : null}
+                        )}
                         {canManageRoles
                           ? manageableRoles.map((role) =>
                               renderRoleRow(role, false),
@@ -224,9 +226,9 @@ export const MemberActionSheet = observer(
                           renderRoleRow(role, true),
                         )}
                       </Box>
-                    ) : null}
+                    )}
 
-                    {canKick || canBan ? (
+                    {(canKick || canBan) && (
                       <ButtonGroup
                         orientation="vertical"
                         variant="plain"
@@ -234,7 +236,7 @@ export const MemberActionSheet = observer(
                         horizontalAlign="left"
                         spacing={0.5}
                       >
-                        {canKick ? (
+                        {canKick && (
                           <Button
                             fullWidth
                             padding={12}
@@ -242,8 +244,8 @@ export const MemberActionSheet = observer(
                           >
                             Kick member
                           </Button>
-                        ) : null}
-                        {canBan ? (
+                        )}
+                        {canBan && (
                           <Button
                             fullWidth
                             padding={12}
@@ -252,9 +254,9 @@ export const MemberActionSheet = observer(
                           >
                             Ban member
                           </Button>
-                        ) : null}
+                        )}
                       </ButtonGroup>
-                    ) : null}
+                    )}
                   </ScrollView>
                 </Paper>
               </Box>
@@ -262,7 +264,7 @@ export const MemberActionSheet = observer(
           </View>
         </Modal>
 
-        {kickOpen ? (
+        {kickOpen && (
           <MemberKickSheet
             visible
             space={space}
@@ -272,9 +274,9 @@ export const MemberActionSheet = observer(
               onClose();
             }}
           />
-        ) : null}
+        )}
 
-        {banOpen ? (
+        {banOpen && (
           <MemberBanSheet
             visible
             space={space}
@@ -284,7 +286,7 @@ export const MemberActionSheet = observer(
               onClose();
             }}
           />
-        ) : null}
+        )}
       </>
     );
   },

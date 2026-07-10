@@ -3,6 +3,7 @@ import "@setup/webrtc";
 import "@setup/notifeeBackgroundHandler";
 import "@setup/backgroundNotificationTask";
 
+import { AppCrashFallback } from "@components/ErrorBoundary/AppCrashFallback";
 import { NativeBaseline } from "@components/NativeBaseline/NativeBaseline";
 import { NavigationWithTheme } from "@components/NavigationWithTheme";
 import { AppTheme } from "@contexts/AppTheme.context";
@@ -18,7 +19,7 @@ import dayjs from "dayjs";
 import calendar from "dayjs/plugin/calendar";
 import duration from "dayjs/plugin/duration";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { Stack } from "expo-router";
+import { Stack, type ErrorBoundaryProps } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
@@ -30,6 +31,16 @@ dayjs.extend(calendar, calendarStrings);
 dayjs.extend(duration);
 
 SplashScreen.preventAutoHideAsync();
+
+const errorLogger = new Logger({ tag: "ErrorBoundary" });
+
+export function ErrorBoundary({ error }: ErrorBoundaryProps) {
+  useEffect(() => {
+    errorLogger.error("Uncaught render error", error);
+  }, [error]);
+
+  return <AppCrashFallback />;
+}
 
 const Root = () => {
   const app = useAppStore();
@@ -80,7 +91,7 @@ const Root = () => {
 
   return (
     <QueryClientProvider client={app.queryClient}>
-      <KeyboardProvider>
+      <KeyboardProvider statusBarTranslucent navigationBarTranslucent>
         <AppTheme>
           <NavigationWithTheme>
             <NativeBaseline>

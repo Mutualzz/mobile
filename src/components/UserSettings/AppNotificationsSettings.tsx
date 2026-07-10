@@ -34,11 +34,11 @@ const NotificationToggle = ({
       <Typography level="body-sm" weight={600}>
         {label}
       </Typography>
-      {description ? (
+      {description && (
         <Typography level="body-xs" textColor="muted">
           {description}
         </Typography>
-      ) : null}
+      )}
     </Box>
     <Switch checked={checked} disabled={disabled} onChange={onChange} />
   </Pressable>

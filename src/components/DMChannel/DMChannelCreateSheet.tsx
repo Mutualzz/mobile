@@ -1,24 +1,14 @@
-import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
+import { BottomSheet } from "@components/Keyboard";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
-import { Box, InputDefault, Modal, Typography } from "@mutualzz/ui-native";
-import {
-  MODAL_SHEET_KEYBOARD_STYLE,
-  MODAL_SHEET_WRAPPER_STYLE,
-  useModalSheetMaxHeight,
-} from "@utils/modalSheet";
+import { Box, InputDefault, Typography } from "@mutualzz/ui-native";
 import { useScaledModalListMaxHeight } from "@utils/accessibilityLayout";
 import type { User } from "@stores/objects/User";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
-import {
-  FlatList,
-  Pressable,
-  View,
-} from "react-native";
+import { FlatList, Pressable } from "react-native";
 
 interface Props {
   visible: boolean;
@@ -33,7 +23,6 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
   const [groupName, setGroupName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const maxSheetHeight = useModalSheetMaxHeight(0.85);
   const listMaxHeight = useScaledModalListMaxHeight();
 
   const suggestions = useMemo(() => {
@@ -80,112 +69,88 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
   };
 
   return (
-    <Modal
+    <BottomSheet
       open={visible}
       onClose={onClose}
-      layout="fullscreen"
-      showCloseButton={false}
-      style={{
-        justifyContent: "flex-end",
-        alignItems: "stretch",
-        backgroundColor: "transparent",
-        paddingVertical: 0,
-      }}
+      title="New Message"
+      maxHeight="85%"
+      keyboard="lift"
+      elevation={app.settings?.preferEmbossed ? 4 : 2}
     >
-      <View pointerEvents="box-none" style={MODAL_SHEET_WRAPPER_STYLE}>
-        <AppKeyboardAvoidingView style={MODAL_SHEET_KEYBOARD_STYLE}>
-          <Paper
-            elevation={app.settings?.preferEmbossed ? 4 : 2}
-            style={{
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
-              padding: 20,
-              gap: 12,
-              maxHeight: maxSheetHeight,
-            }}
-          >
-            <Typography level="body-lg" weight="bold">
-              New Message
-            </Typography>
-            <InputDefault
-              fullWidth
-              placeholder="Search people"
-              accessibilityLabel="Search people"
-              value={search}
-              onChangeText={setSearch}
-              returnKeyType="search"
-            />
-            {selected.length > 1 && (
-              <InputDefault
-                fullWidth
-                placeholder="Group name (optional)"
-                accessibilityLabel="Group name"
-                value={groupName}
-                onChangeText={setGroupName}
-              />
-            )}
-            <FlatList
-              data={suggestions}
-              keyExtractor={(item) => item.id}
-              style={{ maxHeight: listMaxHeight }}
-              keyboardShouldPersistTaps="handled"
-              renderItem={({ item }) => {
-                const isSelected = selected.some(
-                  (entry) => entry.id === item.id,
-                );
-                return (
-                  <Pressable
-                    onPress={() => toggleUser(item)}
-                    accessibilityRole="checkbox"
-                    accessibilityLabel={`${item.displayName}, @${item.username}`}
-                    accessibilityState={{ checked: isSelected }}
-                  >
-                    <Box
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 12,
-                        paddingVertical: 10,
-                      }}
-                    >
-                      <UserAvatar user={item} size={36} />
-                      <Box style={{ flex: 1 }}>
-                        <Typography weight={600}>{item.displayName}</Typography>
-                        <Typography level="body-sm" textColor="muted">
-                          @{item.username}
-                        </Typography>
-                      </Box>
-                      <Typography color="primary">
-                        {isSelected ? "Selected" : ""}
-                      </Typography>
-                    </Box>
-                  </Pressable>
-                );
-              }}
-            />
-            {error && (
-              <Typography
-                color="danger"
-                level="body-sm"
-                accessibilityLiveRegion="polite"
+      <InputDefault
+        fullWidth
+        placeholder="Search people"
+        accessibilityLabel="Search people"
+        value={search}
+        onChangeText={setSearch}
+        returnKeyType="search"
+      />
+      {selected.length > 1 && (
+        <InputDefault
+          fullWidth
+          placeholder="Group name (optional)"
+          accessibilityLabel="Group name"
+          value={groupName}
+          onChangeText={setGroupName}
+        />
+      )}
+      <FlatList
+        data={suggestions}
+        keyExtractor={(item) => item.id}
+        style={{ maxHeight: listMaxHeight }}
+        keyboardShouldPersistTaps="handled"
+        renderItem={({ item }) => {
+          const isSelected = selected.some((entry) => entry.id === item.id);
+          return (
+            <Pressable
+              onPress={() => toggleUser(item)}
+              accessibilityRole="checkbox"
+              accessibilityLabel={`${item.displayName}, @${item.username}`}
+              accessibilityState={{ checked: isSelected }}
+            >
+              <Box
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                  paddingVertical: 10,
+                }}
               >
-                {error}
-              </Typography>
-            )}
-            <Box style={{ flexDirection: "row", gap: 8 }}>
-              <Button variant="plain" onPress={onClose}>
-                Cancel
-              </Button>
-              <Button
-                disabled={selected.length === 0 || saving}
-                onPress={() => void create()}
-              >
-                Create
-              </Button>
-            </Box>
-          </Paper>
-        </AppKeyboardAvoidingView>
-      </View>
-    </Modal>
+                <UserAvatar user={item} size={36} />
+                <Box style={{ flex: 1 }}>
+                  <Typography weight={600}>{item.displayName}</Typography>
+                  <Typography level="body-sm" textColor="muted">
+                    @{item.username}
+                  </Typography>
+                </Box>
+                <Typography color="primary">
+                  {isSelected ? "Selected" : ""}
+                </Typography>
+              </Box>
+            </Pressable>
+          );
+        }}
+      />
+      {error && (
+        <Typography
+          color="danger"
+          level="body-sm"
+          accessibilityLiveRegion="polite"
+        >
+          {error}
+        </Typography>
+      )}
+      <Box style={{ flexDirection: "row", gap: 8 }}>
+        <Button variant="plain" onPress={onClose}>
+          Cancel
+        </Button>
+        <Button
+          disabled={selected.length === 0 || saving}
+          onPress={() => void create()}
+        >
+          Create
+        </Button>
+      </Box>
+    </BottomSheet>
   );
 });

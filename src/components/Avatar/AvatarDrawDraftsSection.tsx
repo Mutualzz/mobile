@@ -76,7 +76,7 @@ export const AvatarDrawDraftsSection = observer(
           })}
         </ScrollView>
 
-        {selectedDraftId ? (
+        {selectedDraftId && (
           <Button
             color="danger"
             size="sm"
@@ -86,7 +86,7 @@ export const AvatarDrawDraftsSection = observer(
           >
             Delete draft
           </Button>
-        ) : null}
+        )}
       </Paper>
     );
   },

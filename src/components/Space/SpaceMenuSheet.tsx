@@ -11,9 +11,14 @@ import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
 import { useSpaceSettingsAccess } from "@hooks/useSpaceFromRoute";
 import { Box, Modal, Typography } from "@mutualzz/ui-native";
-import type { Href } from "expo-router";
 import type { Space } from "@stores/objects/Space";
-import { GearIcon, SignOutIcon, TrashIcon, CheckCircleIcon, FlagIcon } from "phosphor-react-native";
+import {
+  GearIcon,
+  SignOutIcon,
+  TrashIcon,
+  CheckCircleIcon,
+  FlagIcon,
+} from "phosphor-react-native";
 import { ReportContentSheet } from "@components/Report/ReportContentSheet";
 import startCase from "lodash-es/startCase";
 import { observer } from "mobx-react-lite";
@@ -46,9 +51,9 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
   const openSettings = (page?: SpaceSettingsPage) => {
     onClose();
     navigate(
-      (page
+      page
         ? `/(tabs)/spaces/${space.id}/settings/${page}`
-        : `/(tabs)/spaces/${space.id}/settings`) as Href,
+        : `/(tabs)/spaces/${space.id}/settings`,
     );
   };
 
@@ -125,7 +130,7 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
             contentContainerStyle={{ gap: 8 }}
             keyboardShouldPersistTaps="handled"
           >
-            {hasUnread ? (
+            {hasUnread && (
               <Button
                 variant="soft"
                 horizontalAlign="left"
@@ -141,9 +146,9 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
               >
                 Mark all as read
               </Button>
-            ) : null}
+            )}
 
-            {canManage ? (
+            {canManage && (
               <Button
                 variant="soft"
                 horizontalAlign="left"
@@ -155,7 +160,7 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
               >
                 Space settings
               </Button>
-            ) : null}
+            )}
 
             {categories.map(({ category, pages }) => (
               <Box key={category} style={{ gap: 6 }}>
@@ -186,11 +191,7 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
                   color="danger"
                   horizontalAlign="left"
                   startDecorator={
-                    <FlagIcon
-                      size={20}
-                      weight="fill"
-                      color={dangerIconColor}
-                    />
+                    <FlagIcon size={20} weight="fill" color={dangerIconColor} />
                   }
                   fullWidth
                   onPress={confirmReport}

@@ -19,6 +19,7 @@ export function PostCommentsSheet({ open, onClose, post }: Props) {
       onClose={onClose}
       title="Comments"
       height={sheetHeight}
+      keyboard="none"
     >
       <PostComments post={post} />
     </BottomSheet>

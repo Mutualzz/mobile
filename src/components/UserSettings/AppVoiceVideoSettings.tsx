@@ -14,15 +14,11 @@ import {
   useTheme,
 } from "@mutualzz/ui-native";
 import type { VoiceInputMode } from "@utils/voiceSettings.utils";
-import {
-  CaretRightIcon,
-  CheckIcon,
-  XIcon,
-} from "phosphor-react-native";
+import { CaretRightIcon, CheckIcon, XIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { MediaStream, RTCView, mediaDevices } from "react-native-webrtc";
+import { type MediaStream, RTCView, mediaDevices } from "react-native-webrtc";
 
 function deviceLabel(device: VoiceMediaDevice | undefined, fallback: string) {
   if (!device) return fallback;
@@ -93,7 +89,12 @@ function DevicePickerModal({
   const app = useAppStore();
 
   return (
-    <Modal open={open} onClose={onClose} layout="center" showCloseButton={false}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      layout="center"
+      showCloseButton={false}
+    >
       <Paper
         elevation={app.settings?.preferEmbossed ? 4 : 2}
         style={{
@@ -112,7 +113,7 @@ function DevicePickerModal({
           {title}
         </Typography>
 
-        {devices.length === 0 ? (
+        {devices.length === 0 && (
           <Typography
             level="body-sm"
             textColor="muted"
@@ -120,7 +121,7 @@ function DevicePickerModal({
           >
             No devices detected.
           </Typography>
-        ) : null}
+        )}
 
         {devices.map((device) => {
           const active = device.deviceId === selectedId;
@@ -152,13 +153,13 @@ function DevicePickerModal({
               >
                 {deviceLabel(device, "Unknown device")}
               </Typography>
-              {active ? (
+              {active && (
                 <CheckIcon
                   size={16}
                   weight="bold"
                   color={theme.colors.success}
                 />
-              ) : null}
+              )}
             </Pressable>
           );
         })}
@@ -214,15 +215,16 @@ export const AppVoiceVideoSettings = observer(() => {
           nextStream.getTracks().forEach((track) => {
             try {
               track.stop();
-            } catch {}
+            } catch {
+              // ingore
+            }
           });
           return;
         }
 
         stream = nextStream;
         setTestStream(nextStream);
-      } catch (error) {
-        console.error("Failed to start camera test:", error);
+      } catch {
         if (active) setTestingCamera(false);
       }
     };
@@ -235,7 +237,9 @@ export const AppVoiceVideoSettings = observer(() => {
         stream.getTracks().forEach((track) => {
           try {
             track.stop();
-          } catch {}
+          } catch {
+            // ignore
+          }
         });
       }
       setTestStream(null);
@@ -309,12 +313,12 @@ export const AppVoiceVideoSettings = observer(() => {
           <Radio value="voice_activity" label="Voice activity" />
           <Radio value="push_to_talk" label="Push to talk" />
         </RadioGroup>
-        {voice.isPushToTalkMode ? (
+        {voice.isPushToTalkMode && (
           <Typography level="body-xs" textColor="muted">
             While in a voice channel, hold the microphone button in the user bar
             to transmit.
           </Typography>
-        ) : null}
+        )}
       </Paper>
 
       <Paper
@@ -349,24 +353,24 @@ export const AppVoiceVideoSettings = observer(() => {
               }
               label="Automatic sensitivity"
             />
-        {!voice.voiceInputSensitivityAuto ? (
-          <Box style={{ gap: 4 }}>
-            <Typography level="body-xs" textColor="muted">
-              Sensitivity {voice.voiceInputSensitivity}%
-            </Typography>
-            <Slider
-              min={0}
-              max={100}
-              step={1}
-              value={voice.voiceInputSensitivity}
-              onChange={(value) =>
-                voice.setVoiceInputSensitivity(
-                  Array.isArray(value) ? value[0] : value,
-                )
-              }
-            />
-          </Box>
-        ) : null}
+            {!voice.voiceInputSensitivityAuto && (
+              <Box style={{ gap: 4 }}>
+                <Typography level="body-xs" textColor="muted">
+                  Sensitivity {voice.voiceInputSensitivity}%
+                </Typography>
+                <Slider
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={voice.voiceInputSensitivity}
+                  onChange={(value) =>
+                    voice.setVoiceInputSensitivity(
+                      Array.isArray(value) ? value[0] : value,
+                    )
+                  }
+                />
+              </Box>
+            )}
           </>
         )}
       </Paper>

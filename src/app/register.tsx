@@ -1,4 +1,4 @@
-import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
+import { KeyboardForm } from "@components/Keyboard";
 import { Button } from "@components/Button";
 import { DOBInput } from "@components/DOBInput";
 import { Paper } from "@components/Paper";
@@ -133,12 +133,16 @@ const Register = () => {
   if (app.token) return <Redirect href="/" />;
 
   return (
-    <AppKeyboardAvoidingView
+    <KeyboardForm
       style={{
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
         padding: 24,
+      }}
+      contentContainerStyle={{
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
       <Paper
@@ -334,7 +338,7 @@ const Register = () => {
             </Typography>
           </Pressable>
         </Paper>
-    </AppKeyboardAvoidingView>
+    </KeyboardForm>
   );
 };
 

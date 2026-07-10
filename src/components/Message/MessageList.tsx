@@ -4,7 +4,7 @@ import { UserAvatar } from "@components/User/UserAvatar";
 import { HashIcon, ArrowDownIcon } from "phosphor-react-native";
 import { Logger } from "@mutualzz/logger";
 import { useAppStore } from "@hooks/useStores";
-import { useKeyboardOffset } from "@hooks/useKeyboardOffset";
+import { useOnKeyboardOpen } from "@hooks/useKeyboardOffset";
 import { ChannelType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
@@ -158,7 +158,6 @@ const ScrollToBottomFab = ({
 export const MessageList = observer(({ channel }: Props) => {
   const app = useAppStore();
   const { theme } = useTheme();
-  const keyboardHeight = useKeyboardOffset();
   const listRef = useRef<FlashListRef<MessageGroupType>>(null);
   const isAtBottomRef = useRef(true);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
@@ -263,11 +262,33 @@ export const MessageList = observer(({ channel }: Props) => {
     enabled: !!channel?.id && (isDM || canReadHistory),
   });
 
+  const scrollRafRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (scrollRafRef.current != null) {
+        cancelAnimationFrame(scrollRafRef.current);
+      }
+    },
+    [],
+  );
+
   const scrollToBottom = useCallback((animated = true) => {
     listRef.current?.scrollToEnd({ animated });
     isAtBottomRef.current = true;
     setShowScrollToBottom(false);
   }, []);
+
+  const scheduleScrollToBottom = useCallback(
+    (animated = true) => {
+      if (scrollRafRef.current != null) return;
+      scrollRafRef.current = requestAnimationFrame(() => {
+        scrollRafRef.current = null;
+        scrollToBottom(animated);
+      });
+    },
+    [scrollToBottom],
+  );
 
   const scrollToMessage = useCallback(
     async (messageId: string) => {
@@ -313,29 +334,20 @@ export const MessageList = observer(({ channel }: Props) => {
   useEffect(() => {
     isAtBottomRef.current = true;
     setShowScrollToBottom(false);
-    requestAnimationFrame(() => {
-      scrollToBottom(false);
-    });
-  }, [channel?.id, scrollToBottom]);
+    scheduleScrollToBottom(false);
+  }, [channel?.id, scheduleScrollToBottom]);
 
   useEffect(() => {
     if (!isAtBottomRef.current || !latestMessageId) return;
-    requestAnimationFrame(() => {
-      scrollToBottom(true);
-    });
-  }, [latestMessageId, scrollToBottom]);
+    scheduleScrollToBottom(true);
+  }, [latestMessageId, scheduleScrollToBottom]);
 
-  useEffect(() => {
-    if (keyboardHeight <= 0 || !isAtBottomRef.current) return;
-    requestAnimationFrame(() => {
-      scrollToBottom(true);
-    });
-    // Re-scroll after layout settles when the keyboard finishes opening.
-    const timeout = setTimeout(() => {
-      if (isAtBottomRef.current) scrollToBottom(false);
-    }, 120);
-    return () => clearTimeout(timeout);
-  }, [keyboardHeight, scrollToBottom]);
+  const handleKeyboardOpen = useCallback(() => {
+    if (!isAtBottomRef.current) return;
+    scheduleScrollToBottom(true);
+  }, [scheduleScrollToBottom]);
+
+  useOnKeyboardOpen(handleKeyboardOpen);
 
   const fetchMore = useCallback(() => {
     if (!channel?.messages.count) {
@@ -416,11 +428,11 @@ export const MessageList = observer(({ channel }: Props) => {
             theme={theme}
           />
         )}
-        {isFetchingNextPage ? (
+        {isFetchingNextPage && (
           <Box style={{ paddingVertical: 16, alignItems: "center" }}>
             <ActivityIndicator />
           </Box>
-        ) : null}
+        )}
       </Box>
     );
   }, [channel, isDM, canReadHistory, theme, isFetchingNextPage]);
@@ -437,9 +449,7 @@ export const MessageList = observer(({ channel }: Props) => {
         drawDistance={ESTIMATED_GROUP_HEIGHT * 8}
         onContentSizeChange={() => {
           if (!isAtBottomRef.current) return;
-          requestAnimationFrame(() => {
-            scrollToBottom(false);
-          });
+          scheduleScrollToBottom(false);
         }}
         onStartReached={fetchMore}
         onStartReachedThreshold={0.2}

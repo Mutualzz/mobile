@@ -16,13 +16,7 @@ import { Appearance } from "react-native";
 type ApiErrors = Record<string, string>;
 
 export type ThemeCreatorCategory = "general" | "colors";
-export type ThemeCreatorPage =
-  | "details"
-  | "base"
-  | "feedback"
-  | "typography"
-  | "adaptive"
-  | "manage";
+export type ThemeCreatorPage = "details" | "colors" | "manage";
 
 export type ThemeCreatorLoadedType = "default" | "draft" | "custom";
 

@@ -42,17 +42,17 @@ const RelationshipRow = ({
           <Typography level="body-sm" truncate="single">
             {user.displayName}
           </Typography>
-          {statusLabel ? (
+          {statusLabel && (
             <Typography level="body-xs" textColor="muted">
               {statusLabel}
             </Typography>
-          ) : null}
+          )}
         </Box>
-        {actions ? (
+        {actions && (
           <Box style={{ flexDirection: "row", gap: 6, flexShrink: 0 }}>
             {actions}
           </Box>
-        ) : null}
+        )}
       </Paper>
     </UserProfileTrigger>
   );

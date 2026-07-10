@@ -1,4 +1,4 @@
-import { CustomStatusSheet } from "@components/UserSettings/CustomStatusSheet";
+import { ChangeOnlineStatusModal } from "@components/User/ChangeOnlineStatusModal";
 import { IconButton } from "@components/IconButton";
 import { SpaceModeratedSheet } from "@components/Modals/SpaceModeratedSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
@@ -64,10 +64,7 @@ export const UserBar = observer(() => {
 
   const openSpaceModerated = (type: "muted" | "deafened") => {
     const modalId = type === "muted" ? "space-muted" : "space-deafened";
-    openModal(
-      modalId,
-      <SpaceModeratedSheet type={type} modalId={modalId} />,
-    );
+    openModal(modalId, <SpaceModeratedSheet type={type} modalId={modalId} />);
   };
 
   if (!account) return null;
@@ -96,14 +93,12 @@ export const UserBar = observer(() => {
   const isPushToTalk = app.voice.isPushToTalkMode;
   const pushToTalkActive = app.voice.pushToTalkActive;
   const canUsePushToTalk =
-    isPushToTalk &&
-    voiceStatus === "connected" &&
-    !app.voice.effectiveSelfMute;
+    isPushToTalk && voiceStatus === "connected" && !app.voice.effectiveSelfMute;
 
   return (
     <>
       <Box>
-        {showVoicePill ? (
+        {showVoicePill && (
           <Box
             style={{
               gap: 10,
@@ -131,7 +126,7 @@ export const UserBar = observer(() => {
                 >
                   {voiceTitle}
                 </Typography>
-                {voiceSubtitle ? (
+                {voiceSubtitle && (
                   <Typography
                     level="body-xs"
                     textColor="secondary"
@@ -140,7 +135,7 @@ export const UserBar = observer(() => {
                   >
                     {voiceSubtitle}
                   </Typography>
-                ) : null}
+                )}
               </Box>
 
               <IconButton
@@ -155,7 +150,7 @@ export const UserBar = observer(() => {
             </Box>
 
             <Box style={{ flexDirection: "row", gap: 6 }}>
-              {canUsePushToTalk ? (
+              {canUsePushToTalk && (
                 <Pressable
                   disabled={!canHangup}
                   onPressIn={() => app.voice.setPushToTalkPressed(true)}
@@ -199,7 +194,7 @@ export const UserBar = observer(() => {
                     {pushToTalkActive ? "Talking…" : "Hold to talk"}
                   </Typography>
                 </Pressable>
-              ) : null}
+              )}
               <IconButton
                 variant="soft"
                 padding={8}
@@ -231,7 +226,7 @@ export const UserBar = observer(() => {
               </IconButton>
             </Box>
           </Box>
-        ) : null}
+        )}
 
         <Box
           style={{
@@ -343,7 +338,7 @@ export const UserBar = observer(() => {
         </Box>
       </Box>
 
-      <CustomStatusSheet
+      <ChangeOnlineStatusModal
         visible={statusOpen}
         onClose={() => setStatusOpen(false)}
       />

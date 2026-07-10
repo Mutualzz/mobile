@@ -160,11 +160,11 @@ export const AvatarDrawEditor = observer(
               }}
             />
 
-            {error ? (
+            {error && (
               <Typography level="body-sm" color="danger" variant="plain">
                 {error}
               </Typography>
-            ) : null}
+            )}
           </Box>
         </Box>
       </Modal>

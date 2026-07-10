@@ -139,159 +139,171 @@ export const UserActionSheet = observer(
                   gap: 8,
                 }}
               >
-          <Box style={{ alignItems: "center", paddingVertical: 8, gap: 4 }}>
-            <Typography level="body-md" weight={700} truncate="single">
-              {user.displayName}
-            </Typography>
-            <Typography level="body-xs" textColor="muted" truncate="single">
-              @{user.username}
-            </Typography>
-          </Box>
-
-          <Divider lineColor="muted" />
-
-          <ButtonGroup
-            orientation="vertical"
-            variant="plain"
-            fullWidth
-            horizontalAlign="left"
-            spacing={0.5}
-          >
-            {readState?.isUnread ? (
-              <Button
-                fullWidth
-                padding={12}
-                startDecorator={<CheckCircleIcon size={20} weight="fill" />}
-                onPress={() => {
-                  void readState.ack();
-                  onClose();
-                }}
-              >
-                Mark as read
-              </Button>
-            ) : null}
-
-            <Button
-              fullWidth
-              padding={12}
-              startDecorator={<UserIcon size={20} weight="fill" />}
-              onPress={viewProfile}
-            >
-              View Profile
-            </Button>
-
-            {!insideDMs ? (
-              <Button
-                fullWidth
-                padding={12}
-                startDecorator={<ChatCircleIcon size={20} weight="fill" />}
-                disabled={openingDm || iBlockedThem}
-                onPress={() => openDm()}
-              >
-                Message
-              </Button>
-            ) : (
-              <Button
-                fullWidth
-                padding={12}
-                startDecorator={<XCircleIcon size={20} weight="fill" />}
-                disabled={closingDm}
-                onPress={() => closeDm()}
-              >
-                Close DM
-              </Button>
-            )}
-
-            {!isFriend && !isIncomingRequest && !isOutgoingRequest ? (
-              <Button
-                fullWidth
-                padding={12}
-                startDecorator={<UserPlusIcon size={20} weight="fill" />}
-                disabled={relationshipPending || iBlockedThem}
-                onPress={() => addFriend.mutate()}
-              >
-                Add Friend
-              </Button>
-            ) : null}
-
-            {isIncomingRequest ? (
-              <>
-                <Button
-                  fullWidth
-                  padding={12}
-                  color="success"
-                  startDecorator={<UserPlusIcon size={20} weight="fill" />}
-                  disabled={relationshipPending || iBlockedThem}
-                  onPress={() => acceptFriend.mutate()}
+                <Box
+                  style={{ alignItems: "center", paddingVertical: 8, gap: 4 }}
                 >
-                  Accept Friend Request
-                </Button>
-                <Button
+                  <Typography level="body-md" weight={700} truncate="single">
+                    {user.displayName}
+                  </Typography>
+                  <Typography
+                    level="body-xs"
+                    textColor="muted"
+                    truncate="single"
+                  >
+                    @{user.username}
+                  </Typography>
+                </Box>
+
+                <Divider lineColor="muted" />
+
+                <ButtonGroup
+                  orientation="vertical"
+                  variant="plain"
                   fullWidth
-                  padding={12}
-                  disabled={relationshipPending || iBlockedThem}
-                  onPress={() => declineFriend.mutate()}
+                  horizontalAlign="left"
+                  spacing={0.5}
                 >
-                  Decline Friend Request
-                </Button>
-              </>
-            ) : null}
+                  {readState?.isUnread && (
+                    <Button
+                      fullWidth
+                      padding={12}
+                      startDecorator={
+                        <CheckCircleIcon size={20} weight="fill" />
+                      }
+                      onPress={() => {
+                        void readState.ack();
+                        onClose();
+                      }}
+                    >
+                      Mark as read
+                    </Button>
+                  )}
 
-            {isOutgoingRequest ? (
-              <Button
-                fullWidth
-                padding={12}
-                disabled={relationshipPending}
-                onPress={() => declineFriend.mutate()}
-              >
-                Cancel Friend Request
-              </Button>
-            ) : null}
+                  <Button
+                    fullWidth
+                    padding={12}
+                    startDecorator={<UserIcon size={20} weight="fill" />}
+                    onPress={viewProfile}
+                  >
+                    View Profile
+                  </Button>
 
-            {isFriend ? (
-              <Button
-                fullWidth
-                padding={12}
-                startDecorator={<UserMinusIcon size={20} weight="fill" />}
-                disabled={relationshipPending || iBlockedThem}
-                onPress={() => removeFriend.mutate()}
-              >
-                Remove Friend
-              </Button>
-            ) : null}
+                  {!insideDMs ? (
+                    <Button
+                      fullWidth
+                      padding={12}
+                      startDecorator={
+                        <ChatCircleIcon size={20} weight="fill" />
+                      }
+                      disabled={openingDm || iBlockedThem}
+                      onPress={() => openDm()}
+                    >
+                      Message
+                    </Button>
+                  ) : (
+                    <Button
+                      fullWidth
+                      padding={12}
+                      startDecorator={<XCircleIcon size={20} weight="fill" />}
+                      disabled={closingDm}
+                      onPress={() => closeDm()}
+                    >
+                      Close DM
+                    </Button>
+                  )}
 
-            {iBlockedThem ? (
-              <Button
-                fullWidth
-                padding={12}
-                startDecorator={<ProhibitIcon size={20} weight="fill" />}
-                disabled={relationshipPending}
-                onPress={() => unblockUser.mutate()}
-              >
-                Unblock
-              </Button>
-            ) : (
-              <Button
-                fullWidth
-                padding={12}
-                startDecorator={<ProhibitIcon size={20} weight="fill" />}
-                disabled={relationshipPending}
-                onPress={() => blockUser.mutate()}
-              >
-                Block
-              </Button>
-            )}
+                  {!isFriend && !isIncomingRequest && !isOutgoingRequest && (
+                    <Button
+                      fullWidth
+                      padding={12}
+                      startDecorator={<UserPlusIcon size={20} weight="fill" />}
+                      disabled={relationshipPending || iBlockedThem}
+                      onPress={() => addFriend.mutate()}
+                    >
+                      Add Friend
+                    </Button>
+                  )}
 
-            <Button
-              fullWidth
-              padding={12}
-              color="danger"
-              startDecorator={<FlagIcon size={20} weight="fill" />}
-              onPress={openReport}
-            >
-              Report User
-            </Button>
-          </ButtonGroup>
+                  {isIncomingRequest && (
+                    <>
+                      <Button
+                        fullWidth
+                        padding={12}
+                        color="success"
+                        startDecorator={
+                          <UserPlusIcon size={20} weight="fill" />
+                        }
+                        disabled={relationshipPending || iBlockedThem}
+                        onPress={() => acceptFriend.mutate()}
+                      >
+                        Accept Friend Request
+                      </Button>
+                      <Button
+                        fullWidth
+                        padding={12}
+                        disabled={relationshipPending || iBlockedThem}
+                        onPress={() => declineFriend.mutate()}
+                      >
+                        Decline Friend Request
+                      </Button>
+                    </>
+                  )}
+
+                  {isOutgoingRequest && (
+                    <Button
+                      fullWidth
+                      padding={12}
+                      disabled={relationshipPending}
+                      onPress={() => declineFriend.mutate()}
+                    >
+                      Cancel Friend Request
+                    </Button>
+                  )}
+
+                  {isFriend && (
+                    <Button
+                      fullWidth
+                      padding={12}
+                      startDecorator={<UserMinusIcon size={20} weight="fill" />}
+                      disabled={relationshipPending || iBlockedThem}
+                      onPress={() => removeFriend.mutate()}
+                    >
+                      Remove Friend
+                    </Button>
+                  )}
+
+                  {iBlockedThem ? (
+                    <Button
+                      fullWidth
+                      padding={12}
+                      startDecorator={<ProhibitIcon size={20} weight="fill" />}
+                      disabled={relationshipPending}
+                      onPress={() => unblockUser.mutate()}
+                    >
+                      Unblock
+                    </Button>
+                  ) : (
+                    <Button
+                      fullWidth
+                      padding={12}
+                      startDecorator={<ProhibitIcon size={20} weight="fill" />}
+                      disabled={relationshipPending}
+                      onPress={() => blockUser.mutate()}
+                    >
+                      Block
+                    </Button>
+                  )}
+
+                  <Button
+                    fullWidth
+                    padding={12}
+                    color="danger"
+                    startDecorator={<FlagIcon size={20} weight="fill" />}
+                    onPress={openReport}
+                  >
+                    Report User
+                  </Button>
+                </ButtonGroup>
               </Paper>
             </Box>
           </View>

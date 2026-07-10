@@ -119,7 +119,7 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
           paddingTop: 12,
         }}
       >
-        {!isEveryone ? (
+        {!isEveryone && (
           <Pressable onPress={() => setTab("display")}>
             <Typography
               level="body-sm"
@@ -129,7 +129,7 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
               Display
             </Typography>
           </Pressable>
-        ) : null}
+        )}
         <Pressable onPress={() => setTab("permissions")}>
           <Typography
             level="body-sm"
@@ -139,7 +139,7 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
             Permissions
           </Typography>
         </Pressable>
-        {!isEveryone ? (
+        {!isEveryone && (
           <Pressable onPress={() => setTab("members")}>
             <Typography
               level="body-sm"
@@ -149,7 +149,7 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
               Members
             </Typography>
           </Pressable>
-        ) : null}
+        )}
       </Box>
 
       <ScrollView
@@ -161,7 +161,7 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
         }}
         keyboardShouldPersistTaps="handled"
       >
-        {!canEditRole ? (
+        {!canEditRole && (
           <Box
             style={{
               flexDirection: "row",
@@ -174,27 +174,27 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
           >
             <RoleHierarchyAssignLock />
             <Typography level="body-sm" textColor="muted" style={{ flex: 1 }}>
-              You can't edit this role because it's at or above your highest
-              role.
+              You can&apos;t edit this role because it&apos;s at or above your
+              highest role.
             </Typography>
           </Box>
-        ) : null}
+        )}
 
-        {tab === "display" && !isEveryone ? (
+        {tab === "display" && !isEveryone && (
           <SpaceRoleEditDisplay changes={changes} setChanges={setChanges} />
-        ) : null}
+        )}
         {tab === "permissions" && (
           <SpaceRoleEditPermissions changes={changes} setChanges={setChanges} />
         )}
-        {tab === "members" && !isEveryone ? (
+        {tab === "members" && !isEveryone && (
           <SpaceRoleEditManageMembers role={role} />
-        ) : null}
+        )}
 
-        {error ? (
+        {error && (
           <Typography level="body-sm" color="danger" variant="plain">
             {error}
           </Typography>
-        ) : null}
+        )}
 
         <Box
           style={{

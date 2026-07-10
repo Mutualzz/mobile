@@ -8,7 +8,12 @@ import type {
 } from "@expensify/react-native-live-markdown";
 import { normalizeTypography } from "@mutualzz/ui-core";
 import type { MentionType, Snowflake } from "@mutualzz/types";
-import { type PaperProps, MAX_FONT_SCALE_MULTIPLIER, useFontScale, useTheme } from "@mutualzz/ui-native";
+import {
+  type PaperProps,
+  MAX_FONT_SCALE_MULTIPLIER,
+  useFontScale,
+  useTheme,
+} from "@mutualzz/ui-native";
 import type { Expression } from "@stores/objects/Expression";
 import {
   detectColonQuery,
@@ -278,22 +283,22 @@ export const MarkdownInput = observer(
           ...(props.style as object),
         }}
       >
-        {mentionQuery && channel ? (
+        {mentionQuery && channel && (
           <MentionAutocomplete
             channel={channel}
             search={mentionQuery.search}
             onSelect={handleMentionSelect}
           />
-        ) : null}
+        )}
 
-        {colonQuery ? (
+        {colonQuery && (
           <EmojiAutocomplete
             channel={channel ?? undefined}
             search={colonQuery.search}
             onSelectStandard={handleStandardEmojiSelect}
             onSelectCustom={handleCustomEmojiSelect}
           />
-        ) : null}
+        )}
 
         <MarkdownTextInput
           ref={inputRef}
@@ -359,7 +364,7 @@ export const MarkdownInput = observer(
           editable={editable}
         />
 
-        {endAdornment ? (
+        {endAdornment && (
           <View
             pointerEvents="box-none"
             style={{
@@ -372,7 +377,7 @@ export const MarkdownInput = observer(
           >
             {endAdornment}
           </View>
-        ) : null}
+        )}
       </Paper>
     );
   },

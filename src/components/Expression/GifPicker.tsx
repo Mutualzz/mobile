@@ -7,7 +7,10 @@ import {
   XIcon,
 } from "phosphor-react-native";
 import { Box, Input, Typography, useTheme } from "@mutualzz/ui-native";
-import { useScaledProfilePreviewHeight, useScaledSquareSize } from "@utils/accessibilityLayout";
+import {
+  useScaledProfilePreviewHeight,
+  useScaledSquareSize,
+} from "@utils/accessibilityLayout";
 import type { GifResult, GifsResponse, GifTagsResponse } from "@utils/gifs";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { FlashList } from "@shopify/flash-list";
@@ -199,7 +202,7 @@ export const GifPickerContent = observer(
 
     const listHeader = (
       <View>
-        {showTags ? (
+        {showTags && (
           <View
             style={{
               flexDirection: "row",
@@ -208,7 +211,7 @@ export const GifPickerContent = observer(
               paddingBottom: 8,
             }}
           >
-            {favoriteGifs.length > 0 ? (
+            {favoriteGifs.length > 0 && (
               <Pressable
                 onPress={() => setViewingFavorites(true)}
                 style={{
@@ -220,7 +223,7 @@ export const GifPickerContent = observer(
                   backgroundColor: `${theme.colors.neutral}22`,
                 }}
               >
-                {favoriteGifs[0] ? (
+                {favoriteGifs[0] && (
                   <Image
                     source={{
                       uri: favoriteGifs[0].split("|")[1] ?? "",
@@ -231,7 +234,7 @@ export const GifPickerContent = observer(
                     }}
                     resizeMode="cover"
                   />
-                ) : null}
+                )}
                 <View
                   style={{
                     position: "absolute",
@@ -248,7 +251,7 @@ export const GifPickerContent = observer(
                   </Typography>
                 </View>
               </Pressable>
-            ) : null}
+            )}
             {tagsData?.tags.map((tag) => (
               <Pressable
                 key={tag.name}
@@ -292,9 +295,9 @@ export const GifPickerContent = observer(
               </Pressable>
             ))}
           </View>
-        ) : null}
+        )}
 
-        {viewingFavorites ? (
+        {viewingFavorites && (
           <Typography
             level="label-xs"
             textColor="muted"
@@ -306,27 +309,27 @@ export const GifPickerContent = observer(
           >
             Favorites
           </Typography>
-        ) : null}
+        )}
 
-        {(isLoading || isFetching) && debouncedSearch.trim() ? (
+        {(isLoading || isFetching) && debouncedSearch.trim() && (
           <ActivityIndicator
             style={{ paddingVertical: 24 }}
             color={theme.colors.primary}
           />
-        ) : null}
+        )}
 
         {debouncedSearch.trim() &&
-        !viewingFavorites &&
-        !isLoading &&
-        listData.length === 0 ? (
-          <Typography
-            level="body-sm"
-            textColor="muted"
-            style={{ textAlign: "center", padding: 32 }}
-          >
-            No GIFs found for &quot;{debouncedSearch}&quot;
-          </Typography>
-        ) : null}
+          !viewingFavorites &&
+          !isLoading &&
+          listData.length === 0 && (
+            <Typography
+              level="body-sm"
+              textColor="muted"
+              style={{ textAlign: "center", padding: 32 }}
+            >
+              No GIFs found for &quot;{debouncedSearch}&quot;
+            </Typography>
+          )}
       </View>
     );
 

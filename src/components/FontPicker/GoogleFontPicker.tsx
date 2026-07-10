@@ -79,11 +79,11 @@ export const GoogleFontPicker = observer(
           <Typography level="body-xs" weight={700}>
             {label}
           </Typography>
-          {description ? (
+          {description && (
             <Typography level="body-xs" textColor="muted">
               {description}
             </Typography>
-          ) : null}
+          )}
           <Typography
             level="body-sm"
             style={{
@@ -130,13 +130,13 @@ export const GoogleFontPicker = observer(
                 <Typography level="body-sm" style={{ flex: 1 }}>
                   {item.family}
                 </Typography>
-                {active ? (
+                {active && (
                   <CheckIcon
                     size={16}
                     weight="bold"
                     color={theme.colors.success}
                   />
-                ) : null}
+                )}
               </Pressable>
             );
           }}

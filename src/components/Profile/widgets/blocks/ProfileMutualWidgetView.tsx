@@ -22,55 +22,75 @@ interface Props {
   userId: Snowflake;
 }
 
-export const ProfileMutualWidgetView = observer(({ block, size, userId }: Props) => {
-  const app = useAppStore();
-  const maxItems = block.maxItems ?? 6;
+export const ProfileMutualWidgetView = observer(
+  ({ block, size, userId }: Props) => {
+    const app = useAppStore();
+    const maxItems = block.maxItems ?? 6;
 
-  const mutualSpaces =
-    block.mode === "spaces" ? getMutualSpaces(app, userId, maxItems) : [];
-  const isFriend = block.mode === "friends" && isProfileFriend(app, userId);
-  const visible = mutualSpaces.slice(0, VISIBLE_COUNT[size]);
+    const mutualSpaces =
+      block.mode === "spaces" ? getMutualSpaces(app, userId, maxItems) : [];
+    const isFriend = block.mode === "friends" && isProfileFriend(app, userId);
+    const visible = mutualSpaces.slice(0, VISIBLE_COUNT[size]);
 
-  return (
-    <View style={{ width: "100%", height: "100%", padding: 12, gap: 8 }}>
-      <Stack direction="row" alignItems="center" style={{ gap: 6 }}>
-        <UsersThreeIcon size={16} weight="fill" />
-        <Typography level="body-sm" weight="bold">
-          {block.mode === "spaces" ? "Mutual Spaces" : "Friends"}
-        </Typography>
-      </Stack>
-
-      {block.mode === "friends" ? (
-        <Typography level="body-sm" textColor={isFriend ? "primary" : "muted"}>
-          {isFriend ? "You are friends" : "Not friends yet"}
-        </Typography>
-      ) : visible.length === 0 ? (
-        <Typography level="body-sm" textColor="muted">
-          No mutual spaces
-        </Typography>
-      ) : (
-        <Stack direction="column" style={{ gap: 6 }}>
-          {visible.map((space) => (
-            <Stack key={space.id} direction="row" alignItems="center" style={{ gap: 8 }}>
-              <SpaceIcon space={space} size={24} />
-              <Typography level="body-sm" truncate="single" style={{ flex: 1, minWidth: 0 }}>
-                {space.name}
-              </Typography>
-            </Stack>
-          ))}
-          {mutualSpaces.length > visible.length ? (
-            <Typography level="body-xs" textColor="muted">
-              +{mutualSpaces.length - visible.length} more
-            </Typography>
-          ) : null}
+    return (
+      <View style={{ width: "100%", height: "100%", padding: 12, gap: 8 }}>
+        <Stack direction="row" alignItems="center" style={{ gap: 6 }}>
+          <UsersThreeIcon size={16} weight="fill" />
+          <Typography level="body-sm" weight="bold">
+            {block.mode === "spaces" ? "Mutual Spaces" : "Friends"}
+          </Typography>
         </Stack>
-      )}
-    </View>
-  );
-});
+
+        {block.mode === "friends" ? (
+          <Typography
+            level="body-sm"
+            textColor={isFriend ? "primary" : "muted"}
+          >
+            {isFriend ? "You are friends" : "Not friends yet"}
+          </Typography>
+        ) : visible.length === 0 ? (
+          <Typography level="body-sm" textColor="muted">
+            No mutual spaces
+          </Typography>
+        ) : (
+          <Stack direction="column" style={{ gap: 6 }}>
+            {visible.map((space) => (
+              <Stack
+                key={space.id}
+                direction="row"
+                alignItems="center"
+                style={{ gap: 8 }}
+              >
+                <SpaceIcon space={space} size={24} />
+                <Typography
+                  level="body-sm"
+                  truncate="single"
+                  style={{ flex: 1, minWidth: 0 }}
+                >
+                  {space.name}
+                </Typography>
+              </Stack>
+            ))}
+            {mutualSpaces.length > visible.length && (
+              <Typography level="body-xs" textColor="muted">
+                +{mutualSpaces.length - visible.length} more
+              </Typography>
+            )}
+          </Stack>
+        )}
+      </View>
+    );
+  },
+);
 
 export const ProfileMutualWidgetExpandedContent = observer(
-  ({ block, userId }: { block: MobileProfileMutualBlock; userId: Snowflake }) => {
+  ({
+    block,
+    userId,
+  }: {
+    block: MobileProfileMutualBlock;
+    userId: Snowflake;
+  }) => {
     const app = useAppStore();
     const maxItems = block.maxItems ?? 6;
     const mutualSpaces =
@@ -96,7 +116,12 @@ export const ProfileMutualWidgetExpandedContent = observer(
     return (
       <Stack direction="column" style={{ gap: 6 }}>
         {mutualSpaces.map((space) => (
-          <Stack key={space.id} direction="row" alignItems="center" style={{ gap: 6 }}>
+          <Stack
+            key={space.id}
+            direction="row"
+            alignItems="center"
+            style={{ gap: 6 }}
+          >
             <SpaceIcon space={space} size={22} />
             <Typography level="body-sm" truncate="single">
               {space.name}

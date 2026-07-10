@@ -73,7 +73,9 @@ const StaffAppealsScreen = () => {
         `staff/appeals/${appealId}`,
         {
           status: nextStatus,
-          ...(staffResponse?.trim() ? { staffResponse: staffResponse.trim() } : {}),
+          ...(staffResponse?.trim()
+            ? { staffResponse: staffResponse.trim() }
+            : {}),
         },
       ),
     onSuccess: () => {
@@ -113,13 +115,13 @@ const StaffAppealsScreen = () => {
         ))}
       </ScrollView>
 
-      {isLoading ? (
+      {isLoading && (
         <Box style={{ padding: 24, alignItems: "center" }}>
           <ActivityIndicator />
         </Box>
-      ) : null}
+      )}
 
-      {!isLoading && appeals.length === 0 ? (
+      {!isLoading && appeals.length === 0 && (
         <Typography
           level="body-sm"
           textColor="muted"
@@ -127,10 +129,14 @@ const StaffAppealsScreen = () => {
         >
           No appeals found.
         </Typography>
-      ) : null}
+      )}
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 12, gap: 12, paddingBottom: 24 }}
+        contentContainerStyle={{
+          paddingHorizontal: 12,
+          gap: 12,
+          paddingBottom: 24,
+        }}
       >
         {appeals.map((appeal) => (
           <Paper
@@ -138,7 +144,9 @@ const StaffAppealsScreen = () => {
             style={{ padding: 12, borderRadius: 12, gap: 10 }}
             elevation={app.settings?.preferEmbossed ? 3 : 0}
           >
-            <Box style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Box
+              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+            >
               <UserAvatar user={app.users.get(appeal.user.id)} size="md" />
               <Box style={{ flex: 1, gap: 2 }}>
                 <Typography level="body-md" weight={700}>
@@ -155,11 +163,11 @@ const StaffAppealsScreen = () => {
 
             <Typography level="body-sm">{appeal.message}</Typography>
 
-            {appeal.staffResponse ? (
+            {appeal.staffResponse && (
               <Typography level="body-sm" textColor="muted">
                 Staff response: {appeal.staffResponse}
               </Typography>
-            ) : null}
+            )}
 
             {appeal.status === "pending" ? (
               <Box style={{ gap: 8 }}>
@@ -169,7 +177,10 @@ const StaffAppealsScreen = () => {
                   placeholder="Optional staff response"
                   value={responseDrafts[appeal.id] ?? ""}
                   onChangeText={(value) =>
-                    setResponseDrafts((prev) => ({ ...prev, [appeal.id]: value }))
+                    setResponseDrafts((prev) => ({
+                      ...prev,
+                      [appeal.id]: value,
+                    }))
                   }
                 />
                 <Box style={{ flexDirection: "row", gap: 8 }}>
@@ -214,7 +225,9 @@ const StaffAppealsScreen = () => {
             ) : (
               <Button
                 variant="soft"
-                onPress={() => navigate(`/staff/users/${appeal.user.id}` as Href)}
+                onPress={() =>
+                  navigate(`/staff/users/${appeal.user.id}` as Href)
+                }
               >
                 View user
               </Button>
@@ -222,7 +235,7 @@ const StaffAppealsScreen = () => {
           </Paper>
         ))}
 
-        {hasNextPage ? (
+        {hasNextPage && (
           <Button
             variant="soft"
             disabled={isFetchingNextPage}
@@ -230,7 +243,7 @@ const StaffAppealsScreen = () => {
           >
             {isFetchingNextPage ? "Loading..." : "Load more"}
           </Button>
-        ) : null}
+        )}
       </ScrollView>
     </Screen>
   );

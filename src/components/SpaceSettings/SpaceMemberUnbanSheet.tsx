@@ -48,11 +48,11 @@ export const SpaceMemberUnbanSheet = observer(
         <Typography level="body-md" weight={700}>
           Unban {ban.user?.displayName ?? ban.userId}?
         </Typography>
-        {ban.reason ? (
+        {ban.reason && (
           <Typography level="body-sm" textColor="muted">
             Reason: {ban.reason}
           </Typography>
-        ) : null}
+        )}
         <Button color="danger" disabled={pending} onPress={() => void unban()}>
           {pending ? "Unbanning..." : "Unban member"}
         </Button>

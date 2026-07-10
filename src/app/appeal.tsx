@@ -1,4 +1,4 @@
-import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
+import { KeyboardForm } from "@components/Keyboard";
 import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
@@ -34,12 +34,13 @@ const SubmitAppeal = () => {
   if (!token) return <Redirect href="/login" />;
 
   return (
-    <AppKeyboardAvoidingView
+    <KeyboardForm
       style={{
         flex: 1,
         justifyContent: "center",
         paddingHorizontal: 24,
       }}
+      contentContainerStyle={{ justifyContent: "center" }}
     >
       <Paper
         style={{
@@ -84,7 +85,7 @@ const SubmitAppeal = () => {
           </Box>
         )}
       </Paper>
-    </AppKeyboardAvoidingView>
+    </KeyboardForm>
   );
 };
 

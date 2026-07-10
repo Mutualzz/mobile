@@ -5,7 +5,10 @@ import { UserActionSheet } from "@components/User/UserActionSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { Paper } from "@components/Paper";
 import { useUserRowStyle } from "@components/userRowStyle";
-import { useScaledMentionBadgeStyle, useScaledSquareSize } from "@utils/accessibilityLayout";
+import {
+  useScaledMentionBadgeStyle,
+  useScaledSquareSize,
+} from "@utils/accessibilityLayout";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
@@ -97,90 +100,92 @@ export const DMChannelItem = observer(({ channel }: Props) => {
         accessibilityLabel={accessibilityLabel}
         accessibilityState={{ selected: active }}
       >
-      <Paper
-        variant={active ? "soft" : "plain"}
-        style={{
-          ...rowStyle,
-          marginBottom: 4,
-          opacity: iBlockedThem ? 0.6 : active ? 1 : 0.94,
-        }}
-      >
-        {recipient && channel.type === ChannelType.DM ? (
-          <Pressable onPress={() => openProfile(recipient)} hitSlop={4}>
-            <UserAvatar user={recipient} size="md" />
-          </Pressable>
-        ) : (
-          <UserAvatar user={recipient ?? recipients[0]} size="md" />
-        )}
+        <Paper
+          variant={active ? "soft" : "plain"}
+          style={{
+            ...rowStyle,
+            marginBottom: 4,
+            opacity: iBlockedThem ? 0.6 : active ? 1 : 0.94,
+          }}
+        >
+          {recipient && channel.type === ChannelType.DM ? (
+            <Pressable onPress={() => openProfile(recipient)} hitSlop={4}>
+              <UserAvatar user={recipient} size="md" />
+            </Pressable>
+          ) : (
+            <UserAvatar user={recipient ?? recipients[0]} size="md" />
+          )}
 
-        <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
-          <Typography
-            level="body-sm"
-            weight={active ? "bold" : "medium"}
-            truncate="single"
-          >
-            {title}
-          </Typography>
-          {preview ? (
-            <Typography level="body-xs" textColor="muted" truncate="single">
-              {preview}
+          <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
+            <Typography
+              level="body-sm"
+              weight={active ? "bold" : "medium"}
+              truncate="single"
+            >
+              {title}
             </Typography>
-          ) : null}
-        </Box>
+            {preview && (
+              <Typography level="body-xs" textColor="muted" truncate="single">
+                {preview}
+              </Typography>
+            )}
+          </Box>
 
-        {!active && (
-          <Box
-            style={{
-              minWidth: 16,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {mentionCount > 0 ? (
-              <Box
-                style={{
-                  ...mentionBadgeStyle,
-                  borderRadius: 9999,
-                  backgroundColor: theme.colors.danger,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Typography
-                  level="body-xs"
+          {!active && (
+            <Box
+              style={{
+                minWidth: 16,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {mentionCount > 0 ? (
+                <Box
                   style={{
-                    color: "#fff",
-                    fontWeight: "600",
+                    ...mentionBadgeStyle,
+                    borderRadius: 9999,
+                    backgroundColor: theme.colors.danger,
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  {mentionCount > 99 ? "99+" : mentionCount}
-                </Typography>
-              </Box>
-            ) : isUnread ? (
-              <Box
-                style={{
-                  width: unreadDotSize,
-                  height: unreadDotSize,
-                  borderRadius: 9999,
-                  backgroundColor: theme.typography.colors.primary,
-                }}
-              />
-            ) : null}
-          </Box>
-        )}
-      </Paper>
-    </Pressable>
+                  <Typography
+                    level="body-xs"
+                    style={{
+                      color: "#fff",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {mentionCount > 99 ? "99+" : mentionCount}
+                  </Typography>
+                </Box>
+              ) : (
+                isUnread && (
+                  <Box
+                    style={{
+                      width: unreadDotSize,
+                      height: unreadDotSize,
+                      borderRadius: 9999,
+                      backgroundColor: theme.typography.colors.primary,
+                    }}
+                  />
+                )
+              )}
+            </Box>
+          )}
+        </Paper>
+      </Pressable>
 
-      {recipient && channel.type === ChannelType.DM ? (
+      {recipient && channel.type === ChannelType.DM && (
         <UserActionSheet
           user={recipient}
           visible={actionSheetOpen}
           onClose={() => setActionSheetOpen(false)}
           insideDMs
         />
-      ) : null}
+      )}
 
-      {channel.isGroupDM ? (
+      {channel.isGroupDM && (
         <>
           <GroupDMActionSheet
             channel={channel}
@@ -194,7 +199,7 @@ export const DMChannelItem = observer(({ channel }: Props) => {
             channel={channel}
           />
         </>
-      ) : null}
+      )}
     </>
   );
 });

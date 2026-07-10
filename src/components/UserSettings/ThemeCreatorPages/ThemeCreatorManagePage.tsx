@@ -1,13 +1,16 @@
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
-import type { ThemeCreatorFilter, ThemeCreatorLoadedType } from "@stores/ThemeCreator.store";
+import type {
+  ThemeCreatorFilter,
+  ThemeCreatorLoadedType,
+} from "@stores/ThemeCreator.store";
 import { Theme } from "@stores/objects/Theme";
 import { sortThemes } from "@utils/index";
 import { Box, Button, Modal, Typography, useTheme } from "@mutualzz/ui-native";
 import { CaretDownIcon, CheckIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Pressable } from "react-native";
+import { Pressable, ScrollView } from "react-native";
 
 const capitalize = (value: string) =>
   value.charAt(0).toUpperCase() + value.slice(1);
@@ -64,12 +67,12 @@ export const ThemeCreatorManagePage = observer(
       loadedType === "custom" && !!values.id && values.id.trim() !== "";
 
     return (
-      <Box style={{ gap: 20 }}>
+      <Box style={{ gap: 16 }}>
         <Box style={{ gap: 8 }}>
-          <Typography level="body-xs" weight={700}>
-            Load themes
+          <Typography level="body-sm" weight={700}>
+            Source
           </Typography>
-          <Box style={{ flexDirection: "row", gap: 4 }}>
+          <Box style={{ flexDirection: "row", gap: 6 }}>
             {LOADED_TYPES.map((type) => {
               const active = loadedType === type;
               return (
@@ -114,7 +117,7 @@ export const ThemeCreatorManagePage = observer(
               alignItems: "center",
               justifyContent: "space-between",
               gap: 8,
-              paddingHorizontal: 10,
+              paddingHorizontal: 12,
               paddingVertical: 10,
               borderRadius: 8,
               borderWidth: 1,
@@ -156,10 +159,14 @@ export const ThemeCreatorManagePage = observer(
         </Box>
 
         <Box style={{ gap: 8 }}>
-          <Typography level="body-xs" weight={700}>
+          <Typography level="body-sm" weight={700}>
             Filters
           </Typography>
-          <Box style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 6, paddingRight: 4 }}
+          >
             <FilterChip
               label="All"
               active={filters.length === 0}
@@ -173,7 +180,7 @@ export const ThemeCreatorManagePage = observer(
                 onPress={() => toggleFilter(filter)}
               />
             ))}
-          </Box>
+          </ScrollView>
         </Box>
 
         <Modal
@@ -222,13 +229,13 @@ export const ThemeCreatorManagePage = observer(
                   >
                     {theme.name}
                   </Typography>
-                  {active ? (
+                  {active && (
                     <CheckIcon
                       size={16}
                       weight="bold"
                       color={uiTheme.colors.success}
                     />
-                  ) : null}
+                  )}
                 </Pressable>
               );
             })}
@@ -258,14 +265,18 @@ const FilterChip = ({
         paddingVertical: 6,
         borderRadius: 9999,
         borderWidth: 1,
-        borderColor: active ? theme.colors.primary : `${theme.typography.colors.muted}48`,
+        borderColor: active
+          ? theme.colors.primary
+          : `${theme.typography.colors.muted}48`,
         backgroundColor: active ? `${theme.colors.primary}18` : "transparent",
       }}
     >
       <Typography
         level="body-xs"
         weight={active ? "bold" : undefined}
-        style={{ color: active ? theme.colors.primary : theme.typography.colors.muted }}
+        style={{
+          color: active ? theme.colors.primary : theme.typography.colors.muted,
+        }}
       >
         {label}
       </Typography>

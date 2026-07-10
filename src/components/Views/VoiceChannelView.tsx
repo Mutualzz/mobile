@@ -7,7 +7,7 @@ import { UserBar } from "@components/User/UserBar";
 import { VoiceChannelChatSheet } from "@components/Views/VoiceChannelChatSheet";
 import { VoiceChannelParticipant } from "@components/Views/VoiceChannelParticipant";
 import { VoiceParticipantActionSheet } from "@components/Views/VoiceParticipantActionSheet";
-import { useTabBarContentInset } from "@hooks/useTabBarContentInset";
+import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
@@ -24,7 +24,7 @@ interface Props {
 export const VoiceChannelView = observer(({ channel }: Props) => {
   const app = useAppStore();
   const { theme } = useTheme();
-  const tabBarInset = useTabBarContentInset();
+  const tabBarInset = useKeyboardChromeInset();
   const [chatOpen, setChatOpen] = useState(false);
   const [moderationTarget, setModerationTarget] = useState<VoiceState | null>(
     null,
@@ -81,7 +81,9 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
           </IconButton>
         </ScreenHeader>
 
-        <Box style={{ flex: 1, padding: 16, gap: 12, paddingBottom: tabBarInset }}>
+        <Box
+          style={{ flex: 1, padding: 16, gap: 12, paddingBottom: tabBarInset }}
+        >
           {!isJoined ? (
             <Box style={{ gap: 12, alignItems: "center", paddingVertical: 8 }}>
               <Typography textColor="muted" style={{ textAlign: "center" }}>
@@ -97,7 +99,7 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
               >
                 Join Voice
               </Button>
-              {joinFailed ? (
+              {joinFailed && (
                 <Typography
                   color="danger"
                   variant="plain"
@@ -105,7 +107,7 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
                 >
                   {app.voice.connectionError ?? "Voice connection failed"}
                 </Typography>
-              ) : null}
+              )}
             </Box>
           ) : (
             <Typography textColor="muted">
@@ -149,7 +151,7 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
         onClose={() => setChatOpen(false)}
       />
 
-      {moderationTarget && space ? (
+      {moderationTarget && space && (
         <VoiceParticipantActionSheet
           state={moderationTarget}
           space={space}
@@ -157,7 +159,7 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
           onRequestClose={requestCloseModeration}
           onClose={handleModerationClosed}
         />
-      ) : null}
+      )}
     </>
   );
 });

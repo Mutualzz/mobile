@@ -2,7 +2,7 @@ import { readAudioLevelFromStats } from "./webrtcBridge";
 
 const SPEAKING_ON_DELAY_MS = 50;
 const SPEAKING_OFF_DELAY_MS = 250;
-const SPEAKING_TICK_MS = 20;
+const SPEAKING_TICK_MS = 100;
 
 type StatsSource = () => Promise<RTCStatsReport>;
 

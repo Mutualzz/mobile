@@ -41,3 +41,16 @@ export function navigateOnce(
 
   router.navigate(href);
 }
+
+export function exitStaffPanel(
+  back: () => void,
+  getParent?: () => { canGoBack: () => boolean; goBack: () => void } | undefined,
+) {
+  const parent = getParent?.();
+  if (parent?.canGoBack()) {
+    parent.goBack();
+    return;
+  }
+
+  back();
+}

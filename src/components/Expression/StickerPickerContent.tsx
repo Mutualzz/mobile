@@ -20,11 +20,14 @@ const STICKER_IMAGE_SIZE = 72;
 
 interface Props {
   channel?: Channel | null;
+  active?: boolean;
   onSelectSticker: (sticker: Expression) => void;
+  /** Profile editor: show the current user's stickers without channel context. */
+  profileMode?: boolean;
 }
 
 export const StickerPickerContent = observer(
-  ({ channel, onSelectSticker }: Props) => {
+  ({ channel, active = true, onSelectSticker, profileMode = false }: Props) => {
     const app = useAppStore();
     const { width } = useWindowDimensions();
     const columns = getGridColumnCount(width, STICKER_CELL_SIZE);
@@ -38,7 +41,7 @@ export const StickerPickerContent = observer(
       (sticker) =>
         !sticker.spaceId &&
         sticker.authorId === meId &&
-        canUseSticker(meId, sticker, me, channel),
+        (profileMode || canUseSticker(meId, sticker, me, channel)),
     );
 
     const spaceStickerGroups = app.spaces.all
@@ -47,7 +50,8 @@ export const StickerPickerContent = observer(
         stickers: Array.from(space.expressions.values()).filter(
           (expression) =>
             expression.type === ExpressionType.Sticker &&
-            canUseSticker(meId, expression, me, channel),
+            (profileMode ||
+              canUseSticker(meId, expression, me, channel)),
         ),
       }))
       .filter((group) => group.stickers.length > 0);

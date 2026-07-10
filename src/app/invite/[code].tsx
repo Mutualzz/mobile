@@ -74,14 +74,16 @@ const InviteScreen = () => {
     onSuccess: goToSpace,
   });
 
-  const { mutate: acceptFriendInvite, isPending: isAddingFriend } = useMutation({
-    mutationKey: ["accept-friend-invite", code],
-    mutationFn: () => app.relationships.acceptFriendInvite(code!),
-    onSuccess: () => {
-      app.setJoining(null, null);
-      navigate("/");
+  const { mutate: acceptFriendInvite, isPending: isAddingFriend } = useMutation(
+    {
+      mutationKey: ["accept-friend-invite", code],
+      mutationFn: () => app.relationships.acceptFriendInvite(code),
+      onSuccess: () => {
+        app.setJoining(null, null);
+        navigate("/");
+      },
     },
-  });
+  );
 
   const friendActionLabel = relationship?.isFriend
     ? "Friends"
@@ -136,11 +138,11 @@ const InviteScreen = () => {
 
         {!isLoading && invite && isFriendInvite && (
           <>
-            {inviteUser ? (
-              <UserAvatar user={inviteUser} size={64} />
-            ) : null}
+            {inviteUser && <UserAvatar user={inviteUser} size={64} />}
             <Typography style={{ textAlign: "center" }}>
-              {inviteUser?.globalName ?? inviteUser?.username ?? "Friend invite"}
+              {inviteUser?.globalName ??
+                inviteUser?.username ??
+                "Friend invite"}
             </Typography>
             <Typography textColor="muted" style={{ textAlign: "center" }}>
               Wants to be your friend

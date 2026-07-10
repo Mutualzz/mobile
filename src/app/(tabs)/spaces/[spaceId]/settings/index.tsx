@@ -4,7 +4,6 @@ import { Paper } from "@components/Paper";
 import { SpaceActionConfirmSheet } from "@components/SpaceSettings/SpaceActionConfirmSheet";
 import { SpaceSettingsHeader } from "@components/SpaceSettings/SpaceSettingsHeader";
 import { useSettingsIconColor } from "@components/UserSettings/settingsTheme";
-import { spaceSettingsPages } from "@components/SpaceSettings/spaceSettingsPages";
 import { useModal } from "@hooks/useModal";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
@@ -100,12 +99,12 @@ const SpaceSettingsIndex = () => {
               ))}
             </ButtonGroup>
           </Paper>
-          {index < categories.length - 1 ? (
+          {index < categories.length - 1 && (
             <Divider
               style={{ paddingInline: 16, opacity: 0.5 }}
               lineColor="muted"
             />
-          ) : null}
+          )}
         </Fragment>
       ))}
 

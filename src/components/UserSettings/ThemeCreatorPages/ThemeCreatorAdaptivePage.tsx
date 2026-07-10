@@ -9,10 +9,9 @@ export const ThemeCreatorAdaptivePage = observer(() => {
   const { values, setValues } = app.themeCreator;
 
   return (
-    <Box style={{ gap: 16 }}>
+    <Box style={{ gap: 10 }}>
       <ThemeCreatorColorField
         label="Base color"
-        description="The base color of the app — surface, neutral, and semantic colors are derived from this"
         value={values.colors.background}
         onChange={(color: ColorLike) =>
           setValues({
@@ -22,16 +21,14 @@ export const ThemeCreatorAdaptivePage = observer(() => {
         }
       />
       <ThemeCreatorColorField
-        label="Primary color"
-        description="Used to indicate the primary action or important elements. Auto-generated icons derive from this color."
+        label="Primary"
         value={values.colors.primary}
         onChange={(color: ColorLike) =>
           setValues({ colors: { ...values.colors, primary: color } })
         }
       />
       <ThemeCreatorColorField
-        label="Base text color"
-        description="The base color for text. Usually white-ish on dark backgrounds, black-ish on light backgrounds."
+        label="Base text"
         value={values.typography.colors.primary}
         onChange={(color: ColorLike) =>
           setValues({

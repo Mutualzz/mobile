@@ -27,7 +27,6 @@ import {
 } from "@utils/modalSheet";
 import { useScaledProfileMetrics } from "@utils/accessibilityLayout";
 import { useQuery } from "@tanstack/react-query";
-import type { Href } from "expo-router";
 import {
   ChatCircleIcon,
   FlagIcon,
@@ -35,15 +34,11 @@ import {
   PencilSimpleIcon,
   XIcon,
 } from "phosphor-react-native";
+import { ProfileBackgroundLayer } from "@components/Profile/shared/ProfileBackgroundLayer";
 import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  View,
-} from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface Props {
@@ -119,9 +114,6 @@ export const UserProfileSheet = observer(
     } = useUserRelationshipActions(user.id);
 
     const bannerUrl = profile?.constructBannerUrl();
-    const backgroundUrl = profile?.constructBackgroundUrl() ?? null;
-    const resolvedBackgroundColor =
-      profile?.backgroundColor ?? theme.colors.surface;
     const displayName = member?.displayName ?? user.displayName;
     const presence = app.presence.get(user.id);
     const customActivity = presence?.activities.find(
@@ -179,9 +171,7 @@ export const UserProfileSheet = observer(
 
     const openStaffPanel = () => {
       close();
-      navigate(
-        (isSelf ? "/staff" : `/staff/users/${user.id}`) as Href,
-      );
+      navigate(isSelf ? "/staff" : `/staff/users/${user.id}`);
     };
 
     const openReport = () => {
@@ -210,30 +200,7 @@ export const UserProfileSheet = observer(
         }}
         elevation={app.settings?.preferEmbossed ? 3 : 1}
       >
-        <View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: resolvedBackgroundColor,
-          }}
-        />
-        {backgroundUrl ? (
-          <ProfileBlockImage
-            uri={backgroundUrl}
-            assetHash={profile?.backgroundImage}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-            }}
-            resizeMode="cover"
-          />
-        ) : null}
+        {profile ? <ProfileBackgroundLayer profile={profile} /> : null}
 
         <ScrollView
           style={{ flex: 1 }}
@@ -251,14 +218,14 @@ export const UserProfileSheet = observer(
                   backgroundColor: bannerUrl ? undefined : user.accentColor,
                 }}
               >
-                {bannerUrl ? (
+                {bannerUrl && (
                   <ProfileBlockImage
                     uri={bannerUrl}
                     assetHash={profile?.banner}
                     style={{ width: "100%", height: "100%" }}
                     resizeMode="cover"
                   />
-                ) : null}
+                )}
               </View>
 
               <View
@@ -284,7 +251,7 @@ export const UserProfileSheet = observer(
                   <XIcon size={18} weight="bold" />
                 </IconButton>
 
-                {showAccountMenu ? (
+                {showAccountMenu && (
                   <IconButton
                     variant="solid"
                     color="neutral"
@@ -296,7 +263,7 @@ export const UserProfileSheet = observer(
                   >
                     <GearIcon weight="fill" size={18} />
                   </IconButton>
-                ) : null}
+                )}
               </View>
 
               <View
@@ -322,7 +289,7 @@ export const UserProfileSheet = observer(
                   />
                 </Pressable>
 
-                {showAccountMenu ? (
+                {showAccountMenu && (
                   <Pressable
                     onPress={() => setStatusModalOpen(true)}
                     style={{ flex: 1, minWidth: 0, marginBottom: 4 }}
@@ -344,7 +311,7 @@ export const UserProfileSheet = observer(
                       </Typography>
                     </Box>
                   </Pressable>
-                ) : null}
+                )}
               </View>
             </View>
 
@@ -366,16 +333,16 @@ export const UserProfileSheet = observer(
                     >
                       @{user.username}
                     </Typography>
-                    {presenceLabel && !showAccountMenu ? (
+                    {presenceLabel && !showAccountMenu && (
                       <Typography level="body-sm" textColor="accent">
                         {presenceLabel}
                       </Typography>
-                    ) : null}
+                    )}
                   </Box>
 
-                  {profile?.bio ? (
+                  {profile?.bio && (
                     <ProfileMarkdownContent value={profile.bio} />
-                  ) : null}
+                  )}
 
                   <Box
                     style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
@@ -405,20 +372,20 @@ export const UserProfileSheet = observer(
                       </Button>
                     )}
                     {!isSelf &&
-                    !isFriend &&
-                    !isIncomingRequest &&
-                    !isOutgoingRequest ? (
-                      <Button
-                        size="sm"
-                        color="neutral"
-                        variant="soft"
-                        disabled={relationshipPending || iBlockedThem}
-                        onPress={() => addFriend.mutate()}
-                      >
-                        Add Friend
-                      </Button>
-                    ) : null}
-                    {!isSelf && isIncomingRequest ? (
+                      !isFriend &&
+                      !isIncomingRequest &&
+                      !isOutgoingRequest && (
+                        <Button
+                          size="sm"
+                          color="neutral"
+                          variant="soft"
+                          disabled={relationshipPending || iBlockedThem}
+                          onPress={() => addFriend.mutate()}
+                        >
+                          Add Friend
+                        </Button>
+                      )}
+                    {!isSelf && isIncomingRequest && (
                       <>
                         <Button
                           size="sm"
@@ -438,8 +405,8 @@ export const UserProfileSheet = observer(
                           Decline
                         </Button>
                       </>
-                    ) : null}
-                    {!isSelf && isOutgoingRequest ? (
+                    )}
+                    {!isSelf && isOutgoingRequest && (
                       <Button
                         size="sm"
                         color="neutral"
@@ -449,8 +416,8 @@ export const UserProfileSheet = observer(
                       >
                         Cancel Request
                       </Button>
-                    ) : null}
-                    {!isSelf && isFriend ? (
+                    )}
+                    {!isSelf && isFriend && (
                       <Button
                         size="sm"
                         color="neutral"
@@ -460,9 +427,9 @@ export const UserProfileSheet = observer(
                       >
                         Remove Friend
                       </Button>
-                    ) : null}
-                    {!isSelf ? (
-                      iBlockedThem ? (
+                    )}
+                    {!isSelf &&
+                      (iBlockedThem ? (
                         <Button
                           size="sm"
                           color="neutral"
@@ -482,9 +449,8 @@ export const UserProfileSheet = observer(
                         >
                           Block
                         </Button>
-                      )
-                    ) : null}
-                    {!isSelf ? (
+                      ))}
+                    {!isSelf && (
                       <Button
                         size="sm"
                         color="neutral"
@@ -493,8 +459,8 @@ export const UserProfileSheet = observer(
                       >
                         View Profile
                       </Button>
-                    ) : null}
-                    {isViewerStaff && !isSelf ? (
+                    )}
+                    {isViewerStaff && !isSelf && (
                       <Button
                         size="sm"
                         color="danger"
@@ -503,18 +469,8 @@ export const UserProfileSheet = observer(
                       >
                         Open in Staff Panel
                       </Button>
-                    ) : null}
-                    {isViewerStaff && isSelf ? (
-                      <Button
-                        size="sm"
-                        color="neutral"
-                        variant="soft"
-                        onPress={openStaffPanel}
-                      >
-                        Staff Panel
-                      </Button>
-                    ) : null}
-                    {!isSelf ? (
+                    )}
+                    {!isSelf && (
                       <Button
                         size="sm"
                         color="danger"
@@ -524,31 +480,30 @@ export const UserProfileSheet = observer(
                       >
                         Report
                       </Button>
-                    ) : null}
+                    )}
                   </Box>
 
                   <Divider />
 
-                  {profile ? (
-                    profile.mobileBlocks.length > 0 ? (
+                  {profile &&
+                    (profile.mobileBlocks.length > 0 ? (
                       <ProfileWidgetGrid profile={profile} user={user} />
                     ) : (
                       <ProfileWidgetsEmptyViewer />
-                    )
-                  ) : null}
+                    ))}
                 </>
               )}
             </Box>
           </View>
         </ScrollView>
 
-        {showAccountMenu ? (
+        {showAccountMenu && (
           <ChangeOnlineStatusModal
             visible={statusModalOpen}
             onClose={() => setStatusModalOpen(false)}
             onDone={() => setStatusModalOpen(false)}
           />
-        ) : null}
+        )}
       </Paper>
     );
   },

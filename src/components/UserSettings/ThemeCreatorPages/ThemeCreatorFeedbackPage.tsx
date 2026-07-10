@@ -9,50 +9,44 @@ export const ThemeCreatorFeedbackPage = observer(() => {
   const { values, setValues } = app.themeCreator;
 
   return (
-    <Box style={{ gap: 16 }}>
+    <Box style={{ gap: 10 }}>
       <ThemeCreatorColorField
-        label="Primary color"
-        description="Used to indicate the primary action or important elements. Auto-generated icons derive from this color."
+        label="Primary"
         value={values.colors.primary}
         onChange={(color: ColorLike) =>
           setValues({ colors: { ...values.colors, primary: color } })
         }
       />
       <ThemeCreatorColorField
-        label="Neutral color"
-        description="Used to indicate a neutral or inactive state"
+        label="Neutral"
         value={values.colors.neutral}
         onChange={(color: ColorLike) =>
           setValues({ colors: { ...values.colors, neutral: color } })
         }
       />
       <ThemeCreatorColorField
-        label="Success color"
-        description="Used to indicate a successful or positive action"
+        label="Success"
         value={values.colors.success}
         onChange={(color: ColorLike) =>
           setValues({ colors: { ...values.colors, success: color } })
         }
       />
       <ThemeCreatorColorField
-        label="Danger color"
-        description="Used to indicate errors and failure within the app"
+        label="Danger"
         value={values.colors.danger}
         onChange={(color: ColorLike) =>
           setValues({ colors: { ...values.colors, danger: color } })
         }
       />
       <ThemeCreatorColorField
-        label="Warning color"
-        description="Used to indicate caution and requires user attention"
+        label="Warning"
         value={values.colors.warning}
         onChange={(color: ColorLike) =>
           setValues({ colors: { ...values.colors, warning: color } })
         }
       />
       <ThemeCreatorColorField
-        label="Info color"
-        description="Used to indicate additional information"
+        label="Info"
         value={values.colors.info}
         onChange={(color: ColorLike) =>
           setValues({ colors: { ...values.colors, info: color } })

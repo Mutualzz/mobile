@@ -250,7 +250,7 @@ export function ProfileDrawCanvas({
               strokeLinejoin="round"
             />
           ))}
-          {currentPath ? (
+          {currentPath && (
             <Path
               d={currentPath}
               stroke={activeColor}
@@ -259,7 +259,7 @@ export function ProfileDrawCanvas({
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-          ) : null}
+          )}
         </Svg>
       </View>
 
@@ -382,7 +382,7 @@ export function ProfileDrawCanvas({
         <Button color="neutral" disabled={disableActions} onPress={onCancel}>
           Cancel
         </Button>
-        {onSaveDraft ? (
+        {onSaveDraft && (
           <Button
             color="neutral"
             disabled={disableActions || strokes.length === 0}
@@ -390,7 +390,7 @@ export function ProfileDrawCanvas({
           >
             {saveDraftLabel}
           </Button>
-        ) : null}
+        )}
         <Button
           color="primary"
           disabled={disableActions || strokes.length === 0}

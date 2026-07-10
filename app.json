@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mutualzz",
     "slug": "mutualzz",
-    "version": "3.2.2",
+    "version": "3.3.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "com.mutualzz.app",
@@ -23,10 +23,11 @@
     },
     "android": {
       "package": "com.mutualzz.app",
+      "softwareKeyboardLayoutMode": "pan",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/android-icon.png",
+        "backgroundColor": "#88449a"
       }
     },
     "experiments": {
@@ -66,6 +67,7 @@
       "expo-asset",
       "@react-native-community/datetimepicker",
       "./plugins/withAnimatedWebp.js",
+      "./plugins/withNotifeeMavenRepo.js",
       "expo-audio",
       [
         "@config-plugins/react-native-webrtc",

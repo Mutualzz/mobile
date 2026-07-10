@@ -91,14 +91,14 @@ export const ChannelList = observer(() => {
             >
               <UserPlusIcon weight="fill" />
             </IconButton>
-            {canManageChannels ? (
+            {canManageChannels && (
               <IconButton
                 accessibilityLabel="Create category"
                 onPress={() => setCreateCategoryOpen(true)}
               >
                 <PlusIcon weight="bold" />
               </IconButton>
-            ) : null}
+            )}
             <IconButton
               accessibilityLabel="Space menu"
               onPress={() => setSpaceMenuOpen(true)}
@@ -228,12 +228,12 @@ export const ChannelList = observer(() => {
             fill={false}
             style={{ flexDirection: "column", padding: 16 }}
           >
-          <SpaceInviteToSpaceSheet
-            space={space}
-            channel={activeChannel}
-            onClose={() => setInviteOpen(false)}
-          />
-        </Screen>
+            <SpaceInviteToSpaceSheet
+              space={space}
+              channel={activeChannel}
+              onClose={() => setInviteOpen(false)}
+            />
+          </Screen>
         </View>
       </Modal>
     </Screen>

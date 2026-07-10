@@ -1,4 +1,5 @@
 import { Paper } from "@components/Paper";
+import { KeyboardForm } from "@components/Keyboard/KeyboardForm";
 import { useAppStore } from "@hooks/useStores";
 import type { PaperProps } from "@mutualzz/ui-native";
 import { scaledLayoutSize, useFontScale } from "@mutualzz/ui-native";
@@ -9,11 +10,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type SafeTop = boolean | number;
 
+export type ScreenKeyboardMode = "none" | "form";
+
 export type ScreenProps = PropsWithChildren<
     PaperProps & {
         fill?: boolean;
         safeTop?: SafeTop;
         safeHorizontal?: boolean;
+        /** `form` enables keyboard avoidance for settings/auth-style pages. */
+        keyboard?: ScreenKeyboardMode;
     }
 >;
 
@@ -32,6 +37,7 @@ const ScreenComponent = forwardRef<View, ScreenProps>(
             fill = true,
             safeTop = false,
             safeHorizontal = false,
+            keyboard = "none",
             ...props
         },
         ref,
@@ -39,6 +45,19 @@ const ScreenComponent = forwardRef<View, ScreenProps>(
         const app = useAppStore();
         const insets = useSafeAreaInsets();
         const topInset = resolveTopInset(safeTop, insets.top);
+
+        const body = (
+            <Paper
+                ref={ref}
+                style={[fill && { flex: 1 }, style]}
+                elevation={
+                    elevation ?? (app.settings?.preferEmbossed ? 2 : 0)
+                }
+                {...props}
+            >
+                {children}
+            </Paper>
+        );
 
         return (
             <View
@@ -51,16 +70,11 @@ const ScreenComponent = forwardRef<View, ScreenProps>(
                     },
                 ]}
             >
-                <Paper
-                    ref={ref}
-                    style={[fill && { flex: 1 }, style]}
-                    elevation={
-                        elevation ?? (app.settings?.preferEmbossed ? 2 : 0)
-                    }
-                    {...props}
-                >
-                    {children}
-                </Paper>
+                {keyboard === "form" ? (
+                    <KeyboardForm style={{ flex: 1 }}>{body}</KeyboardForm>
+                ) : (
+                    body
+                )}
             </View>
         );
     },

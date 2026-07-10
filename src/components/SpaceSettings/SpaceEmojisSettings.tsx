@@ -40,14 +40,11 @@ const EmojiRow = observer(
           minWidth: 0,
         }}
       >
-        <Image
-          source={{ uri: expression.url }}
-          style={thumbnailStyle}
-        />
+        <Image source={{ uri: expression.url }} style={thumbnailStyle} />
         <Typography level="body-sm" style={{ flex: 1 }} truncate="single">
           :{expression.name}:
         </Typography>
-        {canManage ? (
+        {canManage && (
           <IconButton
             padding={6}
             size={16}
@@ -58,7 +55,7 @@ const EmojiRow = observer(
           >
             <TrashIcon weight="fill" />
           </IconButton>
-        ) : null}
+        )}
       </Paper>
     );
   },
@@ -105,11 +102,11 @@ export const SpaceEmojisSettings = observer(({ space }: Props) => {
 
   return (
     <Box style={{ gap: 16 }}>
-      {canUpload ? (
+      {canUpload && (
         <Button style={{ alignSelf: "flex-start" }} onPress={handleUpload}>
           Upload emoji
         </Button>
-      ) : null}
+      )}
 
       {emojis.length === 0 ? (
         <Typography

@@ -1,5 +1,9 @@
 import type { ProfileImageCrop } from "@mutualzz/types";
-import { Image as ExpoImage, type ImageContentFit } from "expo-image";
+import {
+  Image as ExpoImage,
+  type ImageContentFit,
+  type ImageContentPosition,
+} from "expo-image";
 import { useState } from "react";
 import {
   View,
@@ -15,6 +19,7 @@ interface Props {
   assetHash?: string | null;
   style?: StyleProp<ImageStyle>;
   resizeMode?: ImageResizeMode;
+  contentPosition?: ImageContentPosition;
 }
 
 interface CroppedProps extends Props {
@@ -39,12 +44,14 @@ export function ProfileBlockImage({
   uri,
   style,
   resizeMode = "cover",
+  contentPosition,
 }: Props) {
   return (
     <ExpoImage
       source={{ uri }}
       style={style}
       contentFit={toContentFit(resizeMode)}
+      contentPosition={contentPosition}
       cachePolicy="memory-disk"
       recyclingKey={uri}
     />
@@ -65,12 +72,14 @@ export function ProfileBlockCroppedImage({
 
   if (!crop || resizeMode === "contain") {
     return (
-      <ProfileBlockImage
-        uri={uri}
-        assetHash={assetHash}
-        style={style}
-        resizeMode={resizeMode}
-      />
+      <View style={[{ overflow: "hidden" }, containerStyle, style]}>
+        <ProfileBlockImage
+          uri={uri}
+          assetHash={assetHash}
+          style={{ width: "100%", height: "100%" }}
+          resizeMode={resizeMode}
+        />
+      </View>
     );
   }
 

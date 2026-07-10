@@ -172,7 +172,7 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
             </Pressable>
           )}
 
-          {!imageFile && space.icon && !removeIcon ? (
+          {!imageFile && space.icon && !removeIcon && (
             <Button
               size="sm"
               variant="soft"
@@ -183,9 +183,9 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
             >
               Remove
             </Button>
-          ) : null}
+          )}
 
-          {removeIcon ? (
+          {removeIcon && (
             <Button
               size="sm"
               variant="plain"
@@ -194,7 +194,7 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
             >
               Restore
             </Button>
-          ) : null}
+          )}
         </Box>
       </Box>
 
@@ -243,14 +243,14 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
         </Paper>
       </Box>
 
-      {error ? (
+      {error && (
         <Typography variant="plain" color="danger" level="body-sm">
           {error}
         </Typography>
-      ) : null}
+      )}
 
       <ButtonGroup spacing={8}>
-        {hasChanges ? (
+        {hasChanges && (
           <Button
             variant="plain"
             disabled={saving}
@@ -264,7 +264,7 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
           >
             Reset
           </Button>
-        ) : null}
+        )}
         <Button
           color="success"
           disabled={!hasChanges || saving || !name.trim()}

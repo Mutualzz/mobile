@@ -1,6 +1,7 @@
 import { ModeSwitcher } from "@components/ModeSwitcher";
 import TabBar from "@components/Tabs/TabBar";
 import { UserBar } from "@components/User/UserBar";
+import { useKeyboardOpen } from "@hooks/useKeyboardOffset";
 import { useAppStore } from "@hooks/useStores";
 import { Box } from "@mutualzz/ui-native";
 import { useIsTabBarHidden } from "@utils/layout";
@@ -11,6 +12,8 @@ import { observer } from "mobx-react-lite";
 const AppLayout = () => {
   const app = useAppStore();
   const hideTabBar = useIsTabBarHidden();
+  const keyboardOpen = useKeyboardOpen();
+  const hideChrome = hideTabBar || keyboardOpen;
 
   if (!app.token) return <Redirect href="/login" />;
 
@@ -33,14 +36,17 @@ const AppLayout = () => {
         <TabTrigger name="@me" href="/@me" />
       </TabList>
 
-      {!hideTabBar && (
-        <>
-          <TabBar>
-            <UserBar />
-          </TabBar>
-          {!app.hideSwitcher && <ModeSwitcher />}
-        </>
-      )}
+      <Box
+        pointerEvents={hideChrome ? "none" : "box-none"}
+        style={
+          hideChrome ? { height: 0, overflow: "hidden", opacity: 0 } : undefined
+        }
+      >
+        <TabBar>
+          <UserBar />
+        </TabBar>
+        {!app.hideSwitcher && <ModeSwitcher />}
+      </Box>
     </Tabs>
   );
 };

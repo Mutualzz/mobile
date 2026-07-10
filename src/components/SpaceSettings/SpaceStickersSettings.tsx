@@ -42,14 +42,11 @@ const StickerRow = observer(
           minWidth: 0,
         }}
       >
-        <Image
-          source={{ uri: expression.url }}
-          style={thumbnailStyle}
-        />
+        <Image source={{ uri: expression.url }} style={thumbnailStyle} />
         <Typography level="body-sm" style={{ flex: 1 }} truncate="single">
           :{expression.name}:
         </Typography>
-        {canManage ? (
+        {canManage && (
           <IconButton
             padding={6}
             size={16}
@@ -60,7 +57,7 @@ const StickerRow = observer(
           >
             <TrashIcon weight="fill" />
           </IconButton>
-        ) : null}
+        )}
       </Paper>
     );
   },
@@ -92,7 +89,11 @@ const StickerSection = ({
       <Divider lineColor="muted" />
       <Box style={{ gap: 8 }}>
         {expressions.map((expression) => (
-          <StickerRow key={expression.id} expression={expression} space={space} />
+          <StickerRow
+            key={expression.id}
+            expression={expression}
+            space={space}
+          />
         ))}
       </Box>
     </Paper>
@@ -154,7 +155,7 @@ export const SpaceStickersSettings = observer(({ space }: Props) => {
             {STICKER_LIMIT - stickers.length} slots available
           </Typography>
         </Box>
-        {canUpload ? (
+        {canUpload && (
           <Button
             color="success"
             disabled={stickers.length >= STICKER_LIMIT}
@@ -163,7 +164,7 @@ export const SpaceStickersSettings = observer(({ space }: Props) => {
           >
             Upload sticker
           </Button>
-        ) : null}
+        )}
       </Box>
 
       <StickerSection
@@ -177,7 +178,7 @@ export const SpaceStickersSettings = observer(({ space }: Props) => {
         space={space}
       />
 
-      {stickers.length === 0 ? (
+      {stickers.length === 0 && (
         <Typography
           level="body-sm"
           textColor="muted"
@@ -185,8 +186,7 @@ export const SpaceStickersSettings = observer(({ space }: Props) => {
         >
           No space stickers yet
         </Typography>
-      ) : null}
+      )}
     </Box>
   );
 });
-

@@ -56,6 +56,8 @@ export function createDefaultMobileBlockContent(
       };
     case "draw":
       return { type, svgData: null, paths: null, backgroundColor: null };
+    case "sticker":
+      return { type, expressionId: "" };
   }
 }
 
@@ -121,6 +123,7 @@ export function prepareMobileBlocksForSave(
 ): APIMobileProfileBlock[] {
   return blocks.filter((block) => {
     if (block.type === "image") return block.src.trim() !== "";
+    if (block.type === "sticker") return block.expressionId.trim() !== "";
     if (block.type === "links")
       return (block.links ?? []).some((link) => link.url.trim() !== "");
     return true;
@@ -135,6 +138,13 @@ export function validateMobileBlocksForSave(
   ).length;
   if (emptyImageCount > 0) {
     return `Remove or upload images for ${emptyImageCount} image widget(s) before saving`;
+  }
+
+  const emptyStickerCount = blocks.filter(
+    (block) => block.type === "sticker" && block.expressionId.trim() === "",
+  ).length;
+  if (emptyStickerCount > 0) {
+    return `Choose stickers for ${emptyStickerCount} sticker widget(s) before saving`;
   }
 
   const emptyLinksCount = blocks.filter(

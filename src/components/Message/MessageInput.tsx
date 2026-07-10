@@ -11,7 +11,7 @@ import {
   XIcon,
 } from "phosphor-react-native";
 import { useAppStore } from "@hooks/useStores";
-import { useKeyboardOffset, useKeyboardVisible } from "@hooks/useKeyboardOffset";
+import { useComposerSafePadding } from "@hooks/useKeyboardOffset";
 import {
   Box,
   scaledLayoutSize,
@@ -46,11 +46,16 @@ import { unifiedToEmoji } from "@utils/emojis/unified";
 import Snowflake from "@utils/Snowflake";
 import { createSystemMessage } from "@utils/index";
 import { messageFlags } from "@mutualzz/bitfield";
-import { HttpException, HttpStatusCode, type APIMessage, ChannelType, MessageType } from "@mutualzz/types";
+import {
+  HttpException,
+  HttpStatusCode,
+  type APIMessage,
+  ChannelType,
+  MessageType,
+} from "@mutualzz/types";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Image, Platform, Pressable } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Image, Pressable } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 
 const MAX_STICKERS = 3;
@@ -74,11 +79,7 @@ export const MessageInput = observer(({ channel }: Props) => {
   const fontScale = useFontScale();
   const composerMaxHeight = useScaledComposerPanelMaxHeight();
   const feedSizes = useScaledFeedPreviewSizes();
-  const insets = useSafeAreaInsets();
-  const keyboardVisible = useKeyboardVisible();
-  const keyboardHeight = useKeyboardOffset();
-  const keyboardOpen =
-    keyboardVisible || (Platform.OS === "android" && keyboardHeight > 0);
+  const composerBottomPadding = useComposerSafePadding();
   const [content, setContent] = useState("");
   const [entities, setEntities] = useState<MentionEntity[]>([]);
   const [selection, setSelection] = useState<Selection>({ start: 0, end: 0 });
@@ -246,12 +247,8 @@ export const MessageInput = observer(({ channel }: Props) => {
       .filter((a) => (a.fileSize ?? 0) <= MAX_ATTACHMENT_SIZE)
       .map((a) => ({
         uri: a.uri,
-        type:
-          a.mimeType ??
-          (a.type === "video" ? "video/mp4" : "image/jpeg"),
-        name:
-          a.fileName ??
-          `attachment.${a.type === "video" ? "mp4" : "jpg"}`,
+        type: a.mimeType ?? (a.type === "video" ? "video/mp4" : "image/jpeg"),
+        name: a.fileName ?? `attachment.${a.type === "video" ? "mp4" : "jpg"}`,
         size: a.fileSize ?? undefined,
       }));
 
@@ -532,7 +529,7 @@ export const MessageInput = observer(({ channel }: Props) => {
         flexGrow: 0,
         backgroundColor: theme.colors.surface,
         paddingHorizontal: 12,
-        paddingBottom: keyboardOpen ? 0 : insets.bottom + 12,
+        paddingBottom: composerBottomPadding,
         paddingTop: editingMessage ? 0 : 12,
         borderTopWidth: 1,
         borderTopColor: `${theme.colors.neutral}33`,
@@ -541,7 +538,7 @@ export const MessageInput = observer(({ channel }: Props) => {
         borderBottomWidth: 0,
       }}
     >
-      {app.replyingTo && !editingMessage ? (
+      {app.replyingTo && !editingMessage && (
         <Paper
           elevation={app.settings?.preferEmbossed ? 3 : 0}
           style={{
@@ -561,7 +558,7 @@ export const MessageInput = observer(({ channel }: Props) => {
               {app.replyingTo.author?.displayName ?? "Unknown"}
             </Typography>
           </Typography>
-          {app.replyingTo.authorId !== app.account?.id ? (
+          {app.replyingTo.authorId !== app.account?.id && (
             <Pressable onPress={() => app.setReplyMention(!app.replyMention)}>
               <Typography
                 level="body-xs"
@@ -572,7 +569,7 @@ export const MessageInput = observer(({ channel }: Props) => {
                 {app.replyMention ? "@ ON" : "@ OFF"}
               </Typography>
             </Pressable>
-          ) : null}
+          )}
           <IconButton
             padding={6}
             color="neutral"
@@ -582,7 +579,7 @@ export const MessageInput = observer(({ channel }: Props) => {
             <XIcon size={20} />
           </IconButton>
         </Paper>
-      ) : null}
+      )}
 
       {editingMessage && (
         <Box

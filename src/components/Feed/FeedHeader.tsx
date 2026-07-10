@@ -1,7 +1,6 @@
 import { IconButton } from "@components/IconButton";
 import { PostComposer } from "@components/Feed/PostComposer";
 import { BottomSheet } from "@components/Keyboard/BottomSheet";
-import { Paper } from "@components/Paper";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
@@ -94,9 +93,9 @@ export const FeedHeader = observer(() => {
           })}
         </ScrollView>
 
-        {username ? (
+        {username && (
           <Box style={{ flexDirection: "row", gap: 4, flexShrink: 0 }}>
-            {isForYou ? (
+            {isForYou && (
               <IconButton
                 padding={6}
                 accessibilityLabel="Create post"
@@ -104,7 +103,7 @@ export const FeedHeader = observer(() => {
               >
                 <PlusIcon size={20} weight="bold" />
               </IconButton>
-            ) : null}
+            )}
             <IconButton
               padding={6}
               accessibilityLabel="My profile"
@@ -120,7 +119,7 @@ export const FeedHeader = observer(() => {
               <PaletteIcon size={20} weight="fill" />
             </IconButton>
           </Box>
-        ) : null}
+        )}
       </Box>
 
       <BottomSheet

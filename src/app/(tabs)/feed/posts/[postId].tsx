@@ -14,7 +14,7 @@ const FeedPostDetailScreen = () => {
 
   const { isLoading, isError } = useQuery({
     queryKey: ["post", postId],
-    queryFn: () => app.posts.resolve(postId!, true),
+    queryFn: () => app.posts.resolve(postId, true),
     enabled: !!postId,
   });
 
@@ -36,25 +36,24 @@ const FeedPostDetailScreen = () => {
           paddingVertical: 16,
         }}
       >
-        {isLoading ? (
+        {isLoading && (
           <Box style={{ padding: 24, alignItems: "center" }}>
             <ActivityIndicator />
           </Box>
-        ) : null}
+        )}
 
-        {isError && !post ? (
+        {isError && !post && (
           <Typography level="body-sm" textColor="muted">
             This post doesn&apos;t exist, or is no longer available.
           </Typography>
-        ) : null}
+        )}
 
-        {post ? (
-          post.attachments.length > 0 ? (
+        {post &&
+          (post.attachments.length > 0 ? (
             <MediaPostCard post={post} defaultCommentsOpen />
           ) : (
             <PostCard post={post} defaultCommentsOpen />
-          )
-        ) : null}
+          ))}
       </ScrollView>
     </Screen>
   );

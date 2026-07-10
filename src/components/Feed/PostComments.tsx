@@ -1,3 +1,4 @@
+import { KeyboardComposer } from "@components/Keyboard/KeyboardComposer";
 import { ExpressionPickerSheet } from "@components/Expression/ExpressionPickerSheet";
 import { IconButton } from "@components/IconButton";
 import { MarkdownInput } from "@components/Markdown/MarkdownInput/MarkdownInput";
@@ -8,7 +9,7 @@ import { ReportContentSheet } from "@components/Report/ReportContentSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
-import { useKeyboardOffset } from "@hooks/useKeyboardOffset";
+import { useOnKeyboardOpen } from "@hooks/useKeyboardOffset";
 import { ExpressionType } from "@mutualzz/types";
 import { Box, Typography } from "@mutualzz/ui-native";
 import type { Post } from "@stores/objects/Post";
@@ -27,7 +28,7 @@ import {
   XIcon,
 } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Image, Keyboard, Pressable, ScrollView } from "react-native";
 
 interface Props {
@@ -153,7 +154,6 @@ function CommentRow({
 export const PostComments = observer(({ post }: Props) => {
   const app = useAppStore();
   const feedSizes = useScaledFeedPreviewSizes();
-  const keyboardHeight = useKeyboardOffset();
   const scrollRef = useRef<ScrollView>(null);
   const [content, setContent] = useState("");
   const [stickers, setStickers] = useState<Expression[]>([]);
@@ -186,13 +186,11 @@ export const PostComments = observer(({ post }: Props) => {
     setReplyingTo(null);
   }, [post.id]);
 
-  useEffect(() => {
-    if (keyboardHeight <= 0) return;
+  const handleKeyboardOpen = useCallback(() => {
+    scrollRef.current?.scrollToEnd({ animated: true });
+  }, []);
 
-    requestAnimationFrame(() => {
-      scrollRef.current?.scrollToEnd({ animated: true });
-    });
-  }, [keyboardHeight]);
+  useOnKeyboardOpen(handleKeyboardOpen);
 
   const handleSelectSticker = (sticker: Expression) => {
     setStickers((prev) => {
@@ -238,7 +236,101 @@ export const PostComments = observer(({ post }: Props) => {
   }
 
   return (
-    <Box style={{ flex: 1, minHeight: 0 }}>
+    <KeyboardComposer
+      footer={
+        <Box
+          style={{
+            flexShrink: 0,
+            gap: 10,
+            paddingTop: 10,
+            borderTopWidth: 1,
+            borderTopColor: "rgba(128,128,128,0.2)",
+          }}
+        >
+          {replyingTo && (
+            <Box
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Typography level="body-xs" textColor="muted">
+                Replying to {replyingTo.author?.displayName ?? "Unknown"}
+              </Typography>
+              <IconButton
+                variant="plain"
+                padding={4}
+                onPress={() => setReplyingTo(null)}
+              >
+                <XIcon size={14} />
+              </IconButton>
+            </Box>
+          )}
+
+          {stickers.length > 0 && (
+            <Box style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {stickers.map((sticker) => (
+                <Box key={sticker.id} style={{ position: "relative" }}>
+                  <Image
+                    source={{ uri: sticker.url }}
+                    style={{
+                      width: feedSizes.commentSticker,
+                      height: feedSizes.commentSticker,
+                    }}
+                    resizeMode="contain"
+                  />
+                  <IconButton
+                    variant="plain"
+                    padding={2}
+                    onPress={() =>
+                      setStickers((prev) =>
+                        prev.filter((s) => s.id !== sticker.id),
+                      )
+                    }
+                    style={{ position: "absolute", top: -4, right: -4 }}
+                  >
+                    <XIcon size={12} />
+                  </IconButton>
+                </Box>
+              ))}
+            </Box>
+          )}
+
+          <Box style={{ flexDirection: "row", gap: 8, alignItems: "flex-end" }}>
+            <Box style={{ flex: 1 }}>
+              <MarkdownInput
+                value={content}
+                onChange={setContent}
+                selection={selection}
+                onChangeSelection={setSelection}
+                placeholder={
+                  replyingTo
+                    ? `Reply to ${replyingTo.author?.displayName ?? "comment"}…`
+                    : "Write a comment…"
+                }
+                style={{ minHeight: feedSizes.commentComposerMinHeight }}
+              />
+            </Box>
+            <IconButton
+              variant="plain"
+              padding={6}
+              onPress={() => setPickerOpen(true)}
+            >
+              <SmileyIcon size={20} />
+            </IconButton>
+            <IconButton
+              variant="plain"
+              padding={6}
+              disabled={!canSubmit || isPending}
+              onPress={() => submit()}
+            >
+              <ChatCircleIcon size={20} weight="fill" />
+            </IconButton>
+          </Box>
+        </Box>
+      }
+    >
       <ScrollView
         ref={scrollRef}
         style={{ flex: 1 }}
@@ -285,93 +377,6 @@ export const PostComments = observer(({ post }: Props) => {
         ))}
       </ScrollView>
 
-      <Box
-        style={{
-          flexShrink: 0,
-          gap: 10,
-          paddingTop: 10,
-          borderTopWidth: 1,
-          borderTopColor: "rgba(128,128,128,0.2)",
-        }}
-      >
-        {replyingTo && (
-          <Box
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Typography level="body-xs" textColor="muted">
-              Replying to {replyingTo.author?.displayName ?? "Unknown"}
-            </Typography>
-            <IconButton
-              variant="plain"
-              padding={4}
-              onPress={() => setReplyingTo(null)}
-            >
-              <XIcon size={14} />
-            </IconButton>
-          </Box>
-        )}
-
-        {stickers.length > 0 && (
-          <Box style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {stickers.map((sticker) => (
-              <Box key={sticker.id} style={{ position: "relative" }}>
-                <Image
-                  source={{ uri: sticker.url }}
-                  style={{ width: feedSizes.commentSticker, height: feedSizes.commentSticker }}
-                  resizeMode="contain"
-                />
-                <IconButton
-                  variant="plain"
-                  padding={2}
-                  onPress={() =>
-                    setStickers((prev) => prev.filter((s) => s.id !== sticker.id))
-                  }
-                  style={{ position: "absolute", top: -4, right: -4 }}
-                >
-                  <XIcon size={12} />
-                </IconButton>
-              </Box>
-            ))}
-          </Box>
-        )}
-
-        <Box style={{ flexDirection: "row", gap: 8, alignItems: "flex-end" }}>
-          <Box style={{ flex: 1 }}>
-            <MarkdownInput
-              value={content}
-              onChange={setContent}
-              selection={selection}
-              onChangeSelection={setSelection}
-              placeholder={
-                replyingTo
-                  ? `Reply to ${replyingTo.author?.displayName ?? "comment"}…`
-                  : "Write a comment…"
-              }
-              style={{ minHeight: feedSizes.commentComposerMinHeight }}
-            />
-          </Box>
-          <IconButton
-            variant="plain"
-            padding={6}
-            onPress={() => setPickerOpen(true)}
-          >
-            <SmileyIcon size={20} />
-          </IconButton>
-          <IconButton
-            variant="plain"
-            padding={6}
-            disabled={!canSubmit || isPending}
-            onPress={() => submit()}
-          >
-            <ChatCircleIcon size={20} weight="fill" />
-          </IconButton>
-        </Box>
-      </Box>
-
       <ExpressionPickerSheet
         visible={pickerOpen}
         onClose={() => setPickerOpen(false)}
@@ -382,6 +387,6 @@ export const PostComments = observer(({ post }: Props) => {
         onSelectGif={handleGif}
         showStickers
       />
-    </Box>
+    </KeyboardComposer>
   );
 });

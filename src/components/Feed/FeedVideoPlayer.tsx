@@ -59,11 +59,11 @@ export function FeedVideoPlayer({ uri, isActive, muted = true }: Props) {
         nativeControls={false}
         allowsPictureInPicture={false}
       />
-      {showPlayOverlay ? (
+      {showPlayOverlay && (
         <View style={styles.playOverlay} pointerEvents="none">
           <PlayIcon size={56} color="#fff" weight="fill" />
         </View>
-      ) : null}
+      )}
     </Pressable>
   );
 }

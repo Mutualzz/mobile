@@ -1,7 +1,7 @@
 import { FeedHeader } from "@components/Feed/FeedHeader";
 import { ScheduledPostCard } from "@components/Feed/ScheduledPostCard";
 import { Screen } from "@components/Screen/Screen";
-import { useTabBarContentInset } from "@hooks/useTabBarContentInset";
+import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography } from "@mutualzz/ui-native";
 import { useQuery } from "@tanstack/react-query";
@@ -10,7 +10,7 @@ import { ActivityIndicator, ScrollView } from "react-native";
 
 const FeedScheduledScreen = () => {
   const app = useAppStore();
-  const tabBarInset = useTabBarContentInset();
+  const tabBarInset = useKeyboardChromeInset();
 
   const { isLoading } = useQuery({
     queryKey: ["posts", "scheduled"],
@@ -48,17 +48,17 @@ const FeedScheduledScreen = () => {
           Scheduled Posts
         </Typography>
 
-        {isLoading ? (
+        {isLoading && (
           <Box style={{ padding: 24, alignItems: "center" }}>
             <ActivityIndicator />
           </Box>
-        ) : null}
+        )}
 
-        {!isLoading && scheduledPosts.length === 0 ? (
+        {!isLoading && scheduledPosts.length === 0 && (
           <Typography level="body-sm" textColor="muted">
             You have no scheduled posts.
           </Typography>
-        ) : null}
+        )}
 
         {scheduledPosts.map((post) => (
           <ScheduledPostCard key={post.id} post={post} />

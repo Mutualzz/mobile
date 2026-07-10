@@ -7,10 +7,12 @@ import {
 } from "@components/SpaceSettings/roleHierarchy.utils";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useModal } from "@hooks/useModal";
-import { useAppStore } from "@hooks/useStores";
 import type { Role } from "@stores/objects/Role";
 import { Box, Input, Typography, useTheme } from "@mutualzz/ui-native";
-import { useScaledModalListMaxHeight, useScaledSquareSize } from "@utils/accessibilityLayout";
+import {
+  useScaledModalListMaxHeight,
+  useScaledSquareSize,
+} from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
 import { FlatList, Pressable } from "react-native";
@@ -21,11 +23,9 @@ interface Props {
 }
 
 export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
-  const app = useAppStore();
   const { theme } = useTheme();
-  const listMaxHeight = useScaledModalListMaxHeight();
   const removeButtonSize = useScaledSquareSize(26);
-  const { openModal, closeModal } = useModal();
+  const { openModal } = useModal();
   const [search, setSearch] = useState("");
   const space = role.space;
   const hierarchyContext = space
@@ -96,7 +96,7 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
         <Typography level="body-sm" textColor="muted">
           View and manage members assigned to this role.
         </Typography>
-        {!canManageRole ? (
+        {!canManageRole && (
           <Box
             style={{
               flexDirection: "row",
@@ -107,10 +107,10 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
           >
             <RoleHierarchyAssignLock />
             <Typography level="body-sm" textColor="muted" style={{ flex: 1 }}>
-              You can't assign or remove members from this role.
+              You can&apos;t assign or remove members from this role.
             </Typography>
           </Box>
-        ) : null}
+        )}
       </Paper>
 
       <Box style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
@@ -145,9 +145,7 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
         <FlatList
           data={members}
           keyExtractor={(member) => member.id}
-          ItemSeparatorComponent={() => (
-            <Box style={{ height: 8 }} />
-          )}
+          ItemSeparatorComponent={() => <Box style={{ height: 8 }} />}
           renderItem={({ item: member }) => {
             const canRemove =
               canManageRole &&
@@ -187,7 +185,7 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
                   </Box>
                 </Box>
 
-                {canRemove ? (
+                {canRemove && (
                   <Pressable
                     onPress={() => void member.removeRole(role)}
                     hitSlop={8}
@@ -207,7 +205,7 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
                       <XIcon size={16} weight="bold" />
                     </Box>
                   </Pressable>
-                ) : null}
+                )}
               </Paper>
             );
           }}
@@ -225,7 +223,6 @@ interface AddMembersSheetProps {
 
 const AddMembersSheet = observer(
   ({ modalId, role, eligibleMemberIds }: AddMembersSheetProps) => {
-    const app = useAppStore();
     const { closeModal } = useModal();
     const listMaxHeight = useScaledModalListMaxHeight();
     const [search, setSearch] = useState("");
@@ -306,9 +303,7 @@ const AddMembersSheet = observer(
             data={members}
             keyExtractor={(member) => member!.id}
             style={{ maxHeight: listMaxHeight }}
-            ItemSeparatorComponent={() => (
-              <Box style={{ height: 8 }} />
-            )}
+            ItemSeparatorComponent={() => <Box style={{ height: 8 }} />}
             renderItem={({ item: member }) => {
               const isSelected = selectedIds.includes(member!.id);
               return (
@@ -347,7 +342,7 @@ const AddMembersSheet = observer(
           />
         )}
 
-        {error ? (
+        {error && (
           <Typography
             level="body-sm"
             color="danger"
@@ -355,7 +350,7 @@ const AddMembersSheet = observer(
           >
             {error}
           </Typography>
-        ) : null}
+        )}
 
         <Box
           style={{
@@ -384,4 +379,3 @@ const AddMembersSheet = observer(
     );
   },
 );
-

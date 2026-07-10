@@ -29,7 +29,7 @@ export const SpaceSettingsHeader = observer(
           borderRightWidth: 0,
         }}
       >
-        {showBack ? (
+        {showBack && (
           <Pressable
             hitSlop={11}
             onPress={() => back()}
@@ -38,7 +38,7 @@ export const SpaceSettingsHeader = observer(
           >
             <ArrowLeftIcon size={22} weight="bold" color={iconColor} />
           </Pressable>
-        ) : null}
+        )}
         <Typography
           level="body-lg"
           weight="bold"
@@ -47,7 +47,7 @@ export const SpaceSettingsHeader = observer(
         >
           {title}
         </Typography>
-        {onClose ? (
+        {onClose && (
           <Pressable
             hitSlop={11}
             onPress={onClose}
@@ -56,7 +56,7 @@ export const SpaceSettingsHeader = observer(
           >
             <XIcon size={22} weight="bold" color={iconColor} />
           </Pressable>
-        ) : null}
+        )}
       </ScreenHeader>
     );
   },

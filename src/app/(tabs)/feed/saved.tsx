@@ -1,12 +1,12 @@
 import { FeedHeader } from "@components/Feed/FeedHeader";
 import { PostList } from "@components/Feed/PostList";
 import { Screen } from "@components/Screen/Screen";
-import { useTabBarContentInset } from "@hooks/useTabBarContentInset";
+import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { Box } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 
 const FeedSavedScreen = () => {
-  const tabBarInset = useTabBarContentInset();
+  const tabBarInset = useKeyboardChromeInset();
 
   return (
     <Screen

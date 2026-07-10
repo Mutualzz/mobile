@@ -149,7 +149,7 @@ const SettingsIndex = () => {
         </Button>
       </Paper>
 
-      {app.account?.isStaff ? (
+      {app.account?.isStaff && (
         <Paper
           elevation={app.settings?.preferEmbossed ? 3 : 0}
           style={{
@@ -168,12 +168,12 @@ const SettingsIndex = () => {
             startDecorator={
               <ShieldIcon weight="fill" size={20} color={navIconColor} />
             }
-            onPress={() => navigate("/staff" as Href)}
+            onPress={() => navigate("/staff")}
           >
             Staff Panel
           </Button>
         </Paper>
-      ) : null}
+      )}
 
       <Paper
         elevation={app.settings?.preferEmbossed ? 3 : 0}

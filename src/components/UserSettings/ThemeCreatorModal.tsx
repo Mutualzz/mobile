@@ -1,79 +1,56 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
+import { Screen } from "@components/Screen/Screen";
+import { SpaceSettingsHeader } from "@components/SpaceSettings/SpaceSettingsHeader";
 import { useAppStore } from "@hooks/useStores";
 import type { APITheme, HttpException } from "@mutualzz/types";
 import { baseDarkTheme, baseLightTheme } from "@mutualzz/ui-core";
-import {
-  Box,
-  IconButton,
-  Modal,
-  Switch,
-  Typography,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { Box, Modal, Typography, useTheme } from "@mutualzz/ui-native";
 import { Theme } from "@stores/objects/Theme";
 import { applyAdaptiveThemeValues } from "@utils/adaptation";
 import Snowflake from "@utils/Snowflake";
 import { useMutation } from "@tanstack/react-query";
-import {
-  GearIcon,
-  PaletteIcon,
-  TextAaIcon,
-  TextAlignJustifyIcon,
-  WarningIcon,
-  XIcon,
-} from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Pressable, ScrollView, useColorScheme, View } from "react-native";
-import { ThemeCreatorAdaptivePage } from "./ThemeCreatorPages/ThemeCreatorAdaptivePage";
-import { ThemeCreatorBasePage } from "./ThemeCreatorPages/ThemeCreatorBasePage";
+import { Pressable, ScrollView, useColorScheme } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ThemeCreatorColorsPage } from "./ThemeCreatorPages/ThemeCreatorColorsPage";
 import { ThemeCreatorDetailsPage } from "./ThemeCreatorPages/ThemeCreatorDetailsPage";
-import { ThemeCreatorFeedbackPage } from "./ThemeCreatorPages/ThemeCreatorFeedbackPage";
 import { ThemeCreatorManagePage } from "./ThemeCreatorPages/ThemeCreatorManagePage";
-import { ThemeCreatorTypographyPage } from "./ThemeCreatorPages/ThemeCreatorTypographyPage";
 
 interface Props {
   visible: boolean;
   onClose: () => void;
 }
 
-const NON_ADAPTIVE_TABS = [
-  { id: "details", label: "Details", Icon: TextAlignJustifyIcon },
-  { id: "base", label: "Base", Icon: PaletteIcon },
-  { id: "feedback", label: "Feedback", Icon: WarningIcon },
-  { id: "typography", label: "Typography", Icon: TextAaIcon },
-  { id: "manage", label: "Manage", Icon: GearIcon },
+const TABS = [
+  { id: "details", label: "Details" },
+  { id: "colors", label: "Colors" },
+  { id: "manage", label: "Manage" },
 ] as const;
 
-const ADAPTIVE_TABS = [
-  { id: "details", label: "Details", Icon: TextAlignJustifyIcon },
-  { id: "adaptive", label: "Adaptive", Icon: PaletteIcon },
-  { id: "manage", label: "Manage", Icon: GearIcon },
-] as const;
+type TabId = (typeof TABS)[number]["id"];
 
 export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
   const app = useAppStore();
   const { theme: activeTheme, changeTheme } = useTheme();
   const prefersDark = useColorScheme() === "dark";
+  const insets = useSafeAreaInsets();
   const themeCreator = app.themeCreator;
 
   const [error, setError] = useState<string | null>(null);
 
   const { values, currentPage, userInteracted, loadedType, nameEmpty } =
     themeCreator;
-  const tabs = values.adaptive ? ADAPTIVE_TABS : NON_ADAPTIVE_TABS;
   const ownedByUser = !!values.id && app.account?.id === values.authorId;
   const existingDraft = app.drafts.existsThemeDraft(values);
 
-  const handleAdaptiveToggle = (checked: boolean) => {
-    themeCreator.setValues({ adaptive: checked });
-    themeCreator.setCurrentPage("details");
-  };
-
   const handlePreview = (enabled: boolean) => {
     if (enabled) {
-      themeCreator.startPreview(changeTheme, Theme.serialize(activeTheme), app.account?.id);
+      themeCreator.startPreview(
+        changeTheme,
+        Theme.serialize(activeTheme),
+        app.account?.id,
+      );
       return;
     }
 
@@ -185,130 +162,82 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
     else app.drafts.saveThemeDraft(values);
   };
 
+  const setTab = (id: TabId) => themeCreator.setCurrentPage(id);
+
   return (
     <Modal
       open={visible}
       onClose={onClose}
       layout="fullscreen"
+      hideBackdrop
       showCloseButton={false}
-      style={{
-        justifyContent: "flex-end",
-        alignItems: "stretch",
-        backgroundColor: "transparent",
-        paddingVertical: 0,
-      }}
+      disableBackdropClick
+      style={{ paddingVertical: 0 }}
     >
-      <View
-        pointerEvents="box-none"
-        style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
+      <Screen
+        fill
+        keyboard="form"
+        safeTop
+        style={{ backgroundColor: activeTheme.colors.background }}
       >
-        <Paper
-          style={{
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            padding: 20,
-            gap: 12,
-            maxHeight: "88%",
+        <SpaceSettingsHeader title="Theme Creator" onClose={onClose} />
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            gap: 20,
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            paddingBottom: 4,
           }}
-          elevation={app.settings?.preferEmbossed ? 4 : 2}
         >
-          <Box
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Typography level="body-lg" weight="bold">
-              Theme Creator
+          {TABS.map(({ id, label }) => (
+            <ThemeCreatorTab
+              key={id}
+              label={label}
+              active={currentPage === id}
+              onPress={() => setTab(id)}
+            />
+          ))}
+        </ScrollView>
+
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            paddingBottom: 16,
+          }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {currentPage === "details" && <ThemeCreatorDetailsPage />}
+          {currentPage === "colors" && <ThemeCreatorColorsPage />}
+          {currentPage === "manage" && (
+            <ThemeCreatorManagePage
+              onDeleteTheme={() => deleteTheme()}
+              deletingTheme={deleting}
+            />
+          )}
+        </ScrollView>
+
+        <Box
+          style={{
+            gap: 8,
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            paddingBottom: Math.max(insets.bottom, 12),
+            borderTopWidth: 1,
+            borderTopColor: `${activeTheme.typography.colors.muted}24`,
+          }}
+        >
+          {error && (
+            <Typography level="body-sm" color="danger" variant="plain">
+              {error}
             </Typography>
-            <IconButton
-              variant="plain"
-              color="neutral"
-              padding={4}
-              accessibilityLabel="Close"
-              onPress={onClose}
-            >
-              <XIcon size={18} />
-            </IconButton>
-          </Box>
+          )}
 
-          <Pressable
-            accessibilityRole="switch"
-            accessibilityState={{ checked: values.adaptive }}
-            onPress={() => handleAdaptiveToggle(!values.adaptive)}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-            }}
-          >
-            <Box style={{ flex: 1, gap: 2 }}>
-              <Typography level="body-sm" weight={700}>
-                Adaptive theme
-              </Typography>
-              <Typography level="body-xs" textColor="muted">
-                Derive surface and text colors automatically
-              </Typography>
-            </Box>
-            <Switch checked={values.adaptive} onChange={handleAdaptiveToggle} />
-          </Pressable>
-
-          <Box style={{ flexDirection: "row", gap: 4, flexWrap: "wrap" }}>
-            {tabs.map(({ id, label, Icon }) => (
-              <ThemeCreatorTab
-                key={id}
-                label={label}
-                Icon={Icon}
-                active={currentPage === id}
-                onPress={() => themeCreator.setCurrentPage(id)}
-              />
-            ))}
-          </Box>
-
-          <ScrollView
-            contentContainerStyle={{ paddingVertical: 8, gap: 8 }}
-            keyboardShouldPersistTaps="handled"
-          >
-            {currentPage === "details" && <ThemeCreatorDetailsPage />}
-            {!values.adaptive && currentPage === "base" && (
-              <ThemeCreatorBasePage />
-            )}
-            {!values.adaptive && currentPage === "feedback" && (
-              <ThemeCreatorFeedbackPage />
-            )}
-            {!values.adaptive && currentPage === "typography" && (
-              <ThemeCreatorTypographyPage />
-            )}
-            {values.adaptive && currentPage === "adaptive" && (
-              <ThemeCreatorAdaptivePage />
-            )}
-            {currentPage === "manage" && (
-              <ThemeCreatorManagePage
-                onDeleteTheme={() => deleteTheme()}
-                deletingTheme={deleting}
-              />
-            )}
-          </ScrollView>
-
-          <Box
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 8,
-            }}
-          >
-            <Button
-              expand
-              variant="soft"
-              color="danger"
-              disabled={!userInteracted || themeCreator.inPreview}
-              onPress={handleReset}
-            >
-              Reset
-            </Button>
+          <Box style={{ flexDirection: "row", gap: 8 }}>
             <Button
               expand
               variant="soft"
@@ -317,31 +246,7 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
               }
               onPress={() => handlePreview(!themeCreator.inPreview)}
             >
-              {themeCreator.inPreview ? "Stop Preview" : "Preview"}
-            </Button>
-          </Box>
-
-          {error && (
-            <Typography level="body-sm" color="danger" variant="plain">
-              {error}
-            </Typography>
-          )}
-
-          <Box
-            style={{
-              flexDirection: "row",
-              gap: 8,
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Button
-              color="warning"
-              expand
-              disabled={!userInteracted || nameEmpty || ownedByUser}
-              onPress={handleSaveDraft}
-            >
-              {existingDraft ? "Update Draft" : "Save Draft"}
+              {themeCreator.inPreview ? "Stop" : "Preview"}
             </Button>
             <Button
               expand
@@ -356,61 +261,69 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
                   : "Publish"}
             </Button>
           </Box>
-          <Button variant="plain" onPress={onClose}>
-            Close
-          </Button>
-        </Paper>
-      </View>
+
+          <Box
+            style={{
+              flexDirection: "row",
+              justifyContent: "center",
+              gap: 16,
+            }}
+          >
+            <Button
+              variant="plain"
+              disabled={!userInteracted || themeCreator.inPreview}
+              onPress={handleReset}
+            >
+              Reset
+            </Button>
+            <Button
+              variant="plain"
+              color="warning"
+              disabled={!userInteracted || nameEmpty || ownedByUser}
+              onPress={handleSaveDraft}
+            >
+              {existingDraft ? "Update draft" : "Save draft"}
+            </Button>
+          </Box>
+        </Box>
+      </Screen>
     </Modal>
   );
 });
 
 interface ThemeCreatorTabProps {
   label: string;
-  Icon: typeof PaletteIcon;
   active: boolean;
   onPress: () => void;
 }
 
 const ThemeCreatorTab = ({
   label,
-  Icon,
   active,
   onPress,
 }: ThemeCreatorTabProps) => {
   const { theme } = useTheme();
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        flex: 1,
-        minWidth: 70,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 4,
-        paddingVertical: 8,
-        borderRadius: 8,
-        borderBottomWidth: 2,
-        borderBottomColor: active ? theme.colors.primary : "transparent",
-        backgroundColor: active ? `${theme.colors.primary}14` : "transparent",
-      }}
-    >
-      <Icon
-        size={16}
-        color={active ? theme.colors.primary : theme.typography.colors.muted}
-        weight="fill"
-      />
+    <Pressable onPress={onPress} style={{ gap: 6 }}>
       <Typography
-        level="body-xs"
-        weight={active ? "bold" : undefined}
+        level="body-sm"
+        weight={active ? 700 : 400}
         style={{
-          color: active ? theme.colors.primary : theme.typography.colors.muted,
+          color: active
+            ? theme.colors.primary
+            : theme.typography.colors.muted,
         }}
       >
         {label}
       </Typography>
+      <Box
+        style={{
+          height: 2,
+          borderRadius: 1,
+          backgroundColor: active ? theme.colors.primary : "transparent",
+        }}
+      />
     </Pressable>
   );
 };

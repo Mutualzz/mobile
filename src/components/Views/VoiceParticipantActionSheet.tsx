@@ -1,7 +1,6 @@
 import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
-import type { Channel } from "@stores/objects/Channel";
 import type { Space } from "@stores/objects/Space";
 import type { VoiceState } from "@stores/objects/VoiceState";
 import {
@@ -104,7 +103,9 @@ export const VoiceParticipantActionSheet = observer(
                   gap: 8,
                 }}
               >
-                <Box style={{ alignItems: "center", paddingVertical: 4, gap: 2 }}>
+                <Box
+                  style={{ alignItems: "center", paddingVertical: 4, gap: 2 }}
+                >
                   <Typography level="body-md" weight={700}>
                     {user.displayName}
                   </Typography>
@@ -122,7 +123,7 @@ export const VoiceParticipantActionSheet = observer(
                   horizontalAlign="left"
                   spacing={0.5}
                 >
-                  {canMuteMembers ? (
+                  {canMuteMembers && (
                     <Button
                       fullWidth
                       padding={12}
@@ -136,23 +137,25 @@ export const VoiceParticipantActionSheet = observer(
                     >
                       {state.spaceMute ? "Remove space mute" : "Space mute"}
                     </Button>
-                  ) : null}
+                  )}
 
-                  {canDeafenMembers ? (
+                  {canDeafenMembers && (
                     <Button
                       fullWidth
                       padding={12}
                       color="danger"
                       variant={state.spaceDeaf ? "soft" : "plain"}
-                      startDecorator={<HeadphonesIcon size={20} weight="fill" />}
+                      startDecorator={
+                        <HeadphonesIcon size={20} weight="fill" />
+                      }
                       disabled={moderating}
                       onPress={() => moderateMember("deafen")}
                     >
                       {state.spaceDeaf ? "Remove space deafen" : "Space deafen"}
                     </Button>
-                  ) : null}
+                  )}
 
-                  {canDisconnectMembers ? (
+                  {canDisconnectMembers && (
                     <Button
                       fullWidth
                       padding={12}
@@ -163,7 +166,7 @@ export const VoiceParticipantActionSheet = observer(
                     >
                       Disconnect
                     </Button>
-                  ) : null}
+                  )}
                 </ButtonGroup>
               </Paper>
             </Box>

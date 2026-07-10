@@ -10,7 +10,12 @@ import { calendarStrings } from "@utils/i18n";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import type { Href } from "expo-router";
-import { FileIcon, PlayIcon, ProhibitIcon, ArrowSquareOutIcon } from "phosphor-react-native";
+import {
+  FileIcon,
+  PlayIcon,
+  ProhibitIcon,
+  ArrowSquareOutIcon,
+} from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { Image, Pressable, useWindowDimensions, View } from "react-native";
 
@@ -41,15 +46,15 @@ function AttachmentThumb({
         backgroundColor: "rgba(255, 255, 255, 0.06)",
       }}
     >
-      {isImage ? (
+      {isImage && (
         <Image
           source={{ uri: attachment.url }}
           style={{ width: "100%", height: "100%" }}
           resizeMode="cover"
         />
-      ) : null}
+      )}
 
-      {isVideo ? (
+      {isVideo && (
         <View style={{ width: "100%", height: "100%" }}>
           <Image
             source={{ uri: attachment.url }}
@@ -67,9 +72,9 @@ function AttachmentThumb({
             <PlayIcon size={18} color="#fff" weight="fill" />
           </View>
         </View>
-      ) : null}
+      )}
 
-      {!isImage && !isVideo ? (
+      {!isImage && !isVideo && (
         <View
           style={{
             flex: 1,
@@ -79,9 +84,9 @@ function AttachmentThumb({
         >
           <FileIcon size={20} />
         </View>
-      ) : null}
+      )}
 
-      {overlayCount != null ? (
+      {overlayCount != null && (
         <View
           style={{
             ...StyleSheetAbsoluteFill,
@@ -94,7 +99,7 @@ function AttachmentThumb({
             +{overlayCount}
           </Typography>
         </View>
-      ) : null}
+      )}
     </View>
   );
 }
@@ -239,15 +244,15 @@ export const PostEmbedPreview = observer(({ post: postData }: Props) => {
           )
         )}
 
-        {post.content && post.attachments.length > 0 ? (
+        {post.content && post.attachments.length > 0 && (
           <Typography level="body-xs" textColor="muted">
             {post.attachments.length === 1
               ? "1 attachment"
               : `${post.attachments.length} attachments`}
           </Typography>
-        ) : null}
+        )}
 
-        {post.hashtags.length > 0 ? (
+        {post.hashtags.length > 0 && (
           <Box style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             {post.hashtags.map((hashtag) => (
               <Typography
@@ -259,7 +264,7 @@ export const PostEmbedPreview = observer(({ post: postData }: Props) => {
               </Typography>
             ))}
           </Box>
-        ) : null}
+        )}
       </Paper>
     </Pressable>
   );

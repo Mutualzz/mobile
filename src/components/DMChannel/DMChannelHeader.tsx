@@ -94,11 +94,11 @@ export function DMChannelHeader({
           <Typography weight={700} truncate="single">
             {title}
           </Typography>
-          {subtitle ? (
+          {subtitle && (
             <Typography level="body-xs" textColor="muted" truncate="single">
               {subtitle}
             </Typography>
-          ) : null}
+          )}
         </Box>
       </Box>
 
@@ -122,16 +122,18 @@ export function DMChannelHeader({
             <DotsThreeOutlineVerticalIcon size={20} weight="bold" />
           </IconButton>
         </Box>
-      ) : onOpenUserMenu ? (
-        <IconButton
-          padding={6}
-          color="neutral"
-          onPress={onOpenUserMenu}
-          accessibilityLabel="Conversation options"
-        >
-          <DotsThreeOutlineVerticalIcon size={20} weight="bold" />
-        </IconButton>
-      ) : null}
+      ) : (
+        onOpenUserMenu && (
+          <IconButton
+            padding={6}
+            color="neutral"
+            onPress={onOpenUserMenu}
+            accessibilityLabel="Conversation options"
+          >
+            <DotsThreeOutlineVerticalIcon size={20} weight="bold" />
+          </IconButton>
+        )
+      )}
     </ScreenHeader>
   );
 }

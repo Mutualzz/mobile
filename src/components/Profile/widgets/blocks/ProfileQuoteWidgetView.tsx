@@ -99,12 +99,15 @@ export function ProfileQuoteWidgetView({ block, size }: Props) {
             textColor={styles.text as ColorLike}
           />
         ) : (
-          <Typography level="body-sm" style={{ color: styles.mutedText as ColorLike }}>
+          <Typography
+            level="body-sm"
+            style={{ color: styles.mutedText as ColorLike }}
+          >
             Quote
           </Typography>
         )}
       </Box>
-      {block.attribution ? (
+      {block.attribution && (
         <Typography
           level="body-xs"
           textColor={styles.mutedText as ColorLike}
@@ -112,7 +115,7 @@ export function ProfileQuoteWidgetView({ block, size }: Props) {
         >
           — {block.attribution}
         </Typography>
-      ) : null}
+      )}
     </Stack>
   );
 }
@@ -125,7 +128,7 @@ export function ProfileQuoteWidgetExpandedContent({
   return (
     <Stack direction="column" style={{ gap: 8 }}>
       {block.content ? <ProfileMarkdownContent value={block.content} /> : null}
-      {block.attribution ? (
+      {block.attribution && (
         <Typography
           level="body-xs"
           textColor="muted"
@@ -133,7 +136,7 @@ export function ProfileQuoteWidgetExpandedContent({
         >
           — {block.attribution}
         </Typography>
-      ) : null}
+      )}
     </Stack>
   );
 }

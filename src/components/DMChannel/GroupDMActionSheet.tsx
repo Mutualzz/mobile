@@ -60,7 +60,8 @@ export const GroupDMActionSheet = observer(
       (channel.dmRecipientsList
         .map((user) => user.displayName)
         .filter(Boolean)
-        .join(", ") || "Group DM");
+        .join(", ") ||
+        "Group DM");
 
     return (
       <Modal
@@ -98,7 +99,9 @@ export const GroupDMActionSheet = observer(
                   gap: 8,
                 }}
               >
-                <Box style={{ alignItems: "center", paddingVertical: 4, gap: 2 }}>
+                <Box
+                  style={{ alignItems: "center", paddingVertical: 4, gap: 2 }}
+                >
                   <Typography level="body-md" weight={700} truncate="double">
                     {title}
                   </Typography>
@@ -113,7 +116,7 @@ export const GroupDMActionSheet = observer(
                   horizontalAlign="left"
                   spacing={0.5}
                 >
-                  {readState?.isUnread ? (
+                  {readState?.isUnread && (
                     <Button
                       fullWidth
                       padding={12}
@@ -127,9 +130,9 @@ export const GroupDMActionSheet = observer(
                     >
                       Mark as read
                     </Button>
-                  ) : null}
+                  )}
 
-                  {isOwner ? (
+                  {isOwner && (
                     <Button
                       fullWidth
                       padding={12}
@@ -141,7 +144,7 @@ export const GroupDMActionSheet = observer(
                     >
                       Manage group
                     </Button>
-                  ) : null}
+                  )}
 
                   <Button
                     fullWidth
@@ -153,7 +156,7 @@ export const GroupDMActionSheet = observer(
                     Leave group
                   </Button>
 
-                  {isOwner ? (
+                  {isOwner && (
                     <Button
                       fullWidth
                       padding={12}
@@ -164,7 +167,7 @@ export const GroupDMActionSheet = observer(
                     >
                       Delete group
                     </Button>
-                  ) : null}
+                  )}
                 </ButtonGroup>
               </Paper>
             </Box>

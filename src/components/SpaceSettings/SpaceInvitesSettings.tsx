@@ -79,18 +79,16 @@ export const InviteRow = observer(
             minWidth: 0,
           }}
         >
-          {invite.inviter ? (
-            <UserAvatar user={invite.inviter} size="md" />
-          ) : null}
+          {invite.inviter && <UserAvatar user={invite.inviter} size="md" />}
           <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
             <Typography level="body-sm" truncate="single">
               {invite.inviter?.displayName ?? "Unknown"}
             </Typography>
-            {invite.channel ? (
+            {invite.channel && (
               <Typography level="body-xs" textColor="muted" truncate="single">
                 #{invite.channel.name}
               </Typography>
-            ) : null}
+            )}
           </Box>
         </Box>
 
@@ -119,11 +117,11 @@ export const InviteRow = observer(
           >
             <CopyIcon weight="fill" />
           </IconButton>
-          {copied ? (
+          {copied && (
             <Typography level="body-xs" textColor="muted">
               Copied
             </Typography>
-          ) : null}
+          )}
         </Box>
 
         <Box
@@ -143,7 +141,7 @@ export const InviteRow = observer(
               ? formatCountdown(invite.expiresAt, now)
               : "Never expires"}
           </Typography>
-          {canDelete ? (
+          {canDelete && (
             <IconButton
               padding={6}
               size={16}
@@ -154,7 +152,7 @@ export const InviteRow = observer(
             >
               <TrashIcon weight="fill" />
             </IconButton>
-          ) : null}
+          )}
         </Box>
       </Paper>
     );
@@ -201,7 +199,7 @@ export const SpaceInvitesSettings = observer(({ space }: Props) => {
           Active invite links
         </Typography>
         <Box style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-          {canManageChannels ? (
+          {canManageChannels && (
             <Button
               size="sm"
               color="danger"
@@ -211,7 +209,7 @@ export const SpaceInvitesSettings = observer(({ space }: Props) => {
             >
               Delete all
             </Button>
-          ) : null}
+          )}
           <Button
             size="sm"
             onPress={() =>
@@ -239,9 +237,9 @@ export const SpaceInvitesSettings = observer(({ space }: Props) => {
           {invites.map((invite, index) => (
             <Box key={invite.code} style={{ gap: 8 }}>
               <InviteRow invite={invite} now={now} space={space} />
-              {index < invites.length - 1 ? (
+              {index < invites.length - 1 && (
                 <Divider lineColor="muted" style={{ opacity: 0.25 }} />
-              ) : null}
+              )}
             </Box>
           ))}
         </Box>

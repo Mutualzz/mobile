@@ -1,5 +1,10 @@
 import { useAppStore } from "@hooks/useStores";
-import { createColor, type ColorLike } from "@mutualzz/ui-core";
+import {
+  createColor,
+  extractColors,
+  isValidGradient,
+  type ColorLike,
+} from "@mutualzz/ui-core";
 import { Box } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { ThemeCreatorColorField } from "./ThemeCreatorColorField";
@@ -8,30 +13,47 @@ export const ThemeCreatorBasePage = observer(() => {
   const app = useAppStore();
   const { values, setValues } = app.themeCreator;
 
+  const applyBackgroundColor = (color: ColorLike) => {
+    let isDark: boolean;
+    let isGradient = false;
+
+    if (
+      isValidGradient(color) &&
+      extractColors(color) &&
+      extractColors(color)!.length > 0
+    ) {
+      isDark = createColor(extractColors(color)![0]).isDark();
+      isGradient = true;
+    } else {
+      isDark = createColor(color).isDark();
+    }
+
+    setValues({
+      ...values,
+      type: isDark ? "dark" : "light",
+      style: isGradient ? "gradient" : "normal",
+      colors: { ...values.colors, background: color },
+    });
+  };
+
   return (
-    <Box style={{ gap: 16 }}>
+    <Box style={{ gap: 10 }}>
       <ThemeCreatorColorField
-        label="Background color"
-        description="The background color of the app"
+        label="Background"
         value={values.colors.background}
-        onChange={(color: ColorLike) =>
-          setValues({
-            type: createColor(color).isDark() ? "dark" : "light",
-            colors: { ...values.colors, background: color },
-          })
-        }
+        onChange={applyBackgroundColor}
+        allowGradient
       />
       <ThemeCreatorColorField
-        label="Surface color"
-        description="Applied to cards, sheets, and menus — auto-adapts to some UI elements. If you prefer an embossed style, adjust this color."
+        label="Surface"
         value={values.colors.surface}
         onChange={(color: ColorLike) =>
           setValues({ colors: { ...values.colors, surface: color } })
         }
+        allowGradient
       />
       <ThemeCreatorColorField
-        label="Black color"
-        description="Used for text and icons on a light background"
+        label="Black"
         value={values.colors.common.black}
         onChange={(color: ColorLike) =>
           setValues({
@@ -43,8 +65,7 @@ export const ThemeCreatorBasePage = observer(() => {
         }
       />
       <ThemeCreatorColorField
-        label="White color"
-        description="Used for text and icons on a dark background"
+        label="White"
         value={values.colors.common.white}
         onChange={(color: ColorLike) =>
           setValues({

@@ -1,4 +1,3 @@
-import { KeyboardAwareView } from "@components/Keyboard/KeyboardAwareView";
 import { Button } from "@components/Button";
 import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
@@ -10,22 +9,45 @@ import {
 } from "@components/Profile/widgets/editor/ProfileDrawCanvas";
 import { PROFILE_DRAW_CANVAS_SIZE } from "@components/Profile/widgets/editor/drawCanvas.constants";
 import { parseDrawCanvasState } from "@components/Profile/widgets/editor/drawCanvas.utils";
+import { ProfileWidgetGifPicker } from "@components/Profile/widgets/editor/ProfileWidgetGifPicker";
+import { ProfileWidgetStickerPicker } from "@components/Profile/widgets/editor/ProfileWidgetStickerPicker";
 import { ProfileWidgetMusicPicker } from "@components/Profile/widgets/editor/ProfileWidgetMusicPicker";
+import { ProfileStickerWidgetView } from "@components/Profile/widgets/blocks/ProfileStickerWidgetView";
 import { useAppStore } from "@hooks/useStores";
 import type { UserProfile } from "@stores/objects/UserProfile";
-import type { APIMobileProfileBlock, ProfileLinkItem } from "@mutualzz/types";
-import { Box, Input, Modal, Switch, Slider, Typography, useTheme } from "@mutualzz/ui-native";
+import type { APIMobileProfileBlock, ProfileImageCrop, ProfileLinkItem, MobileProfileStickerBlock } from "@mutualzz/types";
+import {
+  Box,
+  Input,
+  Modal,
+  Switch,
+  Slider,
+  Typography,
+  useTheme,
+} from "@mutualzz/ui-native";
 import { ProfileBlockCroppedImage } from "@components/Profile/shared/ProfileBlockImage";
+import { ProfileBlockLoopingVideo } from "@components/Profile/shared/ProfileBlockLoopingVideo";
 import { useScaledProfilePreviewHeight } from "@utils/accessibilityLayout";
 import {
   canAdjustProfileImageCrop,
   pickProfileImageForUpload,
   recropProfileImageFromUrl,
 } from "@utils/profileImagePicker";
-import type { ProfileImageCrop } from "@mutualzz/types";
+import {
+  clampProfileBlockCornerRadius,
+  isCustomProfileBlockCornerRadius,
+  isProfileImageCdnHash,
+  isProfileImageVideoUrl,
+  PROFILE_BLOCK_CORNER_RADIUS_MAX,
+  PROFILE_BLOCK_CORNER_RADIUS_MIN,
+  resolveProfileBlockCornerRadius,
+  resolveProfileImageBlockUrl,
+} from "@mutualzz/ui-core";
 import * as DocumentPicker from "expo-document-picker";
 import {
   ArrowLeftIcon,
+  GifIcon,
+  StickerIcon,
   CropIcon,
   PlusIcon,
   TrashIcon,
@@ -33,9 +55,7 @@ import {
 } from "phosphor-react-native";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import {
-  Pressable,
-} from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SvgXml } from "react-native-svg";
@@ -47,6 +67,8 @@ interface Props {
   profile: UserProfile;
   onUpdate: (blockId: string, patch: Record<string, unknown>) => void;
   onDelete: (blockId: string) => void;
+  /** Render as a fullscreen overlay instead of a nested RN Modal. */
+  presentation?: "modal" | "overlay";
 }
 
 export function ProfileWidgetContentEditorSheet({
@@ -56,17 +78,29 @@ export function ProfileWidgetContentEditorSheet({
   profile,
   onUpdate,
   onDelete,
+  presentation = "modal",
 }: Props) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [drawMode, setDrawMode] = useState(false);
+  const [musicPickerOpen, setMusicPickerOpen] = useState(false);
+  const [gifPickerOpen, setGifPickerOpen] = useState(false);
+  const [stickerPickerOpen, setStickerPickerOpen] = useState(false);
 
   useEffect(() => {
-    if (!visible) setDrawMode(false);
+    if (!visible) {
+      setDrawMode(false);
+      setMusicPickerOpen(false);
+      setGifPickerOpen(false);
+      setStickerPickerOpen(false);
+    }
   }, [visible]);
 
   useEffect(() => {
     setDrawMode(false);
+    setMusicPickerOpen(false);
+    setGifPickerOpen(false);
+    setStickerPickerOpen(false);
   }, [block?.id]);
 
   if (!block) return null;
@@ -87,6 +121,160 @@ export function ProfileWidgetContentEditorSheet({
     setDrawMode(false);
   };
 
+  const sheetBody = (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: theme.colors.background,
+        paddingTop: insets.top,
+      }}
+    >
+      <Box
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          paddingHorizontal: 16,
+          paddingVertical: 10,
+        }}
+      >
+        <IconButton
+          padding={6}
+          onPress={() => (drawMode ? setDrawMode(false) : onClose())}
+          accessibilityLabel="Back"
+        >
+          <ArrowLeftIcon size={20} />
+        </IconButton>
+        <Typography level="title-md" weight="bold">
+          {drawMode ? "Draw" : "Edit Widget"}
+        </Typography>
+      </Box>
+
+      {isDrawBlock && drawMode && drawBlock ? (
+        <Box
+          style={{
+            flex: 1,
+            paddingHorizontal: 16,
+            paddingBottom: insets.bottom + 16,
+          }}
+        >
+          <ProfileDrawCanvas
+            key={`${drawBlock.id}-${drawBlock.paths ?? "new"}-${drawBlock.svgData ?? ""}`}
+            initial={parseDrawCanvasState(
+              drawBlock.paths,
+              drawBlock.backgroundColor,
+            )}
+            onCancel={() => setDrawMode(false)}
+            onSave={handleDrawSave}
+          />
+        </Box>
+      ) : (
+        <KeyboardAwareScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{
+            padding: 16,
+            gap: 16,
+            paddingBottom: insets.bottom + 16,
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <ProfileWidgetContentFields
+            block={block}
+            profile={profile}
+            update={update}
+            onStartDrawing={isDrawBlock ? () => setDrawMode(true) : undefined}
+            onOpenMusicSearch={
+              block.type === "music"
+                ? () => setMusicPickerOpen(true)
+                : undefined
+            }
+            onOpenGifPicker={
+              block.type === "image" ? () => setGifPickerOpen(true) : undefined
+            }
+            onOpenStickerPicker={
+              block.type === "sticker"
+                ? () => setStickerPickerOpen(true)
+                : undefined
+            }
+          />
+
+          <ProfileBlockCornerRadiusFields block={block} update={update} />
+
+          <Button
+            variant="soft"
+            color="danger"
+            onPress={() => {
+              onDelete(block.id);
+              onClose();
+            }}
+          >
+            Delete widget
+          </Button>
+        </KeyboardAwareScrollView>
+      )}
+
+      {block.type === "music" && (
+        <ProfileWidgetMusicPicker
+          presentation="overlay"
+          visible={musicPickerOpen}
+          onClose={() => setMusicPickerOpen(false)}
+          onSelect={(track) => {
+            update({
+              track,
+              previewUrl: track.previewUrl ?? null,
+              trackUrl: track.trackUrl ?? null,
+              audioHash: null,
+              title: null,
+              artists: null,
+              image: null,
+            });
+            setMusicPickerOpen(false);
+          }}
+        />
+      )}
+
+      {block.type === "image" && (
+        <ProfileWidgetGifPicker
+          presentation="overlay"
+          visible={gifPickerOpen}
+          onClose={() => setGifPickerOpen(false)}
+          onSelect={(src) => {
+            update({ src, crop: null });
+            setGifPickerOpen(false);
+          }}
+        />
+      )}
+
+      {block.type === "sticker" && (
+        <ProfileWidgetStickerPicker
+          presentation="overlay"
+          visible={stickerPickerOpen}
+          onClose={() => setStickerPickerOpen(false)}
+          onSelect={(sticker) => {
+            update({ expressionId: sticker.id });
+            setStickerPickerOpen(false);
+          }}
+        />
+      )}
+    </View>
+  );
+
+  if (presentation === "overlay") {
+    if (!visible) return null;
+
+    return (
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          { zIndex: 100, backgroundColor: theme.colors.background },
+        ]}
+      >
+        {sheetBody}
+      </View>
+    );
+  }
+
   return (
     <Modal
       open={visible}
@@ -97,89 +285,20 @@ export function ProfileWidgetContentEditorSheet({
       disableBackdropClick
       style={{ paddingVertical: 0 }}
     >
-      <KeyboardAwareView
-        style={{ flex: 1, backgroundColor: theme.colors.background, paddingTop: insets.top }}
-      >
-        <Box
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-            paddingHorizontal: 16,
-            paddingVertical: 10,
-          }}
-        >
-          <IconButton
-            padding={6}
-            onPress={() => (drawMode ? setDrawMode(false) : onClose())}
-            accessibilityLabel="Back"
-          >
-            <ArrowLeftIcon size={20} />
-          </IconButton>
-          <Typography level="title-md" weight="bold">
-            {drawMode ? "Draw" : "Edit Widget"}
-          </Typography>
-        </Box>
-
-        {isDrawBlock && drawMode && drawBlock ? (
-          <Box
-            style={{
-              flex: 1,
-              paddingHorizontal: 16,
-              paddingBottom: insets.bottom + 16,
-            }}
-          >
-            <ProfileDrawCanvas
-              key={`${drawBlock.id}-${drawBlock.paths ?? "new"}-${drawBlock.svgData ?? ""}`}
-              initial={parseDrawCanvasState(
-                drawBlock.paths,
-                drawBlock.backgroundColor,
-              )}
-              onCancel={() => setDrawMode(false)}
-              onSave={handleDrawSave}
-            />
-          </Box>
-        ) : (
-          <>
-            <KeyboardAwareScrollView
-              contentContainerStyle={{ padding: 16, gap: 16 }}
-              keyboardShouldPersistTaps="handled"
-            >
-              <ProfileWidgetContentFields
-                block={block}
-                profile={profile}
-                update={update}
-                onStartDrawing={
-                  isDrawBlock ? () => setDrawMode(true) : undefined
-                }
-              />
-            </KeyboardAwareScrollView>
-
-            <Box style={{ padding: 16, paddingBottom: insets.bottom + 16 }}>
-              <Button
-                variant="soft"
-                color="danger"
-                onPress={() => {
-                  onDelete(block.id);
-                  onClose();
-                }}
-              >
-                Delete widget
-              </Button>
-            </Box>
-          </>
-        )}
-      </KeyboardAwareView>
+      {sheetBody}
     </Modal>
   );
 }
 
-function FieldSection({ title, children }: { title: string; children: ReactNode }) {
+function FieldSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
   return (
-    <Paper
-      elevation={1}
-      style={{ borderRadius: 12, padding: 14, gap: 10 }}
-    >
+    <Paper elevation={1} style={{ borderRadius: 12, padding: 14, gap: 10 }}>
       <Typography level="body-xs" weight={700} textColor="muted">
         {title.toUpperCase()}
       </Typography>
@@ -215,14 +334,18 @@ function ChipGroup<T extends string>({
               borderColor: active
                 ? theme.colors.primary
                 : `${theme.typography.colors.muted}48`,
-              backgroundColor: active ? `${theme.colors.primary}18` : "transparent",
+              backgroundColor: active
+                ? `${theme.colors.primary}18`
+                : "transparent",
             }}
           >
             <Typography
               level="body-xs"
               weight={active ? "bold" : undefined}
               style={{
-                color: active ? theme.colors.primary : theme.typography.colors.muted,
+                color: active
+                  ? theme.colors.primary
+                  : theme.typography.colors.muted,
               }}
             >
               {option.label}
@@ -234,23 +357,72 @@ function ChipGroup<T extends string>({
   );
 }
 
+function ProfileBlockCornerRadiusFields({
+  block,
+  update,
+}: {
+  block: APIMobileProfileBlock;
+  update: (patch: Record<string, unknown>) => void;
+}) {
+  const radius = resolveProfileBlockCornerRadius(block, "mobile");
+  const isCustom = isCustomProfileBlockCornerRadius(block);
+
+  return (
+    <FieldSection title="Corner radius">
+      <Typography level="body-xs" textColor="muted">
+        Round widget corners from {PROFILE_BLOCK_CORNER_RADIUS_MIN}px to{" "}
+        {PROFILE_BLOCK_CORNER_RADIUS_MAX}px.
+      </Typography>
+      <Typography level="body-xs">
+        Radius ({radius}px)
+      </Typography>
+      <Slider
+        min={PROFILE_BLOCK_CORNER_RADIUS_MIN}
+        max={PROFILE_BLOCK_CORNER_RADIUS_MAX}
+        step={1}
+        value={radius}
+        onChange={(value) => {
+          const next = Array.isArray(value) ? value[0] : value;
+          update({
+            cornerRadius: clampProfileBlockCornerRadius(next),
+          });
+        }}
+      />
+      {isCustom && (
+        <Button
+          color="neutral"
+          onPress={() => update({ cornerRadius: undefined })}
+        >
+          Reset to default
+        </Button>
+      )}
+    </FieldSection>
+  );
+}
+
 function ProfileWidgetContentFields({
   block,
   profile,
   update,
   onStartDrawing,
+  onOpenMusicSearch,
+  onOpenGifPicker,
+  onOpenStickerPicker,
 }: {
   block: APIMobileProfileBlock;
   profile: UserProfile;
   update: (patch: Record<string, unknown>) => void;
   onStartDrawing?: () => void;
+  onOpenMusicSearch?: () => void;
+  onOpenGifPicker?: () => void;
+  onOpenStickerPicker?: () => void;
 }) {
   switch (block.type) {
     case "header":
       return (
         <FieldSection title="Banner crop">
           <Typography level="body-xs" textColor="muted">
-            Shows your avatar, name, and (at the larger size) banner and bio.
+            Shows your avatar, name, banner, and bio on the larger size.
           </Typography>
           <Typography level="body-xs">
             Crop position ({Math.round(block.bannerFocusY ?? 50)}%)
@@ -260,7 +432,7 @@ function ProfileWidgetContentFields({
             max={100}
             step={1}
             value={block.bannerFocusY ?? 50}
-            onChange={(v) => update({ bannerFocusY: v as number })}
+            onChange={(v) => update({ bannerFocusY: v })}
           />
         </FieldSection>
       );
@@ -284,10 +456,25 @@ function ProfileWidgetContentFields({
           crop={block.crop}
           profile={profile}
           update={update}
+          onOpenGifPicker={onOpenGifPicker}
+        />
+      );
+    case "sticker":
+      return (
+        <ProfileStickerFields
+          block={block}
+          update={update}
+          onOpenStickerPicker={onOpenStickerPicker}
         />
       );
     case "music":
-      return <ProfileMusicFields block={block} update={update} />;
+      return (
+        <ProfileMusicFields
+          block={block}
+          update={update}
+          onOpenMusicSearch={onOpenMusicSearch}
+        />
+      );
     case "links":
       return <ProfileLinksFields links={block.links} update={update} />;
     case "activity":
@@ -319,7 +506,7 @@ function ProfileWidgetContentFields({
             max={12}
             step={1}
             value={block.maxRoles ?? 6}
-            onChange={(v) => update({ maxRoles: v as number })}
+            onChange={(v) => update({ maxRoles: v })}
           />
         </FieldSection>
       );
@@ -342,7 +529,7 @@ function ProfileWidgetContentFields({
             max={12}
             step={1}
             value={block.maxItems ?? 6}
-            onChange={(v) => update({ maxItems: v as number })}
+            onChange={(v) => update({ maxItems: v })}
           />
         </FieldSection>
       );
@@ -427,10 +614,55 @@ function ProfileDrawFields({
           No drawing yet. Open the canvas to sketch something for this widget.
         </Typography>
       )}
-      <Button color="neutral" onPress={onStartDrawing} disabled={!onStartDrawing}>
+      <Button
+        color="neutral"
+        onPress={onStartDrawing}
+        disabled={!onStartDrawing}
+      >
         {block.svgData ? "Edit drawing" : "Start drawing"}
       </Button>
     </FieldSection>
+  );
+}
+
+function ProfileStickerFields({
+  block,
+  update,
+  onOpenStickerPicker,
+}: {
+  block: MobileProfileStickerBlock;
+  update: (patch: Record<string, unknown>) => void;
+  onOpenStickerPicker?: () => void;
+}) {
+  const stickerPreviewHeight = useScaledProfilePreviewHeight(140);
+
+  return (
+    <>
+      <FieldSection title="Preview">
+        <View style={{ width: "100%", height: stickerPreviewHeight }}>
+          <ProfileStickerWidgetView block={block} />
+        </View>
+      </FieldSection>
+
+      <FieldSection title="Sticker">
+        <Button
+          color="neutral"
+          onPress={onOpenStickerPicker}
+          disabled={!onOpenStickerPicker}
+        >
+          <StickerIcon size={14} />{" "}
+          {block.expressionId ? "Change sticker" : "Choose sticker"}
+        </Button>
+        {block.expressionId ? (
+          <Button
+            color="neutral"
+            onPress={() => update({ expressionId: "" })}
+          >
+            Remove sticker
+          </Button>
+        ) : null}
+      </FieldSection>
+    </>
   );
 }
 
@@ -440,12 +672,14 @@ function ProfileImageFields({
   crop,
   profile,
   update,
+  onOpenGifPicker,
 }: {
   src: string;
   objectFit?: "cover" | "contain";
   crop?: ProfileImageCrop | null;
   profile: UserProfile;
   update: (patch: Record<string, unknown>) => void;
+  onOpenGifPicker?: () => void;
 }) {
   const app = useAppStore();
   const [uploading, setUploading] = useState(false);
@@ -455,10 +689,11 @@ function ProfileImageFields({
   const canAdjustCrop = canAdjustProfileImageCrop(src);
 
   const previewUrl = src
-    ? src.startsWith("http")
-      ? src
-      : profile.constructBlockImageUrl(src)
+    ? resolveProfileImageBlockUrl(src, (hash, animated) =>
+        profile.constructBlockImageUrl(hash, undefined, undefined, animated),
+      )
     : null;
+  const previewIsVideo = previewUrl ? isProfileImageVideoUrl(previewUrl) : false;
 
   const uploadImage = async () => {
     if (uploading) return;
@@ -511,51 +746,72 @@ function ProfileImageFields({
 
   return (
     <>
-      {previewUrl ? (
+      {previewUrl && (
         <FieldSection title="Preview">
-          <ProfileBlockCroppedImage
-            uri={previewUrl}
-            assetHash={src.startsWith("http") ? null : src}
-            crop={crop}
-            containerStyle={{
-              width: "100%",
-              height: imagePreviewHeight,
-              borderRadius: 8,
-            }}
-            resizeMode={objectFit === "contain" ? "contain" : "cover"}
-          />
+          {previewIsVideo ? (
+            <ProfileBlockLoopingVideo
+              uri={previewUrl}
+              contentFit={objectFit === "contain" ? "contain" : "cover"}
+              style={{
+                width: "100%",
+                height: imagePreviewHeight,
+                borderRadius: 8,
+              }}
+            />
+          ) : (
+            <ProfileBlockCroppedImage
+              uri={previewUrl}
+              assetHash={isProfileImageCdnHash(src) ? src : null}
+              crop={crop}
+              containerStyle={{
+                width: "100%",
+                height: imagePreviewHeight,
+                borderRadius: 8,
+              }}
+              resizeMode={objectFit === "contain" ? "contain" : "cover"}
+            />
+          )}
         </FieldSection>
-      ) : null}
+      )}
 
       <FieldSection title="Image source">
         <Button color="neutral" disabled={uploading} onPress={uploadImage}>
-          <UploadSimpleIcon size={14} /> {uploading ? "Uploading..." : "Upload image"}
+          <UploadSimpleIcon size={14} />{" "}
+          {uploading ? "Uploading..." : "Upload image"}
         </Button>
-        {canAdjustCrop ? (
+        <Button
+          color="neutral"
+          onPress={onOpenGifPicker}
+          disabled={!onOpenGifPicker}
+        >
+          <GifIcon size={14} /> Choose GIF
+        </Button>
+        {canAdjustCrop && (
           <Button
             color="neutral"
             disabled={recropping || uploading}
             onPress={adjustCrop}
           >
-            <CropIcon size={14} /> {recropping ? "Opening cropper..." : "Adjust crop"}
+            <CropIcon size={14} />{" "}
+            {recropping ? "Opening cropper..." : "Adjust crop"}
           </Button>
-        ) : null}
-        {crop && canAdjustCrop ? (
+        )}
+        {crop && canAdjustCrop && (
           <Button color="neutral" onPress={() => update({ crop: null })}>
             Reset crop
           </Button>
-        ) : null}
+        )}
         <Input
           value={src}
           onChangeText={(next) => update({ src: next, crop: null })}
           placeholder="Or paste an image URL"
           autoCapitalize="none"
         />
-        {error ? (
+        {error && (
           <Typography level="body-xs" color="danger">
             {error}
           </Typography>
-        ) : null}
+        )}
       </FieldSection>
 
       <FieldSection title="Display">
@@ -567,12 +823,12 @@ function ProfileImageFields({
           value={objectFit ?? "cover"}
           onChange={(next) => update({ objectFit: next })}
         />
-        {canAdjustCrop ? (
+        {canAdjustCrop && (
           <Typography level="body-xs" textColor="muted">
             Use Adjust crop to choose which part of the image shows in the
             widget. Full view always shows the original image.
           </Typography>
-        ) : null}
+        )}
       </FieldSection>
     </>
   );
@@ -581,12 +837,13 @@ function ProfileImageFields({
 function ProfileMusicFields({
   block,
   update,
+  onOpenMusicSearch,
 }: {
   block: Extract<APIMobileProfileBlock, { type: "music" }>;
   update: (patch: Record<string, unknown>) => void;
+  onOpenMusicSearch?: () => void;
 }) {
   const app = useAppStore();
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -639,17 +896,26 @@ function ProfileMusicFields({
       </FieldSection>
 
       <FieldSection title="Change song">
-        <Button color="neutral" onPress={() => setPickerOpen(true)}>
+        <Button
+          color="neutral"
+          onPress={onOpenMusicSearch}
+          disabled={!onOpenMusicSearch}
+        >
           Search for a song
         </Button>
-        <Button color="neutral" disabled={uploading} onPress={() => void uploadMp3()}>
-          <UploadSimpleIcon size={14} /> {uploading ? "Uploading..." : "Upload MP3"}
+        <Button
+          color="neutral"
+          disabled={uploading}
+          onPress={() => void uploadMp3()}
+        >
+          <UploadSimpleIcon size={14} />{" "}
+          {uploading ? "Uploading..." : "Upload MP3"}
         </Button>
-        {error ? (
+        {error && (
           <Typography level="body-xs" color="danger">
             {error}
           </Typography>
-        ) : null}
+        )}
       </FieldSection>
 
       <FieldSection title="YouTube link (optional)">
@@ -658,25 +924,10 @@ function ProfileMusicFields({
           onChangeText={(youtubeUrl) => update({ youtubeUrl })}
           placeholder="https://youtube.com/..."
           autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
         />
       </FieldSection>
-
-      <ProfileWidgetMusicPicker
-        visible={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        onSelect={(track) => {
-          update({
-            track,
-            previewUrl: track.previewUrl ?? null,
-            trackUrl: track.trackUrl ?? null,
-            audioHash: null,
-            title: null,
-            artists: null,
-            image: null,
-          });
-          setPickerOpen(false);
-        }}
-      />
     </>
   );
 }
@@ -691,7 +942,9 @@ function ProfileLinksFields({
   const rows = links.length > 0 ? links : [{ label: "", url: "" }];
 
   const setLink = (index: number, patch: Partial<ProfileLinkItem>) => {
-    const next = rows.map((link, i) => (i === index ? { ...link, ...patch } : link));
+    const next = rows.map((link, i) =>
+      i === index ? { ...link, ...patch } : link,
+    );
     update({ links: next });
   };
 

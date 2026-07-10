@@ -90,14 +90,16 @@ export const DMContentPane = observer(() => {
             channel={channel}
           />
         </>
-      ) : dmRecipient ? (
-        <UserActionSheet
-          user={dmRecipient}
-          visible={userMenuOpen}
-          onClose={() => setUserMenuOpen(false)}
-          insideDMs
-        />
-      ) : null}
+      ) : (
+        dmRecipient && (
+          <UserActionSheet
+            user={dmRecipient}
+            visible={userMenuOpen}
+            onClose={() => setUserMenuOpen(false)}
+            insideDMs
+          />
+        )
+      )}
 
       <VoiceUserBarOverlay />
     </Screen>

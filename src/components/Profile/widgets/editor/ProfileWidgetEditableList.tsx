@@ -11,11 +11,22 @@ import type { AccountStore } from "@stores/Account.store";
 import type { User } from "@stores/objects/User";
 import type { UserProfile } from "@stores/objects/UserProfile";
 import type { APIMobileProfileBlock, ProfileBlockSize } from "@mutualzz/types";
+import { resolveProfileBlockCornerRadius } from "@mutualzz/ui-core";
 import { Paper } from "@mutualzz/ui-native";
 import { CaretDownIcon, CaretUpIcon, XIcon } from "phosphor-react-native";
-import { useState } from "react";
-import { View, type LayoutChangeEvent } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type LayoutChangeEvent,
+  type ViewStyle,
+} from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 
 const ROW_GAP = 10;
@@ -50,7 +61,7 @@ function findTargetIndex(
   centerX: number,
   centerY: number,
   containerWidth: number,
-): number {
+) {
   for (let i = 0; i < rects.length; i++) {
     if (i === draggedIndex) continue;
     const rect = rects[i];
@@ -66,14 +77,14 @@ function findTargetIndex(
     }
   }
 
-
   let best = draggedIndex;
   let bestDist = Infinity;
   for (let i = 0; i < rects.length; i++) {
     if (i === draggedIndex) continue;
     const rect = rects[i];
     const rectCenterY = rect.top + rect.height / 2;
-    const rectCenterX = rectLeftPx(rect, containerWidth) + rectWidthPx(rect, containerWidth) / 2;
+    const rectCenterX =
+      rectLeftPx(rect, containerWidth) + rectWidthPx(rect, containerWidth) / 2;
     const dist = Math.hypot(centerX - rectCenterX, centerY - rectCenterY);
     if (dist < bestDist) {
       bestDist = dist;
@@ -81,6 +92,163 @@ function findTargetIndex(
     }
   }
   return best;
+}
+
+function WidgetTileContent({
+  block,
+  profile,
+  user,
+  isDragging,
+}: {
+  block: APIMobileProfileBlock;
+  profile: UserProfile;
+  user: User | AccountStore;
+  isDragging?: boolean;
+}) {
+  const cornerRadius = resolveProfileBlockCornerRadius(block, "mobile");
+
+  return (
+    <View
+      pointerEvents="none"
+      style={{
+        flex: 1,
+        marginHorizontal: ROW_GAP / 2,
+        opacity: isDragging ? 0.9 : 1,
+      }}
+    >
+      <Paper
+        elevation={1}
+        style={{
+          width: "100%",
+          height: "100%",
+          borderRadius: cornerRadius,
+          overflow: "hidden",
+        }}
+      >
+        <ProfileWidgetRenderer block={block} profile={profile} user={user} />
+      </Paper>
+    </View>
+  );
+}
+
+function DraggableWidgetTile({
+  block,
+  index,
+  rect,
+  profile,
+  user,
+  editMode,
+  size,
+  onDragEnd,
+  onEditContent,
+  onEnterEditMode,
+  onDelete,
+  onChangeSize,
+  onMoveUp,
+  onMoveDown,
+}: {
+  block: APIMobileProfileBlock;
+  index: number;
+  rect: PackedRect;
+  profile: UserProfile;
+  user: User | AccountStore;
+  editMode: boolean;
+  size: ProfileBlockSize;
+  onDragEnd: (
+    index: number,
+    translationX: number,
+    translationY: number,
+  ) => void;
+  onEditContent: (block: APIMobileProfileBlock) => void;
+  onEnterEditMode: () => void;
+  onDelete: () => void;
+  onChangeSize: (size: ProfileBlockSize) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+}) {
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const dragging = useSharedValue(0);
+
+  const baseStyle: ViewStyle = {
+    position: "absolute",
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+  };
+
+  const panGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .enabled(editMode)
+        .onBegin(() => {
+          dragging.value = 1;
+        })
+        .onUpdate((e) => {
+          translateX.value = e.translationX;
+          translateY.value = e.translationY;
+        })
+        .onFinalize((e) => {
+          if (editMode) {
+            scheduleOnRN(onDragEnd, index, e.translationX, e.translationY);
+          }
+          translateX.value = 0;
+          translateY.value = 0;
+          dragging.value = 0;
+        }),
+    [dragging, editMode, index, onDragEnd, translateX, translateY],
+  );
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+    ],
+    zIndex: dragging.value > 0 ? 10 : 0,
+    opacity: dragging.value > 0 ? 0.9 : 1,
+  }));
+
+  const content = (
+    <>
+      <WidgetTileContent block={block} profile={profile} user={user} />
+
+      {!editMode && (
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={() => onEditContent(block)}
+          onLongPress={onEnterEditMode}
+          delayLongPress={LONG_PRESS_MS}
+          accessibilityRole="button"
+          accessibilityLabel={`Edit ${block.type} widget`}
+          accessibilityHint="Opens the widget editor. Long press to rearrange widgets."
+        />
+      )}
+
+      {editMode && (
+        <EditModeOverlay
+          type={block.type}
+          size={size}
+          onDelete={onDelete}
+          onChangeSize={onChangeSize}
+          onMoveUp={onMoveUp}
+          onMoveDown={onMoveDown}
+        />
+      )}
+    </>
+  );
+
+  if (!editMode) {
+    return <View style={baseStyle}>{content}</View>;
+  }
+
+  return (
+    <GestureDetector gesture={panGesture}>
+      <Animated.View style={[baseStyle, animatedStyle]}>
+        {content}
+      </Animated.View>
+    </GestureDetector>
+  );
 }
 
 export function ProfileWidgetEditableList({
@@ -95,13 +263,15 @@ export function ProfileWidgetEditableList({
   onChangeSize,
   reorder,
 }: Props) {
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [containerWidth, setContainerWidth] = useState(0);
 
   const items = blocks.map((block) => {
     const size = clampWidgetSize(block.type, block.size);
-    return { id: block.id, size, height: getWidgetTileHeight(block.type, size) };
+    return {
+      id: block.id,
+      size,
+      height: getWidgetTileHeight(block.type, size),
+    };
   });
   const { rects, totalHeight } = computePackedLayout(items, ROW_GAP);
 
@@ -109,22 +279,30 @@ export function ProfileWidgetEditableList({
     setContainerWidth(e.nativeEvent.layout.width);
   };
 
-  const handleDragEnd = (index: number, translationX: number, translationY: number) => {
-    if (containerWidth > 0) {
-      const rect = rects[index];
-      const centerX =
-        rectLeftPx(rect, containerWidth) + rectWidthPx(rect, containerWidth) / 2 + translationX;
-      const centerY = rect.top + rect.height / 2 + translationY;
-      const targetIndex = findTargetIndex(rects, index, centerX, centerY, containerWidth);
+  const handleDragEnd = useCallback(
+    (index: number, translationX: number, translationY: number) => {
+      if (containerWidth > 0) {
+        const rect = rects[index];
+        const centerX =
+          rectLeftPx(rect, containerWidth) +
+          rectWidthPx(rect, containerWidth) / 2 +
+          translationX;
+        const centerY = rect.top + rect.height / 2 + translationY;
+        const targetIndex = findTargetIndex(
+          rects,
+          index,
+          centerX,
+          centerY,
+          containerWidth,
+        );
 
-      if (targetIndex !== index) {
-        onChange(reorder(blocks, index, targetIndex));
+        if (targetIndex !== index) {
+          onChange(reorder(blocks, index, targetIndex));
+        }
       }
-    }
-
-    setDraggingId(null);
-    setDragOffset({ x: 0, y: 0 });
-  };
+    },
+    [blocks, containerWidth, onChange, rects, reorder],
+  );
 
   const moveBlock = (index: number, direction: -1 | 1) => {
     const toIndex = index + direction;
@@ -133,89 +311,34 @@ export function ProfileWidgetEditableList({
   };
 
   return (
-    <View style={{ width: "100%", height: totalHeight }} onLayout={handleLayout}>
+    <View
+      style={{ width: "100%", height: totalHeight }}
+      onLayout={handleLayout}
+    >
       {blocks.map((block, index) => {
         const size = clampWidgetSize(block.type, block.size);
         const rect = rects[index];
-        const isDragging = draggingId === block.id;
-
-        const tapGesture = Gesture.Tap()
-          .maxDuration(LONG_PRESS_MS - 1)
-          .onEnd(() => {
-            scheduleOnRN(onEditContent, block);
-          });
-
-        const longPressGesture = Gesture.LongPress()
-          .minDuration(LONG_PRESS_MS)
-          .onStart(() => {
-            scheduleOnRN(onEnterEditMode);
-          });
-
-        const panGesture = Gesture.Pan()
-          .activateAfterLongPress(LONG_PRESS_MS)
-          .onStart(() => {
-            scheduleOnRN(setDraggingId, block.id);
-          })
-          .onUpdate((e) => {
-            scheduleOnRN(setDragOffset, { x: e.translationX, y: e.translationY });
-          })
-          .onEnd((e) => {
-            scheduleOnRN(handleDragEnd, index, e.translationX, e.translationY);
-          });
-
-        const dragGesture = Gesture.Simultaneous(longPressGesture, panGesture);
-        const gesture = Gesture.Exclusive(dragGesture, tapGesture);
 
         return (
-          <GestureDetector key={block.id} gesture={gesture}>
-            <View
-              style={{
-                position: "absolute",
-                left: rect.left,
-                top: rect.top,
-                width: rect.width,
-                height: rect.height,
-                transform: isDragging
-                  ? [{ translateX: dragOffset.x }, { translateY: dragOffset.y }]
-                  : undefined,
-                zIndex: isDragging ? 10 : 0,
-              }}
-            >
-              <View
-                pointerEvents="none"
-                style={{
-                  flex: 1,
-                  marginHorizontal: ROW_GAP / 2,
-                  opacity: isDragging ? 0.9 : 1,
-                }}
-              >
-                <Paper
-                  elevation={1}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    borderRadius: 12,
-                    overflow: "hidden",
-                  }}
-                >
-                  <ProfileWidgetRenderer block={block} profile={profile} user={user} />
-                </Paper>
-              </View>
-
-              {editMode ? (
-                <EditModeOverlay
-                  type={block.type}
-                  size={size}
-                  onDelete={() => onDelete(block.id)}
-                  onChangeSize={(next) => onChangeSize(block.id, next)}
-                  onMoveUp={index > 0 ? () => moveBlock(index, -1) : undefined}
-                  onMoveDown={
-                    index < blocks.length - 1 ? () => moveBlock(index, 1) : undefined
-                  }
-                />
-              ) : null}
-            </View>
-          </GestureDetector>
+          <DraggableWidgetTile
+            key={block.id}
+            block={block}
+            index={index}
+            rect={rect}
+            profile={profile}
+            user={user}
+            editMode={editMode}
+            size={size}
+            onDragEnd={handleDragEnd}
+            onEditContent={onEditContent}
+            onEnterEditMode={onEnterEditMode}
+            onDelete={() => onDelete(block.id)}
+            onChangeSize={(next) => onChangeSize(block.id, next)}
+            onMoveUp={index > 0 ? () => moveBlock(index, -1) : undefined}
+            onMoveDown={
+              index < blocks.length - 1 ? () => moveBlock(index, 1) : undefined
+            }
+          />
         );
       })}
     </View>
@@ -239,8 +362,15 @@ function EditModeOverlay({
 }) {
   return (
     <>
-      <View style={{ position: "absolute", top: 6, right: 6 + ROW_GAP / 2 }} pointerEvents="box-none">
-        <ProfileWidgetSizePill type={type} size={size} onChange={onChangeSize} />
+      <View
+        style={{ position: "absolute", top: 6, right: 6 + ROW_GAP / 2 }}
+        pointerEvents="box-none"
+      >
+        <ProfileWidgetSizePill
+          type={type}
+          size={size}
+          onChange={onChangeSize}
+        />
       </View>
       <View
         style={{

@@ -6,7 +6,7 @@ import { AddFriendTab } from "@components/Friends/AddFriendTab";
 import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
 import { Screen } from "@components/Screen/Screen";
-import { useTabBarContentInset } from "@hooks/useTabBarContentInset";
+import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography } from "@mutualzz/ui-native";
 import { PlusIcon } from "phosphor-react-native";
@@ -18,7 +18,7 @@ type FriendsSubTab = FriendsTab | "add-friend";
 
 export const MeDrawerContent = observer(() => {
   const app = useAppStore();
-  const tabBarInset = useTabBarContentInset();
+  const tabBarInset = useKeyboardChromeInset();
   const [tab, setTab] = useState<Tab>("direct-messages");
   const [friendsSubTab, setFriendsSubTab] = useState<FriendsSubTab>("online");
   const [createGroupOpen, setCreateGroupOpen] = useState(false);

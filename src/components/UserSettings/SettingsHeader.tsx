@@ -12,42 +12,44 @@ interface Props {
   onBack?: () => void;
 }
 
-export const SettingsHeader = observer(({ title, showBack = false, onBack }: Props) => {
-  const { back } = useAppNavigation();
-  const closeSettings = useCloseSettings();
-  const { theme } = useTheme();
+export const SettingsHeader = observer(
+  ({ title, showBack = false, onBack }: Props) => {
+    const { back } = useAppNavigation();
+    const closeSettings = useCloseSettings();
+    const { theme } = useTheme();
 
-  const iconColor = theme.typography.colors.primary;
+    const iconColor = theme.typography.colors.primary;
 
-  return (
-    <ScreenHeader
-      safeTop={false}
-      safeHorizontal={false}
-      style={{
-        paddingHorizontal: 12,
-        gap: 10,
-        borderTopWidth: 0,
-        borderBottomWidth: 0,
-        borderLeftWidth: 0,
-        borderRightWidth: 0,
-      }}
-    >
-      {showBack ? (
-        <Pressable hitSlop={8} onPress={() => (onBack ? onBack() : back())}>
-          <ArrowLeftIcon size={22} weight="bold" color={iconColor} />
-        </Pressable>
-      ) : null}
-      <Typography
-        level="body-lg"
-        weight="bold"
-        truncate="single"
-        style={{ flex: 1 }}
+    return (
+      <ScreenHeader
+        safeTop={false}
+        safeHorizontal={false}
+        style={{
+          paddingHorizontal: 12,
+          gap: 10,
+          borderTopWidth: 0,
+          borderBottomWidth: 0,
+          borderLeftWidth: 0,
+          borderRightWidth: 0,
+        }}
       >
-        {title}
-      </Typography>
-      <Pressable hitSlop={8} onPress={closeSettings}>
-        <XIcon size={22} weight="bold" color={iconColor} />
-      </Pressable>
-    </ScreenHeader>
-  );
-});
+        {showBack && (
+          <Pressable hitSlop={8} onPress={() => (onBack ? onBack() : back())}>
+            <ArrowLeftIcon size={22} weight="bold" color={iconColor} />
+          </Pressable>
+        )}
+        <Typography
+          level="body-lg"
+          weight="bold"
+          truncate="single"
+          style={{ flex: 1 }}
+        >
+          {title}
+        </Typography>
+        <Pressable hitSlop={8} onPress={closeSettings}>
+          <XIcon size={22} weight="bold" color={iconColor} />
+        </Pressable>
+      </ScreenHeader>
+    );
+  },
+);

@@ -56,7 +56,8 @@ export function ProfileWidgetEditorModal({
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
 
   const sortedBlocks = [...mobileBlocks].sort((a, b) => a.order - b.order);
-  const editingBlock = mobileBlocks.find((b) => b.id === editingBlockId) ?? null;
+  const editingBlock =
+    mobileBlocks.find((b) => b.id === editingBlockId) ?? null;
 
   const handleAddWidget = (type: ProfileBlockType) => {
     onMobileBlocksChange(addMobileWidget(mobileBlocks, type));
@@ -70,7 +71,10 @@ export function ProfileWidgetEditorModal({
     onMobileBlocksChange(updateMobileWidget(mobileBlocks, blockId, { size }));
   };
 
-  const handleUpdateContent = (blockId: string, patch: Record<string, unknown>) => {
+  const handleUpdateContent = (
+    blockId: string,
+    patch: Record<string, unknown>,
+  ) => {
     onMobileBlocksChange(updateMobileWidget(mobileBlocks, blockId, patch));
   };
 
@@ -93,6 +97,7 @@ export function ProfileWidgetEditorModal({
           flex: 1,
           backgroundColor: theme.colors.background,
           paddingTop: insets.top,
+          position: "relative",
         }}
       >
         <Box
@@ -108,7 +113,11 @@ export function ProfileWidgetEditorModal({
             <XIcon size={20} />
           </IconButton>
           {editMode && (
-            <Button size="sm" color="neutral" onPress={() => setEditMode(false)}>
+            <Button
+              size="sm"
+              color="neutral"
+              onPress={() => setEditMode(false)}
+            >
               Done
             </Button>
           )}
@@ -145,11 +154,15 @@ export function ProfileWidgetEditorModal({
             />
           )}
 
-          {error ? (
-            <Typography level="body-sm" color="danger" style={{ marginTop: 12 }}>
+          {error && (
+            <Typography
+              level="body-sm"
+              color="danger"
+              style={{ marginTop: 12 }}
+            >
               {error}
             </Typography>
-          ) : null}
+          )}
         </ScrollView>
 
         <Box
@@ -171,6 +184,7 @@ export function ProfileWidgetEditorModal({
         block={editingBlock}
         profile={profile}
         onUpdate={handleUpdateContent}
+        presentation="overlay"
         onDelete={(blockId) => {
           handleDelete(blockId);
           setEditingBlockId(null);

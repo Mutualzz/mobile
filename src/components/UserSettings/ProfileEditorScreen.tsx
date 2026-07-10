@@ -9,8 +9,10 @@ import {
 } from "@components/Profile/widgets/editor/profileWidgetEditor.utils";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
-import { Box, Input, Typography, hasOpenModals } from "@mutualzz/ui-native";
+import { ProfileBackgroundLayer } from "@components/Profile/shared/ProfileBackgroundLayer";
 import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
+import { Box, Input, Typography, hasOpenModals } from "@mutualzz/ui-native";
+import type { ColorLike } from "@mutualzz/ui-core";
 import { useScaledProfilePreviewHeight } from "@utils/accessibilityLayout";
 import { pickProfileImageAsset } from "@utils/profileImagePicker";
 import { useQuery } from "@tanstack/react-query";
@@ -311,17 +313,35 @@ export const ProfileEditorScreen = observer(() => {
               borderRadius: 12,
               padding: 12,
               gap: 12,
+              overflow: "hidden",
+              minHeight: 96,
             }}
             elevation={app.settings?.preferEmbossed ? 2 : 0}
           >
             <Typography level="body-md" weight={700}>
-              Background color
+              Background
             </Typography>
+            {profile ? (
+              <Box
+                style={{
+                  height: 72,
+                  borderRadius: 8,
+                  overflow: "hidden",
+                }}
+              >
+                <ProfileBackgroundLayer
+                  profile={profile}
+                  backgroundColor={backgroundColor || null}
+                />
+              </Box>
+            ) : null}
             <Input
-              value={backgroundColor}
-              onChangeText={setBackgroundColor}
-              placeholder="#1a1a1a"
-              autoCapitalize="none"
+              type="color"
+              value={(backgroundColor || "#1a1a2e") as ColorLike}
+              onChange={(color: ColorLike) => setBackgroundColor(String(color))}
+              allowGradient
+              showRandom
+              fullWidth
             />
           </Paper>
 

@@ -98,11 +98,11 @@ export const SpaceRoleEditPermissions = observer(
                     >
                       <Box style={{ flex: 1, gap: 4 }}>
                         <Typography level="body-sm">{item.label}</Typography>
-                        {item.description ? (
+                        {item.description && (
                           <Typography level="body-xs" textColor="muted">
                             {item.description}
                           </Typography>
-                        ) : null}
+                        )}
                       </Box>
                       <Switch
                         checked={permissions.has(item.flag)}
@@ -110,14 +110,14 @@ export const SpaceRoleEditPermissions = observer(
                       />
                     </Box>
                   </Pressable>
-                  {itemIndex < group.items.length - 1 ? (
+                  {itemIndex < group.items.length - 1 && (
                     <Divider lineColor="muted" style={{ opacity: 0.25 }} />
-                  ) : null}
+                  )}
                 </Box>
               ))}
-              {groupIndex < visibleGroups.length - 1 ? (
+              {groupIndex < visibleGroups.length - 1 && (
                 <Divider lineColor="muted" style={{ opacity: 0.35 }} />
-              ) : null}
+              )}
             </Box>
           ))
         )}

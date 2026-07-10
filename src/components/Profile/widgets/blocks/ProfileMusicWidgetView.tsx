@@ -96,7 +96,10 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
           recyclingKey={image}
         />
       ) : (
-        <MusicNotesIcon size={musicSizes.miniPlayButton} color={theme.typography.colors.muted} />
+        <MusicNotesIcon
+          size={musicSizes.miniPlayButton}
+          color={theme.typography.colors.muted}
+        />
       )}
     </View>
   );
@@ -106,15 +109,66 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
       <Pressable
         disabled={!playableUrl}
         onPress={togglePlay}
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: "100%", height: "100%", position: "relative" }}
       >
         {art}
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: "55%",
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
+        />
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            paddingHorizontal: 8,
+            paddingVertical: 6,
+            gap: 2,
+          }}
+        >
+          <Typography
+            level="body-xs"
+            weight="bold"
+            truncate="single"
+            style={{
+              color: "#fff",
+              textShadowColor: "rgba(0,0,0,0.75)",
+              textShadowOffset: { width: 0, height: 1 },
+              textShadowRadius: 3,
+            }}
+          >
+            {title}
+          </Typography>
+          {artists ? (
+            <Typography
+              level="body-xs"
+              truncate="single"
+              style={{
+                color: "rgba(255,255,255,0.9)",
+                textShadowColor: "rgba(0,0,0,0.75)",
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 3,
+              }}
+            >
+              {artists}
+            </Typography>
+          ) : null}
+        </View>
         {playableUrl ? (
           <View
             style={{
               position: "absolute",
-              bottom: 4,
-              right: 4,
+              top: 6,
+              right: 6,
               width: musicSizes.miniPlayButton,
               height: musicSizes.miniPlayButton,
               borderRadius: musicSizes.miniPlayButton / 2,
@@ -134,25 +188,30 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
     <Stack
       direction="row"
       alignItems="center"
-      style={{ width: "100%", height: "100%", gap: 10, padding: 12 }}
+      style={{
+        width: "100%",
+        height: "100%",
+        gap: size === "m" ? 8 : 10,
+        padding: size === "m" ? 10 : 12,
+      }}
     >
       {art}
       <Stack direction="column" style={{ flex: 1, minWidth: 0, gap: 2 }}>
         <Typography level="body-sm" weight="bold" truncate="double">
           {title}
         </Typography>
-        {artists ? (
+        {artists && (
           <Typography level="body-xs" textColor="accent" truncate="single">
             {artists}
           </Typography>
-        ) : null}
-        {size === "l" && sourceBadge ? (
+        )}
+        {size === "l" && sourceBadge && (
           <Typography level="body-xs" textColor="muted">
             {sourceBadge}
           </Typography>
-        ) : null}
+        )}
       </Stack>
-      {playableUrl ? (
+      {playableUrl && (
         <Pressable
           onPress={togglePlay}
           style={{
@@ -166,7 +225,7 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
         >
           <PlaybackIcon playSize={musicSizes.playIcon} />
         </Pressable>
-      ) : null}
+      )}
     </Stack>
   );
 }

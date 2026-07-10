@@ -55,11 +55,11 @@ const FriendCodedLinkPreview = observer(({ link }: { link: APICodedLink }) => {
           <Typography weight="bold" numberOfLines={1}>
             {displayName}
           </Typography>
-          {user?.username ? (
+          {user?.username && (
             <Typography level="body-xs" textColor="secondary">
               @{user.username}
             </Typography>
-          ) : null}
+          )}
         </View>
       </Pressable>
       <Button
@@ -101,24 +101,24 @@ export const CodedLinkPreview = observer(({ link }: Props) => {
               {link.space?.name ?? "Unknown Space"}
             </Typography>
             {(memberCount != null && memberCount > 0) ||
-            (onlineCount != null && onlineCount > 0) ? (
-              <Typography level="body-xs" textColor="secondary">
-                {onlineCount != null && onlineCount > 0
-                  ? `${onlineCount.toLocaleString()} Online`
-                  : ""}
-                {onlineCount != null &&
-                onlineCount > 0 &&
-                memberCount != null &&
-                memberCount > 0
-                  ? " • "
-                  : ""}
-                {memberCount != null && memberCount > 0
-                  ? `${memberCount.toLocaleString()} Member${
-                      memberCount === 1 ? "" : "s"
-                    }`
-                  : ""}
-              </Typography>
-            ) : null}
+              (onlineCount != null && onlineCount > 0 && (
+                <Typography level="body-xs" textColor="secondary">
+                  {onlineCount != null && onlineCount > 0
+                    ? `${onlineCount.toLocaleString()} Online`
+                    : ""}
+                  {onlineCount != null &&
+                  onlineCount > 0 &&
+                  memberCount != null &&
+                  memberCount > 0
+                    ? " • "
+                    : ""}
+                  {memberCount != null && memberCount > 0
+                    ? `${memberCount.toLocaleString()} Member${
+                        memberCount === 1 ? "" : "s"
+                      }`
+                    : ""}
+                </Typography>
+              ))}
           </View>
         </View>
         <Typography level="body-xs" textColor="secondary">

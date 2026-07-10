@@ -126,7 +126,7 @@ export const Message = observer(({ message, header }: Props) => {
                 : undefined
           }
         >
-          {header && message.type === MessageType.Reply ? (
+          {header && message.type === MessageType.Reply && (
             <Pressable
               disabled={!repliedMessage}
               onPress={handleJumpToReplied}
@@ -167,11 +167,11 @@ export const Message = observer(({ message, header }: Props) => {
                 </ReplyContent>
               </ReplySection>
             </Pressable>
-          ) : null}
+          )}
 
           <MessageRow header={header}>
             <MessageInfo>
-              {header && message.author ? (
+              {header && message.author && (
                 <UserProfileTrigger
                   user={message.author}
                   member={
@@ -182,7 +182,7 @@ export const Message = observer(({ message, header }: Props) => {
                 >
                   <UserAvatar user={message.author} />
                 </UserProfileTrigger>
-              ) : null}
+              )}
             </MessageInfo>
             <MessageContent>
               {header && (
@@ -209,83 +209,84 @@ export const Message = observer(({ message, header }: Props) => {
                   message.status === QueuedMessageStatus.Failed
                 }
               >
-              {stickerExpressions.length > 0 && (
-                <Box
-                  style={{
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: 8,
-                    marginBottom: 4,
-                  }}
-                >
-                  {stickerExpressions.map((sticker) => (
-                    <MessageSticker key={sticker.id} sticker={sticker} />
-                  ))}
-                </Box>
-              )}
-
-              {message.content && !isOnlyGifUrl && !hideInviteUrl ? (
-                !header && isEdited ? (
+                {stickerExpressions.length > 0 && (
                   <Box
                     style={{
                       flexDirection: "row",
-                      alignItems: "center",
                       flexWrap: "wrap",
+                      gap: 8,
+                      marginBottom: 4,
                     }}
                   >
+                    {stickerExpressions.map((sticker) => (
+                      <MessageSticker key={sticker.id} sticker={sticker} />
+                    ))}
+                  </Box>
+                )}
+
+                {message.content &&
+                  !isOnlyGifUrl &&
+                  !hideInviteUrl &&
+                  (!header && isEdited ? (
+                    <Box
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <MarkdownRenderer
+                        variant="plain"
+                        textColor="primary"
+                        spaceId={message.spaceId}
+                        value={message.content}
+                      />
+                      <EditedIndicator />
+                    </Box>
+                  ) : (
                     <MarkdownRenderer
                       variant="plain"
                       textColor="primary"
                       spaceId={message.spaceId}
                       value={message.content}
                     />
-                    <EditedIndicator />
-                  </Box>
-                ) : (
-                  <MarkdownRenderer
-                    variant="plain"
-                    textColor="primary"
-                    spaceId={message.spaceId}
-                    value={message.content}
-                  />
-                )
-              ) : null}
-            </MessageContentText>
+                  ))}
+              </MessageContentText>
 
-            {"embeds" in message && message.embeds.length > 0 && (
-              <Box
-                style={{
-                  paddingBottom: 4,
-                }}
-              >
-                {message.embeds.map((embed, index) => (
-                  <MessageEmbed key={index} embed={embed} />
-                ))}
-              </Box>
-            )}
-
-            {"codedLinks" in message && message.codedLinks.length > 0 && (
-              <Box style={{ gap: 8, paddingBottom: 4 }}>
-                {message.codedLinks.map((link) => (
-                  <CodedLinkPreview key={link.code} link={link} />
-                ))}
-              </Box>
-            )}
-
-            {isSent &&
-              "attachments" in message &&
-              (message.attachments?.length ?? 0) > 0 && (
-                <Box style={{ gap: 8, paddingBottom: 4 }}>
-                  {message.attachments.map((attachment) => (
-                    <MessageAttachment
-                      key={attachment.id}
-                      attachment={attachment}
-                    />
+              {"embeds" in message && message.embeds.length > 0 && (
+                <Box
+                  style={{
+                    paddingBottom: 4,
+                  }}
+                >
+                  {message.embeds.map((embed, index) => (
+                    <MessageEmbed key={index} embed={embed} />
                   ))}
                 </Box>
               )}
 
-            {isSent && <MessageReactions message={message} />}
+              {"codedLinks" in message && message.codedLinks.length > 0 && (
+                <Box style={{ gap: 8, paddingBottom: 4 }}>
+                  {message.codedLinks.map((link) => (
+                    <CodedLinkPreview key={link.code} link={link} />
+                  ))}
+                </Box>
+              )}
+
+              {isSent &&
+                "attachments" in message &&
+                (message.attachments?.length ?? 0) > 0 && (
+                  <Box style={{ gap: 8, paddingBottom: 4 }}>
+                    {message.attachments.map((attachment) => (
+                      <MessageAttachment
+                        key={attachment.id}
+                        attachment={attachment}
+                      />
+                    ))}
+                  </Box>
+                )}
+
+              {isSent && <MessageReactions message={message} />}
             </MessageContent>
           </MessageRow>
         </MessageBase>

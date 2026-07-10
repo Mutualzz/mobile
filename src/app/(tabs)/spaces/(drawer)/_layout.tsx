@@ -3,7 +3,7 @@ import { ChannelList } from "@components/Channel/ChannelList/ChannelList";
 import { SwipeableDrawer } from "@components/Navigation/SwipeableDrawer";
 import { SpaceLockdownOverlay } from "@components/Space/SpaceLockdownOverlay";
 import { SpacesSidebar } from "@components/Space/SpacesSidebar";
-import { useTabBarContentInset } from "@hooks/useTabBarContentInset";
+import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { useAppStore } from "@hooks/useStores";
 import { Box, hasOpenModals } from "@mutualzz/ui-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -14,7 +14,7 @@ import { BackHandler } from "react-native";
 
 const SpacesDrawerLayout = () => {
   const app = useAppStore();
-  const tabBarInset = useTabBarContentInset();
+  const tabBarInset = useKeyboardChromeInset();
   const activeSpace = app.spaces.active;
   const { spaceId, channelId } = useLocalSearchParams<{
     spaceId?: string;

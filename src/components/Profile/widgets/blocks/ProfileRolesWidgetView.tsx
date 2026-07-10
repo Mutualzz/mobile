@@ -26,7 +26,11 @@ const RoleChip = ({ name, color }: { name: string; color?: string | null }) => (
       borderColor: color || "rgba(255,255,255,0.14)",
     }}
   >
-    <Typography level="body-xs" weight="bold" style={{ color: color || undefined }}>
+    <Typography
+      level="body-xs"
+      weight="bold"
+      style={{ color: color || undefined }}
+    >
       {name}
     </Typography>
   </View>
@@ -38,45 +42,63 @@ interface Props {
   userId: Snowflake;
 }
 
-export const ProfileRolesWidgetView = observer(({ block, size, userId }: Props) => {
-  const app = useAppStore();
-  const member = findMemberForUser(app, userId);
-  const roles = getMemberRoles(member, block.maxRoles ?? 6);
-  const visible = roles.slice(0, VISIBLE_COUNT[size]);
+export const ProfileRolesWidgetView = observer(
+  ({ block, size, userId }: Props) => {
+    const app = useAppStore();
+    const member = findMemberForUser(app, userId);
+    const roles = getMemberRoles(member, block.maxRoles ?? 6);
+    const visible = roles.slice(0, VISIBLE_COUNT[size]);
+    const isCompact = size === "s";
 
-  return (
-    <View style={{ width: "100%", height: "100%", padding: 12, gap: 8 }}>
-      <Stack direction="row" alignItems="center" style={{ gap: 6 }}>
-        <ShieldCheckIcon size={16} weight="fill" />
-        <Typography level="body-sm" weight="bold">
-          Roles
-        </Typography>
-      </Stack>
+    return (
+      <View
+        style={{
+          width: "100%",
+          height: "100%",
+          padding: isCompact ? 10 : 12,
+          gap: isCompact ? 6 : 8,
+        }}
+      >
+        <Stack direction="row" alignItems="center" style={{ gap: 6 }}>
+          <ShieldCheckIcon size={isCompact ? 14 : 16} weight="fill" />
+          <Typography level={isCompact ? "body-xs" : "body-sm"} weight="bold">
+            Roles
+          </Typography>
+        </Stack>
 
-      {visible.length === 0 ? (
-        <Typography level="body-sm" textColor="muted">
-          {member ? "No roles to show" : "Join a shared space to display roles"}
-        </Typography>
-      ) : (
-        <>
-          <Stack direction="row" style={{ gap: 6, flexWrap: "wrap" }}>
-            {visible.map((role) => (
-              <RoleChip key={role.id} name={role.name} color={role.color} />
-            ))}
-          </Stack>
-          {roles.length > visible.length ? (
-            <Typography level="body-xs" textColor="muted">
-              +{roles.length - visible.length} more
-            </Typography>
-          ) : null}
-        </>
-      )}
-    </View>
-  );
-});
+        {visible.length === 0 ? (
+          <Typography level="body-sm" textColor="muted">
+            {member
+              ? "No roles to show"
+              : "Join a shared space to display roles"}
+          </Typography>
+        ) : (
+          <>
+            <Stack direction="row" style={{ gap: 6, flexWrap: "wrap" }}>
+              {visible.map((role) => (
+                <RoleChip key={role.id} name={role.name} color={role.color} />
+              ))}
+            </Stack>
+            {roles.length > visible.length && (
+              <Typography level="body-xs" textColor="muted">
+                +{roles.length - visible.length} more
+              </Typography>
+            )}
+          </>
+        )}
+      </View>
+    );
+  },
+);
 
 export const ProfileRolesWidgetExpandedContent = observer(
-  ({ block, userId }: { block: MobileProfileRolesBlock; userId: Snowflake }) => {
+  ({
+    block,
+    userId,
+  }: {
+    block: MobileProfileRolesBlock;
+    userId: Snowflake;
+  }) => {
     const app = useAppStore();
     const member = findMemberForUser(app, userId);
     const roles = getMemberRoles(member, block.maxRoles ?? 6);

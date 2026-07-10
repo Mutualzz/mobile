@@ -6,6 +6,22 @@ export const WIDGET_TILE_HEIGHTS: Record<ProfileBlockSize, number> = {
   l: 260,
 };
 
+const HEADER_TILE_HEIGHTS: Record<"m" | "l", number> = {
+  m: 156,
+  l: 236,
+};
+
+const LINKS_TILE_HEIGHTS: Record<ProfileBlockSize, number> = {
+  s: 112,
+  m: 168,
+  l: 248,
+};
+
+const ACTIVITY_TILE_HEIGHTS: Record<"s" | "m", number> = {
+  s: 132,
+  m: 168,
+};
+
 const DIVIDER_TILE_HEIGHTS: Record<ProfileBlockSize, number> = {
   s: 32,
   m: 32,
@@ -15,8 +31,17 @@ const DIVIDER_TILE_HEIGHTS: Record<ProfileBlockSize, number> = {
 export const getWidgetTileHeight = (
   type: ProfileBlockType,
   size: ProfileBlockSize,
-): number =>
-  type === "divider" ? DIVIDER_TILE_HEIGHTS[size] : WIDGET_TILE_HEIGHTS[size];
+): number => {
+  if (type === "divider") return DIVIDER_TILE_HEIGHTS[size];
+  if (type === "header" && (size === "m" || size === "l")) {
+    return HEADER_TILE_HEIGHTS[size];
+  }
+  if (type === "links") return LINKS_TILE_HEIGHTS[size];
+  if (type === "activity" && (size === "s" || size === "m")) {
+    return ACTIVITY_TILE_HEIGHTS[size];
+  }
+  return WIDGET_TILE_HEIGHTS[size];
+};
 
 export const WIDGET_SUPPORTED_SIZES: Record<
   ProfileBlockType,
@@ -25,6 +50,7 @@ export const WIDGET_SUPPORTED_SIZES: Record<
   header: ["m", "l"],
   text: ["s", "m", "l"],
   image: ["s", "m", "l"],
+  sticker: ["s", "m", "l"],
   music: ["s", "m", "l"],
   links: ["s", "m", "l"],
   activity: ["s", "m"],
@@ -39,7 +65,6 @@ export const WIDGET_MAXIMIZABLE_TYPES: Partial<
   Record<ProfileBlockType, boolean>
 > = {
   text: true,
-  image: true,
   links: true,
   activity: true,
   roles: true,

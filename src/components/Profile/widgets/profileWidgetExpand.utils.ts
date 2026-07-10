@@ -2,7 +2,7 @@ import type { APIMobileProfileBlock, ProfileBlockSize } from "@mutualzz/types";
 import { isWidgetMaximizable } from "./profileWidget.constants";
 
 const TEXT_LINE_CLAMP: Record<ProfileBlockSize, number> = { s: 2, m: 4, l: 8 };
-const LINKS_VISIBLE: Record<ProfileBlockSize, number> = { s: 1, m: 3, l: 5 };
+const LINKS_VISIBLE: Record<ProfileBlockSize, number> = { s: 1, m: 2, l: 4 };
 
 function isMarkdownTruncated(content: string, maxLines: number) {
   const trimmed = content.trim();
@@ -32,8 +32,6 @@ export function shouldShowWidgetExpand(
       );
       return links.length > LINKS_VISIBLE[size];
     }
-    case "image":
-      return Boolean(block.src);
     case "draw":
       return Boolean(block.svgData);
     case "roles":

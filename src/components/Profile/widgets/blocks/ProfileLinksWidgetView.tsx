@@ -3,18 +3,32 @@ import {
   formatProfileUrlLabel,
   resolveProfileUrl,
 } from "@components/Profile/widgets/blocks/profileLink.utils";
-import type { MobileProfileLinksBlock, ProfileBlockSize } from "@mutualzz/types";
+import type {
+  MobileProfileLinksBlock,
+  ProfileBlockSize,
+} from "@mutualzz/types";
 import { Stack, Typography } from "@mutualzz/ui-native";
+import { useScaledProfileWidgetLinkMetrics } from "@utils/accessibilityLayout";
 import { ArrowSquareOutIcon } from "phosphor-react-native";
 import { Linking, Pressable, View } from "react-native";
 
-const VISIBLE_COUNT: Record<ProfileBlockSize, number> = { s: 1, m: 3, l: 5 };
+const VISIBLE_COUNT: Record<ProfileBlockSize, number> = { s: 1, m: 2, l: 4 };
 
-const LinkRow = ({ label, url }: { label: string; url: string }) => {
+const LinkRow = ({
+  label,
+  url,
+  compact = false,
+}: {
+  label: string;
+  url: string;
+  compact?: boolean;
+}) => {
+  const metrics = useScaledProfileWidgetLinkMetrics();
   const resolved = resolveProfileUrl(url);
   const kind = resolved?.kind ?? "website";
   const accent = resolved?.color ?? "#6366F1";
   const subtitle = resolved ? formatProfileUrlLabel(resolved) : url;
+  const iconSize = compact ? metrics.iconSize - 4 : metrics.iconSize;
 
   return (
     <Pressable
@@ -22,10 +36,10 @@ const LinkRow = ({ label, url }: { label: string; url: string }) => {
       style={{
         flexDirection: "row",
         alignItems: "center",
-        gap: 10,
-        paddingVertical: 8,
-        paddingHorizontal: 10,
-        borderRadius: 10,
+        gap: compact ? 8 : 10,
+        paddingVertical: compact ? metrics.rowPaddingV - 1 : metrics.rowPaddingV,
+        paddingHorizontal: metrics.rowPaddingH,
+        borderRadius: compact ? 8 : 10,
         backgroundColor: `${accent}18`,
         borderWidth: 1,
         borderColor: `${accent}44`,
@@ -33,29 +47,42 @@ const LinkRow = ({ label, url }: { label: string; url: string }) => {
     >
       <View
         style={{
-          width: 32,
-          height: 32,
-          borderRadius: 8,
+          width: iconSize,
+          height: iconSize,
+          borderRadius: compact ? 6 : 8,
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: `${accent}22`,
           borderWidth: 1,
           borderColor: `${accent}55`,
+          flexShrink: 0,
         }}
       >
-        <ProfileLinkKindIcon kind={kind} size={18} color={accent} />
+        <ProfileLinkKindIcon
+          kind={kind}
+          size={compact ? metrics.iconGlyph - 2 : metrics.iconGlyph}
+          color={accent}
+        />
       </View>
       <Stack direction="column" style={{ flex: 1, minWidth: 0, gap: 1 }}>
-        <Typography level="body-sm" weight="bold" truncate="single">
+        <Typography
+          level={compact ? "body-xs" : "body-sm"}
+          weight="bold"
+          truncate="single"
+        >
           {label}
         </Typography>
-        {resolved ? (
+        {resolved && !compact ? (
           <Typography level="body-xs" textColor="muted" truncate="single">
             {subtitle}
           </Typography>
         ) : null}
       </Stack>
-      <ArrowSquareOutIcon size={14} color={accent} style={{ opacity: 0.75 }} />
+      <ArrowSquareOutIcon
+        size={compact ? 12 : 14}
+        color={accent}
+        style={{ opacity: 0.75, flexShrink: 0 }}
+      />
     </Pressable>
   );
 };
@@ -66,12 +93,24 @@ interface Props {
 }
 
 export function ProfileLinksWidgetView({ block, size }: Props) {
-  const links = (block.links ?? []).filter((link) => link.label.trim() && link.url.trim());
+  const metrics = useScaledProfileWidgetLinkMetrics();
+  const links = (block.links ?? []).filter(
+    (link) => link.label.trim() && link.url.trim(),
+  );
   const visible = links.slice(0, VISIBLE_COUNT[size]);
   const remaining = links.length - visible.length;
+  const isCompact = size === "s" || size === "m";
 
   return (
-    <View style={{ width: "100%", height: "100%", padding: 10, gap: 6 }}>
+    <View
+      style={{
+        width: "100%",
+        height: "100%",
+        padding: isCompact ? 8 : 10,
+        gap: metrics.rowGap,
+        justifyContent: "center",
+      }}
+    >
       {links.length === 0 ? (
         <Typography level="body-sm" textColor="muted">
           No links yet
@@ -79,7 +118,12 @@ export function ProfileLinksWidgetView({ block, size }: Props) {
       ) : (
         <>
           {visible.map((link, index) => (
-            <LinkRow key={`${link.url}-${index}`} label={link.label} url={link.url} />
+            <LinkRow
+              key={`${link.url}-${index}`}
+              label={link.label}
+              url={link.url}
+              compact={isCompact}
+            />
           ))}
           {remaining > 0 ? (
             <Typography level="body-xs" textColor="muted">
@@ -97,7 +141,9 @@ export function ProfileLinksWidgetExpandedContent({
 }: {
   block: MobileProfileLinksBlock;
 }) {
-  const links = (block.links ?? []).filter((link) => link.label.trim() && link.url.trim());
+  const links = (block.links ?? []).filter(
+    (link) => link.label.trim() && link.url.trim(),
+  );
 
   return (
     <View style={{ gap: 6 }}>
@@ -107,7 +153,11 @@ export function ProfileLinksWidgetExpandedContent({
         </Typography>
       ) : (
         links.map((link, index) => (
-          <LinkRow key={`${link.url}-${index}`} label={link.label} url={link.url} />
+          <LinkRow
+            key={`${link.url}-${index}`}
+            label={link.label}
+            url={link.url}
+          />
         ))
       )}
     </View>

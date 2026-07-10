@@ -1,7 +1,11 @@
 import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
-import { ChannelType, type APIInvite, HttpException } from "@mutualzz/types";
+import {
+  ChannelType,
+  type APIInvite,
+  type HttpException,
+} from "@mutualzz/types";
 import { Box, Typography } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import { Invite } from "@stores/objects/Invite";
@@ -49,7 +53,9 @@ export const SpaceInviteToSpaceSheet = observer(
     const [expiresAfter, setExpiresAfter] = useState<number | null>(
       expirations[5].value,
     );
-    const [maxUsesAfter, setMaxUsesAfter] = useState<number>(maxUsesOptions[0].value);
+    const [maxUsesAfter, setMaxUsesAfter] = useState<number>(
+      maxUsesOptions[0].value,
+    );
     const [invite, setInvite] = useState<Invite | null>(null);
     const [copied, setCopied] = useState(false);
     const [editSessionId, setEditSessionId] = useState<string | null>(null);
@@ -80,9 +86,7 @@ export const SpaceInviteToSpaceSheet = observer(
             expiresAt: expiresAfter,
           },
           {},
-          editSessionId
-            ? { "x-invite-edit-session": editSessionId }
-            : {},
+          editSessionId ? { "x-invite-edit-session": editSessionId } : {},
         ),
       onSuccess: (updated) => {
         setEditing(false);
@@ -260,15 +264,13 @@ export const SpaceInviteToSpaceSheet = observer(
             </Pressable>
           )}
 
-          {!isLoading && !error && invite ? (
+          {!isLoading && !error && invite && (
             <Typography level="body-xs" textColor="muted">
               This link will expire{" "}
-              {invite.expiresAt
-                ? dayjs(invite.expiresAt).fromNow()
-                : "never"}
+              {invite.expiresAt ? dayjs(invite.expiresAt).fromNow() : "never"}
               {invite.maxUses > 0 ? ` or after ${invite.maxUses} uses` : ""}.
             </Typography>
-          ) : null}
+          )}
         </Box>
 
         <Box style={{ flexDirection: "row", gap: 8 }}>
@@ -281,18 +283,18 @@ export const SpaceInviteToSpaceSheet = observer(
           >
             {copied ? "Copied" : "Copy"}
           </Button>
-          {!isLoading && !error && invite ? (
+          {!isLoading && !error && invite && (
             <Button expand variant="plain" onPress={() => setEditing(true)}>
               Edit
             </Button>
-          ) : null}
+          )}
         </Box>
 
-        {onClose ? (
+        {onClose && (
           <Button variant="plain" color="neutral" onPress={onClose}>
             Done
           </Button>
-        ) : null}
+        )}
       </Paper>
     );
   },

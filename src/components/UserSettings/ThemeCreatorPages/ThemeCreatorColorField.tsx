@@ -3,36 +3,42 @@ import { Box, Input, Typography } from "@mutualzz/ui-native";
 
 interface Props {
   label: string;
-  description?: string;
   value: ColorLike;
   onChange: (color: ColorLike) => void;
   showRandom?: boolean;
+  allowGradient?: boolean;
 }
 
 export const ThemeCreatorColorField = ({
   label,
-  description,
   value,
   onChange,
   showRandom,
+  allowGradient = false,
 }: Props) => {
   return (
-    <Box style={{ gap: 6 }}>
-      <Typography level="body-xs" weight={700}>
+    <Box
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+      }}
+    >
+      <Typography level="body-sm" weight={600} style={{ flex: 1 }}>
         {label}
       </Typography>
-      {description && (
-        <Typography level="body-xs" textColor="muted">
-          {description}
-        </Typography>
-      )}
-      <Input
-        type="color"
-        value={value}
-        onChange={onChange}
-        showRandom={showRandom}
-        fullWidth
-      />
+      <Box style={{ width: 168 }}>
+        <Input
+          type="color"
+          size="sm"
+          value={value}
+          onChange={onChange}
+          showRandom={showRandom}
+          allowGradient={allowGradient}
+          fullWidth
+        />
+      </Box>
     </Box>
   );
 };

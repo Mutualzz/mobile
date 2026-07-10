@@ -1,13 +1,13 @@
 import { FeedHeader } from "@components/Feed/FeedHeader";
 import { PostList } from "@components/Feed/PostList";
 import { Screen } from "@components/Screen/Screen";
-import { useTabBarContentInset } from "@hooks/useTabBarContentInset";
+import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { Box } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 
 const FeedIndexScreen = () => {
-  const tabBarInset = useTabBarContentInset();
+  const tabBarInset = useKeyboardChromeInset();
   const [listHeight, setListHeight] = useState(0);
 
   return (
@@ -29,9 +29,9 @@ const FeedIndexScreen = () => {
           if (nextHeight !== listHeight) setListHeight(nextHeight);
         }}
       >
-        {listHeight > 0 ? (
+        {listHeight > 0 && (
           <PostList variant="for-you" snap listHeight={listHeight} />
-        ) : null}
+        )}
       </Box>
     </Screen>
   );

@@ -1,4 +1,4 @@
-import { AppKeyboardAvoidingView } from "@components/Keyboard/AppKeyboardAvoidingView";
+import { KeyboardForm } from "@components/Keyboard";
 import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { SpaceIcon } from "@components/Space/SpaceIcon";
@@ -67,7 +67,10 @@ const Login = () => {
   const router = useRouter();
 
   const { mutate: login, isPending } = useMutation({
-    mutationFn: async (values: { usernameOrEmail: string; password: string }) => {
+    mutationFn: async (values: {
+      usernameOrEmail: string;
+      password: string;
+    }) => {
       const requestBody: Record<string, string | undefined> = {
         password: values.password,
       };
@@ -89,25 +92,27 @@ const Login = () => {
     },
   });
 
-  const { mutate: forgotPassword, isPending: forgettingPassword } = useMutation({
-    mutationKey: ["forgot-password"],
-    mutationFn: async (usernameOrEmail: string) => {
-      const requestBody: Record<string, string> = {};
-      if (emailRegex.test(usernameOrEmail)) {
-        requestBody.email = usernameOrEmail;
-      } else {
-        requestBody.username = usernameOrEmail;
-      }
-      return app.rest.post("auth/forgot-password", requestBody);
+  const { mutate: forgotPassword, isPending: forgettingPassword } = useMutation(
+    {
+      mutationKey: ["forgot-password"],
+      mutationFn: async (usernameOrEmail: string) => {
+        const requestBody: Record<string, string> = {};
+        if (emailRegex.test(usernameOrEmail)) {
+          requestBody.email = usernameOrEmail;
+        } else {
+          requestBody.username = usernameOrEmail;
+        }
+        return app.rest.post("auth/forgot-password", requestBody);
+      },
+      onSuccess: () => {
+        setForgotError(null);
+        setForgotSent(true);
+      },
+      onError: (err: HttpException) => {
+        setForgotError(err.message);
+      },
     },
-    onSuccess: () => {
-      setForgotError(null);
-      setForgotSent(true);
-    },
-    onError: (err: HttpException) => {
-      setForgotError(err.message);
-    },
-  });
+  );
 
   const Form = useForm({
     defaultValues: {
@@ -124,12 +129,16 @@ const Login = () => {
   const space = app.joiningSpace;
 
   return (
-    <AppKeyboardAvoidingView
+    <KeyboardForm
       style={{
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
         paddingHorizontal: 24,
+      }}
+      contentContainerStyle={{
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
       <Paper
@@ -147,7 +156,7 @@ const Login = () => {
           <Typography level="body-lg" weight="bold">
             Login to an account
           </Typography>
-          {space ? (
+          {space && (
             <Box
               style={{
                 flexDirection: "row",
@@ -165,7 +174,7 @@ const Login = () => {
                 {space.name}
               </Typography>
             </Box>
-          ) : null}
+          )}
         </Box>
 
         {forgotSent ? (
@@ -254,7 +263,7 @@ const Login = () => {
           </Typography>
         </Pressable>
       </Paper>
-    </AppKeyboardAvoidingView>
+    </KeyboardForm>
   );
 };
 

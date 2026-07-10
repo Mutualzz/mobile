@@ -398,7 +398,7 @@ export const EmojiPickerContent = observer(
           ))}
         </Box>
 
-        {search ? (
+        {search && (
           <Typography
             level="body-xs"
             textColor="muted"
@@ -408,9 +408,9 @@ export const EmojiPickerContent = observer(
               ? "No results"
               : `${customSearchResults.length + standardSearchResults.length} results`}
           </Typography>
-        ) : null}
+        )}
 
-        {!search && sidebarItems.length > 0 ? (
+        {!search && sidebarItems.length > 0 && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -443,17 +443,20 @@ export const EmojiPickerContent = observer(
                 >
                   {"space" in item && item.space ? (
                     <SpaceIcon space={item.space} size={18} />
-                  ) : "Icon" in item && item.Icon ? (
-                    <item.Icon
-                      size={16}
-                      color={
-                        active
-                          ? theme.colors.primary
-                          : theme.typography.colors.muted
-                      }
-                      weight="fill"
-                    />
-                  ) : null}
+                  ) : (
+                    "Icon" in item &&
+                    item.Icon && (
+                      <item.Icon
+                        size={16}
+                        color={
+                          active
+                            ? theme.colors.primary
+                            : theme.typography.colors.muted
+                        }
+                        weight="fill"
+                      />
+                    )
+                  )}
                   <Typography
                     level="body-xs"
                     style={{
@@ -469,7 +472,7 @@ export const EmojiPickerContent = observer(
               );
             })}
           </ScrollView>
-        ) : null}
+        )}
 
         <VirtualizedEmojiList
           listRef={listRef}

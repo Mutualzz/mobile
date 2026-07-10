@@ -146,7 +146,9 @@ export const ChannelActionSheet = observer(
                   gap: 8,
                 }}
               >
-                <Box style={{ alignItems: "center", paddingVertical: 4, gap: 2 }}>
+                <Box
+                  style={{ alignItems: "center", paddingVertical: 4, gap: 2 }}
+                >
                   <Typography level="body-md" weight={700} truncate="single">
                     {isCategory ? channel.name : `#${channel.name}`}
                   </Typography>
@@ -161,7 +163,7 @@ export const ChannelActionSheet = observer(
                   horizontalAlign="left"
                   spacing={0.5}
                 >
-                  {hasMarkRead ? (
+                  {hasMarkRead && (
                     <Button
                       fullWidth
                       padding={12}
@@ -172,9 +174,9 @@ export const ChannelActionSheet = observer(
                     >
                       Mark as read
                     </Button>
-                  ) : null}
+                  )}
 
-                  {!isCategory && canInvite ? (
+                  {!isCategory && canInvite && (
                     <Button
                       fullWidth
                       padding={12}
@@ -185,9 +187,9 @@ export const ChannelActionSheet = observer(
                     >
                       Invite to channel
                     </Button>
-                  ) : null}
+                  )}
 
-                  {canReorder ? (
+                  {canReorder && (
                     <>
                       <Button
                         fullWidth
@@ -210,9 +212,9 @@ export const ChannelActionSheet = observer(
                         Move down
                       </Button>
                     </>
-                  ) : null}
+                  )}
 
-                  {canManageChannels ? (
+                  {canManageChannels && (
                     <Button
                       fullWidth
                       padding={12}
@@ -221,9 +223,9 @@ export const ChannelActionSheet = observer(
                     >
                       {isCategory ? "Edit category" : "Channel settings"}
                     </Button>
-                  ) : null}
+                  )}
 
-                  {isCategory && canManageChannels && onDeleteCategory ? (
+                  {isCategory && canManageChannels && onDeleteCategory && (
                     <Button
                       fullWidth
                       padding={12}
@@ -233,7 +235,7 @@ export const ChannelActionSheet = observer(
                     >
                       Delete category
                     </Button>
-                  ) : null}
+                  )}
                 </ButtonGroup>
               </Paper>
             </Box>

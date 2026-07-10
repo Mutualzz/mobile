@@ -1,4 +1,5 @@
 import type { ProfileBlockSize, ProfileBlockType } from "@mutualzz/types";
+import { resolveProfileBlockCornerRadius } from "@mutualzz/ui-core";
 import { Paper, useTheme } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import { CaretDownIcon } from "phosphor-react-native";
@@ -9,29 +10,39 @@ import { getWidgetTileHeight } from "./profileWidget.constants";
 interface Props {
   type: ProfileBlockType;
   size: ProfileBlockSize;
+  cornerRadius?: number;
   onMaximize?: () => void;
   children: ReactNode;
 }
 
 const FADE_ALPHAS = ["00", "18", "40", "80"];
 
-export function ProfileWidgetTile({ type, size, onMaximize, children }: Props) {
+export function ProfileWidgetTile({
+  type,
+  size,
+  cornerRadius,
+  onMaximize,
+  children,
+}: Props) {
   const { theme } = useTheme();
   const fadeBandHeight = useScaledSquareSize(28);
+  const resolvedCornerRadius =
+    cornerRadius ??
+    resolveProfileBlockCornerRadius({ type, cornerRadius: undefined }, "mobile");
 
-  const content = (
+  return (
     <Paper
       elevation={1}
       style={{
         width: "100%",
         height: getWidgetTileHeight(type, size),
-        borderRadius: 12,
+        borderRadius: resolvedCornerRadius,
         overflow: "hidden",
       }}
     >
       {children}
 
-      {onMaximize ? (
+      {onMaximize && (
         <View
           pointerEvents="box-none"
           style={{
@@ -75,9 +86,7 @@ export function ProfileWidgetTile({ type, size, onMaximize, children }: Props) {
             <CaretDownIcon size={12} color={theme.typography.colors.muted} />
           </Pressable>
         </View>
-      ) : null}
+      )}
     </Paper>
   );
-
-  return content;
 }

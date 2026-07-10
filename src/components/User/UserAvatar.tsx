@@ -1,7 +1,7 @@
 import { Paper } from "@components/Paper";
 import { StatusBadge } from "@components/StatusBadge";
 import { UserIcon } from "phosphor-react-native";
-import { type APIUser, Sizes } from "@mutualzz/types";
+import { type APIUser, type Sizes } from "@mutualzz/types";
 import {
   createColor,
   resolveSize,
@@ -24,7 +24,10 @@ import { useMemo } from "react";
 type UserLike = AccountStore | User | APIUser;
 
 function isStoreUser(user: UserLike): user is AccountStore | User {
-  return "constructAvatarUrl" in user && typeof user.constructAvatarUrl === "function";
+  return (
+    "constructAvatarUrl" in user &&
+    typeof user.constructAvatarUrl === "function"
+  );
 }
 
 interface UserAvatarProps extends AvatarProps {
@@ -41,7 +44,13 @@ const baseSizeMap: Record<Size, number> = {
 };
 
 export const UserAvatar = observer(
-  ({ user, badge = false, showInvisible, speaking = false, ...props }: UserAvatarProps) => {
+  ({
+    user,
+    badge = false,
+    showInvisible,
+    speaking = false,
+    ...props
+  }: UserAvatarProps) => {
     const app = useAppStore();
     const { theme } = useTheme();
 
@@ -70,7 +79,7 @@ export const UserAvatar = observer(
 
     const hasAvatar = useMemo(
       () => resolvedUser && resolvedUser.avatar != null,
-      [resolvedUser]
+      [resolvedUser],
     );
 
     const avatarBody = !resolvedUser ? (
@@ -117,7 +126,7 @@ export const UserAvatar = observer(
     return (
       <Box style={{ position: "relative", width: size, height: size }}>
         {avatarBody}
-        {speaking ? (
+        {speaking && (
           <Box
             pointerEvents="none"
             style={{
@@ -131,14 +140,14 @@ export const UserAvatar = observer(
               borderColor: theme.colors.success,
             }}
           />
-        ) : null}
-        {showBadge ? (
+        )}
+        {showBadge && (
           <StatusBadge
             status={status}
             size={size}
             showInvisible={showInvisible}
           />
-        ) : null}
+        )}
       </Box>
     );
   },

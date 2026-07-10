@@ -12,11 +12,7 @@ import type { GifResult } from "@utils/gifs";
 import type { PickerEmoji, SkinTone } from "@utils/emojis/emojiPickerData";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import {
-  Pressable,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { Pressable, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export type ExpressionPickerTab = "emoji" | "gifs" | "stickers";
@@ -98,106 +94,106 @@ export const ExpressionPickerSheet = observer(
               paddingBottom: insets.bottom + 8,
             }}
           >
+            <Box
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: 12,
+                paddingBottom: 8,
+                gap: 8,
+              }}
+            >
               <Box
                 style={{
+                  flex: 1,
                   flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 12,
-                  paddingBottom: 8,
-                  gap: 8,
+                  gap: 4,
                 }}
               >
-                <Box
-                  style={{
-                    flex: 1,
-                    flexDirection: "row",
-                    gap: 4,
-                  }}
-                >
-                  {tabs.map(({ id, label, Icon }) => {
-                    const active = tab === id;
-                    return (
-                      <Pressable
-                        key={id}
-                        onPress={() => setTab(id)}
-                        style={{
-                          flex: 1,
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 6,
-                          paddingVertical: 8,
-                          borderRadius: 8,
-                          borderBottomWidth: 2,
-                          borderBottomColor: active
+                {tabs.map(({ id, label, Icon }) => {
+                  const active = tab === id;
+                  return (
+                    <Pressable
+                      key={id}
+                      onPress={() => setTab(id)}
+                      style={{
+                        flex: 1,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                        paddingVertical: 8,
+                        borderRadius: 8,
+                        borderBottomWidth: 2,
+                        borderBottomColor: active
+                          ? theme.colors.primary
+                          : "transparent",
+                        backgroundColor: active
+                          ? `${theme.colors.primary}14`
+                          : "transparent",
+                      }}
+                    >
+                      <Icon
+                        size={18}
+                        color={
+                          active
                             ? theme.colors.primary
-                            : "transparent",
-                          backgroundColor: active
-                            ? `${theme.colors.primary}14`
-                            : "transparent",
+                            : theme.typography.colors.muted
+                        }
+                        weight="fill"
+                      />
+                      <Typography
+                        level="body-sm"
+                        weight={active ? "bold" : undefined}
+                        truncate="single"
+                        style={{
+                          color: active
+                            ? theme.colors.primary
+                            : theme.typography.colors.muted,
                         }}
                       >
-                        <Icon
-                          size={18}
-                          color={
-                            active
-                              ? theme.colors.primary
-                              : theme.typography.colors.muted
-                          }
-                          weight="fill"
-                        />
-                        <Typography
-                          level="body-sm"
-                          weight={active ? "bold" : undefined}
-                          truncate="single"
-                          style={{
-                            color: active
-                              ? theme.colors.primary
-                              : theme.typography.colors.muted,
-                          }}
-                        >
-                          {label}
-                        </Typography>
-                      </Pressable>
-                    );
-                  })}
-                </Box>
-                <IconButton padding={6} color="neutral" onPress={onClose}>
-                  <XIcon size={20} />
-                </IconButton>
+                        {label}
+                      </Typography>
+                    </Pressable>
+                  );
+                })}
               </Box>
+              <IconButton padding={6} color="neutral" onPress={onClose}>
+                <XIcon size={20} />
+              </IconButton>
+            </Box>
 
-              <Box style={{ flex: 1, minHeight: 0 }}>
-                {tab === "emoji" ? (
-                  <EmojiPickerContent
-                    channel={channel}
-                    onSelectEmoji={(emoji, skinTone) => {
-                      onSelectEmoji(emoji, skinTone);
-                      onClose();
-                    }}
-                    onSelectCustomEmoji={(expression) => {
-                      onSelectCustomEmoji(expression);
-                      onClose();
-                    }}
-                  />
-                ) : null}
+            <Box style={{ flex: 1, minHeight: 0 }}>
+              {tab === "emoji" && (
+                <EmojiPickerContent
+                  channel={channel}
+                  onSelectEmoji={(emoji, skinTone) => {
+                    onSelectEmoji(emoji, skinTone);
+                    onClose();
+                  }}
+                  onSelectCustomEmoji={(expression) => {
+                    onSelectCustomEmoji(expression);
+                    onClose();
+                  }}
+                />
+              )}
 
-                {tab === "gifs" ? (
-                  <GifPickerContent
-                    active={visible && tab === "gifs"}
-                    onSelectGif={(gif) => {
-                      onSelectGif(gif);
-                      onClose();
-                    }}
-                  />
-                ) : null}
+              {tab === "gifs" && (
+                <GifPickerContent
+                  active={visible && tab === "gifs"}
+                  onSelectGif={(gif) => {
+                    onSelectGif(gif);
+                    onClose();
+                  }}
+                />
+              )}
 
-                {tab === "stickers" && showStickers ? (
-                  <StickerPickerContent
-                    channel={channel}
-                    onSelectSticker={onSelectSticker}
-                  />
-                ) : null}
+              {tab === "stickers" && showStickers && (
+                <StickerPickerContent
+                  channel={channel}
+                  onSelectSticker={onSelectSticker}
+                />
+              )}
             </Box>
           </Paper>
         </View>

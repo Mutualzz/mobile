@@ -63,11 +63,11 @@ const ChannelRow = observer(
           >
             {channel.name}
           </Typography>
-          {!isCategory ? (
+          {!isCategory && (
             <Typography level="body-xs" textColor="muted" truncate="single">
               {categoryLabel ?? "No category"}
             </Typography>
-          ) : null}
+          )}
         </Box>
       </Paper>
     );
@@ -139,7 +139,7 @@ export const SpaceChannelsSettings = observer(({ space }: Props) => {
           paddingTop: 8,
           paddingBottom: 32,
         }}
-        renderItem={(channel, index) => (
+        renderItem={(channel) => (
           <ChannelRow
             channel={channel}
             categoryLabel={categoryLabels.get(channel.id) ?? null}

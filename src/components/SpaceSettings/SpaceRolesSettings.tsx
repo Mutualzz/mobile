@@ -11,7 +11,6 @@ import {
 } from "@components/SpaceSettings/roleHierarchy.utils";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
-import type { APIRole } from "@mutualzz/types";
 import { Box, Input, Stack, Typography } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import type { Role } from "@stores/objects/Role";
@@ -89,7 +88,7 @@ const RoleRow = observer(
           </Box>
           <ArrowRightIcon size={18} weight="bold" />
         </Pressable>
-        {showDelete ? (
+        {showDelete && (
           <IconButton
             padding={6}
             size={16}
@@ -100,7 +99,7 @@ const RoleRow = observer(
           >
             <TrashIcon weight="fill" />
           </IconButton>
-        ) : null}
+        )}
       </Paper>
     );
   },
@@ -140,7 +139,7 @@ export const SpaceRolesSettings = observer(({ space }: Props) => {
     try {
       const created = await space.roles.create();
       if (!created) return;
-      const role = space.roles.add(created as APIRole);
+      const role = space.roles.add(created);
       navigate(`/(tabs)/spaces/${space.id}/settings/roles/${role.id}`);
     } finally {
       setCreating(false);
@@ -210,7 +209,7 @@ export const SpaceRolesSettings = observer(({ space }: Props) => {
             />
           ))}
 
-          {reorderableRoles.length > 0 ? (
+          {reorderableRoles.length > 0 && (
             <ReorderableVerticalList
               items={reorderableRoles}
               onReorder={handleReorderRoles}
@@ -219,19 +218,22 @@ export const SpaceRolesSettings = observer(({ space }: Props) => {
               rowGap={8}
               estimatedRowHeight={64}
               renderItem={(role) =>
-                renderRoleRow(role, !isRoleHierarchyLocked(hierarchyContext, role))
+                renderRoleRow(
+                  role,
+                  !isRoleHierarchyLocked(hierarchyContext, role),
+                )
               }
             />
-          ) : null}
+          )}
 
-          {everyone ? (
+          {everyone && (
             <RoleRow
               role={everyone}
               space={space}
               hierarchyLocked={false}
               showDelete={false}
             />
-          ) : null}
+          )}
         </Stack>
       )}
     </ScrollView>

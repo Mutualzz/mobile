@@ -24,8 +24,7 @@ export const AddFriendTab = observer(() => {
       relationship.otherUserId === trimmed,
   );
 
-  const isBlocked =
-    matchingRelationship?.type === RelationshipType.Blocked;
+  const isBlocked = matchingRelationship?.type === RelationshipType.Blocked;
   const isFriend = matchingRelationship?.type === RelationshipType.Friend;
   const alreadySent =
     matchingRelationship?.type === RelationshipType.OutgoingRequest;
@@ -94,11 +93,11 @@ export const AddFriendTab = observer(() => {
         >
           {isPending ? "Sending..." : buttonLabel}
         </Button>
-        {isBlocked ? (
+        {isBlocked && (
           <Typography level="body-sm" color="danger">
             You have blocked this user. Unblock them before sending a request.
           </Typography>
-        ) : null}
+        )}
       </Box>
     </Box>
   );

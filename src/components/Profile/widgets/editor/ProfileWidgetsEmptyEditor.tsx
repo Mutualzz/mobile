@@ -21,14 +21,18 @@ export function ProfileWidgetsEmptyEditor({ onCopyFromDesktop }: Props) {
       }}
     >
       <SquaresFourIcon size={28} color={theme.typography.colors.muted} />
-      <Typography level="body-sm" textColor="muted" style={{ textAlign: "center" }}>
+      <Typography
+        level="body-sm"
+        textColor="muted"
+        style={{ textAlign: "center" }}
+      >
         Add your first widget below to start customizing your mobile profile.
       </Typography>
-      {onCopyFromDesktop ? (
+      {onCopyFromDesktop && (
         <Button variant="soft" color="neutral" onPress={onCopyFromDesktop}>
           Copy layout from desktop
         </Button>
-      ) : null}
+      )}
     </View>
   );
 }
