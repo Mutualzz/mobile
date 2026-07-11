@@ -16,24 +16,24 @@ import {
   UsersThreeIcon,
 } from "phosphor-react-native";
 import { Pressable, ScrollView } from "react-native";
+import { useTranslation } from "react-i18next";
 
 const ITEMS: {
   type: ProfileBlockType;
-  label: string;
   Icon: typeof TextAaIcon;
 }[] = [
-  { type: "header", label: "Header", Icon: UserCircleIcon },
-  { type: "text", label: "Text", Icon: TextAaIcon },
-  { type: "quote", label: "Quote", Icon: QuotesIcon },
-  { type: "image", label: "Image", Icon: ImageIcon },
-  { type: "sticker", label: "Sticker", Icon: StickerIcon },
-  { type: "music", label: "Music", Icon: MusicNotesIcon },
-  { type: "links", label: "Links", Icon: LinkIcon },
-  { type: "activity", label: "Activity", Icon: PulseIcon },
-  { type: "roles", label: "Roles", Icon: ShieldCheckIcon },
-  { type: "mutual", label: "Mutual", Icon: UsersThreeIcon },
-  { type: "divider", label: "Divider", Icon: MinusIcon },
-  { type: "draw", label: "Draw", Icon: PencilSimpleIcon },
+  { type: "header", Icon: UserCircleIcon },
+  { type: "text", Icon: TextAaIcon },
+  { type: "quote", Icon: QuotesIcon },
+  { type: "image", Icon: ImageIcon },
+  { type: "sticker", Icon: StickerIcon },
+  { type: "music", Icon: MusicNotesIcon },
+  { type: "links", Icon: LinkIcon },
+  { type: "activity", Icon: PulseIcon },
+  { type: "roles", Icon: ShieldCheckIcon },
+  { type: "mutual", Icon: UsersThreeIcon },
+  { type: "divider", Icon: MinusIcon },
+  { type: "draw", Icon: PencilSimpleIcon },
 ];
 
 interface Props {
@@ -42,6 +42,7 @@ interface Props {
 
 export function ProfileWidgetPalette({ onAddWidget }: Props) {
   const { theme } = useTheme();
+  const { t } = useTranslation("settings");
   const itemWidth = useScaledWidgetPaletteItemWidth();
 
   return (
@@ -55,7 +56,7 @@ export function ProfileWidgetPalette({ onAddWidget }: Props) {
         alignItems: "flex-start",
       }}
     >
-      {ITEMS.map(({ type, label, Icon }) => (
+      {ITEMS.map(({ type, Icon }) => (
         <Pressable
           key={type}
           onPress={() => onAddWidget(type)}
@@ -72,7 +73,7 @@ export function ProfileWidgetPalette({ onAddWidget }: Props) {
         >
           <Icon size={20} color={theme.typography.colors.primary} />
           <Typography level="body-xs" truncate="single">
-            {label}
+            {t(`profile.blocks.${type}`)}
           </Typography>
         </Pressable>
       ))}

@@ -11,6 +11,7 @@ import Snowflake from "@utils/Snowflake";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, useColorScheme } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemeCreatorColorsPage } from "./ThemeCreatorPages/ThemeCreatorColorsPage";
@@ -18,19 +19,23 @@ import { ThemeCreatorDetailsPage } from "./ThemeCreatorPages/ThemeCreatorDetails
 import { ThemeCreatorManagePage } from "./ThemeCreatorPages/ThemeCreatorManagePage";
 
 interface Props {
-  visible: boolean;
+  visible?: boolean;
   onClose: () => void;
+  /** Content only — open via ModalRoot from settings to avoid nested RN Modals. */
+  embedded?: boolean;
 }
 
 const TABS = [
-  { id: "details", label: "Details" },
-  { id: "colors", label: "Colors" },
-  { id: "manage", label: "Manage" },
+  { id: "details" },
+  { id: "colors" },
+  { id: "manage" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
 
-export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
+export const ThemeCreatorModal = observer(
+  ({ visible = true, onClose, embedded = false }: Props) => {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const { theme: activeTheme, changeTheme } = useTheme();
   const prefersDark = useColorScheme() === "dark";
@@ -104,7 +109,7 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
       themeCreator.stopPreview(changeTheme);
       setError(null);
     },
-    onError: (e) => handleApiError(e, "Failed to publish theme"),
+    onError: (e) => handleApiError(e, t("themeCreator.errors.publishFailed")),
   });
 
   const { mutate: updateTheme, isPending: updating } = useMutation({
@@ -126,7 +131,7 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
       themeCreator.setErrors({});
       setError(null);
     },
-    onError: (e) => handleApiError(e, "Failed to update theme"),
+    onError: (e) => handleApiError(e, t("themeCreator.errors.updateFailed")),
   });
 
   const { mutate: deleteTheme, isPending: deleting } = useMutation({
@@ -154,7 +159,7 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
         changeTheme(Theme.toEmotion(fallback));
       }
     },
-    onError: (e) => handleApiError(e, "Failed to delete theme"),
+    onError: (e) => handleApiError(e, t("themeCreator.errors.deleteFailed")),
   });
 
   const handleSaveDraft = () => {
@@ -164,23 +169,14 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
 
   const setTab = (id: TabId) => themeCreator.setCurrentPage(id);
 
-  return (
-    <Modal
-      open={visible}
-      onClose={onClose}
-      layout="fullscreen"
-      hideBackdrop
-      showCloseButton={false}
-      disableBackdropClick
-      style={{ paddingVertical: 0 }}
-    >
+  const body = (
       <Screen
         fill
         keyboard="form"
         safeTop
         style={{ backgroundColor: activeTheme.colors.background }}
       >
-        <SpaceSettingsHeader title="Theme Creator" onClose={onClose} />
+        <SpaceSettingsHeader title={t("themeCreator.title")} onClose={onClose} />
 
         <ScrollView
           horizontal
@@ -192,10 +188,10 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
             paddingBottom: 4,
           }}
         >
-          {TABS.map(({ id, label }) => (
+          {TABS.map(({ id }) => (
             <ThemeCreatorTab
               key={id}
-              label={label}
+              label={t(`themeCreator.tabs.${id}`)}
               active={currentPage === id}
               onPress={() => setTab(id)}
             />
@@ -246,7 +242,9 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
               }
               onPress={() => handlePreview(!themeCreator.inPreview)}
             >
-              {themeCreator.inPreview ? "Stop" : "Preview"}
+              {themeCreator.inPreview
+                ? t("themeCreator.preview.stopButton")
+                : t("themeCreator.preview.preview")}
             </Button>
             <Button
               expand
@@ -255,10 +253,10 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
               onPress={() => (ownedByUser ? updateTheme() : publishTheme())}
             >
               {publishing || updating
-                ? "Saving..."
+                ? t("profile.saving")
                 : ownedByUser
-                  ? "Update"
-                  : "Publish"}
+                  ? t("themeCreator.actions.update")
+                  : t("themeCreator.actions.publish")}
             </Button>
           </Box>
 
@@ -274,7 +272,7 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
               disabled={!userInteracted || themeCreator.inPreview}
               onPress={handleReset}
             >
-              Reset
+              {t("themeCreator.actions.reset")}
             </Button>
             <Button
               variant="plain"
@@ -282,11 +280,28 @@ export const ThemeCreatorModal = observer(({ visible, onClose }: Props) => {
               disabled={!userInteracted || nameEmpty || ownedByUser}
               onPress={handleSaveDraft}
             >
-              {existingDraft ? "Update draft" : "Save draft"}
+              {existingDraft
+                ? t("themeCreator.actions.updateDraftLower")
+                : t("themeCreator.actions.saveDraftLower")}
             </Button>
           </Box>
         </Box>
       </Screen>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <Modal
+      open={visible}
+      onClose={onClose}
+      layout="fullscreen"
+      hideBackdrop
+      showCloseButton={false}
+      disableBackdropClick
+      style={{ paddingVertical: 0 }}
+    >
+      {body}
     </Modal>
   );
 });

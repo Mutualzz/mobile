@@ -11,6 +11,7 @@ import type { Space } from "@stores/objects/Space";
 import { observer } from "mobx-react-lite";
 import { TrashIcon } from "phosphor-react-native";
 import { useExpressionThumbnailStyle } from "@utils/accessibilityLayout";
+import { useTranslation } from "react-i18next";
 import { Image } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
 
@@ -22,6 +23,7 @@ interface Props {
 
 const StickerRow = observer(
   ({ expression, space }: { expression: Expression; space: Space }) => {
+    const { t } = useTranslation("common");
     const app = useAppStore();
     const thumbnailStyle = useExpressionThumbnailStyle();
     const canManage =
@@ -53,7 +55,9 @@ const StickerRow = observer(
             color="danger"
             variant="soft"
             onPress={() => void expression.delete()}
-            accessibilityLabel={`Delete :${expression.name}:`}
+            accessibilityLabel={t("a11y.deleteExpression", {
+              name: expression.name,
+            })}
           >
             <TrashIcon weight="fill" />
           </IconButton>
@@ -101,6 +105,8 @@ const StickerSection = ({
 };
 
 export const SpaceStickersSettings = observer(({ space }: Props) => {
+  const { t } = useTranslation("space");
+  const { t: tSettings } = useTranslation("settings");
   const { openModal } = useModal();
 
   const stickers = Array.from(space.expressions.values()).filter(
@@ -149,10 +155,12 @@ export const SpaceStickersSettings = observer(({ space }: Props) => {
       <Box style={{ gap: 12 }}>
         <Box style={{ gap: 4 }}>
           <Typography level="body-sm" color="warning" variant="plain">
-            Beta limit: {STICKER_LIMIT} stickers per space.
+            {t("expressions.stickerLimitMobile", { limit: STICKER_LIMIT })}
           </Typography>
           <Typography level="body-sm" textColor="muted">
-            {STICKER_LIMIT - stickers.length} slots available
+            {tSettings("expressions.slotsAvailable", {
+              count: STICKER_LIMIT - stickers.length,
+            })}
           </Typography>
         </Box>
         {canUpload && (
@@ -162,18 +170,18 @@ export const SpaceStickersSettings = observer(({ space }: Props) => {
             style={{ alignSelf: "flex-start" }}
             onPress={handleUpload}
           >
-            Upload sticker
+            {t("channels.uploadSticker")}
           </Button>
         )}
       </Box>
 
       <StickerSection
-        title="Stickers"
+        title={tSettings("expressions.stickers")}
         expressions={staticStickers}
         space={space}
       />
       <StickerSection
-        title="Animated Stickers"
+        title={tSettings("expressions.animatedStickers")}
         expressions={animatedStickers}
         space={space}
       />
@@ -184,7 +192,7 @@ export const SpaceStickersSettings = observer(({ space }: Props) => {
           textColor="muted"
           style={{ textAlign: "center", paddingVertical: 32 }}
         >
-          No space stickers yet
+          {t("expressions.emptyStickers")}
         </Typography>
       )}
     </Box>

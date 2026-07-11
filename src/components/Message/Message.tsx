@@ -10,12 +10,12 @@ import { QueuedMessageStatus } from "@stores/objects/QueuedMessage";
 import { GIF_ONLY_URL_PATTERN } from "@utils/gifs";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
 import { MessageActionSheet } from "./MessageActionSheet";
 import { QueuedMessageActionSheet } from "./QueuedMessageActionSheet";
 import { MessageAuthor } from "./MessageAuthor";
 import {
-  EditedIndicator,
   MessageBase,
   MessageContent,
   MessageContentText,
@@ -45,6 +45,7 @@ interface Props {
 
 export const Message = observer(({ message, header }: Props) => {
   const app = useAppStore();
+  const { t } = useTranslation("chat");
   const { theme } = useTheme();
   const space = message.spaceId ? app.spaces.get(message.spaceId) : null;
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
@@ -142,7 +143,7 @@ export const Message = observer(({ message, header }: Props) => {
                       <UserAvatar user={repliedMessage.author} size="sm" />
                       <ReplyAuthorName>
                         <Typography level="body-xs" textColor="muted">
-                          {repliedMessage.author?.displayName ?? "Unknown"}
+                          {repliedMessage.author?.displayName ?? t("unknown")}
                         </Typography>
                       </ReplyAuthorName>
                       <ReplyContentText>
@@ -161,7 +162,7 @@ export const Message = observer(({ message, header }: Props) => {
                       textColor="muted"
                       style={{ fontStyle: "italic" }}
                     >
-                      Could not find the replied message
+                      {t("reply.replyPreviewMissing")}
                     </Typography>
                   )}
                 </ReplyContent>
@@ -241,7 +242,13 @@ export const Message = observer(({ message, header }: Props) => {
                         spaceId={message.spaceId}
                         value={message.content}
                       />
-                      <EditedIndicator />
+                      <Typography
+                        level="body-xs"
+                        textColor="muted"
+                        style={{ marginLeft: 4 }}
+                      >
+                        {t("message.edited")}
+                      </Typography>
                     </Box>
                   ) : (
                     <MarkdownRenderer

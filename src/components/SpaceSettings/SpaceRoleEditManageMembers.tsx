@@ -15,6 +15,7 @@ import {
 } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FlatList, Pressable } from "react-native";
 import { PlusIcon, XIcon } from "phosphor-react-native";
 
@@ -23,6 +24,8 @@ interface Props {
 }
 
 export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
+  const { t } = useTranslation("space");
+  const { t: tCommon } = useTranslation("common");
   const { theme } = useTheme();
   const removeButtonSize = useScaledSquareSize(26);
   const { openModal } = useModal();
@@ -50,10 +53,10 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
 
   const emptyLabel = (() => {
     if (!role.members?.length && !search.trim()) {
-      return "No members have been assigned this role.";
+      return t("roles.members.emptyAssigned");
     }
     if (!members.length && search.trim()) {
-      return "No members match your search.";
+      return t("roles.members.emptySearch");
     }
     return null;
   })();
@@ -91,10 +94,10 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
         }}
       >
         <Typography level="body-md" weight={700}>
-          Role members
+          {t("roles.members.title")}
         </Typography>
         <Typography level="body-sm" textColor="muted">
-          View and manage members assigned to this role.
+          {t("roles.members.description")}
         </Typography>
         {!canManageRole && (
           <Box
@@ -107,7 +110,7 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
           >
             <RoleHierarchyAssignLock />
             <Typography level="body-sm" textColor="muted" style={{ flex: 1 }}>
-              You can&apos;t assign or remove members from this role.
+              {t("roles.hierarchy.cantManageMembers")}
             </Typography>
           </Box>
         )}
@@ -118,7 +121,7 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
           <Input
             value={search}
             onChangeText={setSearch}
-            placeholder="Search members"
+            placeholder={t("roles.members.searchPlaceholder")}
             autoCapitalize="none"
           />
         </Box>
@@ -128,7 +131,7 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
             startDecorator={<PlusIcon size={18} weight="bold" />}
             onPress={openAddMembersSheet}
           >
-            Add members
+            {t("roles.members.addTitle")}
           </Button>
         ) : null}
       </Box>
@@ -190,7 +193,10 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
                     onPress={() => void member.removeRole(role)}
                     hitSlop={8}
                     accessibilityRole="button"
-                    accessibilityLabel={`Remove ${member.displayName} from ${role.name}`}
+                    accessibilityLabel={tCommon("a11y.removeMemberFromRole", {
+                      member: member.displayName,
+                      role: role.name,
+                    })}
                   >
                     <Box
                       style={{
@@ -223,6 +229,9 @@ interface AddMembersSheetProps {
 
 const AddMembersSheet = observer(
   ({ modalId, role, eligibleMemberIds }: AddMembersSheetProps) => {
+    const { t } = useTranslation("space");
+    const { t: tCommon } = useTranslation("common");
+    const { t: tChat } = useTranslation("chat");
     const { closeModal } = useModal();
     const listMaxHeight = useScaledModalListMaxHeight();
     const [search, setSearch] = useState("");
@@ -261,7 +270,7 @@ const AddMembersSheet = observer(
         closeModal(modalId);
       } catch (e) {
         setError(
-          e instanceof Error ? e.message : "Failed to add members to role",
+          e instanceof Error ? e.message : t("roles.members.addFailed"),
         );
       } finally {
         setSaving(false);
@@ -277,16 +286,19 @@ const AddMembersSheet = observer(
         }}
       >
         <Typography level="body-md" weight={700}>
-          Add members
+          {t("roles.members.addTitle")}
         </Typography>
         <Typography level="body-sm" textColor="muted">
-          Select members to assign to {role.name}.
+          {t("roles.members.addDescription", {
+            max: 30,
+            roleName: role.name,
+          })}
         </Typography>
 
         <Input
           value={search}
           onChangeText={setSearch}
-          placeholder="Search members"
+          placeholder={t("roles.members.searchPlaceholder")}
           autoCapitalize="none"
         />
 
@@ -296,7 +308,9 @@ const AddMembersSheet = observer(
             textColor="muted"
             style={{ paddingVertical: 16 }}
           >
-            No eligible members
+            {eligibleMemberIds.length === 0
+              ? t("roles.members.noEligible")
+              : t("roles.members.emptySearch")}
           </Typography>
         ) : (
           <FlatList
@@ -333,7 +347,7 @@ const AddMembersSheet = observer(
                       </Typography>
                     </Box>
                     <Typography color="primary">
-                      {isSelected ? "Selected" : ""}
+                      {isSelected ? tChat("dm.selected") : ""}
                     </Typography>
                   </Paper>
                 </Pressable>
@@ -365,14 +379,16 @@ const AddMembersSheet = observer(
             expand
             onPress={() => closeModal(modalId)}
           >
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button
             expand
             disabled={!selectedIds.length || saving}
             onPress={() => void addMembers()}
           >
-            Add{selectedIds.length ? ` (${selectedIds.length})` : ""}
+            {selectedIds.length
+              ? t("actions.addMembersCount", { count: selectedIds.length })
+              : tCommon("add")}
           </Button>
         </Box>
       </Box>

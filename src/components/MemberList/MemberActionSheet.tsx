@@ -23,6 +23,7 @@ import { useMutation } from "@tanstack/react-query";
 import { CheckIcon, ShieldIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -36,6 +37,8 @@ interface Props {
 export const MemberActionSheet = observer(
   ({ member, space, visible, onClose }: Props) => {
     const app = useAppStore();
+    const { t } = useTranslation("chat");
+    const { t: tSpace } = useTranslation("space");
     const { theme } = useTheme();
     const insets = useSafeAreaInsets();
     const [kickOpen, setKickOpen] = useState(false);
@@ -73,10 +76,10 @@ export const MemberActionSheet = observer(
       mutationKey: ["toggle-member-role", member.id],
       mutationFn: async (role: Role) => {
         if (!canManageRoles) {
-          throw new Error("You don't have permission to manage this member");
+          throw new Error(tSpace("roles.hierarchy.cantManageMember"));
         }
         if (!canAssignRole(hierarchyContext, role)) {
-          throw new Error("Role hierarchy prevents modifying this role");
+          throw new Error(tSpace("roles.hierarchy.cantAssign"));
         }
         if (member.roles.has(role.id)) return member.removeRole(role);
         return member.addRole(role);
@@ -151,6 +154,8 @@ export const MemberActionSheet = observer(
       );
     };
 
+    const username = member.user?.username ?? member.displayName;
+
     return (
       <>
         <Modal
@@ -208,11 +213,11 @@ export const MemberActionSheet = observer(
                     {showRoles && (
                       <Box style={{ gap: 8, paddingBottom: 8 }}>
                         <Typography level="body-sm" weight={700}>
-                          Roles
+                          {t("contextMenu.roles")}
                         </Typography>
                         {!canManageRoles && assignedRoles.length === 0 && (
                           <Typography level="body-sm" textColor="muted">
-                            No roles assigned.
+                            {t("contextMenu.noRolesAssigned")}
                           </Typography>
                         )}
                         {canManageRoles
@@ -242,7 +247,7 @@ export const MemberActionSheet = observer(
                             padding={12}
                             onPress={() => setKickOpen(true)}
                           >
-                            Kick member
+                            {t("contextMenu.kickMember", { username })}
                           </Button>
                         )}
                         {canBan && (
@@ -252,7 +257,7 @@ export const MemberActionSheet = observer(
                             color="danger"
                             onPress={() => setBanOpen(true)}
                           >
-                            Ban member
+                            {t("contextMenu.banMember", { username })}
                           </Button>
                         )}
                       </ButtonGroup>

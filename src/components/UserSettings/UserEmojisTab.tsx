@@ -12,46 +12,47 @@ import { TrashIcon } from "phosphor-react-native";
 import { Image } from "react-native";
 import { useExpressionThumbnailStyle } from "@utils/accessibilityLayout";
 import ImagePicker from "react-native-image-crop-picker";
+import { useTranslation } from "react-i18next";
 
 const EMOJI_LIMIT = 100;
 
 const ExpressionRow = observer(({ expression }: { expression: Expression }) => {
+  const { t } = useTranslation("settings");
   const thumbnailStyle = useExpressionThumbnailStyle();
 
   return (
-  <Paper
-    variant="plain"
-    style={{
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-      padding: 12,
-      borderRadius: 10,
-      minWidth: 0,
-    }}
-  >
-    <Image
-      source={{ uri: expression.url }}
-      style={thumbnailStyle}
-    />
-    <Typography
-      level="body-sm"
-      style={{ flex: 1, minWidth: 0 }}
-      truncate="single"
+    <Paper
+      variant="plain"
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        padding: 12,
+        borderRadius: 10,
+        minWidth: 0,
+      }}
     >
-      :{expression.name}:
-    </Typography>
-    <IconButton
-      padding={6}
-      size={16}
-      color="danger"
-      variant="soft"
-      onPress={() => void expression.delete()}
-      accessibilityLabel={`Delete :${expression.name}:`}
-    >
-      <TrashIcon weight="fill" />
-    </IconButton>
-  </Paper>
+      <Image source={{ uri: expression.url }} style={thumbnailStyle} />
+      <Typography
+        level="body-sm"
+        style={{ flex: 1, minWidth: 0 }}
+        truncate="single"
+      >
+        :{expression.name}:
+      </Typography>
+      <IconButton
+        padding={6}
+        size={16}
+        color="danger"
+        variant="soft"
+        onPress={() => void expression.delete()}
+        accessibilityLabel={t("expressions.deleteNamed", {
+          name: expression.name,
+        })}
+      >
+        <TrashIcon weight="fill" />
+      </IconButton>
+    </Paper>
   );
 });
 
@@ -87,6 +88,7 @@ const EmojiSection = ({
 };
 
 export const UserEmojisTab = observer(() => {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const { openModal } = useModal();
   const account = app.account;
@@ -129,10 +131,12 @@ export const UserEmojisTab = observer(() => {
       <Box style={{ gap: 12 }}>
         <Box style={{ gap: 4 }}>
           <Typography level="body-sm" color="warning" variant="plain">
-            Beta limit: {EMOJI_LIMIT} emojis per account.
+            {t("expressions.emojiLimitMobile", { limit: EMOJI_LIMIT })}
           </Typography>
           <Typography level="body-sm" textColor="muted">
-            {EMOJI_LIMIT - emojis.length} slots available
+            {t("expressions.slotsAvailable", {
+              count: EMOJI_LIMIT - emojis.length,
+            })}
           </Typography>
         </Box>
         <Button
@@ -141,12 +145,18 @@ export const UserEmojisTab = observer(() => {
           style={{ alignSelf: "flex-start" }}
           onPress={handleUpload}
         >
-          Upload Emoji
+          {t("expressions.uploadEmoji")}
         </Button>
       </Box>
 
-      <EmojiSection title="Emojis" expressions={staticEmojis} />
-      <EmojiSection title="Animated Emojis" expressions={animatedEmojis} />
+      <EmojiSection
+        title={t("expressions.emojis")}
+        expressions={staticEmojis}
+      />
+      <EmojiSection
+        title={t("expressions.animatedEmojis")}
+        expressions={animatedEmojis}
+      />
 
       {emojis.length === 0 && (
         <Typography
@@ -154,7 +164,7 @@ export const UserEmojisTab = observer(() => {
           textColor="muted"
           style={{ textAlign: "center", paddingVertical: 32 }}
         >
-          No emojis created yet
+          {t("expressions.noEmojis")}
         </Typography>
       )}
     </Box>

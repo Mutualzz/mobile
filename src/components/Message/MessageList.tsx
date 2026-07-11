@@ -15,6 +15,7 @@ import { FlashList, type FlashListRef } from "@shopify/flash-list";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Keyboard,
@@ -47,6 +48,7 @@ const SpaceEndMessage = ({
   theme: ReturnType<typeof useTheme>["theme"];
 }) => {
   const app = useAppStore();
+  const { t } = useTranslation("chat");
   const endIconSize = useScaledSquareSize(64);
 
   return (
@@ -77,15 +79,15 @@ const SpaceEndMessage = ({
           marginVertical: 8,
         }}
       >
-        Welcome to #{channel?.name}!
+        {t("empty.channel.welcome", { channel: channel?.name })}
       </Typography>
       {canReadHistory ? (
         <Typography textColor="secondary">
-          This is the start of the #{channel?.name} channel.
+          {t("empty.channel.start", { channel: channel?.name })}
         </Typography>
       ) : (
         <Typography textColor="secondary">
-          You don&apos;t have permissions to read message history
+          {t("empty.channel.noHistory")}
         </Typography>
       )}
     </Box>
@@ -93,6 +95,7 @@ const SpaceEndMessage = ({
 };
 
 const DMEndMessage = ({ channel }: { channel: Channel }) => {
+  const { t } = useTranslation("chat");
   const isGroupDM = channel.type === ChannelType.GroupDM;
   const conversationName = getDMConversationName(channel);
 
@@ -114,11 +117,13 @@ const DMEndMessage = ({ channel }: { channel: Channel }) => {
       <Typography level="h4" weight={700}>
         {isGroupDM
           ? conversationName
-          : `Send your first message to ${channel.dmRecipient?.displayName}`}
+          : t("empty.dm.firstMessage", {
+              name: channel.dmRecipient?.displayName,
+            })}
       </Typography>
 
       <Typography textColor="secondary">
-        Welcome to the beginning of the {conversationName}
+        {t("empty.dm.beginning", { conversation: conversationName })}
       </Typography>
     </Box>
   );
@@ -131,6 +136,8 @@ const ScrollToBottomFab = ({
   visible: boolean;
   onPress: () => void;
 }) => {
+  const { t } = useTranslation("chat");
+
   if (!visible) return null;
 
   return (
@@ -147,7 +154,7 @@ const ScrollToBottomFab = ({
         color="neutral"
         variant="soft"
         onPress={onPress}
-        accessibilityLabel="Scroll to latest messages"
+        accessibilityLabel={t("message.scrollToLatestA11y")}
       >
         <ArrowDownIcon size={20} weight="bold" />
       </IconButton>

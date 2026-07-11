@@ -16,6 +16,7 @@ import { ArrowLeftIcon, ChatCircleIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { FlatList, Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   channel: Channel;
@@ -24,6 +25,7 @@ interface Props {
 export const VoiceChannelView = observer(({ channel }: Props) => {
   const app = useAppStore();
   const { theme } = useTheme();
+  const { t } = useTranslation("chat");
   const tabBarInset = useKeyboardChromeInset();
   const [chatOpen, setChatOpen] = useState(false);
   const [moderationTarget, setModerationTarget] = useState<VoiceState | null>(
@@ -74,7 +76,7 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
           </Typography>
           <IconButton
             padding={6}
-            accessibilityLabel="Open chat"
+            accessibilityLabel={t("voice.openChat")}
             onPress={() => setChatOpen(true)}
           >
             <ChatCircleIcon size={20} weight="fill" />
@@ -88,8 +90,8 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
             <Box style={{ gap: 12, alignItems: "center", paddingVertical: 8 }}>
               <Typography textColor="muted" style={{ textAlign: "center" }}>
                 {members.length === 0
-                  ? "No one is in voice right now."
-                  : `${members.length} ${members.length === 1 ? "person is" : "people are"} in voice.`}
+                  ? t("voice.noOneInVoice")
+                  : t("voice.peopleInVoice", { count: members.length })}
               </Typography>
               <Button
                 onPress={() =>
@@ -97,7 +99,7 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
                 }
                 fullWidth
               >
-                Join Voice
+                {t("voice.joinVoice")}
               </Button>
               {joinFailed && (
                 <Typography
@@ -105,17 +107,19 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
                   variant="plain"
                   style={{ textAlign: "center" }}
                 >
-                  {app.voice.connectionError ?? "Voice connection failed"}
+                  {app.voice.connectionError ??
+                    t("voice.connection.failedFallback")}
                 </Typography>
               )}
             </Box>
           ) : (
             <Typography textColor="muted">
               {isConnecting
-                ? "Connecting to voice..."
+                ? t("voice.connection.connecting")
                 : isConnected
-                  ? "Connected to voice"
-                  : (app.voice.connectionError ?? "Voice connection failed")}
+                  ? t("voice.connection.connected")
+                  : (app.voice.connectionError ??
+                    t("voice.connection.failedFallback"))}
             </Typography>
           )}
 
@@ -134,7 +138,7 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
             )}
             ListEmptyComponent={
               <Typography textColor="muted">
-                No one is connected yet.
+                {t("voice.noOneConnectedYet")}
               </Typography>
             }
           />

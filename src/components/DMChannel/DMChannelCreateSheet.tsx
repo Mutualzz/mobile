@@ -8,6 +8,7 @@ import { useScaledModalListMaxHeight } from "@utils/accessibilityLayout";
 import type { User } from "@stores/objects/User";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FlatList, Pressable } from "react-native";
 
 interface Props {
@@ -16,6 +17,8 @@ interface Props {
 }
 
 export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
+  const { t } = useTranslation("common");
+  const { t: tChat } = useTranslation("chat");
   const app = useAppStore();
   const { navigate } = useAppNavigation();
   const [search, setSearch] = useState("");
@@ -62,7 +65,9 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
       onClose();
       navigate(`/@me/${channel.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to create DM");
+      setError(
+        e instanceof Error ? e.message : tChat("dm.createFailed"),
+      );
     } finally {
       setSaving(false);
     }
@@ -72,15 +77,15 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
     <BottomSheet
       open={visible}
       onClose={onClose}
-      title="New Message"
+      title={tChat("dm.createTitle")}
       maxHeight="85%"
       keyboard="lift"
       elevation={app.settings?.preferEmbossed ? 4 : 2}
     >
       <InputDefault
         fullWidth
-        placeholder="Search people"
-        accessibilityLabel="Search people"
+        placeholder={tChat("dm.searchPeople")}
+        accessibilityLabel={tChat("dm.searchPeople")}
         value={search}
         onChangeText={setSearch}
         returnKeyType="search"
@@ -88,8 +93,8 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
       {selected.length > 1 && (
         <InputDefault
           fullWidth
-          placeholder="Group name (optional)"
-          accessibilityLabel="Group name"
+          placeholder={tChat("dm.groupNameOptional")}
+          accessibilityLabel={tChat("dm.groupNameOptional")}
           value={groupName}
           onChangeText={setGroupName}
         />
@@ -124,7 +129,7 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
                   </Typography>
                 </Box>
                 <Typography color="primary">
-                  {isSelected ? "Selected" : ""}
+                  {isSelected ? tChat("dm.selected") : ""}
                 </Typography>
               </Box>
             </Pressable>
@@ -142,13 +147,13 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
       )}
       <Box style={{ flexDirection: "row", gap: 8 }}>
         <Button variant="plain" onPress={onClose}>
-          Cancel
+          {t("cancel")}
         </Button>
         <Button
           disabled={selected.length === 0 || saving}
           onPress={() => void create()}
         >
-          Create
+          {t("create")}
         </Button>
       </Box>
     </BottomSheet>

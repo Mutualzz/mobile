@@ -5,6 +5,7 @@ import { StaffHeader } from "@components/Staff/StaffHeader";
 import { useRequireStaffAccess } from "@hooks/useRequireStaffAccess";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
+import { reportReasonKeys } from "@mutualzz/i18n";
 import type { APIReport, ReportStatus } from "@mutualzz/types";
 import { Box, Typography } from "@mutualzz/ui-native";
 import {
@@ -15,49 +16,36 @@ import {
 import type { Href } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView } from "react-native";
 import dayjs from "dayjs";
 
 const PAGE_LIMIT = 50;
 const ANY = "any";
 
-const statusOptions = [
-    { value: ANY, label: "Any status" },
-    { value: "pending", label: "Pending" },
-    { value: "reviewed", label: "Reviewed" },
-    { value: "dismissed", label: "Dismissed" },
-    { value: "actioned", label: "Actioned" },
-];
+const statusValues = [ANY, "pending", "reviewed", "dismissed", "actioned"] as const;
+const targetTypeValues = [
+    ANY,
+    "message",
+    "post",
+    "comment",
+    "user",
+    "space",
+] as const;
 
-const targetTypeOptions = [
-    { value: ANY, label: "Any type" },
-    { value: "message", label: "Message" },
-    { value: "post", label: "Post" },
-    { value: "comment", label: "Comment" },
-    { value: "user", label: "User" },
-    { value: "space", label: "Space" },
-];
-
-const reasonLabels: Record<string, string> = {
-    spam: "Spam",
-    harassment: "Harassment or Abuse",
-    hate_speech: "Hate Speech",
-    nsfw: "NSFW / Inappropriate Content",
-    self_harm: "Self-Harm or Suicide",
-    impersonation: "Impersonation",
-    misinformation: "Misinformation",
-    other: "Other",
-};
-
-function getTakedownLabel(targetType: string) {
-    return targetType === "space" ? "Shut Down Space" : "Take Down";
+function getTakedownKey(targetType: string) {
+    return targetType === "space"
+        ? "report.actions.shutDownSpace"
+        : "report.actions.takeDownContent";
 }
 
-function getLockdownLabel(targetType: string) {
-    return targetType === "space" ? "Lock Down Space" : "";
+function getLockdownKey(targetType: string) {
+    return targetType === "space" ? "report.actions.lockDownSpace" : null;
 }
 
 const StaffReportsScreen = () => {
+    const { t } = useTranslation("staff");
+    const { t: tCommon } = useTranslation("common");
     const { isStaff } = useRequireStaffAccess();
     const app = useAppStore();
     const { navigate } = useAppNavigation();
@@ -141,23 +129,43 @@ const StaffReportsScreen = () => {
 
     const acting = takingDown || lockingDown;
 
+    const reasonLabel = (reason: string) => {
+        const key =
+            reportReasonKeys[reason as keyof typeof reportReasonKeys];
+        return key ? tCommon(key) : reason;
+    };
+
+    const statusLabel = (value: string) => {
+        if (value === ANY) return t("report.anyStatus");
+        return t(`report.status.${value}`);
+    };
+
+    const targetTypeLabel = (value: string) => {
+        if (value === ANY) return t("report.anyType");
+        return t(`report.targetTypes.${value}`);
+    };
+
     if (!isStaff) return null;
 
     return (
         <Screen style={{ flexDirection: "column" }}>
-            <StaffHeader title="Reports" showBack backHref="/staff" />
+            <StaffHeader
+                title={t("nav.reports")}
+                showBack
+                backHref="/staff"
+            />
             <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <Box style={{ flexDirection: "row", gap: 8 }}>
-                        {statusOptions.map((o) => (
+                        {statusValues.map((value) => (
                             <Button
-                                key={o.value}
+                                key={value}
                                 size="sm"
-                                variant={status === o.value ? "solid" : "soft"}
-                                color={status === o.value ? "primary" : "neutral"}
-                                onPress={() => setStatus(o.value)}
+                                variant={status === value ? "solid" : "soft"}
+                                color={status === value ? "primary" : "neutral"}
+                                onPress={() => setStatus(value)}
                             >
-                                {o.label}
+                                {statusLabel(value)}
                             </Button>
                         ))}
                     </Box>
@@ -165,21 +173,21 @@ const StaffReportsScreen = () => {
 
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <Box style={{ flexDirection: "row", gap: 8 }}>
-                        {targetTypeOptions.map((o) => (
+                        {targetTypeValues.map((value) => (
                             <Button
-                                key={o.value}
+                                key={value}
                                 size="sm"
                                 variant={
-                                    targetType === o.value ? "solid" : "soft"
+                                    targetType === value ? "solid" : "soft"
                                 }
                                 color={
-                                    targetType === o.value
+                                    targetType === value
                                         ? "primary"
                                         : "neutral"
                                 }
-                                onPress={() => setTargetType(o.value)}
+                                onPress={() => setTargetType(value)}
                             >
-                                {o.label}
+                                {targetTypeLabel(value)}
                             </Button>
                         ))}
                     </Box>
@@ -187,166 +195,191 @@ const StaffReportsScreen = () => {
 
                 {isFetching && (
                     <Typography level="body-sm" textColor="muted">
-                        Loading...
+                        {t("home.loading")}
                     </Typography>
                 )}
 
                 {!isFetching && reports.length === 0 && (
                     <Typography level="body-sm" textColor="muted">
-                        No reports found
+                        {t("report.empty")}
                     </Typography>
                 )}
 
                 <Box style={{ gap: 8 }}>
-                    {reports.map((report) => (
-                        <Paper
-                            key={report.id}
-                            variant="plain"
-                            style={{ padding: 12, borderRadius: 10, gap: 8 }}
-                        >
-                            <Box
+                    {reports.map((report) => {
+                        const lockdownKey = getLockdownKey(report.targetType);
+                        return (
+                            <Paper
+                                key={report.id}
+                                variant="plain"
                                 style={{
-                                    flexDirection: "row",
-                                    justifyContent: "space-between",
-                                    alignItems: "flex-start",
+                                    padding: 12,
+                                    borderRadius: 10,
                                     gap: 8,
                                 }}
                             >
-                                <Box style={{ flex: 1, gap: 2 }}>
-                                    <Typography level="body-sm" weight={700}>
-                                        {reasonLabels[report.reason] ??
-                                            report.reason}{" "}
-                                        · {report.targetType} {report.targetId}
-                                    </Typography>
-                                    <Typography
-                                        level="body-xs"
-                                        textColor="muted"
-                                    >
-                                        Reported by{" "}
-                                        {report.reporter.globalName ||
-                                            report.reporter.username}
-                                        {" · "}
-                                        {dayjs(report.createdAt).format(
-                                            "MMM D, YYYY h:mm A",
-                                        )}
-                                    </Typography>
-                                </Box>
-                                <Typography
-                                    level="body-xs"
-                                    weight={700}
-                                    textColor="muted"
-                                >
-                                    {report.status.toUpperCase()}
-                                </Typography>
-                            </Box>
-
-                            {report.description && (
-                                <Typography level="body-sm">
-                                    {report.description}
-                                </Typography>
-                            )}
-
-                            <Button
-                                size="sm"
-                                color="neutral"
-                                variant="soft"
-                                onPress={() =>
-                                    navigate(
-                                        `/staff/reports/${report.id}` as Href,
-                                    )
-                                }
-                            >
-                                View Details
-                            </Button>
-
-                            {report.status === "pending" && (
                                 <Box
                                     style={{
                                         flexDirection: "row",
-                                        flexWrap: "wrap",
+                                        justifyContent: "space-between",
+                                        alignItems: "flex-start",
                                         gap: 8,
                                     }}
                                 >
-                                    {report.targetType === "space" && (
+                                    <Box style={{ flex: 1, gap: 2 }}>
+                                        <Typography
+                                            level="body-sm"
+                                            weight={700}
+                                        >
+                                            {reasonLabel(report.reason)} ·{" "}
+                                            {report.targetType}{" "}
+                                            {report.targetId}
+                                        </Typography>
+                                        <Typography
+                                            level="body-xs"
+                                            textColor="muted"
+                                        >
+                                            {t("report.reportedBy", {
+                                                name:
+                                                    report.reporter
+                                                        .globalName ||
+                                                    report.reporter.username,
+                                            })}
+                                            {" · "}
+                                            {dayjs(report.createdAt).format(
+                                                "MMM D, YYYY h:mm A",
+                                            )}
+                                        </Typography>
+                                    </Box>
+                                    <Typography
+                                        level="body-xs"
+                                        weight={700}
+                                        textColor="muted"
+                                    >
+                                        {t(
+                                            `report.status.${report.status}`,
+                                        ).toUpperCase()}
+                                    </Typography>
+                                </Box>
+
+                                {report.description && (
+                                    <Typography level="body-sm">
+                                        {report.description}
+                                    </Typography>
+                                )}
+
+                                <Button
+                                    size="sm"
+                                    color="neutral"
+                                    variant="soft"
+                                    onPress={() =>
+                                        navigate(
+                                            `/staff/reports/${report.id}` as Href,
+                                        )
+                                    }
+                                >
+                                    {t("report.viewDetails")}
+                                </Button>
+
+                                {report.status === "pending" && (
+                                    <Box
+                                        style={{
+                                            flexDirection: "row",
+                                            flexWrap: "wrap",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        {lockdownKey && (
+                                            <Button
+                                                size="sm"
+                                                color="warning"
+                                                variant="solid"
+                                                disabled={
+                                                    acting || updatingStatus
+                                                }
+                                                onPress={() =>
+                                                    lockdownSpace(report.id)
+                                                }
+                                            >
+                                                {lockingDown
+                                                    ? t("working")
+                                                    : t(lockdownKey)}
+                                            </Button>
+                                        )}
+                                        {report.targetType !== "user" && (
+                                            <Button
+                                                size="sm"
+                                                color="danger"
+                                                variant="solid"
+                                                disabled={
+                                                    acting || updatingStatus
+                                                }
+                                                onPress={() =>
+                                                    takedownContent(report.id)
+                                                }
+                                            >
+                                                {takingDown
+                                                    ? t("working")
+                                                    : t(
+                                                          getTakedownKey(
+                                                              report.targetType,
+                                                          ),
+                                                      )}
+                                            </Button>
+                                        )}
                                         <Button
                                             size="sm"
-                                            color="warning"
-                                            variant="solid"
-                                            disabled={acting || updatingStatus}
+                                            color="success"
+                                            variant="soft"
+                                            disabled={
+                                                updatingStatus || acting
+                                            }
                                             onPress={() =>
-                                                lockdownSpace(report.id)
+                                                updateStatus({
+                                                    reportId: report.id,
+                                                    status: "reviewed",
+                                                })
                                             }
                                         >
-                                            {lockingDown
-                                                ? "Working..."
-                                                : getLockdownLabel(
-                                                      report.targetType,
-                                                  )}
+                                            {t("report.reviewedShort")}
                                         </Button>
-                                    )}
-                                    {report.targetType !== "user" && (
                                         <Button
                                             size="sm"
                                             color="danger"
-                                            variant="solid"
-                                            disabled={acting || updatingStatus}
+                                            variant="soft"
+                                            disabled={
+                                                updatingStatus || acting
+                                            }
                                             onPress={() =>
-                                                takedownContent(report.id)
+                                                updateStatus({
+                                                    reportId: report.id,
+                                                    status: "actioned",
+                                                })
                                             }
                                         >
-                                            {takingDown
-                                                ? "Working..."
-                                                : getTakedownLabel(
-                                                      report.targetType,
-                                                  )}
+                                            {t("report.actionedShort")}
                                         </Button>
-                                    )}
-                                    <Button
-                                        size="sm"
-                                        color="success"
-                                        variant="soft"
-                                        disabled={updatingStatus || acting}
-                                        onPress={() =>
-                                            updateStatus({
-                                                reportId: report.id,
-                                                status: "reviewed",
-                                            })
-                                        }
-                                    >
-                                        Reviewed
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        color="danger"
-                                        variant="soft"
-                                        disabled={updatingStatus || acting}
-                                        onPress={() =>
-                                            updateStatus({
-                                                reportId: report.id,
-                                                status: "actioned",
-                                            })
-                                        }
-                                    >
-                                        Actioned
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        color="neutral"
-                                        variant="soft"
-                                        disabled={updatingStatus || acting}
-                                        onPress={() =>
-                                            updateStatus({
-                                                reportId: report.id,
-                                                status: "dismissed",
-                                            })
-                                        }
-                                    >
-                                        Dismiss
-                                    </Button>
-                                </Box>
-                            )}
-                        </Paper>
-                    ))}
+                                        <Button
+                                            size="sm"
+                                            color="neutral"
+                                            variant="soft"
+                                            disabled={
+                                                updatingStatus || acting
+                                            }
+                                            onPress={() =>
+                                                updateStatus({
+                                                    reportId: report.id,
+                                                    status: "dismissed",
+                                                })
+                                            }
+                                        >
+                                            {t("report.dismiss")}
+                                        </Button>
+                                    </Box>
+                                )}
+                            </Paper>
+                        );
+                    })}
                 </Box>
 
                 {hasNextPage && (
@@ -356,7 +389,9 @@ const StaffReportsScreen = () => {
                         disabled={isFetchingNextPage}
                         onPress={() => fetchNextPage()}
                     >
-                        {isFetchingNextPage ? "Loading..." : "Load more"}
+                        {isFetchingNextPage
+                            ? t("home.loading")
+                            : t("home.loadMore")}
                     </Button>
                 )}
             </ScrollView>

@@ -7,6 +7,7 @@ import { InputDefault, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
     userId: string;
@@ -17,6 +18,8 @@ interface Props {
 
 export const StaffUserForceLogoutConfirmSheet = observer(
     ({ userId, username, onSuccess, modalId }: Props) => {
+        const { t } = useTranslation("staff");
+        const { t: tCommon } = useTranslation("common");
         const app = useAppStore();
         const { closeModal } = useModal();
         const [reason, setReason] = useState("");
@@ -46,16 +49,14 @@ export const StaffUserForceLogoutConfirmSheet = observer(
                 elevation={app.settings?.preferEmbossed ? 4 : 2}
             >
                 <Typography level="body-md" weight={700}>
-                    Force Logout
+                    {t("user.modals.forceLogout.title")}
                 </Typography>
                 <Typography level="body-sm" textColor="muted">
-                    Are you sure you want to sign @{username} out of every
-                    session? They will need to log back in, but the account
-                    stays enabled.
+                    {t("user.modals.forceLogout.body", { username })}
                 </Typography>
                 <InputDefault
                     fullWidth
-                    placeholder="Reason (optional)"
+                    placeholder={t("user.modals.reasonOptional")}
                     value={reason}
                     onChangeText={setReason}
                 />
@@ -69,7 +70,9 @@ export const StaffUserForceLogoutConfirmSheet = observer(
                     disabled={isPending}
                     onPress={() => mutate()}
                 >
-                    {isPending ? "Working..." : "Force Logout"}
+                    {isPending
+                        ? t("working")
+                        : t("user.modals.forceLogout.title")}
                 </Button>
                 <Button
                     variant="soft"
@@ -77,7 +80,7 @@ export const StaffUserForceLogoutConfirmSheet = observer(
                     disabled={isPending}
                     onPress={() => closeModal(modalId)}
                 >
-                    Cancel
+                    {tCommon("cancel")}
                 </Button>
             </Paper>
         );

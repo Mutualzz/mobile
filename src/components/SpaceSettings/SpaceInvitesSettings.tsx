@@ -14,6 +14,7 @@ import { observer } from "mobx-react-lite";
 import { CopyIcon, TrashIcon } from "phosphor-react-native";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   space: Space;
@@ -23,9 +24,9 @@ function pad(num: number) {
   return num.toString().padStart(2, "0");
 }
 
-function formatCountdown(expiresAt: Date, now: Date) {
+function formatCountdown(expiresAt: Date, now: Date, expiredLabel: string) {
   const diff = expiresAt.getTime() - now.getTime();
-  if (diff <= 0) return "Expired";
+  if (diff <= 0) return expiredLabel;
 
   const totalSeconds = Math.floor(diff / 1000);
   const days = Math.floor(totalSeconds / 86400);
@@ -38,6 +39,8 @@ function formatCountdown(expiresAt: Date, now: Date) {
 
 export const InviteRow = observer(
   ({ invite, now, space }: { invite: Invite; now: Date; space: Space }) => {
+    const { t } = useTranslation("space");
+    const { t: tCommon } = useTranslation("common");
     const app = useAppStore();
     const [copied, setCopied] = useState(false);
     const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -82,7 +85,7 @@ export const InviteRow = observer(
           {invite.inviter && <UserAvatar user={invite.inviter} size="md" />}
           <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
             <Typography level="body-sm" truncate="single">
-              {invite.inviter?.displayName ?? "Unknown"}
+              {invite.inviter?.displayName ?? t("unknown", { ns: "chat" })}
             </Typography>
             {invite.channel && (
               <Typography level="body-xs" textColor="muted" truncate="single">
@@ -113,13 +116,13 @@ export const InviteRow = observer(
             color="neutral"
             variant="soft"
             onPress={() => void copyInviteLink()}
-            accessibilityLabel="Copy invite link"
+            accessibilityLabel={t("invites.copyInviteUrl")}
           >
             <CopyIcon weight="fill" />
           </IconButton>
           {copied && (
             <Typography level="body-xs" textColor="muted">
-              Copied
+              {t("invites.copiedToClipboard")}
             </Typography>
           )}
         </Box>
@@ -133,13 +136,18 @@ export const InviteRow = observer(
           }}
         >
           <Typography level="body-xs" textColor="muted">
-            Uses: {invite.uses}
-            {invite.maxUses === 0 ? "" : ` / ${invite.maxUses}`}
+            {t("invites.usesLabel", {
+              uses: invite.uses,
+              max:
+                invite.maxUses === 0
+                  ? ""
+                  : t("invites.usesMax", { max: invite.maxUses }),
+            })}
           </Typography>
           <Typography level="body-xs" textColor="muted">
             {invite.expiresAt
-              ? formatCountdown(invite.expiresAt, now)
-              : "Never expires"}
+              ? formatCountdown(invite.expiresAt, now, t("invites.expired"))
+              : t("invites.neverExpires")}
           </Typography>
           {canDelete && (
             <IconButton
@@ -148,7 +156,7 @@ export const InviteRow = observer(
               color="danger"
               variant="soft"
               onPress={() => void invite.delete()}
-              accessibilityLabel="Delete invite"
+              accessibilityLabel={tCommon("a11y.deleteInvite")}
             >
               <TrashIcon weight="fill" />
             </IconButton>
@@ -160,6 +168,7 @@ export const InviteRow = observer(
 );
 
 export const SpaceInvitesSettings = observer(({ space }: Props) => {
+  const { t } = useTranslation("space");
   const { openModal } = useModal();
   const [now, setNow] = useState(new Date());
 
@@ -196,7 +205,7 @@ export const SpaceInvitesSettings = observer(({ space }: Props) => {
         }}
       >
         <Typography level="body-md" weight={700}>
-          Active invite links
+          {t("invites.activeLinks")}
         </Typography>
         <Box style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
           {canManageChannels && (
@@ -207,7 +216,7 @@ export const SpaceInvitesSettings = observer(({ space }: Props) => {
               disabled={invites.length === 0}
               onPress={() => void space.deleteAll()}
             >
-              Delete all
+              {t("actions.deleteAllInvites")}
             </Button>
           )}
           <Button
@@ -219,7 +228,7 @@ export const SpaceInvitesSettings = observer(({ space }: Props) => {
               )
             }
           >
-            Create invite
+            {t("actions.createInvite")}
           </Button>
         </Box>
       </Box>
@@ -230,7 +239,7 @@ export const SpaceInvitesSettings = observer(({ space }: Props) => {
           textColor="muted"
           style={{ textAlign: "center", paddingVertical: 32 }}
         >
-          No invites have been created for this space yet.
+          {t("invites.empty")}
         </Typography>
       ) : (
         <Box style={{ gap: 8 }}>

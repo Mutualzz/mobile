@@ -16,6 +16,7 @@ import {
   TrashIcon,
 } from "phosphor-react-native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   PanResponder,
   Pressable,
@@ -78,11 +79,15 @@ export function ProfileDrawCanvas({
   onSaveDraft,
   canvasSize = PROFILE_DRAW_CANVAS_SIZE,
   maskShape = "square",
-  saveLabel = "Save Drawing",
-  saveDraftLabel = "Save draft",
+  saveLabel,
+  saveDraftLabel,
   disableActions = false,
   defaultBackgroundColor = DEFAULT_BACKGROUND,
 }: Props) {
+  const { t } = useTranslation("settings");
+  const { t: tCommon } = useTranslation("common");
+  const resolvedSaveLabel = saveLabel ?? t("profile.draw.saveDrawing");
+  const resolvedSaveDraftLabel = saveDraftLabel ?? t("profile.draw.saveDraft");
   const { width: windowWidth } = useWindowDimensions();
   const brushButtonSize = useScaledSquareSize(28);
   const layoutSize = Math.min(canvasSize, Math.max(240, windowWidth - 48));
@@ -220,8 +225,8 @@ export function ProfileDrawCanvas({
       <View
         accessible
         accessibilityRole="none"
-        accessibilityLabel="Drawing canvas"
-        accessibilityHint="Draw by dragging a finger across this area."
+        accessibilityLabel={t("profile.draw.canvasLabel")}
+        accessibilityHint={t("profile.draw.canvasHint")}
         collapsable={false}
         {...panResponder.panHandlers}
         style={{
@@ -278,7 +283,9 @@ export function ProfileDrawCanvas({
             <Pressable
               key={swatchColor}
               accessibilityRole="button"
-              accessibilityLabel={`Brush color ${swatchColor}`}
+              accessibilityLabel={t("profile.draw.brushColorA11y", {
+                color: swatchColor,
+              })}
               accessibilityState={{ selected }}
               onPress={() => {
                 setErasing(false);
@@ -299,7 +306,7 @@ export function ProfileDrawCanvas({
           variant={erasing ? "solid" : "plain"}
           color="neutral"
           padding={6}
-          accessibilityLabel="Eraser"
+          accessibilityLabel={t("profile.draw.eraser")}
           onPress={() => setErasing(true)}
         >
           <EraserIcon size={16} />
@@ -308,7 +315,7 @@ export function ProfileDrawCanvas({
           variant="plain"
           color="neutral"
           padding={6}
-          accessibilityLabel="Brush"
+          accessibilityLabel={t("profile.draw.brush")}
           onPress={() => setErasing(false)}
         >
           <PencilSimpleIcon size={16} />
@@ -316,7 +323,9 @@ export function ProfileDrawCanvas({
       </Box>
 
       <Box style={{ gap: 4 }}>
-        <Typography level="body-xs">Stroke width ({strokeWidth}px)</Typography>
+        <Typography level="body-xs">
+          {t("profile.draw.strokeWidth", { value: strokeWidth })}
+        </Typography>
         <Slider
           size={18}
           min={1}
@@ -331,7 +340,7 @@ export function ProfileDrawCanvas({
 
       <Box style={{ gap: 4 }}>
         <Typography level="body-xs" weight={700}>
-          Background
+          {t("profile.draw.background")}
         </Typography>
         <InputColor
           value={backgroundColor as ColorLike}
@@ -352,7 +361,7 @@ export function ProfileDrawCanvas({
         <IconButton
           variant="soft"
           color="neutral"
-          accessibilityLabel="Undo"
+          accessibilityLabel={t("profile.draw.undo")}
           disabled={strokes.length === 0}
           onPress={undo}
         >
@@ -361,7 +370,7 @@ export function ProfileDrawCanvas({
         <IconButton
           variant="soft"
           color="neutral"
-          accessibilityLabel="Redo"
+          accessibilityLabel={t("profile.draw.redo")}
           disabled={redoStack.length === 0}
           onPress={redo}
         >
@@ -370,7 +379,7 @@ export function ProfileDrawCanvas({
         <IconButton
           variant="soft"
           color="danger"
-          accessibilityLabel="Clear"
+          accessibilityLabel={t("profile.draw.clear")}
           disabled={strokes.length === 0}
           onPress={clear}
         >
@@ -380,7 +389,7 @@ export function ProfileDrawCanvas({
 
       <Box style={{ flexDirection: "row", gap: 8, marginTop: "auto" }}>
         <Button color="neutral" disabled={disableActions} onPress={onCancel}>
-          Cancel
+          {tCommon("cancel")}
         </Button>
         {onSaveDraft && (
           <Button
@@ -388,7 +397,7 @@ export function ProfileDrawCanvas({
             disabled={disableActions || strokes.length === 0}
             onPress={() => onSaveDraft(exportState())}
           >
-            {saveDraftLabel}
+            {resolvedSaveDraftLabel}
           </Button>
         )}
         <Button
@@ -396,7 +405,7 @@ export function ProfileDrawCanvas({
           disabled={disableActions || strokes.length === 0}
           onPress={() => onSave(exportState())}
         >
-          {saveLabel}
+          {resolvedSaveLabel}
         </Button>
       </Box>
     </Box>

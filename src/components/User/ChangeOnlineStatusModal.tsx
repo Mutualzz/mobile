@@ -9,40 +9,19 @@ import { observer } from "mobx-react-lite";
 import { CheckIcon } from "phosphor-react-native";
 import { useEffect, useState } from "react";
 import { Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
-  visible: boolean;
+  visible?: boolean;
   onClose: () => void;
   onDone?: () => void;
+  /** Panel only — use with ModalRoot to avoid nested RN Modals. */
+  embedded?: boolean;
 }
 
-const STATUS_OPTIONS: {
-  status: PresenceStatus;
-  label: string;
-  description?: string;
-  showInvisible?: boolean;
-}[] = [
-  { status: "online", label: "Online" },
-  {
-    status: "idle",
-    label: "Idle",
-    description: "Away from keyboard",
-  },
-  {
-    status: "dnd",
-    label: "Do Not Disturb",
-    description: "You won't receive notifications",
-  },
-  {
-    status: "invisible",
-    label: "Invisible",
-    description: "Appear offline",
-    showInvisible: true,
-  },
-];
-
 export const ChangeOnlineStatusModal = observer(
-  ({ visible, onClose, onDone }: Props) => {
+  ({ visible = true, onClose, onDone, embedded = false }: Props) => {
+    const { t } = useTranslation("common");
     const app = useAppStore();
     const { theme } = useTheme();
     const account = app.account;
@@ -53,12 +32,38 @@ export const ChangeOnlineStatusModal = observer(
     const [selectedDurationMs, setSelectedDurationMs] = useState<number | null>(
       STATUS_DURATION_OPTIONS[1]?.durationMs ?? null,
     );
+    const isActive = embedded || visible;
+
+    const STATUS_OPTIONS: {
+      status: PresenceStatus;
+      label: string;
+      description?: string;
+      showInvisible?: boolean;
+    }[] = [
+      { status: "online", label: t("status.online") },
+      {
+        status: "idle",
+        label: t("status.idle"),
+        description: t("status.idleDescription"),
+      },
+      {
+        status: "dnd",
+        label: t("status.dnd"),
+        description: t("status.dndDescription"),
+      },
+      {
+        status: "invisible",
+        label: t("status.invisible"),
+        description: t("status.invisibleDescription"),
+        showInvisible: true,
+      },
+    ];
 
     useEffect(() => {
-      if (!visible) return;
+      if (!isActive) return;
       setSelectedStatus(null);
       setSelectedDurationMs(STATUS_DURATION_OPTIONS[1]?.durationMs ?? null);
-    }, [visible]);
+    }, [isActive]);
 
     const selectStatus = (status: PresenceStatus) => {
       if (selectedDurationMs == null) {
@@ -79,10 +84,11 @@ export const ChangeOnlineStatusModal = observer(
 
     return (
       <BottomSheet
+        embedded={embedded}
         open={visible}
         onClose={onClose}
-        title="Change Status"
-        maxHeight="92%"
+        title={t("customStatus.changeStatus")}
+        maxHeight="95%"
         keyboard="scroll"
         elevation={app.settings?.preferEmbossed ? 4 : 2}
       >
@@ -143,7 +149,7 @@ export const ChangeOnlineStatusModal = observer(
 
         <Box style={{ gap: 8, paddingHorizontal: 8 }}>
           <Typography level="body-xs" textColor="muted">
-            Clear online status after
+            {t("status.clearOnlineAfter")}
           </Typography>
           <Box
             style={{
@@ -156,7 +162,7 @@ export const ChangeOnlineStatusModal = observer(
               const active = selectedDurationMs === option.durationMs;
               return (
                 <Pressable
-                  key={option.label}
+                  key={`${option.labelKey}:${option.count ?? "forever"}`}
                   onPress={() => setSelectedDurationMs(option.durationMs)}
                   style={{
                     paddingHorizontal: 10,
@@ -168,7 +174,9 @@ export const ChangeOnlineStatusModal = observer(
                   }}
                 >
                   <Typography level="body-xs" weight={active ? 700 : 500}>
-                    {option.label}
+                    {option.count == null
+                      ? t(option.labelKey)
+                      : t(option.labelKey, { count: option.count })}
                   </Typography>
                 </Pressable>
               );
@@ -178,7 +186,7 @@ export const ChangeOnlineStatusModal = observer(
 
         <Divider style={{ marginVertical: 4 }} />
 
-        <CustomStatusEditor active={visible} onSaved={onClose} />
+        <CustomStatusEditor active={isActive} onSaved={onClose} />
       </BottomSheet>
     );
   },

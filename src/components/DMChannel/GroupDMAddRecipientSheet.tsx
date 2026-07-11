@@ -8,6 +8,7 @@ import type { Snowflake } from "@mutualzz/types";
 import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FlatList, Pressable } from "react-native";
 
 interface Props {
@@ -18,6 +19,9 @@ interface Props {
 
 export const GroupDMAddRecipientSheet = observer(
   ({ visible, onClose, channel }: Props) => {
+    const { t } = useTranslation("common");
+    const { t: tChat } = useTranslation("chat");
+    const { t: tSpace } = useTranslation("space");
     const app = useAppStore();
     const [search, setSearch] = useState("");
     const [selected, setSelected] = useState<Snowflake | null>(null);
@@ -25,7 +29,10 @@ export const GroupDMAddRecipientSheet = observer(
     const [error, setError] = useState<string | null>(null);
 
     const existingIds = new Set(channel.recipientIds ?? []);
-    const isFull = (channel.recipientIds?.length ?? 0) >= 10;
+    const currentCount = channel.recipientIds?.length ?? 0;
+    const maxCount = 10;
+    const isFull = currentCount >= maxCount;
+    const spotsRemaining = maxCount - currentCount;
     const listMaxHeight = useScaledModalListMaxHeight();
 
     const suggestions = useMemo(() => {
@@ -52,7 +59,9 @@ export const GroupDMAddRecipientSheet = observer(
         setSearch("");
         onClose();
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to add recipient");
+        setError(
+          e instanceof Error ? e.message : tChat("groupDm.addRecipientFailed"),
+        );
       } finally {
         setSaving(false);
       }
@@ -62,7 +71,7 @@ export const GroupDMAddRecipientSheet = observer(
       <BottomSheet
         open={visible}
         onClose={onClose}
-        title="Add to Group"
+        title={tChat("header.dm.addToGroup")}
         maxHeight="85%"
         keyboard="lift"
         elevation={app.settings?.preferEmbossed ? 4 : 2}
@@ -74,16 +83,19 @@ export const GroupDMAddRecipientSheet = observer(
           textColor={isFull ? undefined : "muted"}
         >
           {isFull
-            ? "This group is full (10/10)."
-            : `${10 - (channel.recipientIds?.length ?? 0)} spot${10 - (channel.recipientIds?.length ?? 0) === 1 ? "" : "s"} remaining`}
+            ? tChat("groupDm.groupFullCount", {
+                current: currentCount,
+                max: maxCount,
+              })
+            : tChat("groupDm.spotsRemaining", { count: spotsRemaining })}
         </Typography>
 
         {!isFull && (
           <>
             <InputDefault
               fullWidth
-              placeholder="Search friends"
-              accessibilityLabel="Search friends"
+              placeholder={tSpace("invites.modal.searchFriends")}
+              accessibilityLabel={tSpace("invites.modal.searchFriends")}
               value={search}
               onChangeText={setSearch}
               returnKeyType="search"
@@ -95,7 +107,9 @@ export const GroupDMAddRecipientSheet = observer(
               keyboardShouldPersistTaps="handled"
               ListEmptyComponent={
                 <Typography level="body-sm" textColor="muted">
-                  {search.trim() ? "No results." : "No friends to add."}
+                  {search.trim()
+                    ? tSpace("invites.modal.noResults")
+                    : tChat("groupDm.noFriendsToAdd")}
                 </Typography>
               }
               renderItem={({ item }) => {
@@ -125,7 +139,7 @@ export const GroupDMAddRecipientSheet = observer(
                         </Typography>
                       </Box>
                       <Typography color="primary">
-                        {isSelected ? "Selected" : ""}
+                        {isSelected ? tChat("dm.selected") : ""}
                       </Typography>
                     </Box>
                   </Pressable>
@@ -147,13 +161,13 @@ export const GroupDMAddRecipientSheet = observer(
 
         <Box style={{ flexDirection: "row", gap: 8 }}>
           <Button variant="plain" color="neutral" onPress={onClose}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             disabled={!selected || saving || isFull}
             onPress={() => void addRecipient()}
           >
-            Add to Group
+            {tChat("header.dm.addToGroup")}
           </Button>
         </Box>
       </BottomSheet>

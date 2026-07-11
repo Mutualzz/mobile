@@ -18,6 +18,7 @@ import {
   TrashIcon,
 } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -31,6 +32,7 @@ interface Props {
 export const GroupDMActionSheet = observer(
   ({ channel, visible, onClose, onOpenManage }: Props) => {
     const app = useAppStore();
+    const { t } = useTranslation("chat");
     const insets = useSafeAreaInsets();
     const { navigate } = useAppNavigation();
 
@@ -61,7 +63,7 @@ export const GroupDMActionSheet = observer(
         .map((user) => user.displayName)
         .filter(Boolean)
         .join(", ") ||
-        "Group DM");
+        t("groupDm.title"));
 
     return (
       <Modal
@@ -128,7 +130,7 @@ export const GroupDMActionSheet = observer(
                         onClose();
                       }}
                     >
-                      Mark as read
+                      {t("contextMenu.markAsRead")}
                     </Button>
                   )}
 
@@ -142,7 +144,7 @@ export const GroupDMActionSheet = observer(
                         onOpenManage();
                       }}
                     >
-                      Manage group
+                      {t("groupDm.manage.title")}
                     </Button>
                   )}
 
@@ -153,7 +155,7 @@ export const GroupDMActionSheet = observer(
                     disabled={isPending}
                     onPress={() => leaveGroup()}
                   >
-                    Leave group
+                    {t("groupDm.leave")}
                   </Button>
 
                   {isOwner && (
@@ -165,7 +167,7 @@ export const GroupDMActionSheet = observer(
                       disabled={isPending}
                       onPress={() => deleteGroup()}
                     >
-                      Delete group
+                      {t("groupDm.delete")}
                     </Button>
                   )}
                 </ButtonGroup>

@@ -5,6 +5,7 @@ import { Message, type MessageLike } from "@stores/objects/Message";
 import { useScaledMessageInfoWidth } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
 import type { PropsWithChildren } from "react";
+import { useTranslation } from "react-i18next";
 import type { ViewProps } from "react-native";
 
 interface Props extends PropsWithChildren, ViewProps {
@@ -145,14 +146,18 @@ export const DetailsBase = styled(Box)({
   paddingLeft: 4,
 });
 
-export const EditedIndicator = () => (
-  <Typography level="body-xs" textColor="muted" style={{ marginLeft: 4 }}>
-    (edited)
-  </Typography>
-);
+export const EditedIndicator = () => {
+  const { t } = useTranslation("chat");
+  return (
+    <Typography level="body-xs" textColor="muted" style={{ marginLeft: 4 }}>
+      {t("message.edited")}
+    </Typography>
+  );
+};
 
 export const MessageDetails = observer(
   ({ message }: { message: MessageLike }) => {
+    const { t } = useTranslation("common");
     const isEdited = message instanceof Message && message.edited;
 
     return (
@@ -167,7 +172,7 @@ export const MessageDetails = observer(
           typographyProps={{
             level: "body-xs",
           }}
-          accessibilityLabelPrefix="Sent"
+          accessibilityLabelPrefix={t("a11y.sent")}
         />
 
         {isEdited && <EditedIndicator />}

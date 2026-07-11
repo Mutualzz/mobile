@@ -12,46 +12,47 @@ import { TrashIcon } from "phosphor-react-native";
 import { useExpressionThumbnailStyle } from "@utils/accessibilityLayout";
 import { Image } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
+import { useTranslation } from "react-i18next";
 
 const STICKER_LIMIT = 100;
 
 const StickerRow = observer(({ expression }: { expression: Expression }) => {
+  const { t } = useTranslation("settings");
   const thumbnailStyle = useExpressionThumbnailStyle();
 
   return (
-  <Paper
-    variant="plain"
-    style={{
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-      padding: 12,
-      borderRadius: 10,
-      minWidth: 0,
-    }}
-  >
-    <Image
-      source={{ uri: expression.url }}
-      style={thumbnailStyle}
-    />
-    <Typography
-      level="body-sm"
-      style={{ flex: 1, minWidth: 0 }}
-      truncate="single"
+    <Paper
+      variant="plain"
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        padding: 12,
+        borderRadius: 10,
+        minWidth: 0,
+      }}
     >
-      :{expression.name}:
-    </Typography>
-    <IconButton
-      padding={6}
-      size={16}
-      color="danger"
-      variant="soft"
-      onPress={() => void expression.delete()}
-      accessibilityLabel={`Delete :${expression.name}:`}
-    >
-      <TrashIcon weight="fill" />
-    </IconButton>
-  </Paper>
+      <Image source={{ uri: expression.url }} style={thumbnailStyle} />
+      <Typography
+        level="body-sm"
+        style={{ flex: 1, minWidth: 0 }}
+        truncate="single"
+      >
+        :{expression.name}:
+      </Typography>
+      <IconButton
+        padding={6}
+        size={16}
+        color="danger"
+        variant="soft"
+        onPress={() => void expression.delete()}
+        accessibilityLabel={t("expressions.deleteNamed", {
+          name: expression.name,
+        })}
+      >
+        <TrashIcon weight="fill" />
+      </IconButton>
+    </Paper>
   );
 });
 
@@ -87,6 +88,7 @@ const StickerSection = ({
 };
 
 export const UserStickersTab = observer(() => {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const { openModal } = useModal();
   const account = app.account;
@@ -129,10 +131,12 @@ export const UserStickersTab = observer(() => {
       <Box style={{ gap: 12 }}>
         <Box style={{ gap: 4 }}>
           <Typography level="body-sm" color="warning" variant="plain">
-            Beta limit: {STICKER_LIMIT} stickers per account.
+            {t("expressions.stickerLimitMobile", { limit: STICKER_LIMIT })}
           </Typography>
           <Typography level="body-sm" textColor="muted">
-            {STICKER_LIMIT - stickers.length} slots available
+            {t("expressions.slotsAvailable", {
+              count: STICKER_LIMIT - stickers.length,
+            })}
           </Typography>
         </Box>
         <Button
@@ -141,13 +145,16 @@ export const UserStickersTab = observer(() => {
           style={{ alignSelf: "flex-start" }}
           onPress={handleUpload}
         >
-          Upload Sticker
+          {t("expressions.uploadSticker")}
         </Button>
       </Box>
 
-      <StickerSection title="Stickers" expressions={staticStickers} />
       <StickerSection
-        title="Animated Stickers"
+        title={t("expressions.stickers")}
+        expressions={staticStickers}
+      />
+      <StickerSection
+        title={t("expressions.animatedStickers")}
         expressions={animatedStickers}
       />
 
@@ -157,7 +164,7 @@ export const UserStickersTab = observer(() => {
           textColor="muted"
           style={{ textAlign: "center", paddingVertical: 32 }}
         >
-          No stickers created yet
+          {t("expressions.noStickers")}
         </Typography>
       )}
     </Box>

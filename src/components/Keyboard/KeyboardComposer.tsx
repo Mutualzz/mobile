@@ -1,7 +1,7 @@
 import { useKeyboardPaddingStyle } from "@hooks/useKeyboardPaddingStyle";
 import type { ReactNode } from "react";
-import { View } from "react-native";
-import Animated from "react-native-reanimated";
+import { View, type LayoutChangeEvent } from "react-native";
+import Animated, { useSharedValue } from "react-native-reanimated";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 
 interface Props {
@@ -15,14 +15,21 @@ interface Props {
  * parents where KeyboardAvoidingView breaks.
  */
 export function KeyboardComposer({ children, footer }: Props) {
-  const listInsetStyle = useKeyboardPaddingStyle();
+  const footerHeight = useSharedValue(0);
+  const listInsetStyle = useKeyboardPaddingStyle(footerHeight);
+
+  const onFooterLayout = (event: LayoutChangeEvent) => {
+    footerHeight.value = Math.ceil(event.nativeEvent.layout.height);
+  };
 
   return (
     <View style={{ flex: 1, minHeight: 0 }}>
       <Animated.View style={[{ flex: 1, minHeight: 0 }, listInsetStyle]}>
         {children}
       </Animated.View>
-      <KeyboardStickyView>{footer}</KeyboardStickyView>
+      <KeyboardStickyView>
+        <View onLayout={onFooterLayout}>{footer}</View>
+      </KeyboardStickyView>
     </View>
   );
 }

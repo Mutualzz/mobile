@@ -1,10 +1,10 @@
 export const STATUS_DURATION_OPTIONS = [
-    { label: "15 minutes", durationMs: 15 * 60_000 },
-    { label: "1 hour", durationMs: 60 * 60_000 },
-    { label: "4 hours", durationMs: 4 * 60 * 60_000 },
-    { label: "1 day", durationMs: 24 * 60 * 60_000 },
-    { label: "3 days", durationMs: 3 * 24 * 60 * 60_000 },
-    { label: "Forever", durationMs: null },
+  { labelKey: "duration.minutes", count: 15, durationMs: 15 * 60_000 },
+  { labelKey: "duration.hours", count: 1, durationMs: 60 * 60_000 },
+  { labelKey: "duration.hours", count: 4, durationMs: 4 * 60 * 60_000 },
+  { labelKey: "duration.days", count: 1, durationMs: 24 * 60 * 60_000 },
+  { labelKey: "duration.days", count: 3, durationMs: 3 * 24 * 60 * 60_000 },
+  { labelKey: "duration.forever", count: null, durationMs: null },
 ] as const;
 
 export type StatusDurationOption = (typeof STATUS_DURATION_OPTIONS)[number];

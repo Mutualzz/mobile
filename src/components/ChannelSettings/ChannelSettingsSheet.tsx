@@ -2,13 +2,16 @@ import { ChannelInvitesSection } from "@components/ChannelSettings/ChannelInvite
 import { MarkdownInput } from "@components/Markdown/MarkdownInput/MarkdownInput";
 import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
-import { SPACE_PERMISSION_GROUPS } from "@components/SpaceSettings/permissionGroups";
 import { useAppStore } from "@hooks/useStores";
 import {
   BitField,
   permissionFlags,
   type PermissionFlag,
 } from "@mutualzz/bitfield";
+import {
+  channelPermissionGroups,
+  type PermissionChannelKind,
+} from "@mutualzz/i18n";
 import { ChannelType, type APIChannel } from "@mutualzz/types";
 import {
   Box,
@@ -26,6 +29,7 @@ import type { Channel } from "@stores/objects/Channel";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, View } from "react-native";
 import {
   CheckIcon,
@@ -36,6 +40,11 @@ import {
   XIcon,
 } from "phosphor-react-native";
 
+const CHANNEL_TYPE_KIND: Partial<Record<ChannelType, PermissionChannelKind>> = {
+  [ChannelType.Text]: "text",
+  [ChannelType.Voice]: "voice",
+  [ChannelType.Category]: "category",
+};
 interface Props {
   visible: boolean;
   onClose: () => void;
@@ -101,39 +110,31 @@ function applyOverwriteState(
   return { allow: allow.bits, deny: deny.bits };
 }
 
-function getChannelPermissionGroups(type: ChannelType) {
-  return SPACE_PERMISSION_GROUPS.filter((group) => {
-    if (group.title === "Advanced Permissions") return false;
-    if (group.title === "General Space Permissions") {
-      return (
-        group.items.filter((item) =>
-          ["ViewChannel", "ManageChannels", "ManageRoles"].includes(item.flag),
-        ).length > 0
-      );
-    }
-    if (group.title === "Membership Permissions") return false;
-    if (group.title === "Text Channel Permissions") {
-      return type === ChannelType.Text || type === ChannelType.Category;
-    }
-    if (group.title === "Voice Channel Permissions") {
-      return type === ChannelType.Voice || type === ChannelType.Category;
-    }
-    return false;
-  }).map((group) => {
-    if (group.title !== "General Space Permissions") return group;
-    return {
-      ...group,
-      title: "General Channel Permissions",
-      items: group.items.filter((item) =>
-        ["ViewChannel", "ManageChannels", "ManageRoles"].includes(item.flag),
-      ),
-    };
-  });
+function getChannelPermissionGroups(
+  type: ChannelType,
+  t: (key: string) => string,
+) {
+  const kind = CHANNEL_TYPE_KIND[type];
+  if (!kind) return [];
+
+  return channelPermissionGroups
+    .filter((group) => group.channelTypes.includes(kind))
+    .map((group) => ({
+      id: group.id,
+      title: t(group.titleKey),
+      items: group.items.map((item) => ({
+        flag: item.flag as PermissionFlag,
+        label: t(item.labelKey),
+        description: t(item.descriptionKey),
+      })),
+    }));
 }
 
 export const ChannelSettingsSheet = observer(
   ({ visible, onClose, channel }: Props) => {
     const app = useAppStore();
+    const { t } = useTranslation("space");
+    const { t: tCommon } = useTranslation("common");
     const { theme } = useTheme();
     const feedSizes = useScaledFeedPreviewSizes();
     const dirtyIndicatorSize = useScaledSquareSize(6);
@@ -210,7 +211,10 @@ export const ChannelSettingsSheet = observer(
     const selectedEntry = selectedKey
       ? targetEntries.find((entry) => entry.key === selectedKey)
       : null;
-    const permissionGroups = getChannelPermissionGroups(channel.type);
+    const permissionGroups = useMemo(
+      () => getChannelPermissionGroups(channel.type, t),
+      [channel.type, t],
+    );
     const filteredPermissionGroups = permissionGroups
       .map((group) => ({
         ...group,
@@ -360,7 +364,7 @@ export const ChannelSettingsSheet = observer(
     return (
       <>
         <Modal
-          open={visible}
+          open={visible && !overwritePickerOpen}
           onClose={onClose}
           layout="fullscreen"
           showCloseButton={false}
@@ -386,7 +390,7 @@ export const ChannelSettingsSheet = observer(
               elevation={app.settings?.preferEmbossed ? 4 : 2}
             >
               <Typography level="body-lg" weight="bold">
-                Channel Settings
+                {t("channels.settingsTitle")}
               </Typography>
               <ScrollView keyboardShouldPersistTaps="handled">
                 <Box style={{ gap: 12 }}>
@@ -394,7 +398,7 @@ export const ChannelSettingsSheet = observer(
                     fullWidth
                     value={name ?? ""}
                     onChangeText={setName}
-                    placeholder="Channel name"
+                    placeholder={t("channels.namePlaceholder")}
                   />
                   <MarkdownInput
                     value={topic}
@@ -402,14 +406,14 @@ export const ChannelSettingsSheet = observer(
                     selection={selection}
                     onChangeSelection={setSelection}
                     channelId={channel.id}
-                    placeholder="Topic"
+                    placeholder={t("channels.topicPlaceholder")}
                     style={{ minHeight: feedSizes.composerMinHeight }}
                   />
 
                   {canManagePermissions && (
                     <Box style={{ gap: 12, paddingTop: 8 }}>
                       <Typography level="body-md" weight="bold">
-                        Permission overwrites
+                        {t("channels.permissionOverwrites")}
                       </Typography>
 
                       <Box
@@ -473,7 +477,9 @@ export const ChannelSettingsSheet = observer(
                             setOverwriteSearch("");
                           }}
                           accessibilityRole="button"
-                          accessibilityLabel="Add permission overwrite"
+                          accessibilityLabel={t(
+                            "channels.permissions.addOverwrite",
+                          )}
                         >
                           <Paper
                             variant="plain"
@@ -487,15 +493,16 @@ export const ChannelSettingsSheet = observer(
                             }}
                           >
                             <PlusIcon size={14} weight="bold" />
-                            <Typography level="body-xs">Add</Typography>
+                            <Typography level="body-xs">
+                              {tCommon("add")}
+                            </Typography>
                           </Paper>
                         </Pressable>
                       </Box>
 
                       {!selectedDraft || !selectedKey ? (
                         <Typography level="body-sm" textColor="muted">
-                          Select an overwrite target to edit channel-specific
-                          permissions.
+                          {t("channels.selectOverwriteTarget")}
                         </Typography>
                       ) : (
                         <Box style={{ gap: 10 }}>
@@ -517,7 +524,7 @@ export const ChannelSettingsSheet = observer(
                               disabled={deletingOverwrite}
                               onPress={() => deleteOverwrite(selectedKey)}
                             >
-                              Remove
+                              {tCommon("remove")}
                             </Button>
                           </Box>
 
@@ -525,17 +532,17 @@ export const ChannelSettingsSheet = observer(
                             fullWidth
                             value={overwriteSearch}
                             onChangeText={setOverwriteSearch}
-                            placeholder="Search permissions"
+                            placeholder={t("roles.permissions.searchPlaceholder")}
                           />
 
                           {filteredPermissionGroups.length === 0 ? (
                             <Typography level="body-sm" textColor="muted">
-                              No permissions match your search.
+                              {t("roles.permissions.emptySearch")}
                             </Typography>
                           ) : (
                             filteredPermissionGroups.map((group) => (
                               <Paper
-                                key={group.title}
+                                key={group.id}
                                 style={{
                                   padding: 12,
                                   borderRadius: 12,
@@ -624,7 +631,10 @@ export const ChannelSettingsSheet = observer(
                                         >
                                           <Pressable
                                             onPress={() => toggleState("allow")}
-                                            accessibilityLabel={`Allow ${item.label}`}
+                                            accessibilityLabel={tCommon(
+                                              "a11y.allowPermission",
+                                              { label: item.label },
+                                            )}
                                           >
                                             <Box
                                               style={stateStyle(
@@ -642,7 +652,10 @@ export const ChannelSettingsSheet = observer(
                                             onPress={() =>
                                               toggleState("neutral")
                                             }
-                                            accessibilityLabel={`Neutral ${item.label}`}
+                                            accessibilityLabel={tCommon(
+                                              "a11y.neutralPermission",
+                                              { label: item.label },
+                                            )}
                                           >
                                             <Box
                                               style={stateStyle(
@@ -658,7 +671,10 @@ export const ChannelSettingsSheet = observer(
                                           </Pressable>
                                           <Pressable
                                             onPress={() => toggleState("deny")}
-                                            accessibilityLabel={`Deny ${item.label}`}
+                                            accessibilityLabel={tCommon(
+                                              "a11y.denyPermission",
+                                              { label: item.label },
+                                            )}
                                           >
                                             <Box
                                               style={stateStyle(
@@ -686,13 +702,13 @@ export const ChannelSettingsSheet = observer(
                                 disabled={savingOverwrite}
                                 onPress={resetSelected}
                               >
-                                Reset
+                                {tCommon("reset")}
                               </Button>
                               <Button
                                 disabled={savingOverwrite}
                                 onPress={() => saveOverwrite()}
                               >
-                                Save overwrite
+                                {t("channels.saveOverwrite")}
                               </Button>
                             </Box>
                           )}
@@ -710,7 +726,7 @@ export const ChannelSettingsSheet = observer(
                 disabled={isPending || !name?.trim()}
                 onPress={() => save()}
               >
-                Save
+                {tCommon("save")}
               </Button>
               <Button
                 color="danger"
@@ -718,10 +734,10 @@ export const ChannelSettingsSheet = observer(
                 disabled={deleting}
                 onPress={() => deleteChannel()}
               >
-                Delete channel
+                {t("channels.deleteChannelAction")}
               </Button>
               <Button variant="plain" onPress={onClose}>
-                Close
+                {tCommon("close")}
               </Button>
             </Paper>
           </View>
@@ -754,13 +770,13 @@ export const ChannelSettingsSheet = observer(
               elevation={app.settings?.preferEmbossed ? 4 : 2}
             >
               <Typography level="body-lg" weight="bold">
-                Add permission overwrite
+                {t("channels.permissions.addOverwrite")}
               </Typography>
               <InputDefault
                 fullWidth
                 value={overwriteSearch}
                 onChangeText={setOverwriteSearch}
-                placeholder="Search roles or members"
+                placeholder={t("channels.searchTargets")}
               />
 
               <ScrollView keyboardShouldPersistTaps="handled">
@@ -768,7 +784,7 @@ export const ChannelSettingsSheet = observer(
                   {filteredRoles.length > 0 && (
                     <Box style={{ gap: 8 }}>
                       <Typography level="body-xs" textColor="muted">
-                        Roles
+                        {t("channels.permissions.roles")}
                       </Typography>
                       {filteredRoles.map((role) => (
                         <Pressable
@@ -799,7 +815,7 @@ export const ChannelSettingsSheet = observer(
                   {filteredMembers.length > 0 && (
                     <Box style={{ gap: 8 }}>
                       <Typography level="body-xs" textColor="muted">
-                        Members
+                        {t("channels.permissions.members")}
                       </Typography>
                       {filteredMembers.map((member) => (
                         <Pressable
@@ -833,7 +849,7 @@ export const ChannelSettingsSheet = observer(
                   {filteredRoles.length === 0 &&
                     filteredMembers.length === 0 && (
                       <Typography level="body-sm" textColor="muted">
-                        No results
+                        {t("channels.permissions.noResults")}
                       </Typography>
                     )}
                 </Box>
@@ -844,7 +860,7 @@ export const ChannelSettingsSheet = observer(
                 color="neutral"
                 onPress={() => setOverwritePickerOpen(false)}
               >
-                Cancel
+                {tCommon("cancel")}
               </Button>
             </Paper>
           </View>

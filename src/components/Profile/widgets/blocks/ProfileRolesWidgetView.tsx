@@ -11,6 +11,7 @@ import type {
 import { Stack, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { ShieldCheckIcon } from "phosphor-react-native";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 const VISIBLE_COUNT: Record<ProfileBlockSize, number> = { s: 3, m: 6, l: 10 };
@@ -44,6 +45,7 @@ interface Props {
 
 export const ProfileRolesWidgetView = observer(
   ({ block, size, userId }: Props) => {
+    const { t } = useTranslation("settings");
     const app = useAppStore();
     const member = findMemberForUser(app, userId);
     const roles = getMemberRoles(member, block.maxRoles ?? 6);
@@ -62,15 +64,15 @@ export const ProfileRolesWidgetView = observer(
         <Stack direction="row" alignItems="center" style={{ gap: 6 }}>
           <ShieldCheckIcon size={isCompact ? 14 : 16} weight="fill" />
           <Typography level={isCompact ? "body-xs" : "body-sm"} weight="bold">
-            Roles
+            {t("profile.blocks.roles")}
           </Typography>
         </Stack>
 
         {visible.length === 0 ? (
           <Typography level="body-sm" textColor="muted">
             {member
-              ? "No roles to show"
-              : "Join a shared space to display roles"}
+              ? t("profile.blocks.noRolesToShow")
+              : t("profile.blocks.rolesNeedSharedSpace")}
           </Typography>
         ) : (
           <>
@@ -81,7 +83,9 @@ export const ProfileRolesWidgetView = observer(
             </Stack>
             {roles.length > visible.length && (
               <Typography level="body-xs" textColor="muted">
-                +{roles.length - visible.length} more
+                {t("profile.blocks.moreCount", {
+                  value: roles.length - visible.length,
+                })}
               </Typography>
             )}
           </>
@@ -99,6 +103,7 @@ export const ProfileRolesWidgetExpandedContent = observer(
     block: MobileProfileRolesBlock;
     userId: Snowflake;
   }) => {
+    const { t } = useTranslation("settings");
     const app = useAppStore();
     const member = findMemberForUser(app, userId);
     const roles = getMemberRoles(member, block.maxRoles ?? 6);
@@ -106,7 +111,9 @@ export const ProfileRolesWidgetExpandedContent = observer(
     if (roles.length === 0) {
       return (
         <Typography level="body-sm" textColor="muted">
-          {member ? "No roles to show" : "Join a shared space to display roles"}
+          {member
+            ? t("profile.blocks.noRolesToShow")
+            : t("profile.blocks.rolesNeedSharedSpace")}
         </Typography>
       );
     }

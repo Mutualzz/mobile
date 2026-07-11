@@ -14,10 +14,12 @@ import type { Space } from "@stores/objects/Space";
 import { useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
 
 const SidebarSpace = observer(
   ({ space, active }: { space: Space; active: boolean }) => {
+    const { t } = useTranslation("chat");
     const app = useAppStore();
     const router = useRouter();
 
@@ -46,7 +48,9 @@ const SidebarSpace = observer(
             router.replace(`/spaces/${space.id}`);
           }}
           accessibilityRole="button"
-          accessibilityLabel={`${space.name}${pillType === "unread" ? ", unread" : ""}`}
+          accessibilityLabel={`${space.name}${
+            pillType === "unread" ? `, ${t("a11y.unread")}` : ""
+          }`}
           accessibilityState={{ selected: active }}
         >
           <SpaceIcon selected={active} space={space} />

@@ -13,8 +13,10 @@ import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { ActivityIndicator } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import { useTranslation } from "react-i18next";
 
 const InviteScreen = () => {
+  const { t } = useTranslation("auth");
   const app = useAppStore();
   const { navigate } = useAppNavigation();
   const { code } = useLocalSearchParams<{ code: string }>();
@@ -86,10 +88,10 @@ const InviteScreen = () => {
   );
 
   const friendActionLabel = relationship?.isFriend
-    ? "Friends"
+    ? t("invite.friends")
     : relationship?.isOutgoingRequest
-      ? "Pending"
-      : "Add Friend";
+      ? t("invite.pending")
+      : t("invite.addFriend");
 
   if (!code) return <Redirect href="/" />;
 
@@ -106,13 +108,12 @@ const InviteScreen = () => {
       >
         <Paper style={{ padding: 24, borderRadius: 12, gap: 12 }}>
           <Typography level="body-lg" weight="bold">
-            Invite Invalid
+            {t("invite.invalidTitle")}
           </Typography>
           <Typography textColor="muted">
-            This invite may be expired, or you might not have permission to join
-            it.
+            {t("invite.invalidDescription")}
           </Typography>
-          <Button onPress={() => navigate("/")}>Continue</Button>
+          <Button onPress={() => navigate("/")}>{t("actions.continue")}</Button>
         </Paper>
       </Box>
     );
@@ -142,10 +143,10 @@ const InviteScreen = () => {
             <Typography style={{ textAlign: "center" }}>
               {inviteUser?.globalName ??
                 inviteUser?.username ??
-                "Friend invite"}
+                t("invite.friendInvite")}
             </Typography>
             <Typography textColor="muted" style={{ textAlign: "center" }}>
-              Wants to be your friend
+              {t("invite.wantsToBeFriend")}
             </Typography>
             <Button
               fullWidth
@@ -157,7 +158,7 @@ const InviteScreen = () => {
               }
               onPress={() => acceptFriendInvite()}
             >
-              {isSelf ? "This is your invite link" : friendActionLabel}
+              {isSelf ? t("invite.thisIsYourInviteLink") : friendActionLabel}
             </Button>
           </>
         )}
@@ -166,8 +167,10 @@ const InviteScreen = () => {
           <>
             <SpaceIcon space={invite.space} size={64} />
             <Typography style={{ textAlign: "center" }}>
-              {(invite.inviter?.globalName ?? invite.inviter?.username) +
-                " invited you to join"}
+              {t("invite.invitedYouToJoin", {
+                name:
+                  invite.inviter?.globalName ?? invite.inviter?.username ?? "",
+              })}
             </Typography>
             <Typography level="title-md" weight="bold">
               {invite.space.name}
@@ -177,7 +180,7 @@ const InviteScreen = () => {
               disabled={isJoining}
               onPress={() => (isInSpace ? goToSpace() : acceptInvite())}
             >
-              {isInSpace ? "Go to space" : "Accept invite"}
+              {isInSpace ? t("invite.goToSpace") : t("invite.acceptInvite")}
             </Button>
           </>
         )}

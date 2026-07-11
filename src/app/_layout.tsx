@@ -2,6 +2,7 @@ import "react-native-get-random-values";
 import "@setup/webrtc";
 import "@setup/notifeeBackgroundHandler";
 import "@setup/backgroundNotificationTask";
+import "../i18n";
 
 import { AppCrashFallback } from "@components/ErrorBoundary/AppCrashFallback";
 import { NativeBaseline } from "@components/NativeBaseline/NativeBaseline";

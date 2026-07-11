@@ -6,12 +6,15 @@ import { Box, Input, InputPassword, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   onClose: () => void;
 }
 
 export const DeleteAccountSheet = observer(({ onClose }: Props) => {
+  const { t } = useTranslation("settings");
+  const { t: tCommon } = useTranslation("common");
   const app = useAppStore();
   const account = app.account;
   const [confirmUsername, setConfirmUsername] = useState("");
@@ -42,17 +45,20 @@ export const DeleteAccountSheet = observer(({ onClose }: Props) => {
       embedded
       open
       onClose={onClose}
-      title="Delete account"
+      title={t("account.deleteAccountAction")}
       elevation={app.settings?.preferEmbossed ? 4 : 2}
     >
       <Typography level="body-sm" textColor="muted">
-        This permanently deactivates your account. Type your username and password
-        to confirm.
+        {t("account.deleteAccountConfirm")}
       </Typography>
       <Input
         fullWidth
-        placeholder={`Type ${account.username} to confirm`}
-        accessibilityLabel="Confirm username"
+        placeholder={t("account.typeUsernameToConfirm", {
+          username: account.username,
+        })}
+        accessibilityLabel={t("account.typeUsernameToConfirm", {
+          username: account.username,
+        })}
         autoCapitalize="none"
         autoCorrect={false}
         value={confirmUsername}
@@ -60,8 +66,8 @@ export const DeleteAccountSheet = observer(({ onClose }: Props) => {
       />
       <InputPassword
         fullWidth
-        placeholder="Password"
-        accessibilityLabel="Password"
+        placeholder={t("account.password")}
+        accessibilityLabel={t("account.password")}
         autoCapitalize="none"
         autoCorrect={false}
         value={password}
@@ -74,7 +80,7 @@ export const DeleteAccountSheet = observer(({ onClose }: Props) => {
       )}
       <Box style={{ flexDirection: "row", gap: 8 }}>
         <Button variant="soft" onPress={onClose} style={{ flex: 1 }}>
-          Cancel
+          {tCommon("cancel")}
         </Button>
         <Button
           color="danger"
@@ -82,7 +88,9 @@ export const DeleteAccountSheet = observer(({ onClose }: Props) => {
           onPress={() => mutate()}
           style={{ flex: 1 }}
         >
-          {isPending ? "Deleting..." : "Delete account"}
+          {isPending
+            ? t("account.deleting")
+            : t("account.deleteAccountAction")}
         </Button>
       </Box>
     </BottomSheet>

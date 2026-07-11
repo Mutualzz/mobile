@@ -4,6 +4,7 @@ import type {
   ProfileBlockType,
 } from "@mutualzz/types";
 import Snowflake from "@utils/Snowflake";
+import i18n from "../../../../i18n";
 
 type DistributiveOmit<T, K extends keyof T> = T extends unknown
   ? Omit<T, K>
@@ -19,7 +20,7 @@ export function createDefaultMobileBlockContent(
 ): MobileBlockContent {
   switch (type) {
     case "text":
-      return { type, content: "New text" };
+      return { type, content: i18n.t("profile.widgets.defaults.text", { ns: "settings" }) };
     case "image":
       return { type, src: "", objectFit: "cover" };
     case "header":
@@ -27,7 +28,7 @@ export function createDefaultMobileBlockContent(
     case "music":
       return {
         type,
-        title: "Favorite song",
+        title: i18n.t("profile.widgets.defaults.musicTitle", { ns: "settings" }),
         artists: null,
         image: null,
         previewUrl: null,
@@ -37,7 +38,12 @@ export function createDefaultMobileBlockContent(
     case "links":
       return {
         type,
-        links: [{ label: "My link", url: "https://example.com" }],
+        links: [
+          {
+            label: i18n.t("profile.widgets.defaults.linkLabel", { ns: "settings" }),
+            url: "https://example.com",
+          },
+        ],
       };
     case "activity":
       return { type, showCustomStatus: true };
@@ -50,7 +56,7 @@ export function createDefaultMobileBlockContent(
     case "quote":
       return {
         type,
-        content: "Write a quote…",
+        content: i18n.t("profile.widgets.defaults.quoteContent", { ns: "settings" }),
         variant: "default",
         attribution: null,
       };
@@ -137,14 +143,20 @@ export function validateMobileBlocksForSave(
     (block) => block.type === "image" && block.src.trim() === "",
   ).length;
   if (emptyImageCount > 0) {
-    return `Remove or upload images for ${emptyImageCount} image widget(s) before saving`;
+    return i18n.t("profile.widgets.validation.emptyImages", {
+      ns: "settings",
+      count: emptyImageCount,
+    });
   }
 
   const emptyStickerCount = blocks.filter(
     (block) => block.type === "sticker" && block.expressionId.trim() === "",
   ).length;
   if (emptyStickerCount > 0) {
-    return `Choose stickers for ${emptyStickerCount} sticker widget(s) before saving`;
+    return i18n.t("profile.widgets.validation.emptyStickers", {
+      ns: "settings",
+      count: emptyStickerCount,
+    });
   }
 
   const emptyLinksCount = blocks.filter(
@@ -155,7 +167,10 @@ export function validateMobileBlocksForSave(
       ),
   ).length;
   if (emptyLinksCount > 0) {
-    return `Add at least one link to ${emptyLinksCount} links widget(s) before saving`;
+    return i18n.t("profile.widgets.validation.emptyLinks", {
+      ns: "settings",
+      count: emptyLinksCount,
+    });
   }
 
   return null;

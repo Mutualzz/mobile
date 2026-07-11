@@ -10,6 +10,7 @@ import { Box, Typography } from "@mutualzz/ui-native";
 import type { Relationship } from "@stores/objects/Relationship";
 import { observer } from "mobx-react-lite";
 import { useEffect, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView } from "react-native";
 
 const RelationshipRow = ({
@@ -39,6 +40,8 @@ const RelationshipRow = ({
 };
 
 export const FriendsList = observer(() => {
+  const { t } = useTranslation("common");
+  const { t: tChat } = useTranslation("chat");
   const app = useAppStore();
   const { navigate } = useAppNavigation();
   const incoming = app.relationships.getIncoming();
@@ -59,7 +62,7 @@ export const FriendsList = observer(() => {
         textColor="muted"
         style={{ textAlign: "center", paddingVertical: 24 }}
       >
-        No friends yet.
+        {tChat("friends.emptyYet")}
       </Typography>
     );
   }
@@ -67,7 +70,7 @@ export const FriendsList = observer(() => {
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
       <ListSection
-        name={`Incoming — ${incoming.length}`}
+        name={tChat("friends.incomingCount", { value: incoming.length })}
         items={incoming.map((relationship) => (
           <RelationshipRow
             key={relationship.id}
@@ -83,7 +86,7 @@ export const FriendsList = observer(() => {
                     )
                   }
                 >
-                  Accept
+                  {t("accept")}
                 </Button>
                 <Button
                   size="sm"
@@ -94,7 +97,7 @@ export const FriendsList = observer(() => {
                     )
                   }
                 >
-                  Decline
+                  {t("decline")}
                 </Button>
                 <Button
                   size="sm"
@@ -106,7 +109,7 @@ export const FriendsList = observer(() => {
                     )
                   }
                 >
-                  Block
+                  {tChat("contextMenu.block")}
                 </Button>
               </>
             }
@@ -115,7 +118,9 @@ export const FriendsList = observer(() => {
       />
 
       <ListSection
-        name={`Pending — ${outgoing.length}`}
+        name={tChat("friends.pendingSectionCount", {
+          value: outgoing.length,
+        })}
         items={outgoing.map((relationship) => (
           <RelationshipRow
             key={relationship.id}
@@ -130,7 +135,7 @@ export const FriendsList = observer(() => {
                   )
                 }
               >
-                Cancel
+                {t("cancel")}
               </Button>
             }
           />
@@ -138,7 +143,9 @@ export const FriendsList = observer(() => {
       />
 
       <ListSection
-        name={`Friends — ${friends.length}`}
+        name={tChat("friends.friendsSectionCount", {
+          value: friends.length,
+        })}
         items={friends.map((relationship) => (
           <RelationshipRow
             key={relationship.id}
@@ -156,7 +163,7 @@ export const FriendsList = observer(() => {
                     app.setDMDrawerOpen(false);
                   }}
                 >
-                  Message
+                  {tChat("friends.message")}
                 </Button>
                 <Button
                   size="sm"
@@ -168,7 +175,7 @@ export const FriendsList = observer(() => {
                     void app.relationships.removeFriend(user.id);
                   }}
                 >
-                  Remove
+                  {tChat("friends.remove")}
                 </Button>
               </>
             }

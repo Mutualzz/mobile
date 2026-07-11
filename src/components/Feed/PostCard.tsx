@@ -19,6 +19,7 @@ import dayjs from "dayjs";
 import { FlagIcon, TrashIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView, useWindowDimensions } from "react-native";
 
 interface Props {
@@ -30,6 +31,7 @@ interface Props {
 
 export const PostCard = observer(
   ({ post, defaultCommentsOpen, layout = "card", itemHeight }: Props) => {
+    const { t } = useTranslation("chat");
     const app = useAppStore();
     const { theme } = useTheme();
     const { openModal } = useModal();
@@ -78,7 +80,7 @@ export const PostCard = observer(
             <UserAvatar user={post.author} size="md" badge />
             <Box style={{ flex: 1, minWidth: 0 }}>
               <Typography level="body-md" weight={700} truncate="single">
-                {post.author?.displayName ?? "Unknown User"}
+                {post.author?.displayName ?? t("unknownUser")}
               </Typography>
               <Typography level="body-xs" textColor="muted">
                 {dayjs(post.createdAt).fromNow()}
@@ -92,7 +94,7 @@ export const PostCard = observer(
               color="danger"
               padding={6}
               onPress={() => void post.delete()}
-              accessibilityLabel="Delete post"
+              accessibilityLabel={t("feed.actions.deletePost")}
             >
               <TrashIcon size={18} />
             </IconButton>
@@ -107,12 +109,12 @@ export const PostCard = observer(
                   <ReportContentSheet
                     targetType="post"
                     targetId={post.id}
-                    contentLabel="this post"
+                    contentLabel={t("feed.report.thisPost")}
                     modalId={`report-post-${post.id}`}
                   />,
                 )
               }
-              accessibilityLabel="Report post"
+              accessibilityLabel={t("feed.actions.reportPost")}
             >
               <FlagIcon size={18} />
             </IconButton>

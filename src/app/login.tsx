@@ -20,6 +20,7 @@ import { observer } from "mobx-react-lite";
 import { forwardRef, useRef, useState } from "react";
 import type { TextInput } from "react-native";
 import { Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 
 const InputWithLabel = forwardRef<
   TextInput,
@@ -59,6 +60,7 @@ const InputWithLabel = forwardRef<
 InputWithLabel.displayName = "InputWithLabel";
 
 const Login = () => {
+  const { t } = useTranslation("auth");
   const app = useAppStore();
   const [error, setError] = useState<string | null>(null);
   const [forgotError, setForgotError] = useState<string | null>(null);
@@ -154,7 +156,7 @@ const Login = () => {
       >
         <Box style={{ gap: 8, alignItems: "center", width: "100%" }}>
           <Typography level="body-lg" weight="bold">
-            Login to an account
+            {t("login.title")}
           </Typography>
           {space && (
             <Box
@@ -167,7 +169,7 @@ const Login = () => {
               }}
             >
               <Typography level="body-sm" style={{ textAlign: "center" }}>
-                You are logging in to accept an invite to join a space:
+                {t("login.inviteContext")}
               </Typography>
               <SpaceIcon size={36} space={space} />
               <Typography level="body-sm" style={{ textAlign: "center" }}>
@@ -179,8 +181,7 @@ const Login = () => {
 
         {forgotSent ? (
           <Typography level="body-sm" style={{ textAlign: "center" }}>
-            If an account exists for that username or email, a password reset
-            link has been sent.
+            {t("forgotPassword.messageShort")}
           </Typography>
         ) : (
           <Box style={{ flexDirection: "column", gap: 12, width: "100%" }}>
@@ -188,7 +189,7 @@ const Login = () => {
               name="usernameOrEmail"
               children={(field) => (
                 <InputWithLabel
-                  label="Username or Email"
+                  label={t("login.usernameOrEmail")}
                   apiError={forgotError}
                   onChangeText={field.handleChange}
                   onBlur={field.handleBlur}
@@ -205,7 +206,7 @@ const Login = () => {
                 <Box style={{ gap: 8, width: "100%" }}>
                   <InputWithLabel
                     ref={passwordRef}
-                    label="Password"
+                    label={t("login.password")}
                     type="password"
                     apiError={error}
                     onChangeText={field.handleChange}
@@ -222,9 +223,7 @@ const Login = () => {
                         Form.getFieldValue("usernameOrEmail");
 
                       if (!usernameOrEmail) {
-                        setForgotError(
-                          "Please enter your username or email to reset your password",
-                        );
+                        setForgotError(t("forgotPassword.usernameRequired"));
                         return;
                       }
 
@@ -232,7 +231,7 @@ const Login = () => {
                     }}
                   >
                     <Typography color="info" variant="plain" level="body-sm">
-                      Forgot your password?
+                      {t("login.forgotPassword")}
                     </Typography>
                   </Pressable>
                 </Box>
@@ -247,7 +246,7 @@ const Login = () => {
                   disabled={isSubmitting || isPending}
                   style={{ marginTop: 8 }}
                 >
-                  {isSubmitting ? "..." : "Login"}
+                  {isSubmitting ? t("actions.submitting") : t("actions.login")}
                 </Button>
               )}
             />
@@ -256,9 +255,9 @@ const Login = () => {
 
         <Pressable onPress={() => router.replace("/register")}>
           <Typography>
-            Don&apos;t have an account?{" "}
+            {t("login.noAccount")}{" "}
             <Typography color="info" variant="plain">
-              Register
+              {t("actions.register")}
             </Typography>
           </Typography>
         </Pressable>

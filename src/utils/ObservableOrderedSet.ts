@@ -20,10 +20,12 @@ export class ObservableOrderedSet<T> {
     }
 
     get size() {
+        void this._version;
         return this.index.size;
     }
 
     has(v: T) {
+        void this._version;
         return this.index.has(v);
     }
 

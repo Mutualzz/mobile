@@ -7,6 +7,7 @@ import { Typography } from "@mutualzz/ui-native";
 import type { Space } from "@stores/objects/Space";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   space: Space;
@@ -16,6 +17,8 @@ interface Props {
 
 export const SpaceActionConfirmSheet = observer(
   ({ space, action, modalId = "space-action-confirm" }: Props) => {
+    const { t } = useTranslation("space");
+    const { t: tCommon } = useTranslation("common");
     const app = useAppStore();
     const { closeModal } = useModal();
     const { navigate } = useAppNavigation();
@@ -49,11 +52,11 @@ export const SpaceActionConfirmSheet = observer(
       >
         <Typography level="body-md" weight={700}>
           {action === "delete"
-            ? `Delete "${space.name}"?`
-            : `Leave "${space.name}"?`}
+            ? t("confirm.deleteSpaceTitle", { name: space.name })
+            : t("confirm.leaveSpaceTitle", { name: space.name })}
         </Typography>
         <Typography level="body-sm" textColor="muted">
-          This action cannot be undone.
+          {t("confirm.cannotUndo")}
         </Typography>
         <Button
           color="danger"
@@ -61,10 +64,10 @@ export const SpaceActionConfirmSheet = observer(
           onPress={() => void handleConfirm()}
         >
           {pending
-            ? "Working..."
+            ? t("actions.working")
             : action === "delete"
-              ? "Delete space"
-              : "Leave space"}
+              ? t("menu.deleteSpace")
+              : t("menu.leaveSpace")}
         </Button>
         <Button
           variant="soft"
@@ -72,7 +75,7 @@ export const SpaceActionConfirmSheet = observer(
           disabled={pending}
           onPress={() => closeModal(modalId)}
         >
-          Cancel
+          {tCommon("cancel")}
         </Button>
       </Paper>
     );

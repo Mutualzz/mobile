@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from "react-native";
 import { Gesture, GestureDetector, ScrollView } from "react-native-gesture-handler";
 import { scheduleOnRN } from "react-native-worklets";
@@ -94,6 +95,7 @@ export function ReorderableVerticalList<T extends ReorderableItem>({
   contentContainerStyle,
   style,
 }: Props<T>) {
+  const { t } = useTranslation("common");
   const { theme } = useTheme();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -179,7 +181,7 @@ export function ReorderableVerticalList<T extends ReorderableItem>({
         <GestureDetector gesture={panGesture}>
           <View
             accessibilityRole="button"
-            accessibilityLabel="Reorder"
+            accessibilityLabel={t("a11y.reorder")}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={{
               justifyContent: "center",

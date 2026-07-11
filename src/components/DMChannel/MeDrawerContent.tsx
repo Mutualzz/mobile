@@ -12,12 +12,15 @@ import { Box, Typography } from "@mutualzz/ui-native";
 import { PlusIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 type Tab = "direct-messages" | "friends";
 type FriendsSubTab = FriendsTab | "add-friend";
 
 export const MeDrawerContent = observer(() => {
   const app = useAppStore();
+  const { t } = useTranslation("chat");
+  const { t: tSpace } = useTranslation("space");
   const tabBarInset = useKeyboardChromeInset();
   const [tab, setTab] = useState<Tab>("direct-messages");
   const [friendsSubTab, setFriendsSubTab] = useState<FriendsSubTab>("online");
@@ -27,7 +30,7 @@ export const MeDrawerContent = observer(() => {
     return (
       <Screen>
         <Typography style={{ textAlign: "center", padding: 24 }}>
-          Loading...
+          {t("loading")}
         </Typography>
       </Screen>
     );
@@ -61,17 +64,17 @@ export const MeDrawerContent = observer(() => {
           variant={tab === "direct-messages" ? "soft" : "plain"}
           onPress={() => setTab("direct-messages")}
         >
-          Direct Messages
+          {tSpace("sidebar.directMessages")}
         </Button>
         <Button
           variant={tab === "friends" ? "soft" : "plain"}
           onPress={() => setTab("friends")}
         >
-          Friends
+          {t("friends.title")}
         </Button>
         {tab === "direct-messages" && (
           <IconButton
-            accessibilityLabel="Create group DM"
+            accessibilityLabel={t("dm.createGroupA11y")}
             onPress={() => setCreateGroupOpen(true)}
           >
             <PlusIcon weight="bold" />
@@ -99,7 +102,7 @@ export const MeDrawerContent = observer(() => {
               variant={friendsSubTab === "online" ? "soft" : "plain"}
               onPress={() => setFriendsSubTab("online")}
             >
-              Online
+              {t("friends.tabs.online")}
             </Button>
             <Button
               expand
@@ -107,7 +110,7 @@ export const MeDrawerContent = observer(() => {
               variant={friendsSubTab === "all" ? "soft" : "plain"}
               onPress={() => setFriendsSubTab("all")}
             >
-              All
+              {t("friends.tabs.all")}
             </Button>
             <Button
               expand
@@ -115,7 +118,7 @@ export const MeDrawerContent = observer(() => {
               variant={friendsSubTab === "pending" ? "soft" : "plain"}
               onPress={() => setFriendsSubTab("pending")}
             >
-              Pending
+              {t("friends.tabs.pending")}
             </Button>
             <Button
               expand
@@ -124,7 +127,7 @@ export const MeDrawerContent = observer(() => {
               variant={friendsSubTab === "add-friend" ? "soft" : "plain"}
               onPress={() => setFriendsSubTab("add-friend")}
             >
-              Add friend
+              {t("friends.tabs.addFriend")}
             </Button>
           </Paper>
           {friendsSubTab === "add-friend" ? (

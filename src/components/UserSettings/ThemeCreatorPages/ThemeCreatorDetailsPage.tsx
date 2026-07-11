@@ -1,9 +1,11 @@
 import { useAppStore } from "@hooks/useStores";
 import { Box, Divider, Input, Switch, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
 
 export const ThemeCreatorDetailsPage = observer(() => {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const { values, errors, setValues } = app.themeCreator;
 
@@ -15,12 +17,12 @@ export const ThemeCreatorDetailsPage = observer(() => {
     <Box style={{ gap: 16 }}>
       <Box style={{ gap: 8 }}>
         <Typography level="body-sm" weight={700}>
-          Theme name
+          {t("themeCreator.details.themeNameShort")}
         </Typography>
         <Input
           value={values.name}
           onChangeText={(name) => setValues({ name })}
-          placeholder="My theme"
+          placeholder={t("themeCreator.details.namePlaceholder")}
           maxLength={64}
         />
         {errors.name && (
@@ -32,12 +34,12 @@ export const ThemeCreatorDetailsPage = observer(() => {
 
       <Box style={{ gap: 8 }}>
         <Typography level="body-sm" weight={700}>
-          Description
+          {t("themeCreator.details.description")}
         </Typography>
         <Input
           value={values.description ?? ""}
           onChangeText={(description) => setValues({ description })}
-          placeholder="Optional description"
+          placeholder={t("themeCreator.details.descriptionPlaceholder")}
           maxLength={200}
         />
       </Box>
@@ -57,10 +59,10 @@ export const ThemeCreatorDetailsPage = observer(() => {
       >
         <Box style={{ flex: 1, gap: 2 }}>
           <Typography level="body-sm" weight={700}>
-            Adaptive theme
+            {t("themeCreator.details.adaptiveTheme")}
           </Typography>
           <Typography level="body-xs" textColor="muted">
-            Auto-derive surface and text colors from a base palette
+            {t("themeCreator.details.adaptiveThemeDescription")}
           </Typography>
         </Box>
         <Switch checked={values.adaptive} onChange={handleAdaptiveToggle} />

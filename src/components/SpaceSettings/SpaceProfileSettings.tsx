@@ -23,12 +23,16 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Image, Pressable } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   space: Space;
 }
 
 export const SpaceProfileSettings = observer(({ space }: Props) => {
+  const { t } = useTranslation("space");
+  const { t: tSettings } = useTranslation("settings");
+  const { t: tCommon } = useTranslation("common");
   const app = useAppStore();
   const { theme } = useTheme();
   const spaceIconSize = useScaledSquareSize(80);
@@ -80,7 +84,9 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
       setError(null);
     },
     onError: (err: HttpException) => {
-      setError(err.errors?.[0]?.message ?? err.message ?? "An error occurred");
+      setError(
+        err.errors?.[0]?.message ?? err.message ?? t("profile.genericError"),
+      );
     },
   });
 
@@ -116,7 +122,7 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
     <Box style={{ gap: 16, padding: 12 }}>
       <Box style={{ gap: 8 }}>
         <Typography level="body-sm" weight={600}>
-          Space icon
+          {t("profile.spaceIcon")}
         </Typography>
         <Box
           style={{
@@ -141,7 +147,7 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
                 color="danger"
                 onPress={clearImage}
               >
-                Cancel
+                {tCommon("cancel")}
               </Button>
             </Box>
           ) : (
@@ -165,7 +171,7 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
                     weight="fill"
                   />
                   <Typography level="body-xs" weight={700}>
-                    Change
+                    {tSettings("account.change")}
                   </Typography>
                 </Box>
               </Box>
@@ -181,7 +187,7 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
               onPress={() => setRemoveIcon(true)}
               disabled={saving}
             >
-              Remove
+              {tSettings("profile.remove")}
             </Button>
           )}
 
@@ -192,7 +198,7 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
               onPress={() => setRemoveIcon(false)}
               disabled={saving}
             >
-              Restore
+              {tCommon("restore")}
             </Button>
           )}
         </Box>
@@ -200,7 +206,7 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
 
       <Box style={{ gap: 8 }}>
         <Typography level="body-sm" weight={600}>
-          Name{" "}
+          {t("profile.name")}{" "}
           <Typography variant="plain" color="danger">
             *
           </Typography>
@@ -218,7 +224,7 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
 
       <Box style={{ gap: 8 }}>
         <Typography level="body-sm" weight={600}>
-          Description
+          {t("profile.description")}
         </Typography>
         <Paper
           style={{
@@ -233,7 +239,7 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
             onChange={setDescription}
             selection={descriptionSelection}
             onChangeSelection={setDescriptionSelection}
-            placeholder="Write something about your space..."
+            placeholder={t("profile.descriptionPlaceholder")}
             editable={!saving}
             enableMentions={false}
             enableEmoticons={false}
@@ -262,7 +268,7 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
               setError(null);
             }}
           >
-            Reset
+            {tSettings("themeCreator.actions.reset")}
           </Button>
         )}
         <Button
@@ -270,7 +276,7 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
           disabled={!hasChanges || saving || !name.trim()}
           onPress={() => saveProfile()}
         >
-          {saving ? "Saving..." : "Save Changes"}
+          {saving ? tSettings("profile.saving") : tSettings("profile.saveChanges")}
         </Button>
       </ButtonGroup>
     </Box>

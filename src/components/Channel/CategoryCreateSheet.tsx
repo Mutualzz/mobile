@@ -8,6 +8,7 @@ import { useMutation } from "@tanstack/react-query";
 import { FolderSimpleIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 interface Props {
@@ -19,6 +20,8 @@ interface Props {
 export const CategoryCreateSheet = observer(
   ({ visible, onClose, space }: Props) => {
     const app = useAppStore();
+    const { t } = useTranslation("space");
+    const { t: tCommon } = useTranslation("common");
     const [name, setName] = useState("");
     const [error, setError] = useState<string | null>(null);
 
@@ -66,11 +69,11 @@ export const CategoryCreateSheet = observer(
             }}
           >
             <Typography level="body-lg" weight="bold">
-              Create Category
+              {t("channels.createCategory.title")}
             </Typography>
             <InputDefault
               fullWidth
-              placeholder="Category name"
+              placeholder={t("channels.createCategory.namePlaceholder")}
               value={name}
               onChangeText={setName}
               startDecorator={<FolderSimpleIcon size={18} weight="fill" />}
@@ -88,7 +91,7 @@ export const CategoryCreateSheet = observer(
               }}
             >
               <Button color="danger" expand variant="soft" onPress={onClose}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button
                 expand
@@ -96,7 +99,7 @@ export const CategoryCreateSheet = observer(
                 disabled={isPending || !name.trim()}
                 onPress={() => createCategory()}
               >
-                Create
+                {tCommon("create")}
               </Button>
             </Box>
           </Paper>

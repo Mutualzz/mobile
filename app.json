@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mutualzz",
     "slug": "mutualzz",
-    "version": "3.3.0",
+    "version": "3.4.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "com.mutualzz.app",
@@ -15,7 +15,9 @@
       "icon": "./assets/ios.icon",
       "appleTeamId": "HQ5FZ3HQC5",
       "infoPlist": {
-        "NSUserActivityTypes": ["INSendMessageIntent"]
+        "NSUserActivityTypes": [
+          "INSendMessageIntent"
+        ]
       },
       "entitlements": {
         "com.apple.developer.usernotifications.communication": true
@@ -77,7 +79,77 @@
         }
       ],
       "expo-video",
-      "expo-image"
+      "expo-image",
+      [
+        "expo-alternate-app-icons",
+        [
+          {
+            "name": "Crimson",
+            "ios": "./assets/app-icons/crimson.png",
+            "android": {
+              "foregroundImage": "./assets/app-icons/foreground.png",
+              "backgroundColor": "#E1556B"
+            }
+          },
+          {
+            "name": "Rose",
+            "ios": "./assets/app-icons/rose.png",
+            "android": {
+              "foregroundImage": "./assets/app-icons/foreground.png",
+              "backgroundColor": "#A23A4F"
+            }
+          },
+          {
+            "name": "Ocean",
+            "ios": "./assets/app-icons/ocean.png",
+            "android": {
+              "foregroundImage": "./assets/app-icons/foreground.png",
+              "backgroundColor": "#63A9C8"
+            }
+          },
+          {
+            "name": "Teal",
+            "ios": "./assets/app-icons/teal.png",
+            "android": {
+              "foregroundImage": "./assets/app-icons/foreground.png",
+              "backgroundColor": "#2AA8A3"
+            }
+          },
+          {
+            "name": "Rust",
+            "ios": "./assets/app-icons/rust.png",
+            "android": {
+              "foregroundImage": "./assets/app-icons/foreground.png",
+              "backgroundColor": "#D09663"
+            }
+          },
+          {
+            "name": "Violet",
+            "ios": "./assets/app-icons/violet.png",
+            "android": {
+              "foregroundImage": "./assets/app-icons/foreground.png",
+              "backgroundColor": "#9F6CDA"
+            }
+          },
+          {
+            "name": "Steel",
+            "ios": "./assets/app-icons/steel.png",
+            "android": {
+              "foregroundImage": "./assets/app-icons/foreground.png",
+              "backgroundColor": "#98A0D6"
+            }
+          },
+          {
+            "name": "Gold",
+            "ios": "./assets/app-icons/gold.png",
+            "android": {
+              "foregroundImage": "./assets/app-icons/foreground.png",
+              "backgroundColor": "#C08A2A"
+            }
+          }
+        ]
+      ],
+      "expo-localization"
     ],
     "extra": {
       "router": {},

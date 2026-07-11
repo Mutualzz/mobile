@@ -26,11 +26,24 @@ import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import { ClockIcon, HashIcon, StarIcon, UserIcon } from "phosphor-react-native";
 import type { FlashListRef } from "@shopify/flash-list";
 import type { EmojiListItem } from "@components/Expression/emojiListModel";
+import { pickerCategoryKeys } from "@mutualzz/i18n";
 import { observer } from "mobx-react-lite";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, useWindowDimensions } from "react-native";
 
 const SKIN_TONES: SkinTone[] = ["1F3FB", "1F3FC", "1F3FD", "1F3FE", "1F3FF"];
+
+const categoryLabel = (
+  id: string,
+  t: (key: string) => string,
+  fallback: string,
+) => {
+  const key =
+    pickerCategoryKeys[id as keyof typeof pickerCategoryKeys] ??
+    pickerCategoryKeys[fallback as keyof typeof pickerCategoryKeys];
+  return key ? t(key) : fallback;
+};
 
 interface Props {
   channel?: Channel | null;
@@ -40,6 +53,7 @@ interface Props {
 
 export const EmojiPickerContent = observer(
   ({ channel, onSelectEmoji, onSelectCustomEmoji }: Props) => {
+    const { t } = useTranslation("chat");
     const app = useAppStore();
     const { theme } = useTheme();
     const { width } = useWindowDimensions();
@@ -224,12 +238,12 @@ export const EmojiPickerContent = observer(
             [
               {
                 sectionId: "search-custom",
-                title: "Custom",
+                title: t("picker.custom"),
                 cells: customCells,
               },
               {
                 sectionId: "search-standard",
-                title: "Standard",
+                title: t("picker.standard"),
                 cells: standardCells,
               },
             ],
@@ -244,17 +258,17 @@ export const EmojiPickerContent = observer(
         [
           {
             sectionId: "favorites",
-            title: "Favorites",
+            title: t("picker.favorites"),
             cells: toCells(favoriteEmojiItems),
           },
           {
             sectionId: "recent",
-            title: "Recently used",
+            title: t("picker.recentlyUsed"),
             cells: toCells(recentItems),
           },
           {
             sectionId: "my-emojis",
-            title: "Your emojis",
+            title: t("picker.yourEmojis"),
             cells: myEmojis.map((emoji) => ({
               kind: "custom" as const,
               emoji,
@@ -271,7 +285,7 @@ export const EmojiPickerContent = observer(
           })),
           ...PICKER_CATEGORIES.map((category) => ({
             sectionId: category.id,
-            title: category.name,
+            title: categoryLabel(category.id, t, category.name),
             cells: category.emojis.map((emoji) => ({
               kind: "standard" as const,
               emoji,
@@ -289,19 +303,20 @@ export const EmojiPickerContent = observer(
       search,
       spaceEmojiGroups,
       standardSearchResults,
+      t,
       toCells,
     ]);
 
     const sidebarItems = useMemo(
       () => [
         ...(favoriteEmojiItems.length > 0
-          ? [{ id: "favorites", label: "Favorites", Icon: StarIcon }]
+          ? [{ id: "favorites", label: t("picker.favorites"), Icon: StarIcon }]
           : []),
         ...(recentItems.length > 0
-          ? [{ id: "recent", label: "Recent", Icon: ClockIcon }]
+          ? [{ id: "recent", label: t("picker.recent"), Icon: ClockIcon }]
           : []),
         ...(myEmojis.length > 0
-          ? [{ id: "my-emojis", label: "Yours", Icon: UserIcon }]
+          ? [{ id: "my-emojis", label: t("picker.yours"), Icon: UserIcon }]
           : []),
         ...spaceEmojiGroups.map(({ space }) => ({
           id: `space-${space.id}`,
@@ -310,7 +325,7 @@ export const EmojiPickerContent = observer(
         })),
         ...PICKER_CATEGORIES.map((category) => ({
           id: category.id,
-          label: category.name,
+          label: categoryLabel(category.id, t, category.name),
           Icon: HashIcon,
         })),
       ],
@@ -319,6 +334,7 @@ export const EmojiPickerContent = observer(
         myEmojis.length,
         recentItems.length,
         spaceEmojiGroups,
+        t,
       ],
     );
 
@@ -349,7 +365,7 @@ export const EmojiPickerContent = observer(
           <Input
             value={search}
             onChangeText={setSearch}
-            placeholder="Search emojis…"
+            placeholder={t("picker.searchEmojis")}
             variant="soft"
             color="neutral"
             style={{ borderRadius: 8 }}
@@ -405,8 +421,11 @@ export const EmojiPickerContent = observer(
             style={{ paddingHorizontal: 12, paddingBottom: 8 }}
           >
             {customSearchResults.length + standardSearchResults.length === 0
-              ? "No results"
-              : `${customSearchResults.length + standardSearchResults.length} results`}
+              ? t("picker.noResults")
+              : t("picker.results", {
+                  count:
+                    customSearchResults.length + standardSearchResults.length,
+                })}
           </Typography>
         )}
 

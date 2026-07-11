@@ -55,6 +55,7 @@ import {
 } from "@mutualzz/types";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Image, Pressable } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 
@@ -75,6 +76,7 @@ interface Props {
 
 export const MessageInput = observer(({ channel }: Props) => {
   const app = useAppStore();
+  const { t } = useTranslation("chat");
   const { theme } = useTheme();
   const fontScale = useFontScale();
   const composerMaxHeight = useScaledComposerPanelMaxHeight();
@@ -357,7 +359,7 @@ export const MessageInput = observer(({ channel }: Props) => {
         if (isDM && theyBlockedMe) {
           throw new HttpException(
             HttpStatusCode.Forbidden,
-            "You cannot message this person",
+            t("cannotMessagePerson"),
           );
         }
 
@@ -395,7 +397,7 @@ export const MessageInput = observer(({ channel }: Props) => {
             ? e.message
             : typeof e === "string"
               ? e
-              : "Unknown error";
+              : t("unknownError");
 
         msg.fail(error);
 
@@ -495,21 +497,28 @@ export const MessageInput = observer(({ channel }: Props) => {
   const placeholder = (() => {
     if (denySendingMessages) {
       return isDM
-        ? "You cannot message this person, because you have them blocked"
-        : "You are not allowed to send messages in this channel.";
+        ? t("composer.placeholder.blocked")
+        : t("composer.placeholder.noPermission");
     }
 
-    if (editingMessage) return "Edit message";
+    if (editingMessage) return t("composer.placeholder.edit");
 
     if (isDM) {
-      return `Message ${
-        isGroupDM
-          ? (channel.name ?? "the group")
-          : (channel.dmRecipient?.displayName ?? "in this conversation")
-      }`;
+      if (isGroupDM) {
+        return channel.name
+          ? t("composer.placeholder.dm", { name: channel.name })
+          : t("composer.placeholder.groupFallback");
+      }
+
+      const name = channel.dmRecipient?.displayName;
+      return name
+        ? t("composer.placeholder.dm", { name })
+        : t("composer.placeholder.dmFallback");
     }
 
-    return `Message #${channel.name}`;
+    return channel.name
+      ? t("composer.placeholder.channel", { channel: channel.name })
+      : t("composer.placeholder.channelFallback");
   })();
 
   const handleContentChange = useCallback(
@@ -553,10 +562,9 @@ export const MessageInput = observer(({ channel }: Props) => {
           }}
         >
           <Typography level="body-xs" textColor="secondary" style={{ flex: 1 }}>
-            Replying to{" "}
-            <Typography level="body-xs" weight={700} textColor="primary">
-              {app.replyingTo.author?.displayName ?? "Unknown"}
-            </Typography>
+            {t("reply.banner", {
+              name: app.replyingTo.author?.displayName ?? t("unknown"),
+            })}
           </Typography>
           {app.replyingTo.authorId !== app.account?.id && (
             <Pressable onPress={() => app.setReplyMention(!app.replyMention)}>
@@ -566,7 +574,7 @@ export const MessageInput = observer(({ channel }: Props) => {
                 color={app.replyMention ? "info" : undefined}
                 textColor={app.replyMention ? undefined : "secondary"}
               >
-                {app.replyMention ? "@ ON" : "@ OFF"}
+                {app.replyMention ? t("composer.mentionOn") : t("composer.mentionOff")}
               </Typography>
             </Pressable>
           )}
@@ -574,7 +582,7 @@ export const MessageInput = observer(({ channel }: Props) => {
             padding={6}
             color="neutral"
             onPress={() => app.setReplyingTo(null)}
-            accessibilityLabel="Cancel reply"
+            accessibilityLabel={t("edit.cancelReplyA11y")}
           >
             <XIcon size={20} />
           </IconButton>
@@ -603,13 +611,13 @@ export const MessageInput = observer(({ channel }: Props) => {
             level="body-sm"
             style={{ flex: 1, color: theme.colors.primary }}
           >
-            Editing message
+            {t("edit.banner")}
           </Typography>
           <IconButton
             padding={6}
             color="neutral"
             onPress={cancelEditing}
-            accessibilityLabel="Cancel edit"
+            accessibilityLabel={t("edit.cancelA11y")}
           >
             <XIcon size={20} />
           </IconButton>
@@ -648,7 +656,7 @@ export const MessageInput = observer(({ channel }: Props) => {
                 padding={4}
                 color="neutral"
                 onPress={() => handleRemoveSticker(sticker.id)}
-                accessibilityLabel="Remove sticker"
+                accessibilityLabel={t("composer.removeSticker")}
                 style={{
                   position: "absolute",
                   top: -4,
@@ -699,7 +707,7 @@ export const MessageInput = observer(({ channel }: Props) => {
                 padding={4}
                 color="neutral"
                 onPress={() => removeAttachment(index)}
-                accessibilityLabel="Remove attachment"
+                accessibilityLabel={t("composer.removeAttachment")}
                 style={{
                   position: "absolute",
                   top: -6,
@@ -722,10 +730,10 @@ export const MessageInput = observer(({ channel }: Props) => {
         }}
       >
         <IconButton
-          padding={6}
+          padding={8}
           color="neutral"
           onPress={() => void pickAttachments()}
-          accessibilityLabel="Add attachment"
+          accessibilityLabel={t("composer.addAttachment")}
           disabled={
             denySendingMessages ||
             !!editingMessage ||
@@ -757,7 +765,7 @@ export const MessageInput = observer(({ channel }: Props) => {
                 padding={4}
                 color="neutral"
                 onPress={() => setPickerOpen(true)}
-                accessibilityLabel="Open expression picker"
+                accessibilityLabel={t("composer.openExpressionPicker")}
               >
                 <SmileyIcon size={22} weight="fill" />
               </IconButton>

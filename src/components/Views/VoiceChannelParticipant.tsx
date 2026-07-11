@@ -17,6 +17,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { Pressable, View } from "react-native";
 import { RTCView } from "react-native-webrtc";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   state: VoiceState;
@@ -30,6 +31,7 @@ export const VoiceChannelParticipant = observer(
   ({ state, space, selfId, showAudioControls = false, onModerate }: Props) => {
     const app = useAppStore();
     const { theme } = useTheme();
+    const { t } = useTranslation("chat");
     const user = state.user;
     const isSelf = state.userId === selfId;
     const me = space?.members.me;
@@ -94,19 +96,21 @@ export const VoiceChannelParticipant = observer(
             <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
               <Typography truncate="single">
                 {user?.displayName ?? state.userId}
-                {isSelf ? " (You)" : ""}
+                {isSelf ? ` ${t("voice.participant.you")}` : ""}
               </Typography>
               {speaking ? (
                 <Typography level="body-xs" textColor="accent">
-                  Speaking
+                  {t("voice.participant.speaking")}
                 </Typography>
               ) : state.selfMute || state.spaceMute ? (
                 <Typography level="body-xs" textColor="muted">
-                  {state.spaceMute ? "Server muted" : "Muted"}
+                  {state.spaceMute
+                    ? t("voice.participant.serverMuted")
+                    : t("voice.controls.muted")}
                 </Typography>
               ) : state.spaceDeaf ? (
                 <Typography level="body-xs" textColor="muted">
-                  Server deafened
+                  {t("voice.participant.serverDeafened")}
                 </Typography>
               ) : null}
             </Box>
@@ -116,8 +120,8 @@ export const VoiceChannelParticipant = observer(
                 padding={8}
                 accessibilityLabel={
                   locallyMuted
-                    ? "Unmute this user locally"
-                    : "Mute this user locally"
+                    ? t("voice.controls.unmuteUserLocally")
+                    : t("voice.controls.muteUserLocally")
                 }
                 onPress={() => app.voice.toggleUserVoiceMuted(state.userId)}
               >
@@ -147,7 +151,7 @@ export const VoiceChannelParticipant = observer(
           {!isSelf && showAudioControls && (
             <Box style={{ gap: 4, paddingHorizontal: 4 }}>
               <Typography level="body-xs" textColor="muted">
-                Volume {volume}%
+                {t("voice.controls.volumePercent", { value: volume })}
               </Typography>
               <Slider
                 min={0}

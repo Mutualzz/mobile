@@ -11,6 +11,7 @@ import * as Clipboard from "expo-clipboard";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   space: Space;
@@ -21,6 +22,9 @@ interface Props {
 
 export const SpaceCreateInviteSheet = observer(
   ({ space, channel, modalId = "space-create-invite", onClose }: Props) => {
+    const { t } = useTranslation("space");
+    const { t: tSettings } = useTranslation("settings");
+    const { t: tCommon } = useTranslation("common");
     const app = useAppStore();
     const { closeModal } = useModal();
     const close = onClose ?? (() => closeModal(modalId));
@@ -53,7 +57,9 @@ export const SpaceCreateInviteSheet = observer(
         space.addInvite(created);
         setInviteUrl(Invite.constructUrl(created.code));
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to create invite");
+        setError(
+          e instanceof Error ? e.message : t("invites.createFailed"),
+        );
       } finally {
         setCreating(false);
       }
@@ -79,7 +85,7 @@ export const SpaceCreateInviteSheet = observer(
         elevation={app.settings?.preferEmbossed ? 4 : 2}
       >
         <Typography level="body-md" weight={700}>
-          Create invite link
+          {t("invites.createTitle")}
         </Typography>
 
         {inviteUrl ? (
@@ -90,18 +96,20 @@ export const SpaceCreateInviteSheet = observer(
               </Typography>
             </Pressable>
             <Typography level="body-xs" textColor="muted">
-              {copied ? "Copied!" : "Tap the link to copy"}
+              {copied ? t("invites.copiedToClipboard") : t("invites.tapToCopy")}
             </Typography>
             <Button color="neutral" variant="soft" onPress={close}>
-              Done
+              {tSettings("profile.done")}
             </Button>
           </Box>
         ) : (
           <Box style={{ gap: 8 }}>
             <Typography level="body-sm" textColor="muted">
               {channel
-                ? `Creates a link to #${channel.name}.`
-                : "Creates a link to the default text channel for this space."}
+                ? t("invites.createDescriptionChannel", {
+                    channel: channel.name,
+                  })
+                : t("invites.createDescriptionDefault")}
             </Typography>
             {error && (
               <Typography level="body-sm" color="danger" variant="plain">
@@ -109,7 +117,7 @@ export const SpaceCreateInviteSheet = observer(
               </Typography>
             )}
             <Button disabled={creating} onPress={() => void createInvite()}>
-              {creating ? "Creating..." : "Create invite"}
+              {creating ? t("actions.creating") : t("actions.createInvite")}
             </Button>
             <Button
               variant="soft"
@@ -117,7 +125,7 @@ export const SpaceCreateInviteSheet = observer(
               disabled={creating}
               onPress={close}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
           </Box>
         )}

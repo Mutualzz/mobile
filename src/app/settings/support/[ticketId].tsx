@@ -9,8 +9,11 @@ import { type Href, useLocalSearchParams } from "expo-router";
 import dayjs from "dayjs";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const SupportTicketScreen = () => {
+  const { t } = useTranslation("common");
+  const { t: tSettings } = useTranslation("settings");
   const app = useAppStore();
   const { navigate } = useAppNavigation();
   const queryClient = useQueryClient();
@@ -39,7 +42,9 @@ const SupportTicketScreen = () => {
       queryClient.invalidateQueries({ queryKey: ["support-tickets"] });
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : "Failed to send reply");
+      setError(
+        err instanceof Error ? err.message : t("support.sendReplyFailed"),
+      );
     },
   });
 
@@ -48,13 +53,13 @@ const SupportTicketScreen = () => {
 
   return (
     <SettingsScreen
-      title={ticket?.subject ?? "Ticket"}
+      title={ticket?.subject ?? t("support.myTickets")}
       onBack={() => navigate("/settings/support" as Href)}
     >
       <Box style={{ padding: 16, gap: 12 }}>
         {isLoading && (
           <Typography level="body-sm" textColor="muted">
-            Loading...
+            {t("support.loading")}
           </Typography>
         )}
 
@@ -69,7 +74,7 @@ const SupportTicketScreen = () => {
           >
             <Typography level="body-xs" textColor="muted">
               {message.isStaff
-                ? "Support"
+                ? t("support.staffLabel")
                 : message.author.globalName || message.author.username}{" "}
               · {dayjs(message.createdAt).format("MMM D, h:mm A")}
             </Typography>
@@ -82,7 +87,7 @@ const SupportTicketScreen = () => {
             <InputDefault
               fullWidth
               multiline
-              placeholder="Write a reply"
+              placeholder={t("support.writeReply")}
               value={reply}
               onChangeText={setReply}
             />
@@ -95,14 +100,16 @@ const SupportTicketScreen = () => {
               disabled={sending || !reply.trim()}
               onPress={() => sendReply()}
             >
-              {sending ? "Sending..." : "Send reply"}
+              {sending
+                ? tSettings("account.sending")
+                : t("support.sendReply")}
             </Button>
           </Box>
         )}
 
         {isClosed && (
           <Typography level="body-sm" textColor="muted">
-            This ticket is closed.
+            {t("support.ticketClosed")}
           </Typography>
         )}
       </Box>

@@ -2,6 +2,7 @@ import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Switch, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView } from "react-native";
 
 const NotificationToggle = ({
@@ -45,6 +46,7 @@ const NotificationToggle = ({
 );
 
 export const AppNotificationsSettings = observer(() => {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const settings = app.settings;
 
@@ -73,16 +75,15 @@ export const AppNotificationsSettings = observer(() => {
       >
         <Box style={{ gap: 4 }}>
           <Typography level="body-md" weight={700}>
-            Push notifications
+            {t("notifications.pushTitle")}
           </Typography>
           <Typography level="body-sm" textColor="muted">
-            Sent to your phone when you are idle or offline. DMs support quick
-            reply from the notification shade.
+            {t("notifications.pushDescriptionMobile")}
           </Typography>
         </Box>
 
         <NotificationToggle
-          label="Enable push notifications"
+          label={t("notifications.enablePush")}
           checked={settings.pushEnabled}
           onChange={(value) => {
             settings.setPushEnabled(value);
@@ -90,8 +91,8 @@ export const AppNotificationsSettings = observer(() => {
           }}
         />
         <NotificationToggle
-          label="Direct messages"
-          description="Includes group direct messages"
+          label={t("notifications.directMessages")}
+          description={t("notifications.directMessagesDescription")}
           checked={settings.pushDirectMessages}
           disabled={!settings.pushEnabled}
           onChange={(value) => {
@@ -100,8 +101,8 @@ export const AppNotificationsSettings = observer(() => {
           }}
         />
         <NotificationToggle
-          label="Mentions"
-          description="Includes @user, @role, @everyone, and @here"
+          label={t("notifications.mentions")}
+          description={t("notifications.mentionsDescription")}
           checked={settings.pushMentions}
           disabled={!settings.pushEnabled}
           onChange={(value) => {
@@ -120,12 +121,10 @@ export const AppNotificationsSettings = observer(() => {
         elevation={settings.preferEmbossed ? 2 : 0}
       >
         <Typography level="body-md" weight={700}>
-          Do Not Disturb
+          {t("notifications.dndTitle")}
         </Typography>
         <Typography level="body-sm" textColor="muted">
-          Set your status to Do Not Disturb or Invisible to suppress push
-          notifications regardless of these toggles. While you are online and
-          active, notifications stay in the app instead.
+          {t("notifications.dndDescriptionMobile")}
         </Typography>
       </Paper>
 
@@ -138,12 +137,10 @@ export const AppNotificationsSettings = observer(() => {
         elevation={settings.preferEmbossed ? 2 : 0}
       >
         <Typography level="body-md" weight={700}>
-          Presence
+          {t("notifications.presenceTitle")}
         </Typography>
         <Typography level="body-sm" textColor="muted">
-          Idle detection on desktop automatically marks you as idle after
-          inactivity. On mobile, use your status picker to set Online, Idle, Do
-          Not Disturb, or Invisible - including timed durations.
+          {t("notifications.presenceDescriptionMobile")}
         </Typography>
       </Paper>
     </ScrollView>

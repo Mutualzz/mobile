@@ -16,20 +16,16 @@ import {
 import type { Href } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, ScrollView } from "react-native";
 import dayjs from "dayjs";
 
 const PAGE_LIMIT = 50;
 const ANY = "any";
-
-const statusOptions: { value: string; label: string }[] = [
-  { value: ANY, label: "Any status" },
-  { value: "pending", label: "Pending" },
-  { value: "accepted", label: "Accepted" },
-  { value: "rejected", label: "Rejected" },
-];
+const statusValues = [ANY, "pending", "accepted", "rejected"] as const;
 
 const StaffAppealsScreen = () => {
+  const { t } = useTranslation("staff");
   const { isStaff } = useRequireStaffAccess();
   const app = useAppStore();
   const { navigate } = useAppNavigation();
@@ -83,34 +79,40 @@ const StaffAppealsScreen = () => {
     },
   });
 
-  if (!isStaff) return null;
-
   const appeals = data?.pages.flat() ?? [];
 
   useEffect(() => {
+    if (!isStaff) return;
     for (const appeal of appeals) {
       void app.users.resolve(appeal.user.id);
     }
-  }, [appeals, app.users]);
+  }, [isStaff, appeals, app.users]);
+
+  if (!isStaff) return null;
+
+  const statusLabel = (value: string) => {
+    if (value === ANY) return t("appeals.anyStatus");
+    return t(`appeals.status.${value}`);
+  };
 
   return (
     <Screen style={{ flexDirection: "column", gap: 12, paddingBottom: 16 }}>
-      <StaffHeader title="Appeals" showBack backHref="/staff" />
+      <StaffHeader title={t("nav.appeals")} showBack backHref="/staff" />
 
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
       >
-        {statusOptions.map((option) => (
+        {statusValues.map((value) => (
           <Button
-            key={option.value}
+            key={value}
             size="sm"
-            variant={status === option.value ? "solid" : "soft"}
-            color={status === option.value ? "primary" : "neutral"}
-            onPress={() => setStatus(option.value)}
+            variant={status === value ? "solid" : "soft"}
+            color={status === value ? "primary" : "neutral"}
+            onPress={() => setStatus(value)}
           >
-            {option.label}
+            {statusLabel(value)}
           </Button>
         ))}
       </ScrollView>
@@ -127,7 +129,7 @@ const StaffAppealsScreen = () => {
           textColor="muted"
           style={{ paddingHorizontal: 12 }}
         >
-          No appeals found.
+          {t("appeals.empty")}
         </Typography>
       )}
 
@@ -157,7 +159,7 @@ const StaffAppealsScreen = () => {
                 </Typography>
               </Box>
               <Typography level="body-xs" weight={700}>
-                {appeal.status}
+                {t(`appeals.status.${appeal.status}`)}
               </Typography>
             </Box>
 
@@ -165,7 +167,7 @@ const StaffAppealsScreen = () => {
 
             {appeal.staffResponse && (
               <Typography level="body-sm" textColor="muted">
-                Staff response: {appeal.staffResponse}
+                {t("appeals.staffResponse", { text: appeal.staffResponse })}
               </Typography>
             )}
 
@@ -174,7 +176,7 @@ const StaffAppealsScreen = () => {
                 <InputDefault
                   fullWidth
                   multiline
-                  placeholder="Optional staff response"
+                  placeholder={t("appeals.responsePlaceholder")}
                   value={responseDrafts[appeal.id] ?? ""}
                   onChangeText={(value) =>
                     setResponseDrafts((prev) => ({
@@ -196,7 +198,7 @@ const StaffAppealsScreen = () => {
                       })
                     }
                   >
-                    Accept
+                    {t("appeals.accept")}
                   </Button>
                   <Button
                     style={{ flex: 1 }}
@@ -210,7 +212,7 @@ const StaffAppealsScreen = () => {
                       })
                     }
                   >
-                    Reject
+                    {t("appeals.reject")}
                   </Button>
                   <Button
                     variant="soft"
@@ -218,7 +220,7 @@ const StaffAppealsScreen = () => {
                       navigate(`/staff/users/${appeal.user.id}` as Href)
                     }
                   >
-                    User
+                    {t("appeals.viewUser")}
                   </Button>
                 </Box>
               </Box>
@@ -229,7 +231,7 @@ const StaffAppealsScreen = () => {
                   navigate(`/staff/users/${appeal.user.id}` as Href)
                 }
               >
-                View user
+                {t("appeals.viewUser")}
               </Button>
             )}
           </Paper>
@@ -241,7 +243,7 @@ const StaffAppealsScreen = () => {
             disabled={isFetchingNextPage}
             onPress={() => void fetchNextPage()}
           >
-            {isFetchingNextPage ? "Loading..." : "Load more"}
+            {isFetchingNextPage ? t("home.loading") : t("home.loadMore")}
           </Button>
         )}
       </ScrollView>

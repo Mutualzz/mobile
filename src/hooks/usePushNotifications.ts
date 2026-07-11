@@ -1,9 +1,9 @@
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
-import { registerBackgroundNotificationTask } from "@setup/backgroundNotificationTask";
 import notifee, { EventType } from "@notifee/react-native";
 import {
   displayAndroidMessageNotification,
+  ensureAndroidMessageChannel,
   parseMessagePushData,
 } from "@utils/androidMessageNotification";
 import {
@@ -25,22 +25,21 @@ Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
     const data = notification.request.content.data;
 
+    // Android message pushes are data-only and rendered via Notifee
+    // (foreground listener / background task). Suppress Expo's default UI.
     if (
       Platform.OS === "android" &&
       data &&
-      typeof data === "object"
+      typeof data === "object" &&
+      parseMessagePushData(data as Record<string, unknown>)
     ) {
-      const parsed = parseMessagePushData(data as Record<string, unknown>);
-      if (parsed) {
-        await displayAndroidMessageNotification(parsed);
-        return {
-          shouldShowAlert: false,
-          shouldPlaySound: false,
-          shouldSetBadge: false,
-          shouldShowBanner: false,
-          shouldShowList: false,
-        };
-      }
+      return {
+        shouldShowAlert: false,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+        shouldShowBanner: false,
+        shouldShowList: false,
+      };
     }
 
     return {
@@ -148,8 +147,8 @@ export function usePushNotifications(enabled: boolean) {
     });
 
     if (Platform.OS === "android") {
-      void registerBackgroundNotificationTask().catch((error) => {
-        console.warn("[push] failed to register background task", error);
+      void ensureAndroidMessageChannel().catch((error) => {
+        console.warn("[push] failed to create Android channel", error);
       });
     }
   }, []);

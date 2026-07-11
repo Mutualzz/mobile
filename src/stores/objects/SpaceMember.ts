@@ -15,6 +15,7 @@ import {
   resolveEffectiveChannelBits,
 } from "@mutualzz/bitfield";
 import type { User } from "@stores/objects/User";
+import i18n from "../../i18n";
 
 export class SpaceMember {
   id: Snowflake;
@@ -72,7 +73,11 @@ export class SpaceMember {
   }
 
   get displayName() {
-    return this.nickname ?? this.user?.displayName ?? "Deleted User";
+    return (
+      this.nickname ??
+      this.user?.displayName ??
+      i18n.t("deletedUser", { ns: "chat" })
+    );
   }
 
   get space() {

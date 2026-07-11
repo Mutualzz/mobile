@@ -6,6 +6,7 @@ import type { QueuedMessage } from "@stores/objects/QueuedMessage";
 import { QueuedMessageStatus } from "@stores/objects/QueuedMessage";
 import { ArrowClockwiseIcon, TrashIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -17,6 +18,7 @@ interface Props {
 
 export const QueuedMessageActionSheet = observer(
   ({ message, visible, onClose }: Props) => {
+    const { t } = useTranslation("common");
     const app = useAppStore();
     const insets = useSafeAreaInsets();
 
@@ -76,7 +78,7 @@ export const QueuedMessageActionSheet = observer(
                     startDecorator={<ArrowClockwiseIcon size={20} />}
                     onPress={handleRetry}
                   >
-                    Retry
+                    {t("retry")}
                   </Button>
                 )}
                 <Button
@@ -87,7 +89,7 @@ export const QueuedMessageActionSheet = observer(
                   startDecorator={<TrashIcon size={20} weight="fill" />}
                   onPress={handleDelete}
                 >
-                  Delete
+                  {t("delete")}
                 </Button>
               </Paper>
 
@@ -103,7 +105,7 @@ export const QueuedMessageActionSheet = observer(
                   padding={14}
                   onPress={onClose}
                 >
-                  Cancel
+                  {t("cancel")}
                 </Button>
               </Paper>
             </Box>

@@ -7,6 +7,7 @@ import { InputDefault, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
     userId: string;
@@ -17,6 +18,8 @@ interface Props {
 
 export const StaffUserWarnConfirmSheet = observer(
     ({ userId, username, onSuccess, modalId }: Props) => {
+        const { t } = useTranslation("staff");
+        const { t: tCommon } = useTranslation("common");
         const app = useAppStore();
         const { closeModal } = useModal();
         const [reason, setReason] = useState("");
@@ -47,15 +50,14 @@ export const StaffUserWarnConfirmSheet = observer(
                 elevation={app.settings?.preferEmbossed ? 4 : 2}
             >
                 <Typography level="body-md" weight={700}>
-                    Warn User
+                    {t("user.modals.warn.title")}
                 </Typography>
                 <Typography level="body-sm" textColor="muted">
-                    This sends @{username} a warning email and logs it to
-                    their audit trail. It doesn't change their account state.
+                    {t("user.modals.warn.body", { username })}
                 </Typography>
                 <InputDefault
                     fullWidth
-                    placeholder="Reason (required)"
+                    placeholder={t("user.modals.reasonRequired")}
                     value={reason}
                     onChangeText={setReason}
                 />
@@ -69,7 +71,7 @@ export const StaffUserWarnConfirmSheet = observer(
                     disabled={isPending || !reason.trim()}
                     onPress={() => mutate()}
                 >
-                    {isPending ? "Working..." : "Send Warning"}
+                    {isPending ? t("working") : t("user.modals.warn.submit")}
                 </Button>
                 <Button
                     variant="soft"
@@ -77,7 +79,7 @@ export const StaffUserWarnConfirmSheet = observer(
                     disabled={isPending}
                     onPress={() => closeModal(modalId)}
                 >
-                    Cancel
+                    {tCommon("cancel")}
                 </Button>
             </Paper>
         );

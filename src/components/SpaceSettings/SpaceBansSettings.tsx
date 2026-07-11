@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
     space: Space;
@@ -53,6 +54,7 @@ const BanRow = observer(({ ban, space }: { ban: SpaceBan; space: Space }) => {
 });
 
 export const SpaceBansSettings = observer(({ space }: Props) => {
+    const { t } = useTranslation("space");
     const [search, setSearch] = useState("");
 
     useQuery({
@@ -85,17 +87,17 @@ export const SpaceBansSettings = observer(({ space }: Props) => {
         >
             <Box style={{ gap: 8 }}>
                 <Typography level="body-md" weight={700}>
-                    Space ban list
+                    {t("bans.title")}
                 </Typography>
                 <Typography level="body-sm" textColor="muted">
-                    View and manage banned users in this space.
+                    {t("bans.descriptionShort")}
                 </Typography>
             </Box>
 
             <Input
                 value={search}
                 onChangeText={setSearch}
-                placeholder="Search by username or user ID"
+                placeholder={t("bans.searchPlaceholderShort")}
                 autoCapitalize="none"
             />
 
@@ -105,7 +107,7 @@ export const SpaceBansSettings = observer(({ space }: Props) => {
                     textColor="muted"
                     style={{ textAlign: "center", paddingVertical: 32 }}
                 >
-                    No one has been banned yet
+                    {t("bans.empty")}
                 </Typography>
             ) : (
                 <Box style={{ gap: 8 }}>

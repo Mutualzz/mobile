@@ -14,18 +14,21 @@ import { type Href } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Linking } from "react-native";
 import dayjs from "dayjs";
 
-const categoryOptions: { value: SupportTicketCategory; label: string }[] = [
-  { value: "account", label: "Account & login" },
-  { value: "bug", label: "Bug or crash" },
-  { value: "donations", label: "Donations" },
-  { value: "feature", label: "Feature request" },
-  { value: "other", label: "Other" },
-];
+const categoryKeys = [
+  "account",
+  "bug",
+  "donations",
+  "feature",
+  "other",
+] as const satisfies readonly SupportTicketCategory[];
 
 const SupportSettings = () => {
+  const { t } = useTranslation("common");
+  const { t: tSettings } = useTranslation("settings");
   const app = useAppStore();
   const { navigate } = useAppNavigation();
   const queryClient = useQueryClient();
@@ -57,18 +60,20 @@ const SupportSettings = () => {
       navigate(`/settings/support/${ticket.id}` as Href);
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : "Failed to create ticket");
+      setError(
+        err instanceof Error ? err.message : t("support.createFailed"),
+      );
     },
   });
 
   return (
     <SettingsScreen
-      title="Help & Support"
+      title={tSettings("helpAndSupport")}
       onBack={() => navigate("/settings" as Href)}
     >
       <Box style={{ padding: 16, gap: 16 }}>
         <Typography level="body-sm" textColor="muted">
-          Browse help at mutualzz.com/support or contact us below.
+          {t("support.mobileIntro")}
         </Typography>
         <Button
           variant="soft"
@@ -76,35 +81,35 @@ const SupportSettings = () => {
             Linking.openURL("https://mutualzz.com/support").catch(() => undefined)
           }
         >
-          Open help center
+          {t("support.openHelpCenter")}
         </Button>
 
         <Box style={{ gap: 8 }}>
           <Typography level="body-md" weight="bold">
-            New ticket
+            {t("support.newTicket")}
           </Typography>
           <Box style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {categoryOptions.map((option) => (
+            {categoryKeys.map((value) => (
               <Button
-                key={option.value}
+                key={value}
                 size="sm"
-                variant={category === option.value ? "solid" : "soft"}
-                onPress={() => setCategory(option.value)}
+                variant={category === value ? "solid" : "soft"}
+                onPress={() => setCategory(value)}
               >
-                {option.label}
+                {t(`support.categories.${value}`)}
               </Button>
             ))}
           </Box>
           <InputDefault
             fullWidth
-            placeholder="Subject"
+            placeholder={t("support.subjectPlaceholder")}
             value={subject}
             onChangeText={setSubject}
           />
           <InputDefault
             fullWidth
             multiline
-            placeholder="Describe your issue"
+            placeholder={t("support.describeIssue")}
             value={message}
             onChangeText={setMessage}
           />
@@ -117,22 +122,22 @@ const SupportSettings = () => {
             disabled={creating || !subject.trim() || !message.trim()}
             onPress={() => createTicket()}
           >
-            {creating ? "Submitting..." : "Submit ticket"}
+            {creating ? t("report.submitting") : t("support.submitTicket")}
           </Button>
         </Box>
 
         <Box style={{ gap: 8 }}>
           <Typography level="body-md" weight="bold">
-            My tickets
+            {t("support.myTickets")}
           </Typography>
           {isFetching && (
             <Typography level="body-sm" textColor="muted">
-              Loading...
+              {t("support.loading")}
             </Typography>
           )}
           {!isFetching && tickets.length === 0 && (
             <Typography level="body-sm" textColor="muted">
-              No tickets yet
+              {t("support.noTickets")}
             </Typography>
           )}
           {tickets.map((ticket) => (

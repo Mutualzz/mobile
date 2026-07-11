@@ -15,6 +15,7 @@ import { type Channel } from "@stores/objects/Channel";
 import { type Space } from "@stores/objects/Space";
 import { useScaledMentionBadgeStyle, useScaledSquareSize } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import { Keyboard, Pressable } from "react-native";
 
 interface Props extends PaperProps {
@@ -42,6 +43,8 @@ export const ChannelListItem = observer(
     canManageChannels = false,
     ...props
   }: Props) => {
+    const { t } = useTranslation("common");
+    const { t: tChat } = useTranslation("chat");
     const { theme } = useTheme();
     const { navigate } = useAppNavigation();
     const app = useAppStore();
@@ -75,7 +78,13 @@ export const ChannelListItem = observer(
 
     const accessibilityLabel = isCategory
       ? (channel.name ?? undefined)
-      : `${channel.name}${mentionCount > 0 ? `, ${mentionCount} mentions` : isUnread ? ", unread" : ""}`;
+      : `${channel.name}${
+          mentionCount > 0
+            ? `, ${tChat("a11y.mentionsCount", { value: mentionCount })}`
+            : isUnread
+              ? `, ${tChat("a11y.unread")}`
+              : ""
+        }`;
 
     return (
       <Pressable
@@ -191,7 +200,7 @@ export const ChannelListItem = observer(
               size={14}
               variant="plain"
               color="neutral"
-              accessibilityLabel="Create channel in category"
+              accessibilityLabel={t("a11y.createChannelInCategory")}
               style={{
                 borderRadius: 9999,
               }}

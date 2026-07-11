@@ -10,18 +10,21 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { Pressable, StyleSheet, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   link: APICodedLink;
 }
 
 const FriendCodedLinkPreview = observer(({ link }: { link: APICodedLink }) => {
+  const { t } = useTranslation("auth");
+  const { t: tChat } = useTranslation("chat");
   const app = useAppStore();
   const router = useRouter();
 
   const user = link.user ?? link.inviter;
   const userId = user?.id;
-  const displayName = user?.globalName ?? user?.username ?? "Someone";
+  const displayName = user?.globalName ?? user?.username ?? tChat("someone");
   const isSelf = userId === app.account?.id;
   const relationship = userId ? app.relationships.getForMe(userId) : undefined;
 
@@ -33,10 +36,10 @@ const FriendCodedLinkPreview = observer(({ link }: { link: APICodedLink }) => {
   });
 
   const actionLabel = relationship?.isFriend
-    ? "Friends"
+    ? t("invite.friends")
     : relationship?.isOutgoingRequest
-      ? "Pending"
-      : "Add Friend";
+      ? t("invite.pending")
+      : t("invite.addFriend");
 
   const actionDisabled =
     isPending ||
@@ -71,13 +74,16 @@ const FriendCodedLinkPreview = observer(({ link }: { link: APICodedLink }) => {
           addFriend();
         }}
       >
-        {isSelf ? "You" : actionLabel}
+        {isSelf ? tChat("you") : actionLabel}
       </Button>
     </Paper>
   );
 });
 
 export const CodedLinkPreview = observer(({ link }: Props) => {
+  const { t } = useTranslation("auth");
+  const { t: tChat } = useTranslation("chat");
+  const { t: tSpace } = useTranslation("space");
   const router = useRouter();
 
   if (link.type === InviteType.Friend) {
@@ -87,7 +93,7 @@ export const CodedLinkPreview = observer(({ link }: Props) => {
   const openInvite = () => router.push(`/invite/${link.code}`);
 
   const inviterName =
-    link.inviter?.globalName ?? link.inviter?.username ?? "Someone";
+    link.inviter?.globalName ?? link.inviter?.username ?? tChat("someone");
   const memberCount = link.approximateMemberCount;
   const onlineCount = link.approximatePresenceCount;
 
@@ -98,13 +104,13 @@ export const CodedLinkPreview = observer(({ link }: Props) => {
           <SpaceIcon space={link.space} size={48} />
           <View style={styles.headerText}>
             <Typography weight="bold" numberOfLines={1}>
-              {link.space?.name ?? "Unknown Space"}
+              {link.space?.name ?? tChat("unknownSpace")}
             </Typography>
             {(memberCount != null && memberCount > 0) ||
               (onlineCount != null && onlineCount > 0 && (
                 <Typography level="body-xs" textColor="secondary">
                   {onlineCount != null && onlineCount > 0
-                    ? `${onlineCount.toLocaleString()} Online`
+                    ? `${onlineCount.toLocaleString()} ${tChat("online")}`
                     : ""}
                   {onlineCount != null &&
                   onlineCount > 0 &&
@@ -113,16 +119,14 @@ export const CodedLinkPreview = observer(({ link }: Props) => {
                     ? " • "
                     : ""}
                   {memberCount != null && memberCount > 0
-                    ? `${memberCount.toLocaleString()} Member${
-                        memberCount === 1 ? "" : "s"
-                      }`
+                    ? tSpace("roles.memberCount", { count: memberCount })
                     : ""}
                 </Typography>
               ))}
           </View>
         </View>
         <Typography level="body-xs" textColor="secondary">
-          {inviterName} invited you to join
+          {t("invite.invitedYouToJoin", { name: inviterName })}
           {link.channel?.name ? ` #${link.channel.name}` : ""}
         </Typography>
       </Paper>

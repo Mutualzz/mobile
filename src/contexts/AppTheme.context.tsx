@@ -1,3 +1,4 @@
+import { AdaptiveAppIcon } from "@components/AdaptiveAppIcon";
 import { useAppStore } from "@hooks/useStores";
 import { ThemeProvider, type ThemeProviderRef } from "@mutualzz/ui-native";
 import { Theme } from "@stores/objects/Theme";
@@ -56,5 +57,10 @@ export const AppTheme = observer(({ children }: PropsWithChildren) => {
         return dispose;
     }, [prefersDark]);
 
-    return <ThemeProvider ref={themeProviderRef}>{children}</ThemeProvider>;
+    return (
+        <ThemeProvider ref={themeProviderRef}>
+            <AdaptiveAppIcon />
+            {children}
+        </ThemeProvider>
+    );
 });

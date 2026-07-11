@@ -19,6 +19,7 @@ import { observer } from "mobx-react-lite";
 import { ArrowRightIcon, TrashIcon } from "phosphor-react-native";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   space: Space;
@@ -36,6 +37,8 @@ const RoleRow = observer(
     hierarchyLocked: boolean;
     showDelete: boolean;
   }) => {
+    const { t } = useTranslation("space");
+    const { t: tCommon } = useTranslation("common");
     const { navigate } = useAppNavigation();
     const roleColorSize = useScaledSquareSize(14);
     const memberCount = role.members?.length ?? 0;
@@ -80,10 +83,10 @@ const RoleRow = observer(
           <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
             <Typography level="body-sm" weight={700} truncate="single">
               {role.name}
-              {isEveryone ? " (@everyone)" : ""}
+              {isEveryone ? t("roles.everyoneSuffix") : ""}
             </Typography>
             <Typography level="body-xs" textColor="muted">
-              {memberCount} member{memberCount === 1 ? "" : "s"}
+              {t("roles.memberCount", { count: memberCount })}
             </Typography>
           </Box>
           <ArrowRightIcon size={18} weight="bold" />
@@ -95,7 +98,9 @@ const RoleRow = observer(
             color="danger"
             variant="soft"
             onPress={() => void role.delete()}
-            accessibilityLabel={`Delete ${role.name}`}
+            accessibilityLabel={tCommon("a11y.deleteNamed", {
+              name: role.name,
+            })}
           >
             <TrashIcon weight="fill" />
           </IconButton>
@@ -106,6 +111,7 @@ const RoleRow = observer(
 );
 
 export const SpaceRolesSettings = observer(({ space }: Props) => {
+  const { t } = useTranslation("space");
   const app = useAppStore();
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
@@ -174,14 +180,14 @@ export const SpaceRolesSettings = observer(({ space }: Props) => {
         <Input
           value={search}
           onChangeText={setSearch}
-          placeholder="Search roles..."
+          placeholder={t("roles.searchPlaceholder")}
         />
         <Button
           style={{ alignSelf: "flex-start" }}
           disabled={creating}
           onPress={() => void createRole()}
         >
-          {creating ? "Creating..." : "Create role"}
+          {creating ? t("actions.creating") : t("actions.createRole")}
         </Button>
       </Box>
 

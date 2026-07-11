@@ -8,6 +8,7 @@ import { InputDefault, Box, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
 
 type DeleteMode = "soft" | "hard";
@@ -32,6 +33,8 @@ export const StaffUserDeleteConfirmSheet = observer(
         onHardDeleted,
         modalId,
     }: Props) => {
+        const { t } = useTranslation("staff");
+        const { t: tCommon } = useTranslation("common");
         const app = useAppStore();
         const { closeModal } = useModal();
         const [mode, setMode] = useState<DeleteMode>(
@@ -76,18 +79,18 @@ export const StaffUserDeleteConfirmSheet = observer(
             >
                 <Typography level="body-md" weight={700}>
                     {isHardDelete
-                        ? "Hard Delete Account"
-                        : "Soft Delete Account"}
+                        ? t("user.modals.delete.hardTitle")
+                        : t("user.modals.delete.softTitle")}
                 </Typography>
                 <Typography level="body-sm" textColor="muted">
                     {isHardDelete
-                        ? `This permanently removes @${username}'s account and associated data. Any spaces they own will also be deleted. This cannot be undone.`
-                        : `This soft deletes @${username}'s account. They will be signed out and unable to log back in, but their data is retained.`}
+                        ? t("user.modals.delete.hardBody", { username })
+                        : t("user.modals.delete.softBody", { username })}
                 </Typography>
                 {isFounder && !allowHardDeleteOnly && (
                     <Box style={{ gap: 8 }}>
                         <Typography level="body-sm" weight={700}>
-                            Deletion type
+                            {t("user.modals.delete.type")}
                         </Typography>
                         <Box style={{ flexDirection: "row", gap: 8 }}>
                             <Pressable onPress={() => setMode("soft")}>
@@ -98,7 +101,7 @@ export const StaffUserDeleteConfirmSheet = observer(
                                         mode === "soft" ? undefined : "muted"
                                     }
                                 >
-                                    Soft delete (recommended)
+                                    {t("user.modals.delete.softOption")}
                                 </Typography>
                             </Pressable>
                             <Pressable onPress={() => setMode("hard")}>
@@ -109,7 +112,7 @@ export const StaffUserDeleteConfirmSheet = observer(
                                         mode === "hard" ? undefined : "muted"
                                     }
                                 >
-                                    Hard delete
+                                    {t("user.modals.delete.hardOption")}
                                 </Typography>
                             </Pressable>
                         </Box>
@@ -117,14 +120,16 @@ export const StaffUserDeleteConfirmSheet = observer(
                 )}
                 <InputDefault
                     fullWidth
-                    placeholder="Reason (required)"
+                    placeholder={t("user.modals.reasonRequired")}
                     value={reason}
                     onChangeText={setReason}
                 />
                 <InputDefault
                     fullWidth
                     autoCapitalize="none"
-                    placeholder={`Type ${username} to confirm`}
+                    placeholder={t("user.modals.delete.confirmUsername", {
+                        username,
+                    })}
                     value={confirmUsername}
                     onChangeText={setConfirmUsername}
                 />
@@ -141,10 +146,10 @@ export const StaffUserDeleteConfirmSheet = observer(
                     onPress={() => mutate()}
                 >
                     {isPending
-                        ? "Working..."
+                        ? t("working")
                         : isHardDelete
-                          ? "Hard Delete Account"
-                          : "Soft Delete Account"}
+                          ? t("user.modals.delete.hardTitle")
+                          : t("user.modals.delete.softTitle")}
                 </Button>
                 <Button
                     variant="soft"
@@ -152,7 +157,7 @@ export const StaffUserDeleteConfirmSheet = observer(
                     disabled={isPending}
                     onPress={() => closeModal(modalId)}
                 >
-                    Cancel
+                    {tCommon("cancel")}
                 </Button>
             </Paper>
         );

@@ -11,10 +11,12 @@ import { Box, Typography } from "@mutualzz/ui-native";
 import { useScaledAvatarEditorSizes } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Image, ScrollView, View } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
 
 export default observer(function AvatarEditorScreen() {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const { back } = useAppNavigation();
   const account = app.account;
@@ -48,7 +50,7 @@ export default observer(function AvatarEditorScreen() {
       account.update(updated);
       back();
     } catch (e) {
-      setError(getErrorMessage(e, "Failed to upload avatar"));
+      setError(getErrorMessage(e, t("profile.failedUploadAvatar")));
     } finally {
       setUploading(false);
     }
@@ -91,14 +93,14 @@ export default observer(function AvatarEditorScreen() {
       account.update(updated);
       back();
     } catch (e) {
-      setError(getErrorMessage(e, "Failed to restore avatar"));
+      setError(getErrorMessage(e, t("profile.failedRestoreAvatar")));
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <SettingsScreen title="Avatar Studio" contentStyle={{ flex: 1 }}>
+    <SettingsScreen title={t("profile.avatarStudio")} contentStyle={{ flex: 1 }}>
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 32 }}
@@ -109,10 +111,10 @@ export default observer(function AvatarEditorScreen() {
           elevation={app.settings?.preferEmbossed ? 2 : 0}
         >
           <Typography level="body-md" weight={700}>
-            Avatar studio
+            {t("profile.avatarStudio")}
           </Typography>
           <Typography level="body-sm" textColor="muted">
-            Upload a new avatar or jump in quickly below.
+            {t("profile.avatarStudioDescriptionMobile")}
           </Typography>
         </Paper>
 
@@ -133,11 +135,10 @@ export default observer(function AvatarEditorScreen() {
           elevation={app.settings?.preferEmbossed ? 2 : 0}
         >
           <Typography level="body-md" weight={700}>
-            Current avatar
+            {t("profile.currentAvatar")}
           </Typography>
           <Typography level="body-sm" textColor="muted">
-            Preview your current avatar before switching to another upload or
-            preset.
+            {t("profile.currentAvatarDescription")}
           </Typography>
           <Box style={{ alignItems: "center", paddingVertical: 4 }}>
             <Image
@@ -170,14 +171,14 @@ export default observer(function AvatarEditorScreen() {
             elevation={app.settings?.preferEmbossed ? 2 : 0}
           >
             <Typography level="body-md" weight={700}>
-              Avatar presets
+              {t("profile.avatarPresets")}
             </Typography>
             <Typography level="body-sm" textColor="muted">
-              Reuse a previous avatar from your saved history.
+              {t("profile.avatarPresetsDescription")}
             </Typography>
             {previousAvatars.length === 0 ? (
               <Typography textColor="muted" level="body-sm">
-                No previous avatars yet.
+                {t("profile.noPreviousAvatars")}
               </Typography>
             ) : (
               <Box

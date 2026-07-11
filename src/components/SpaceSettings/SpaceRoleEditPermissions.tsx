@@ -1,7 +1,7 @@
 import { Button } from "@components/Button";
 import {
   filterPermissionGroups,
-  SPACE_PERMISSION_GROUPS,
+  spacePermissionGroups,
 } from "@components/SpaceSettings/permissionGroups";
 import type {
   RoleEditable,
@@ -16,6 +16,7 @@ import {
 import { Box, Divider, Input, Switch, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
 
 interface Props {
@@ -25,15 +26,30 @@ interface Props {
 
 export const SpaceRoleEditPermissions = observer(
   ({ changes, setChanges }: Props) => {
+    const { t } = useTranslation("space");
     const [search, setSearch] = useState("");
 
     const permissions: BitField<PermissionFlags> = changes.allow
       ? BitField.fromString(permissionFlags, changes.allow.toString())
       : BitField.fromString(permissionFlags, "0");
 
+    const groups = useMemo(
+      () =>
+        spacePermissionGroups.map((group) => ({
+          id: group.id,
+          title: t(group.titleKey),
+          items: group.items.map((item) => ({
+            flag: item.flag as PermissionFlag,
+            label: t(item.labelKey),
+            description: t(item.descriptionKey),
+          })),
+        })),
+      [t],
+    );
+
     const visibleGroups = useMemo(
-      () => filterPermissionGroups(SPACE_PERMISSION_GROUPS, search),
-      [search],
+      () => filterPermissionGroups(groups, search),
+      [groups, search],
     );
 
     const togglePermission = (flag: PermissionFlag) => {
@@ -52,7 +68,7 @@ export const SpaceRoleEditPermissions = observer(
         <Input
           value={search}
           onChangeText={setSearch}
-          placeholder="Search permissions..."
+          placeholder={t("roles.permissions.searchPlaceholder")}
         />
 
         <Button
@@ -68,7 +84,7 @@ export const SpaceRoleEditPermissions = observer(
             }))
           }
         >
-          Clear permissions
+          {t("roles.permissions.clear")}
         </Button>
 
         {visibleGroups.length === 0 ? (
@@ -77,11 +93,11 @@ export const SpaceRoleEditPermissions = observer(
             textColor="muted"
             style={{ textAlign: "center", paddingVertical: 24 }}
           >
-            No permissions match your search
+            {t("roles.permissions.emptySearch")}
           </Typography>
         ) : (
           visibleGroups.map((group, groupIndex) => (
-            <Box key={group.title} style={{ gap: 12 }}>
+            <Box key={group.id} style={{ gap: 12 }}>
               <Typography level="body-md" weight={700}>
                 {group.title}
               </Typography>

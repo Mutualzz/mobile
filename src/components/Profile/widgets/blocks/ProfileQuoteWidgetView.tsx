@@ -9,6 +9,7 @@ import { dynamicElevation, formatColor } from "@mutualzz/ui-core";
 import { Box, Stack, Typography, useTheme } from "@mutualzz/ui-native";
 import Color from "color";
 import { QuotesIcon } from "phosphor-react-native";
+import { useTranslation } from "react-i18next";
 
 const readableTextColors = (background: string) => {
   const onDark = Color(background).isDark();
@@ -69,6 +70,7 @@ interface Props {
 }
 
 export function ProfileQuoteWidgetView({ block, size }: Props) {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const { theme } = useTheme();
   const variant = block.variant ?? "default";
@@ -103,7 +105,7 @@ export function ProfileQuoteWidgetView({ block, size }: Props) {
             level="body-sm"
             style={{ color: styles.mutedText as ColorLike }}
           >
-            Quote
+            {t("profile.blocks.quote")}
           </Typography>
         )}
       </Box>

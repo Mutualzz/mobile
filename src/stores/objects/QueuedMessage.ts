@@ -3,6 +3,7 @@ import type { AppStore } from "@stores/App.store";
 import { action, makeObservable, observable } from "mobx";
 import type { Expression } from "./Expression";
 import { MessageBase, messageBaseMobxAnnotations } from "./MessageBase";
+import i18n from "../../i18n";
 
 export enum QueuedMessageStatus {
     Sending = "sending",
@@ -110,7 +111,7 @@ export class QueuedMessage extends MessageBase {
                     ? e.message
                     : typeof e === "string"
                       ? e
-                      : "Unknown error";
+                      : i18n.t("errors.unknown", { ns: "common" });
             this.fail(error);
         }
     }

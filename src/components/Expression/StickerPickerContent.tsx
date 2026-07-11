@@ -13,6 +13,7 @@ import type { Expression } from "@stores/objects/Expression";
 import { canUseSticker } from "@utils/expressions";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useWindowDimensions } from "react-native";
 
 const STICKER_CELL_SIZE = 80;
@@ -28,6 +29,7 @@ interface Props {
 
 export const StickerPickerContent = observer(
   ({ channel, active = true, onSelectSticker, profileMode = false }: Props) => {
+    const { t } = useTranslation("chat");
     const app = useAppStore();
     const { width } = useWindowDimensions();
     const columns = getGridColumnCount(width, STICKER_CELL_SIZE);
@@ -82,7 +84,7 @@ export const StickerPickerContent = observer(
         [
           {
             sectionId: "my-stickers",
-            title: "Your stickers",
+            title: t("picker.yourStickers"),
             cells: toCells(myStickers),
           },
           ...spaceStickerGroups.map(({ space, stickers }) => ({
@@ -94,7 +96,7 @@ export const StickerPickerContent = observer(
         ],
         columns,
       );
-    }, [columns, myStickers, search.trim(), searchResults, spaceStickerGroups]);
+    }, [columns, myStickers, search.trim(), searchResults, spaceStickerGroups, t]);
 
     const emptyLabel =
       allStickers.length === 0 && !search.trim() ? (
@@ -103,7 +105,7 @@ export const StickerPickerContent = observer(
           textColor="muted"
           style={{ textAlign: "center" }}
         >
-          No stickers yet. Upload some in User or Space settings.
+          {t("picker.emptyStickers")}
         </Typography>
       ) : search.trim() && searchResults.length === 0 ? (
         <Typography
@@ -111,7 +113,7 @@ export const StickerPickerContent = observer(
           textColor="muted"
           style={{ textAlign: "center" }}
         >
-          No results
+          {t("picker.noResults")}
         </Typography>
       ) : null;
 
@@ -121,7 +123,7 @@ export const StickerPickerContent = observer(
           <Input
             value={search}
             onChangeText={setSearch}
-            placeholder="Search stickers…"
+            placeholder={t("picker.searchStickers")}
             variant="soft"
             color="neutral"
             style={{ borderRadius: 8 }}

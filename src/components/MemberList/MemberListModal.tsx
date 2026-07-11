@@ -8,6 +8,7 @@ import { XIcon } from "phosphor-react-native";
 import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -24,6 +25,7 @@ interface Props {
 
 export const MemberListModal = observer(
   ({ channel, visible, onClose }: Props) => {
+    const { t } = useTranslation("chat");
     const app = useAppStore();
     const space = channel.spaceId ? app.spaces.get(channel.spaceId) : null;
     const store = space?.memberLists.get(channel.listId);
@@ -101,7 +103,9 @@ export const MemberListModal = observer(
         >
           <ScreenHeader safeTop>
             <Typography level="body-md" weight="bold" style={{ flex: 1 }}>
-              Members — {memberCount || loadedCount}
+              {t("groupDm.membersCount", {
+                value: memberCount || loadedCount,
+              })}
             </Typography>
             <IconButton padding={8} onPress={onClose}>
               <XIcon size={20} />
@@ -118,7 +122,7 @@ export const MemberListModal = observer(
                 flex: 1,
               }}
             >
-              Loading members...
+              {t("loadingMembersEllipsis")}
             </Typography>
           ) : sections.length === 0 ? (
             <Typography
@@ -130,7 +134,7 @@ export const MemberListModal = observer(
                 flex: 1,
               }}
             >
-              No members to show.
+              {t("noMembersToShow")}
             </Typography>
           ) : (
             <ScrollView
@@ -175,7 +179,7 @@ export const MemberListModal = observer(
                     paddingVertical: 16,
                   }}
                 >
-                  Loading more members...
+                  {t("loadingMoreMembers")}
                 </Typography>
               )}
             </ScrollView>

@@ -11,7 +11,8 @@ import Snowflake from "@utils/Snowflake";
 import { CheckIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { useTranslation } from "react-i18next";
+import { ScrollView, View } from "react-native";
 
 interface Props {
   visible: boolean;
@@ -25,12 +26,16 @@ function ShareRow({
   sent,
   sending,
   onSend,
+  sendLabel,
+  sendingLabel,
 }: {
   avatar: React.ReactNode;
   name: React.ReactNode;
   sent: boolean;
   sending: boolean;
   onSend: () => void;
+  sendLabel: string;
+  sendingLabel: string;
 }) {
   return (
     <Box
@@ -53,13 +58,14 @@ function ShareRow({
         disabled={sent || sending}
         onPress={onSend}
       >
-        {sent ? <CheckIcon size={16} /> : sending ? "Sending…" : "Send"}
+        {sent ? <CheckIcon size={16} /> : sending ? sendingLabel : sendLabel}
       </Button>
     </Box>
   );
 }
 
 export const SharePostSheet = observer(({ visible, post, onClose }: Props) => {
+  const { t } = useTranslation("chat");
   const app = useAppStore();
   const [sentTo, setSentTo] = useState<Set<string>>(new Set());
   const [sendingTo, setSendingTo] = useState<Set<string>>(new Set());
@@ -132,7 +138,10 @@ export const SharePostSheet = observer(({ visible, post, onClose }: Props) => {
         paddingVertical: 0,
       }}
     >
-      <View pointerEvents="box-none" style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}>
+      <View
+        pointerEvents="box-none"
+        style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
+      >
         <Paper
           style={{
             borderTopLeftRadius: 16,
@@ -144,13 +153,13 @@ export const SharePostSheet = observer(({ visible, post, onClose }: Props) => {
           elevation={4}
         >
           <Typography level="body-lg" weight={700}>
-            Share post
+            {t("feed.share.title")}
           </Typography>
 
           <ScrollView contentContainerStyle={{ gap: 12 }}>
             {hasNothingToShow && (
               <Typography level="body-sm" textColor="muted">
-                You don't have any conversations or friends to share with yet.
+                {t("feed.empty.shareTargets")}
               </Typography>
             )}
 
@@ -177,6 +186,8 @@ export const SharePostSheet = observer(({ visible, post, onClose }: Props) => {
                   }
                   sent={sentTo.has(channel.id)}
                   sending={sendingTo.has(channel.id)}
+                  sendLabel={t("feed.share.send")}
+                  sendingLabel={t("feed.share.sending")}
                   onSend={() => {
                     void sendToChannel(channel, channel.id);
                   }}
@@ -191,6 +202,8 @@ export const SharePostSheet = observer(({ visible, post, onClose }: Props) => {
                 name={friend.displayName}
                 sent={sentTo.has(`friend:${friend.id}`)}
                 sending={sendingTo.has(`friend:${friend.id}`)}
+                sendLabel={t("feed.share.send")}
+                sendingLabel={t("feed.share.sending")}
                 onSend={() => {
                   void sendToFriend(friend);
                 }}
@@ -199,7 +212,7 @@ export const SharePostSheet = observer(({ visible, post, onClose }: Props) => {
           </ScrollView>
 
           <Button variant="soft" onPress={onClose}>
-            Done
+            {t("feed.share.done")}
           </Button>
         </Paper>
       </View>

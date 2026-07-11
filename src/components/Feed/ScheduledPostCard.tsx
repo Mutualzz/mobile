@@ -18,6 +18,7 @@ import dayjs from "dayjs";
 import { TrashIcon, XIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Platform, Pressable, useWindowDimensions } from "react-native";
 
 interface Props {
@@ -25,6 +26,7 @@ interface Props {
 }
 
 export const ScheduledPostCard = observer(({ post }: Props) => {
+  const { t } = useTranslation("chat");
   const app = useAppStore();
   const { theme } = useTheme();
   const { width } = useWindowDimensions();
@@ -73,13 +75,16 @@ export const ScheduledPostCard = observer(({ post }: Props) => {
           <UserAvatar user={post.author} size="md" />
           <Box style={{ flex: 1, minWidth: 0 }}>
             <Typography level="body-md" weight={700} truncate="single">
-              {post.author?.displayName ?? "Unknown User"}
+              {post.author?.displayName ?? t("unknownUser")}
             </Typography>
             <Typography level="body-xs" textColor="muted">
-              Scheduled for{" "}
               {post.scheduledFor
-                ? dayjs(post.scheduledFor).format("dddd, MMMM D, YYYY h:mm A")
-                : "unknown"}
+                ? t("feed.scheduled.scheduledFor", {
+                    datetime: dayjs(post.scheduledFor).format(
+                      "dddd, MMMM D, YYYY h:mm A",
+                    ),
+                  })
+                : t("feed.scheduled.scheduledForUnknown")}
             </Typography>
           </Box>
         </Box>
@@ -182,15 +187,15 @@ export const ScheduledPostCard = observer(({ post }: Props) => {
             disabled={nextDate.getTime() <= Date.now() || isRescheduling}
             onPress={() => reschedule(nextDate)}
           >
-            Save time
+            {t("feed.scheduled.saveTime")}
           </Button>
         ) : (
           <Button size="sm" variant="soft" onPress={() => setRescheduling(true)}>
-            Reschedule
+            {t("feed.scheduled.reschedule")}
           </Button>
         )}
         <Button size="sm" disabled={isPublishing} onPress={() => publishNow()}>
-          Publish now
+          {t("feed.scheduled.publishNow")}
         </Button>
       </Box>
     </Paper>

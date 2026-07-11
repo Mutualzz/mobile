@@ -1,6 +1,7 @@
 import { useAppStore } from "@hooks/useStores";
 import { Box, Divider, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import { ThemeCreatorAdaptivePage } from "./ThemeCreatorAdaptivePage";
 import { ThemeCreatorBasePage } from "./ThemeCreatorBasePage";
 import { ThemeCreatorFeedbackPage } from "./ThemeCreatorFeedbackPage";
@@ -15,6 +16,7 @@ const SectionHeader = ({ title }: { title: string }) => (
 );
 
 export const ThemeCreatorColorsPage = observer(() => {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const { values } = app.themeCreator;
 
@@ -24,11 +26,11 @@ export const ThemeCreatorColorsPage = observer(() => {
 
   return (
     <Box style={{ gap: 12 }}>
-      <SectionHeader title="Base" />
+      <SectionHeader title={t("themeCreator.sections.base")} />
       <ThemeCreatorBasePage />
-      <SectionHeader title="Semantic" />
+      <SectionHeader title={t("themeCreator.sections.semantic")} />
       <ThemeCreatorFeedbackPage />
-      <SectionHeader title="Typography" />
+      <SectionHeader title={t("themeCreator.sections.typography")} />
       <ThemeCreatorTypographyPage />
     </Box>
   );

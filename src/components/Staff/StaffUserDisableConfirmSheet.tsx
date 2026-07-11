@@ -8,6 +8,7 @@ import { InputDefault, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
     userId: string;
@@ -19,6 +20,8 @@ interface Props {
 
 export const StaffUserDisableConfirmSheet = observer(
     ({ userId, username, disable, onSuccess, modalId }: Props) => {
+        const { t } = useTranslation("staff");
+        const { t: tCommon } = useTranslation("common");
         const app = useAppStore();
         const { closeModal } = useModal();
         const [reason, setReason] = useState("");
@@ -49,20 +52,21 @@ export const StaffUserDisableConfirmSheet = observer(
                 elevation={app.settings?.preferEmbossed ? 4 : 2}
             >
                 <Typography level="body-md" weight={700}>
-                    {disable ? "Disable Account" : "Enable Account"}
+                    {disable
+                        ? t("user.modals.disable.title")
+                        : t("user.modals.disable.enableTitle")}
                 </Typography>
                 <Typography level="body-sm" textColor="muted">
-                    Are you sure you want to {disable ? "disable" : "re-enable"}{" "}
-                    @{username}&apos;s account?
-                    {disable &&
-                        " They will be signed out and unable to log back in until re-enabled."}
+                    {disable
+                        ? t("user.modals.disable.bodyDisable", { username })
+                        : t("user.modals.disable.bodyEnable", { username })}
                 </Typography>
                 <InputDefault
                     fullWidth
                     placeholder={
                         disable
-                            ? "Reason (required)"
-                            : "Reason (optional)"
+                            ? t("user.modals.reasonRequired")
+                            : t("user.modals.reasonOptional")
                     }
                     value={reason}
                     onChangeText={setReason}
@@ -78,10 +82,10 @@ export const StaffUserDisableConfirmSheet = observer(
                     onPress={() => mutate()}
                 >
                     {isPending
-                        ? "Working..."
+                        ? t("working")
                         : disable
-                          ? "Disable Account"
-                          : "Enable Account"}
+                          ? t("user.modals.disable.title")
+                          : t("user.modals.disable.enableTitle")}
                 </Button>
                 <Button
                     variant="soft"
@@ -89,7 +93,7 @@ export const StaffUserDisableConfirmSheet = observer(
                     disabled={isPending}
                     onPress={() => closeModal(modalId)}
                 >
-                    Cancel
+                    {tCommon("cancel")}
                 </Button>
             </Paper>
         );

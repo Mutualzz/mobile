@@ -15,6 +15,7 @@ import { Box, Modal, Typography, useTheme } from "@mutualzz/ui-native";
 import { ArrowLeftIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface Props {
@@ -29,6 +30,7 @@ export const AvatarDrawEditor = observer(
     const app = useAppStore();
     const { theme } = useTheme();
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation("settings");
     const account = app.account;
 
     const [canvasKey, setCanvasKey] = useState(0);
@@ -54,7 +56,7 @@ export const AvatarDrawEditor = observer(
 
     const uploadDrawnAvatar = async (state: DrawCanvasState) => {
       if (state.strokes.length === 0) {
-        setError("Draw something before saving.");
+        setError(t("profile.avatar.draw.drawBeforeSaving"));
         return;
       }
 
@@ -66,7 +68,7 @@ export const AvatarDrawEditor = observer(
           circular: true,
         });
         if (!base64) {
-          throw new Error("Failed to export drawing");
+          throw new Error(t("profile.avatar.draw.failedExportDrawing"));
         }
 
         const formData = new FormData();
@@ -84,7 +86,7 @@ export const AvatarDrawEditor = observer(
         onUploaded?.();
         handleClose();
       } catch (e) {
-        setError(getErrorMessage(e, "Failed to upload avatar"));
+        setError(getErrorMessage(e, t("profile.failedUploadAvatar")));
       } finally {
         setSaving(false);
       }
@@ -126,13 +128,13 @@ export const AvatarDrawEditor = observer(
             <IconButton
               padding={6}
               onPress={handleClose}
-              accessibilityLabel="Back"
+              accessibilityLabel={t("profile.avatar.draw.back")}
               disabled={saving}
             >
               <ArrowLeftIcon size={20} />
             </IconButton>
             <Typography level="title-md" weight="bold">
-              Draw avatar
+              {t("profile.avatar.draw.drawAvatarTitle")}
             </Typography>
           </Box>
 
@@ -149,7 +151,11 @@ export const AvatarDrawEditor = observer(
               canvasSize={AVATAR_DRAW_CANVAS_SIZE}
               maskShape="circle"
               defaultBackgroundColor="#ffffff"
-              saveLabel={saving ? "Uploading..." : "Save avatar"}
+              saveLabel={
+                saving
+                  ? t("expressions.uploading")
+                  : t("profile.avatar.draw.saveAvatar")
+              }
               disableActions={saving}
               onCancel={handleClose}
               onSave={(state) => {

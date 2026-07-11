@@ -12,13 +12,14 @@ import type { GifResult } from "@utils/gifs";
 import type { PickerEmoji, SkinTone } from "@utils/emojis/emojiPickerData";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export type ExpressionPickerTab = "emoji" | "gifs" | "stickers";
 
 interface Props {
-  visible: boolean;
+  visible?: boolean;
   onClose: () => void;
   channel?: Channel | null;
   initialTab?: ExpressionPickerTab;
@@ -27,21 +28,23 @@ interface Props {
   onSelectCustomEmoji: (expression: Expression) => void;
   onSelectGif: (gif: GifResult) => void;
   onSelectSticker: (sticker: Expression) => void;
+  /** Panel only — use with ModalRoot to avoid nested RN Modals. */
+  embedded?: boolean;
 }
 
-const TABS: {
+const TAB_DEFS: {
   id: ExpressionPickerTab;
-  label: string;
+  labelKey: "picker.tabs.emoji" | "picker.tabs.gifs" | "picker.tabs.stickers";
   Icon: typeof SmileyIcon;
 }[] = [
-  { id: "emoji", label: "Emoji", Icon: SmileyIcon },
-  { id: "gifs", label: "GIFs", Icon: GifIcon },
-  { id: "stickers", label: "Stickers", Icon: StickerIcon },
+  { id: "emoji", labelKey: "picker.tabs.emoji", Icon: SmileyIcon },
+  { id: "gifs", labelKey: "picker.tabs.gifs", Icon: GifIcon },
+  { id: "stickers", labelKey: "picker.tabs.stickers", Icon: StickerIcon },
 ];
 
 export const ExpressionPickerSheet = observer(
   ({
-    visible,
+    visible = true,
     onClose,
     channel,
     initialTab = "emoji",
@@ -50,35 +53,26 @@ export const ExpressionPickerSheet = observer(
     onSelectCustomEmoji,
     onSelectGif,
     onSelectSticker,
+    embedded = false,
   }: Props) => {
+    const { t } = useTranslation("chat");
     const app = useAppStore();
     const { theme } = useTheme();
     const insets = useSafeAreaInsets();
     const { height } = useWindowDimensions();
     const [tab, setTab] = useState<ExpressionPickerTab>(initialTab);
+    const isActive = embedded || visible;
 
     useEffect(() => {
-      if (!visible) return;
+      if (!isActive) return;
       setTab(initialTab);
-    }, [visible, initialTab]);
+    }, [isActive, initialTab]);
 
     const tabs = showStickers
-      ? TABS
-      : TABS.filter((entry) => entry.id !== "stickers");
+      ? TAB_DEFS
+      : TAB_DEFS.filter((entry) => entry.id !== "stickers");
 
-    return (
-      <Modal
-        open={visible}
-        onClose={onClose}
-        layout="fullscreen"
-        showCloseButton={false}
-        style={{
-          justifyContent: "flex-end",
-          alignItems: "stretch",
-          backgroundColor: "transparent",
-          paddingVertical: 0,
-        }}
-      >
+    const panel = (
         <View
           pointerEvents="box-none"
           style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
@@ -110,7 +104,7 @@ export const ExpressionPickerSheet = observer(
                   gap: 4,
                 }}
               >
-                {tabs.map(({ id, label, Icon }) => {
+                {tabs.map(({ id, labelKey, Icon }) => {
                   const active = tab === id;
                   return (
                     <Pressable
@@ -152,7 +146,7 @@ export const ExpressionPickerSheet = observer(
                             : theme.typography.colors.muted,
                         }}
                       >
-                        {label}
+                        {t(labelKey)}
                       </Typography>
                     </Pressable>
                   );
@@ -180,7 +174,7 @@ export const ExpressionPickerSheet = observer(
 
               {tab === "gifs" && (
                 <GifPickerContent
-                  active={visible && tab === "gifs"}
+                  active={isActive && tab === "gifs"}
                   onSelectGif={(gif) => {
                     onSelectGif(gif);
                     onClose();
@@ -197,6 +191,24 @@ export const ExpressionPickerSheet = observer(
             </Box>
           </Paper>
         </View>
+    );
+
+    if (embedded) return panel;
+
+    return (
+      <Modal
+        open={visible}
+        onClose={onClose}
+        layout="fullscreen"
+        showCloseButton={false}
+        style={{
+          justifyContent: "flex-end",
+          alignItems: "stretch",
+          backgroundColor: "transparent",
+          paddingVertical: 0,
+        }}
+      >
+        {panel}
       </Modal>
     );
   },

@@ -6,6 +6,7 @@ import { ArrowLeftIcon, XIcon } from "phosphor-react-native";
 import type { Href } from "expo-router";
 import { useNavigation } from "expo-router";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
 
 interface Props {
@@ -17,16 +18,12 @@ interface Props {
 }
 
 export const StaffHeader = observer(
-  ({
-    title,
-    showBack = false,
-    backHref,
-    backLabel = "Staff Panel",
-    onClose,
-  }: Props) => {
+  ({ title, showBack = false, backHref, backLabel, onClose }: Props) => {
+    const { t } = useTranslation("staff");
     const { back, navigate } = useAppNavigation();
     const navigation = useNavigation();
     const { theme } = useTheme();
+    const resolvedBackLabel = backLabel ?? t("title");
 
     const iconColor = theme.typography.colors.primary;
 
@@ -69,7 +66,7 @@ export const StaffHeader = observer(
           >
             <ArrowLeftIcon size={22} weight="bold" color={iconColor} />
             <Typography level="body-sm" weight="bold">
-              {backLabel}
+              {resolvedBackLabel}
             </Typography>
           </Pressable>
         )}

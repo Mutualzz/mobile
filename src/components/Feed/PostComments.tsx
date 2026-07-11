@@ -8,6 +8,7 @@ import { MessageSticker } from "@components/Message/MessageSticker";
 import { ReportContentSheet } from "@components/Report/ReportContentSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useModal } from "@hooks/useModal";
+import { useOpenBottomSheet } from "@hooks/useOpenBottomSheet";
 import { useAppStore } from "@hooks/useStores";
 import { useOnKeyboardOpen } from "@hooks/useKeyboardOffset";
 import { ExpressionType } from "@mutualzz/types";
@@ -29,6 +30,7 @@ import {
 } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Image, Keyboard, Pressable, ScrollView } from "react-native";
 
 interface Props {
@@ -84,6 +86,7 @@ function CommentRow({
   onReply: (comment: PostComment) => void;
 }) {
   const { openModal } = useModal();
+  const { t } = useTranslation("chat");
 
   return (
     <Box style={{ flexDirection: "row", gap: 10 }}>
@@ -99,7 +102,7 @@ function CommentRow({
         >
           <Box style={{ flex: 1, minWidth: 0 }}>
             <Typography level="body-sm" weight={700} truncate="single">
-              {comment.author?.displayName ?? "Unknown User"}
+              {comment.author?.displayName ?? t("unknownUser")}
             </Typography>
             <Typography level="body-xs" textColor="muted">
               {dayjs(comment.createdAt).fromNow()}
@@ -127,7 +130,7 @@ function CommentRow({
                     <ReportContentSheet
                       targetType="comment"
                       targetId={comment.id}
-                      contentLabel="this comment"
+                      contentLabel={t("feed.report.thisComment")}
                       modalId={`report-comment-${comment.id}`}
                     />,
                   )
@@ -143,7 +146,7 @@ function CommentRow({
 
         <Pressable onPress={() => onReply(comment)}>
           <Typography level="body-xs" weight={600} textColor="muted">
-            Reply
+            {t("feed.comments.reply")}
           </Typography>
         </Pressable>
       </Box>
@@ -153,12 +156,13 @@ function CommentRow({
 
 export const PostComments = observer(({ post }: Props) => {
   const app = useAppStore();
+  const { t } = useTranslation("chat");
+  const { openBottomSheet, closeBottomSheet } = useOpenBottomSheet();
   const feedSizes = useScaledFeedPreviewSizes();
   const scrollRef = useRef<ScrollView>(null);
   const [content, setContent] = useState("");
   const [stickers, setStickers] = useState<Expression[]>([]);
   const [replyingTo, setReplyingTo] = useState<PostComment | null>(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
 
   const { isLoading } = useQuery({
@@ -198,14 +202,30 @@ export const PostComments = observer(({ post }: Props) => {
       if (prev.length >= MAX_STICKERS) return prev;
       return [...prev, sticker];
     });
-    setPickerOpen(false);
+    closeBottomSheet("post-comment-picker");
   };
 
   const handleGif = (gif: GifResult) => {
     const url = resolveGifSendUrl(gif);
     const needsSpace = content.length > 0 && !/\s$/.test(content);
     setContent((prev) => `${prev}${needsSpace ? " " : ""}${url}`);
-    setPickerOpen(false);
+    closeBottomSheet("post-comment-picker");
+  };
+
+  const openPicker = () => {
+    openBottomSheet(
+      "post-comment-picker",
+      <ExpressionPickerSheet
+        embedded
+        onClose={() => closeBottomSheet("post-comment-picker")}
+        initialTab="stickers"
+        onSelectEmoji={() => closeBottomSheet("post-comment-picker")}
+        onSelectCustomEmoji={() => closeBottomSheet("post-comment-picker")}
+        onSelectSticker={handleSelectSticker}
+        onSelectGif={handleGif}
+        showStickers
+      />,
+    );
   };
 
   const handleReply = (comment: PostComment) => {
@@ -256,7 +276,9 @@ export const PostComments = observer(({ post }: Props) => {
               }}
             >
               <Typography level="body-xs" textColor="muted">
-                Replying to {replyingTo.author?.displayName ?? "Unknown"}
+                {t("reply.banner", {
+                  name: replyingTo.author?.displayName ?? t("unknown"),
+                })}
               </Typography>
               <IconButton
                 variant="plain"
@@ -306,8 +328,12 @@ export const PostComments = observer(({ post }: Props) => {
                 onChangeSelection={setSelection}
                 placeholder={
                   replyingTo
-                    ? `Reply to ${replyingTo.author?.displayName ?? "comment"}…`
-                    : "Write a comment…"
+                    ? t("feed.comments.replyPlaceholder", {
+                        name:
+                          replyingTo.author?.displayName ??
+                          t("feed.comments.replyFallback"),
+                      })
+                    : t("feed.comments.placeholder")
                 }
                 style={{ minHeight: feedSizes.commentComposerMinHeight }}
               />
@@ -315,7 +341,7 @@ export const PostComments = observer(({ post }: Props) => {
             <IconButton
               variant="plain"
               padding={6}
-              onPress={() => setPickerOpen(true)}
+              onPress={openPicker}
             >
               <SmileyIcon size={20} />
             </IconButton>
@@ -341,13 +367,13 @@ export const PostComments = observer(({ post }: Props) => {
       >
         {isLoading && (
           <Typography level="body-sm" textColor="muted">
-            Loading comments…
+            {t("feed.comments.loading")}
           </Typography>
         )}
 
         {!isLoading && post.comments.count === 0 && (
           <Typography level="body-sm" textColor="muted">
-            No comments yet.
+            {t("feed.empty.comments")}
           </Typography>
         )}
 
@@ -376,17 +402,6 @@ export const PostComments = observer(({ post }: Props) => {
           </Box>
         ))}
       </ScrollView>
-
-      <ExpressionPickerSheet
-        visible={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        initialTab="stickers"
-        onSelectEmoji={() => setPickerOpen(false)}
-        onSelectCustomEmoji={() => setPickerOpen(false)}
-        onSelectSticker={handleSelectSticker}
-        onSelectGif={handleGif}
-        showStickers
-      />
     </KeyboardComposer>
   );
 });

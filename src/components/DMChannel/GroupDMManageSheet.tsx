@@ -10,6 +10,7 @@ import type { Channel } from "@stores/objects/Channel";
 import type { User } from "@stores/objects/User";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Image, Pressable } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
 import {
@@ -28,6 +29,8 @@ interface Props {
 export const GroupDMManageSheet = observer(
   ({ visible, onClose, channel }: Props) => {
     const app = useAppStore();
+    const { t } = useTranslation("chat");
+    const { t: tCommon } = useTranslation("common");
     const { navigate } = useAppNavigation();
     const { theme } = useTheme();
 
@@ -88,7 +91,7 @@ export const GroupDMManageSheet = observer(
       } catch (e) {
         const err = e as HttpException;
         setError(
-          err?.errors?.[0]?.message ?? err?.message ?? "Failed to save group",
+          err?.errors?.[0]?.message ?? err?.message ?? t("groupDm.saveFailed"),
         );
       } finally {
         setSaving(false);
@@ -104,7 +107,7 @@ export const GroupDMManageSheet = observer(
         onClose();
         navigate("/@me", { replace: true });
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to leave group");
+        setError(e instanceof Error ? e.message : t("groupDm.leaveFailed"));
       } finally {
         setSaving(false);
       }
@@ -119,7 +122,7 @@ export const GroupDMManageSheet = observer(
         onClose();
         navigate("/@me", { replace: true });
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to delete group");
+        setError(e instanceof Error ? e.message : t("groupDm.deleteFailed"));
       } finally {
         setSaving(false);
       }
@@ -138,7 +141,7 @@ export const GroupDMManageSheet = observer(
         setError(
           err?.errors?.[0]?.message ??
             err?.message ??
-            "Failed to remove member",
+            t("groupDm.removeMemberFailed"),
         );
       } finally {
         setRemovingUserId(null);
@@ -151,9 +154,8 @@ export const GroupDMManageSheet = observer(
       <BottomSheet
         open={visible}
         onClose={onClose}
-        title="Manage Group"
+        title={t("groupDm.manage.title")}
         maxHeight="90%"
-        scrollable
         keyboard="lift"
         elevation={app.settings?.preferEmbossed ? 4 : 2}
         sheetStyle={{ gap: 16 }}
@@ -185,7 +187,7 @@ export const GroupDMManageSheet = observer(
               >
                 <CameraIcon size={18} color={theme.typography.colors.muted} />
                 <Typography level="body-xs" textColor="muted">
-                  Icon
+                  {t("groupDm.manage.icon")}
                 </Typography>
               </Box>
             )}
@@ -202,26 +204,26 @@ export const GroupDMManageSheet = observer(
                 setRemoveIcon(true);
               }}
             >
-              Remove icon
+              {t("groupDm.manage.removeIcon")}
             </Button>
           )}
         </Box>
 
         <Box style={{ gap: 6 }}>
           <Typography level="body-sm" weight={600}>
-            Group name
+            {t("groupDm.manage.groupName")}
           </Typography>
           <InputDefault
             fullWidth
             value={name}
             onChangeText={setName}
-            placeholder="e.g. Game Night"
+            placeholder={t("groupDm.namePlaceholder")}
           />
         </Box>
 
         <Box style={{ gap: 8 }}>
           <Typography level="body-sm" weight={600}>
-            Members ({members.length})
+            {t("groupDm.manage.members")} ({members.length})
           </Typography>
 
           <Box style={{ gap: 8, maxHeight: membersListMaxHeight }}>
@@ -254,7 +256,7 @@ export const GroupDMManageSheet = observer(
                       truncate="single"
                     >
                       {member.displayName}
-                      {isSelf ? " (you)" : ""}
+                      {isSelf ? ` ${t("groupDm.manage.you")}` : ""}
                     </Typography>
                   </Box>
 
@@ -267,7 +269,9 @@ export const GroupDMManageSheet = observer(
                       startDecorator={<UserMinusIcon size={14} weight="fill" />}
                       onPress={() => void removeMember(member)}
                     >
-                      {removingUserId === member.id ? "Removing…" : "Remove"}
+                      {removingUserId === member.id
+                        ? t("groupDm.manage.removing")
+                        : t("groupDm.manage.remove")}
                     </Button>
                   )}
                 </Box>
@@ -278,7 +282,7 @@ export const GroupDMManageSheet = observer(
 
         <Box style={{ gap: 8 }}>
           <Button disabled={!hasChanges || saving} onPress={() => void save()}>
-            Save changes
+            {t("groupDm.manage.saveChanges")}
           </Button>
 
           <Button
@@ -289,7 +293,7 @@ export const GroupDMManageSheet = observer(
             onPress={() => void leave()}
             disabled={saving}
           >
-            Leave group
+            {t("groupDm.manage.leaveGroup")}
           </Button>
 
           {isOwner && (
@@ -301,7 +305,7 @@ export const GroupDMManageSheet = observer(
               onPress={() => void deleteGroup()}
               disabled={saving}
             >
-              Delete group
+              {t("groupDm.manage.deleteGroup")}
             </Button>
           )}
         </Box>
@@ -317,7 +321,7 @@ export const GroupDMManageSheet = observer(
         )}
 
         <Button variant="plain" color="neutral" onPress={onClose}>
-          Cancel
+          {tCommon("cancel")}
         </Button>
       </BottomSheet>
     );

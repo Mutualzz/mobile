@@ -16,6 +16,7 @@ import {
     View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 interface ApiErrors {
     email?: string;
@@ -26,19 +27,19 @@ interface ApiErrors {
     dateOfBirth?: string;
 }
 
-const MONTHS = [
-    { value: "01", name: "January" },
-    { value: "02", name: "February" },
-    { value: "03", name: "March" },
-    { value: "04", name: "April" },
-    { value: "05", name: "May" },
-    { value: "06", name: "June" },
-    { value: "07", name: "July" },
-    { value: "08", name: "August" },
-    { value: "09", name: "September" },
-    { value: "10", name: "October" },
-    { value: "11", name: "November" },
-    { value: "12", name: "December" },
+const MONTH_VALUES = [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "10",
+    "11",
+    "12",
 ] as const;
 
 const parseDobParts = (value: unknown) => {
@@ -70,6 +71,7 @@ export const DOBInput = ({
     apiErrors: ApiErrors;
     required?: boolean;
 }) => {
+    const { t } = useTranslation("auth");
     const { theme } = useTheme();
     const insets = useSafeAreaInsets();
     const { height: windowHeight } = useWindowDimensions();
@@ -82,7 +84,10 @@ export const DOBInput = ({
     );
     const [monthOpen, setMonthOpen] = useState(false);
 
-    const selectedMonth = MONTHS.find((entry) => entry.value === month);
+    const selectedMonthValue = MONTH_VALUES.find((value) => value === month);
+    const selectedMonthName = selectedMonthValue
+        ? t(`dob.months.${selectedMonthValue}`)
+        : undefined;
 
     const commitDate = (
         nextMonth: string,
@@ -135,7 +140,7 @@ export const DOBInput = ({
                     onPress={() => setMonthOpen(true)}
                     style={{ flex: 1.4, minWidth: 0 }}
                     accessibilityRole="button"
-                    accessibilityLabel="Select month"
+                    accessibilityLabel={t("dob.selectMonth")}
                 >
                     <Box
                         pointerEvents="none"
@@ -150,10 +155,10 @@ export const DOBInput = ({
                     >
                         <Typography
                             level="body-sm"
-                            textColor={selectedMonth ? "primary" : "muted"}
+                            textColor={selectedMonthName ? "primary" : "muted"}
                             truncate="single"
                         >
-                            {selectedMonth?.name ?? "Month"}
+                            {selectedMonthName ?? t("dob.month")}
                         </Typography>
                     </Box>
                 </Pressable>
@@ -167,7 +172,7 @@ export const DOBInput = ({
                             commitDate(month, text, year);
                         }}
                         onBlur={field.handleBlur}
-                        placeholder="Day"
+                        placeholder={t("dob.day")}
                         keyboardType="number-pad"
                         maxLength={2}
                     />
@@ -182,7 +187,7 @@ export const DOBInput = ({
                             commitDate(month, day, text);
                         }}
                         onBlur={field.handleBlur}
-                        placeholder="Year"
+                        placeholder={t("dob.year")}
                         keyboardType="number-pad"
                         maxLength={4}
                     />
@@ -222,18 +227,18 @@ export const DOBInput = ({
                             }}
                         >
                             <Typography level="title-sm" weight="bold">
-                                Select month
+                                {t("dob.selectMonth")}
                             </Typography>
                         </Box>
                         <ScrollView keyboardShouldPersistTaps="handled">
-                            {MONTHS.map((entry) => {
-                                const active = entry.value === month;
+                            {MONTH_VALUES.map((value) => {
+                                const active = value === month;
                                 return (
                                     <Pressable
-                                        key={entry.value}
+                                        key={value}
                                         onPress={() => {
-                                            setMonth(entry.value);
-                                            commitDate(entry.value, day, year);
+                                            setMonth(value);
+                                            commitDate(value, day, year);
                                             setMonthOpen(false);
                                             field.handleBlur();
                                         }}
@@ -255,7 +260,7 @@ export const DOBInput = ({
                                                           .primary,
                                             }}
                                         >
-                                            {entry.name}
+                                            {t(`dob.months.${value}`)}
                                         </Typography>
                                     </Pressable>
                                 );
@@ -276,7 +281,7 @@ export const DOBInput = ({
                 </Typography>
             )}
             <Typography level="body-xs" textColor="muted">
-                You must be at least 13 years old. Latest birth year: {maxYear}.
+                {t("dob.ageHint", { maxYear })}
             </Typography>
         </Box>
     );

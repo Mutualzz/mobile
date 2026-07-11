@@ -4,6 +4,7 @@ import { Typography } from "@mutualzz/ui-native";
 import { calendarStrings } from "@utils/i18n";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
 
 export const Time = ({
@@ -17,9 +18,11 @@ export const Time = ({
     onPressTime,
     typographyProps,
     pressableProps,
-    accessibilityLabelPrefix = "Time",
+    accessibilityLabelPrefix,
 }: TimeProps) => {
+    const { t } = useTranslation("common");
     const [, forceTick] = useState(0);
+    const labelPrefix = accessibilityLabelPrefix ?? t("a11y.time");
 
     useEffect(() => {
         if (!refreshIntervalMs) return;
@@ -71,8 +74,8 @@ export const Time = ({
 
     const a11yLabel = useMemo(() => {
         const relLong = d.fromNow();
-        return `${accessibilityLabelPrefix}: ${calendarText}. (${relLong}).`;
-    }, [accessibilityLabelPrefix, calendarText, d]);
+        return `${labelPrefix}: ${calendarText}. (${relLong}).`;
+    }, [labelPrefix, calendarText, d]);
 
     const handlePress = useCallback(() => {
         onPressTime?.({ raw: value, iso, unixMs });

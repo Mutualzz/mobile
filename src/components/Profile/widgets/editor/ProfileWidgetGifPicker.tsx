@@ -4,7 +4,9 @@ import { BottomSheet } from "@components/Keyboard/BottomSheet";
 import { resolveGifImageBlockSrc } from "@mutualzz/ui-core";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { GifResult } from "@utils/gifs";
+import { useModalSheetMaxHeight } from "@utils/modalSheet";
 import { XIcon } from "phosphor-react-native";
+import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -21,8 +23,12 @@ export function ProfileWidgetGifPicker({
   onSelect,
   presentation = "modal",
 }: Props) {
+  const { t } = useTranslation("settings");
+  const { t: tCommon } = useTranslation("common");
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const sheetHeight = useModalSheetMaxHeight(0.8);
+  const title = t("profile.inspector.chooseGif");
 
   const handleSelect = (gif: GifResult) => {
     onSelect(resolveGifImageBlockSrc(gif));
@@ -54,13 +60,13 @@ export function ProfileWidgetGifPicker({
           }}
         >
           <Typography level="title-md" weight="bold">
-            Choose a GIF
+            {title}
           </Typography>
           <IconButton
             variant="plain"
             color="neutral"
             padding={4}
-            accessibilityLabel="Close"
+            accessibilityLabel={tCommon("close")}
             onPress={onClose}
           >
             <XIcon size={18} />
@@ -78,15 +84,15 @@ export function ProfileWidgetGifPicker({
     <BottomSheet
       open={visible}
       onClose={onClose}
-      title="Choose a GIF"
-      maxHeight="80%"
-      scrollable={false}
+      title={title}
+      height={sheetHeight}
+      keyboard="none"
       headerRight={
         <IconButton
           variant="plain"
           color="neutral"
           padding={4}
-          accessibilityLabel="Close"
+          accessibilityLabel={tCommon("close")}
           onPress={onClose}
         >
           <XIcon size={18} />

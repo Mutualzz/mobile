@@ -1,6 +1,7 @@
 import { ProfileMarkdownContent } from "@components/Profile/shared/ProfileMarkdownContent";
 import type { MobileProfileTextBlock, ProfileBlockSize } from "@mutualzz/types";
 import { Typography } from "@mutualzz/ui-native";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 const LINE_CLAMP: Record<ProfileBlockSize, number> = { s: 2, m: 4, l: 8 };
@@ -11,13 +12,15 @@ interface Props {
 }
 
 export function ProfileTextWidgetView({ block, size }: Props) {
+  const { t } = useTranslation("settings");
+
   return (
     <View style={{ width: "100%", height: "100%", padding: 12 }}>
       {block.content ? (
         <ProfileMarkdownContent value={block.content} lineClamp={LINE_CLAMP[size]} />
       ) : (
         <Typography level="body-md" textColor="muted">
-          Text
+          {t("profile.blocks.text")}
         </Typography>
       )}
     </View>
@@ -29,11 +32,13 @@ export function ProfileTextWidgetExpandedContent({
 }: {
   block: MobileProfileTextBlock;
 }) {
+  const { t } = useTranslation("settings");
+
   return block.content ? (
     <ProfileMarkdownContent value={block.content} />
   ) : (
     <Typography level="body-md" textColor="muted">
-      Text
+      {t("profile.blocks.text")}
     </Typography>
   );
 }

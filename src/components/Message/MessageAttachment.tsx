@@ -2,6 +2,7 @@ import { Paper } from "@components/Paper";
 import type { APIAttachment } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { FileIcon } from "phosphor-react-native";
+import { useTranslation } from "react-i18next";
 import { Image, Linking, Pressable, useWindowDimensions } from "react-native";
 import WebView from "react-native-webview";
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function MessageAttachment({ attachment }: Props) {
+  const { t } = useTranslation("common");
   const { theme } = useTheme();
   const { width } = useWindowDimensions();
   const maxWidth = Math.min(width - 96, 520);
@@ -80,7 +82,7 @@ export function MessageAttachment({ attachment }: Props) {
             {attachment.filename}
           </Typography>
           <Typography level="body-xs" textColor="muted">
-            Tap to open
+            {t("a11y.tapToOpen")}
           </Typography>
         </Box>
       </Paper>

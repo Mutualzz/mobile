@@ -3,16 +3,20 @@ import { SpaceStickersSettings } from "@components/SpaceSettings/SpaceStickersSe
 import { SpaceSettingsScreen } from "@components/SpaceSettings/SpaceSettingsScreen";
 import { Paper } from "@components/Paper";
 import { useRequireSpaceSettingsAccess } from "@hooks/useSpaceFromRoute";
+import { spacePageTitleKeys } from "@mutualzz/i18n";
 import { Box, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { ScrollView } from "react-native";
+import { useTranslation } from "react-i18next";
 
 const SpaceExpressionsSettingsPage = () => {
+    const { t } = useTranslation("space");
+    const { t: tSettings } = useTranslation("settings");
     const { space } = useRequireSpaceSettingsAccess();
     if (!space) return null;
 
     return (
-        <SpaceSettingsScreen title="Expressions" contentStyle={{ flex: 1 }}>
+        <SpaceSettingsScreen title={t(spacePageTitleKeys.expressions)} contentStyle={{ flex: 1 }}>
             <ScrollView
                 style={{ flex: 1 }}
                 contentContainerStyle={{
@@ -29,23 +33,23 @@ const SpaceExpressionsSettingsPage = () => {
                     }}
                 >
                     <Typography level="body-md" weight={700}>
-                        Space expressions
+                        {t("expressions.pageTitle")}
                     </Typography>
                     <Typography level="body-sm" textColor="muted">
-                        Upload and manage custom emoji and stickers for this space.
+                        {t("expressions.pageDescription")}
                     </Typography>
                 </Paper>
 
                 <Box style={{ gap: 12 }}>
                     <Typography level="body-md" weight={700}>
-                        Emojis
+                        {tSettings("expressions.emojis")}
                     </Typography>
                     <SpaceEmojisSettings space={space} />
                 </Box>
 
                 <Box style={{ gap: 12 }}>
                     <Typography level="body-md" weight={700}>
-                        Stickers
+                        {tSettings("expressions.stickers")}
                     </Typography>
                     <SpaceStickersSettings space={space} />
                 </Box>

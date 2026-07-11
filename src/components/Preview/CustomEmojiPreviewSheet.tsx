@@ -7,6 +7,7 @@ import { Box, Divider, Typography } from "@mutualzz/ui-native";
 import { Image as ExpoImage } from "expo-image";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   expression: Expression;
@@ -15,6 +16,7 @@ interface Props {
 
 export const CustomEmojiPreviewSheet = observer(
   ({ expression, onClose }: Props) => {
+    const { t } = useTranslation("chat");
     const app = useAppStore();
     const author = expression.author;
 
@@ -23,10 +25,10 @@ export const CustomEmojiPreviewSheet = observer(
     }, [app.users, author, expression.authorId]);
 
     const sourceLabel = expression.spaceId
-      ? " from one of the spaces you belong in"
+      ? t("expressionPreview.emojiFromSpaceBelong")
       : expression.authorId === app.account?.id
-        ? " from you, you can use it in any chats"
-        : " from a user";
+        ? t("expressionPreview.emojiFromYou")
+        : t("expressionPreview.emojiFromUser");
 
     return (
       <ExpressionPreviewSheetLayout onClose={onClose}>
@@ -48,7 +50,7 @@ export const CustomEmojiPreviewSheet = observer(
               :{expression.name}:
             </Typography>
             <Typography level="body-xs" textColor="muted">
-              This emoji is{sourceLabel}
+              {sourceLabel}
             </Typography>
           </Box>
         </Box>
@@ -58,7 +60,7 @@ export const CustomEmojiPreviewSheet = observer(
         {expression.spaceId ? (
           <Box style={{ gap: 6 }}>
             <Typography level="body-sm">
-              This emoji is from a space
+              {t("expressionPreview.emojiFromSpace")}
             </Typography>
             <Box
               style={{
@@ -69,14 +71,14 @@ export const CustomEmojiPreviewSheet = observer(
             >
               <SpaceIcon space={expression.space} size="sm" />
               <Typography level="body-sm" weight="bold">
-                {expression.space?.name ?? "Private Space"}
+                {expression.space?.name ?? t("privateSpace")}
               </Typography>
             </Box>
           </Box>
         ) : (
           <Box style={{ gap: 6 }}>
             <Typography level="body-xs" textColor="muted">
-              This emoji is from a user
+              {t("expressionPreview.emojiFromUser")}
             </Typography>
             <Box
               style={{
@@ -91,7 +93,7 @@ export const CustomEmojiPreviewSheet = observer(
                 style={{ width: 28, height: 28 }}
               />
               <Typography level="body-sm" weight="bold">
-                {author?.displayName ?? "Unknown User"}
+                {author?.displayName ?? t("unknownUser")}
               </Typography>
             </Box>
           </Box>

@@ -19,6 +19,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView } from "react-native";
 
 const ANY_FLAG = "any";
@@ -27,6 +28,7 @@ const flagOptions = [ANY_FLAG, UNVERIFIED_FLAG, ...Object.keys(userFlags)];
 const PAGE_LIMIT = 25;
 
 const StaffIndexScreen = () => {
+    const { t } = useTranslation("staff");
     const { isStaff } = useRequireStaffAccess();
     const app = useAppStore();
     const { navigate } = useAppNavigation();
@@ -81,7 +83,7 @@ const StaffIndexScreen = () => {
 
     return (
         <Screen style={{ flexDirection: "column" }}>
-            <StaffHeader title="Staff" />
+            <StaffHeader title={t("title")} />
             <ScrollView
                 contentContainerStyle={{ padding: 16, gap: 16 }}
                 keyboardShouldPersistTaps="handled"
@@ -99,8 +101,7 @@ const StaffIndexScreen = () => {
                         textColor="muted"
                         style={{ flex: 1 }}
                     >
-                        Search by username, or filter by flag, to find a user
-                        and view their account and available staff actions.
+                        {t("home.findUserDescription")}
                     </Typography>
                     <Box style={{ gap: 8 }}>
                         <Button
@@ -110,7 +111,7 @@ const StaffIndexScreen = () => {
                             startDecorator={<WarningIcon size={16} />}
                             onPress={() => navigate("/staff/reports" as Href)}
                         >
-                            Reports
+                            {t("nav.reports")}
                         </Button>
                         <Button
                             size="sm"
@@ -121,7 +122,7 @@ const StaffIndexScreen = () => {
                             }
                             onPress={() => navigate("/staff/activity" as Href)}
                         >
-                            Activity
+                            {t("nav.activity")}
                         </Button>
                         <Button
                             size="sm"
@@ -130,7 +131,7 @@ const StaffIndexScreen = () => {
                             startDecorator={<GavelIcon size={16} />}
                             onPress={() => navigate("/staff/appeals" as Href)}
                         >
-                            Appeals
+                            {t("nav.appeals")}
                         </Button>
                     </Box>
                 </Box>
@@ -138,7 +139,7 @@ const StaffIndexScreen = () => {
                 <Input
                     value={query}
                     onChangeText={setQuery}
-                    placeholder="Search by username, or paste a user ID"
+                    placeholder={t("home.searchPlaceholder")}
                     autoCapitalize="none"
                 />
 
@@ -152,7 +153,7 @@ const StaffIndexScreen = () => {
                                 color={flag === f ? "primary" : "neutral"}
                                 onPress={() => setFlag(f)}
                             >
-                                {f === ANY_FLAG ? "Any flag" : f}
+                                {f === ANY_FLAG ? t("home.anyFlag") : f}
                             </Button>
                         ))}
                     </Box>
@@ -165,7 +166,7 @@ const StaffIndexScreen = () => {
                             style={{ padding: 12, borderRadius: 10 }}
                         >
                             <Typography level="body-sm">
-                                Go to user ID {trimmedQuery}
+                                {t("home.goToUserId", { id: trimmedQuery })}
                             </Typography>
                         </Paper>
                     </Pressable>
@@ -173,7 +174,7 @@ const StaffIndexScreen = () => {
 
                 {isFetching && !isFetchingNextPage && (
                     <Typography level="body-sm" textColor="muted">
-                        Searching...
+                        {t("home.searching")}
                     </Typography>
                 )}
 
@@ -182,7 +183,7 @@ const StaffIndexScreen = () => {
                     results.length === 0 &&
                     !isSnowflake && (
                         <Typography level="body-sm" textColor="muted">
-                            No users found
+                            {t("home.noUsers")}
                         </Typography>
                     )}
 
@@ -230,7 +231,9 @@ const StaffIndexScreen = () => {
                             disabled={isFetchingNextPage}
                             onPress={() => fetchNextPage()}
                         >
-                            {isFetchingNextPage ? "Loading..." : "Load more"}
+                            {isFetchingNextPage
+                                ? t("home.loading")
+                                : t("home.loadMore")}
                         </Button>
                     )}
                 </Box>

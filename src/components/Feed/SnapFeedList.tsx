@@ -1,10 +1,11 @@
 import { PostCard } from "@components/Feed/PostCard";
 import { MediaPostCard } from "@components/Feed/MediaPostCard";
-import { useFeedPosts } from "@components/Feed/useFeedPosts";
+import { useFeedPosts, type FeedVariant } from "@components/Feed/useFeedPosts";
 import type { Post } from "@stores/objects/Post";
 import { Box, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   FlatList,
@@ -14,19 +15,28 @@ import {
 } from "react-native";
 
 interface Props {
+  variant: FeedVariant;
   itemHeight: number;
 }
 
-export const SnapFeedList = observer(({ itemHeight }: Props) => {
+export const SnapFeedList = observer(({ variant, itemHeight }: Props) => {
+  const { t } = useTranslation("chat");
   const { posts, fetchMore, isFetchingNextPage, refetch, isRefetching } =
-    useFeedPosts("for-you");
+    useFeedPosts(variant);
   const [activePostId, setActivePostId] = useState<string | null>(null);
+
+  const emptyLabel =
+    variant === "saved" ? t("feed.empty.saved") : t("feed.empty.posts");
 
   useEffect(() => {
     if (!activePostId && posts[0]?.id) {
       setActivePostId(posts[0].id);
     }
   }, [activePostId, posts]);
+
+  useEffect(() => {
+    setActivePostId(null);
+  }, [variant]);
 
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken<Post>[] }) => {
@@ -93,7 +103,7 @@ export const SnapFeedList = observer(({ itemHeight }: Props) => {
               padding: 32,
             }}
           >
-            <Typography textColor="muted">No posts yet.</Typography>
+            <Typography textColor="muted">{emptyLabel}</Typography>
           </Box>
         ) : null
       }

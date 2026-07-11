@@ -3,12 +3,15 @@ import { Typography } from "@mutualzz/ui-native";
 import { PencilSimpleIcon } from "phosphor-react-native";
 import { View } from "react-native";
 import { SvgXml } from "react-native-svg";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   block: MobileProfileDrawBlock;
 }
 
 export function ProfileDrawWidgetView({ block }: Props) {
+  const { t } = useTranslation("settings");
+
   if (!block.svgData) {
     return (
       <View
@@ -22,8 +25,12 @@ export function ProfileDrawWidgetView({ block }: Props) {
         }}
       >
         <PencilSimpleIcon size={28} color="rgba(128,128,128,0.45)" />
-        <Typography level="body-xs" textColor="muted" style={{ textAlign: "center" }}>
-          No drawing yet
+        <Typography
+          level="body-xs"
+          textColor="muted"
+          style={{ textAlign: "center" }}
+        >
+          {t("profile.inspector.noDrawingYet")}
         </Typography>
       </View>
     );
@@ -34,6 +41,7 @@ export function ProfileDrawWidgetView({ block }: Props) {
       style={{
         width: "100%",
         height: "100%",
+        overflow: "hidden",
         backgroundColor: block.backgroundColor ?? "transparent",
       }}
     >
@@ -50,6 +58,7 @@ export function ProfileDrawWidgetExpandedContent({ block }: Props) {
       style={{
         width: "100%",
         aspectRatio: 1,
+        overflow: "hidden",
         backgroundColor: block.backgroundColor ?? "transparent",
       }}
     >

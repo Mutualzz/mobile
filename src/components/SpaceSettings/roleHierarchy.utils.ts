@@ -11,12 +11,6 @@ export interface HierarchyContext {
   canReorder: boolean;
 }
 
-export const ROLE_HIERARCHY_LOCK_LABEL =
-  "You can't reorder roles at or above your highest role";
-
-export const ROLE_HIERARCHY_ASSIGN_LABEL =
-  "You can't assign or remove this role";
-
 export function getHierarchyContext(
   space: Space,
   me: SpaceMember | null | undefined,

@@ -23,6 +23,7 @@ import { ensureVoiceMicPermission } from "@utils/voicePermissions";
 import { AppState, type AppStateStatus } from "react-native";
 import type { MediaStream } from "react-native-webrtc";
 import { mediaDevices } from "react-native-webrtc";
+import i18n from "../i18n";
 
 export type VoiceConnectionStatus =
   | "idle"
@@ -131,7 +132,7 @@ export class VoiceStore {
           runInAction(() => {
             this.connectionError = canAutoRejoin
               ? null
-              : (reason ?? "Voice connection closed");
+              : (reason ?? i18n.t("voice.errors.closed", { ns: "chat" }));
             this.cameraEnabled = false;
             if (!canAutoRejoin) {
               this.connectionStatus = "idle";
@@ -447,7 +448,9 @@ export class VoiceStore {
     } catch (error) {
       runInAction(() => {
         this.connectionError =
-          error instanceof Error ? error.message : "Failed to enumerate devices";
+          error instanceof Error
+            ? error.message
+            : i18n.t("voice.errors.enumerateDevices", { ns: "chat" });
       });
     }
   }
@@ -463,7 +466,9 @@ export class VoiceStore {
     const hasMicPermission = await ensureVoiceMicPermission();
     if (!hasMicPermission) {
       runInAction(() => {
-        this.connectionError = "Microphone permission is required for voice channels";
+        this.connectionError = i18n.t("voice.errors.micPermissionRequired", {
+          ns: "chat",
+        });
         this.connectionStatus = "failed";
         this.currentVoiceTarget = null;
       });
@@ -550,7 +555,7 @@ export class VoiceStore {
 
   onVoiceServerUpdate(payload: VoiceServerUpdatePayload) {
     if (!payload.voiceEndpoint?.trim()) {
-      this.failJoin("Voice server is not configured");
+      this.failJoin(i18n.t("voice.errors.notConfigured", { ns: "chat" }));
       return;
     }
 
@@ -610,7 +615,7 @@ export class VoiceStore {
       raw.userId === this.app.account?.id &&
       this.connectionStatus === "connecting"
     ) {
-      this.failJoin("Unable to join voice channel");
+      this.failJoin(i18n.t("voice.errors.unableToJoin", { ns: "chat" }));
       return;
     }
 
@@ -787,7 +792,7 @@ export class VoiceStore {
 
     if (!endpoint || !token) {
       this.logger.warn("startConnection called with no pending credentials");
-      this.failJoin("Voice server credentials were not provided");
+      this.failJoin(i18n.t("voice.errors.credentialsMissing", { ns: "chat" }));
       return;
     }
 
@@ -817,7 +822,9 @@ export class VoiceStore {
 
       const hasMicPermission = await ensureVoiceMicPermission();
       if (!hasMicPermission) {
-        throw new Error("Microphone permission is required for voice channels");
+        throw new Error(
+          i18n.t("voice.errors.micPermissionRequired", { ns: "chat" }),
+        );
       }
 
       try {
@@ -868,7 +875,7 @@ export class VoiceStore {
     this.clearJoinTimeout();
     this.joinTimeoutTimer = setTimeout(() => {
       if (this.connectionStatus === "connecting") {
-        this.failJoin("Voice connection timed out");
+        this.failJoin(i18n.t("voice.errors.timedOut", { ns: "chat" }));
       }
     }, VOICE_JOIN_TIMEOUT_MS);
   }

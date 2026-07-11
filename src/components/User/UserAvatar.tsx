@@ -43,6 +43,8 @@ const baseSizeMap: Record<Size, number> = {
   lg: 48,
 };
 
+const DEFAULT_AVATAR_ELEVATION = 5;
+
 export const UserAvatar = observer(
   ({
     user,
@@ -77,14 +79,11 @@ export const UserAvatar = observer(
       ? app.presence.get(resolvedUser.id)?.status
       : null;
 
-    const hasAvatar = useMemo(
-      () => resolvedUser && resolvedUser.avatar != null,
-      [resolvedUser],
-    );
+    const hasAvatar = Boolean(resolvedUser?.avatar);
 
     const avatarBody = !resolvedUser ? (
       <MAvatar
-        elevation={5}
+        elevation={DEFAULT_AVATAR_ELEVATION}
         shape="circle"
         variant="elevation"
         {...props}
@@ -92,27 +91,38 @@ export const UserAvatar = observer(
       >
         <UserIcon />
       </MAvatar>
-    ) : hasAvatar ? (
-      <MAvatar
-        src={resolvedUser.constructAvatarUrl(true, version, size)}
-        {...props}
-        size={size}
-      />
     ) : (
       <Paper
-        variant={resolvedUser.defaultAvatar.color ? "solid" : "elevation"}
-        elevation={5}
+        // Always elevate default avatars so the paper disc shows everywhere,
+        // independent of the global preferEmbossed setting.
+        variant={
+          hasAvatar
+            ? "plain"
+            : resolvedUser.defaultAvatar.color
+              ? "solid"
+              : "elevation"
+        }
+        elevation={hasAvatar ? 0 : DEFAULT_AVATAR_ELEVATION}
         transparency={0}
         style={{
           width: size,
           height: size,
           flexDirection: "column",
           borderRadius: 9999,
+          overflow: "visible",
         }}
-        color={(resolvedUser.defaultAvatar.color as Hex) || "neutral"}
+        color={
+          hasAvatar
+            ? undefined
+            : ((resolvedUser.defaultAvatar.color as Hex) || "neutral")
+        }
       >
         <MAvatar
-          src={resolvedUser.constructAvatarUrl(false, version, size)}
+          src={resolvedUser.constructAvatarUrl(
+            hasAvatar,
+            version,
+            size,
+          )}
           {...props}
           size={size}
         />

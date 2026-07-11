@@ -17,6 +17,7 @@ import { CopyIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   space: Space;
@@ -26,29 +27,33 @@ interface Props {
 
 type CreateInviteResponse = APIInvite & { editSessionId?: string };
 
-const expirations = [
-  { label: "30 minutes", value: 1800 },
-  { label: "1 hour", value: 3600 },
-  { label: "6 hours", value: 21600 },
-  { label: "12 hours", value: 43200 },
-  { label: "1 day", value: 86400 },
-  { label: "7 days", value: 604800 },
-  { label: "Never", value: null },
-] as const;
-
-const maxUsesOptions = [
-  { label: "No limit", value: 0 },
-  { label: "1 use", value: 1 },
-  { label: "5 uses", value: 5 },
-  { label: "10 uses", value: 10 },
-  { label: "25 uses", value: 25 },
-  { label: "50 uses", value: 50 },
-  { label: "100 uses", value: 100 },
-] as const;
-
 export const SpaceInviteToSpaceSheet = observer(
   ({ space, channel, onClose }: Props) => {
+    const { t } = useTranslation("space");
+    const { t: tSettings } = useTranslation("settings");
+    const { t: tCommon } = useTranslation("common");
     const app = useAppStore();
+
+    const expirations = [
+      { label: t("invites.expiry.30minutes"), value: 1800 },
+      { label: t("invites.expiry.1hour"), value: 3600 },
+      { label: t("invites.expiry.6hours"), value: 21600 },
+      { label: t("invites.expiry.12hours"), value: 43200 },
+      { label: t("invites.expiry.1day"), value: 86400 },
+      { label: t("invites.expiry.7days"), value: 604800 },
+      { label: t("invites.expiry.never"), value: null },
+    ] as const;
+
+    const maxUsesOptions = [
+      { label: t("invites.maxUses.noLimit"), value: 0 },
+      { label: t("invites.maxUses.1use"), value: 1 },
+      { label: t("invites.maxUses.5uses"), value: 5 },
+      { label: t("invites.maxUses.10uses"), value: 10 },
+      { label: t("invites.maxUses.25uses"), value: 25 },
+      { label: t("invites.maxUses.50uses"), value: 50 },
+      { label: t("invites.maxUses.100uses"), value: 100 },
+    ] as const;
+
     const [editing, setEditing] = useState(false);
     const [expiresAfter, setExpiresAfter] = useState<number | null>(
       expirations[5].value,
@@ -157,13 +162,13 @@ export const SpaceInviteToSpaceSheet = observer(
           elevation={app.settings?.preferEmbossed ? 4 : 2}
         >
           <Typography level="body-md" weight={700}>
-            Edit invite link
+            {t("actions.editInviteLink")}
           </Typography>
 
           <ScrollView contentContainerStyle={{ gap: 16 }}>
             <Box style={{ gap: 8 }}>
               <Typography level="body-sm" weight={600}>
-                Expire after
+                {t("invites.modal.expireAfter")}
               </Typography>
               <Box style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {expirations.map((opt) => (
@@ -181,7 +186,7 @@ export const SpaceInviteToSpaceSheet = observer(
 
             <Box style={{ gap: 8 }}>
               <Typography level="body-sm" weight={600}>
-                Max uses
+                {t("invites.modal.maxUses")}
               </Typography>
               <Box style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {maxUsesOptions.map((opt) => (
@@ -208,7 +213,7 @@ export const SpaceInviteToSpaceSheet = observer(
                 setEditSessionId(null);
               }}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               expand
@@ -216,7 +221,7 @@ export const SpaceInviteToSpaceSheet = observer(
               disabled={saving || !invite}
               onPress={() => updateInvite()}
             >
-              {saving ? "Saving…" : "Save"}
+              {saving ? tSettings("profile.saving") : tCommon("save")}
             </Button>
           </Box>
         </Paper>
@@ -236,21 +241,23 @@ export const SpaceInviteToSpaceSheet = observer(
       >
         <Box style={{ gap: 4 }}>
           <Typography level="body-md" weight={700}>
-            Invite friends to {space.name}
+            {t("invites.modal.title", { spaceName: space.name })}
           </Typography>
           <Typography level="body-sm" textColor="muted">
-            Recipients will land in #{channelToUse?.name ?? "general"}
+            {t("invites.modal.landingChannel", {
+              channelName: channelToUse?.name ?? "general",
+            })}
           </Typography>
         </Box>
 
         <Box style={{ gap: 8 }}>
           <Typography level="body-sm" weight={600}>
-            Invite link
+            {t("invites.modal.inviteLink")}
           </Typography>
 
           {isLoading ? (
             <Typography level="body-sm" textColor="muted">
-              Creating invite…
+              {t("actions.creating")}
             </Typography>
           ) : (
             <Pressable onPress={() => void copyInviteLink()} disabled={!!error}>
@@ -266,9 +273,12 @@ export const SpaceInviteToSpaceSheet = observer(
 
           {!isLoading && !error && invite && (
             <Typography level="body-xs" textColor="muted">
-              This link will expire{" "}
-              {invite.expiresAt ? dayjs(invite.expiresAt).fromNow() : "never"}
-              {invite.maxUses > 0 ? ` or after ${invite.maxUses} uses` : ""}.
+              {t("invites.modal.expiresPrefix")}
+              {invite.expiresAt ? dayjs(invite.expiresAt).fromNow() : t("invites.modal.expiresNever")}
+              {invite.maxUses > 0
+                ? t("invites.modal.expiresAfterUses", { count: invite.maxUses })
+                : ""}
+              .
             </Typography>
           )}
         </Box>
@@ -281,18 +291,18 @@ export const SpaceInviteToSpaceSheet = observer(
             disabled={isLoading || !!error || !invite || copied}
             onPress={() => void copyInviteLink()}
           >
-            {copied ? "Copied" : "Copy"}
+            {copied ? t("invites.copiedToClipboard") : t("invites.copyInviteUrl")}
           </Button>
           {!isLoading && !error && invite && (
             <Button expand variant="plain" onPress={() => setEditing(true)}>
-              Edit
+              {t("actions.editInviteLink")}
             </Button>
           )}
         </Box>
 
         {onClose && (
           <Button variant="plain" color="neutral" onPress={onClose}>
-            Done
+            {tSettings("profile.done")}
           </Button>
         )}
       </Paper>

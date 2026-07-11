@@ -307,8 +307,18 @@ export class AccountSettingsStore {
   }
 
   moveSpace(fromIndex: number, toIndex: number) {
-    const items = this.spacePositions.toArray();
+    const items = this.app.spaces.positioned.map((s) => s.id);
+    if (
+      fromIndex === toIndex ||
+      fromIndex < 0 ||
+      toIndex < 0 ||
+      fromIndex >= items.length ||
+      toIndex >= items.length
+    ) {
+      return;
+    }
     const [removed] = items.splice(fromIndex, 1);
+    if (removed == null) return;
     items.splice(toIndex, 0, removed);
     this.reorderSpaces(items);
   }

@@ -7,10 +7,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { ActivityIndicator, ScrollView } from "react-native";
+import { useTranslation } from "react-i18next";
 
 const FeedPostDetailScreen = () => {
   const app = useAppStore();
   const { postId } = useLocalSearchParams<{ postId: string }>();
+  const { t } = useTranslation("chat");
 
   const { isLoading, isError } = useQuery({
     queryKey: ["post", postId],
@@ -44,7 +46,7 @@ const FeedPostDetailScreen = () => {
 
         {isError && !post && (
           <Typography level="body-sm" textColor="muted">
-            This post doesn&apos;t exist, or is no longer available.
+            {t("feed.empty.postUnavailable")}
           </Typography>
         )}
 

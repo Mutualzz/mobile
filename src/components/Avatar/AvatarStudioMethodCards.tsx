@@ -8,24 +8,25 @@ import {
   UploadSimpleIcon,
 } from "phosphor-react-native";
 import { Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 
 const METHOD_CARDS = [
   {
     method: "upload",
-    title: "Upload",
-    description: "Use a photo or GIF from your library.",
+    titleKey: "profile.methodUpload",
+    descriptionKey: "profile.methodUploadDescriptionMobile",
     icon: UploadSimpleIcon,
   },
   {
     method: "draw",
-    title: "Draw",
-    description: "Sketch a custom avatar on the canvas.",
+    titleKey: "profile.methodDraw",
+    descriptionKey: "profile.methodDrawDescription",
     icon: PaintBrushIcon,
   },
   {
     method: "avatars",
-    title: "Avatars",
-    description: "Pick a default style or restore a previous one.",
+    titleKey: "profile.methodAvatars",
+    descriptionKey: "profile.methodAvatarsDescription",
     icon: ImagesIcon,
   },
 ] as const;
@@ -45,6 +46,7 @@ export function AvatarStudioMethodCards({
   onDraw,
   onAvatars,
 }: Props) {
+  const { t } = useTranslation("settings");
   const iconColor = useSettingsIconColor();
   const mutedIconColor = useSettingsIconColor("neutral");
 
@@ -58,13 +60,14 @@ export function AvatarStudioMethodCards({
     <Box style={{ gap: 8 }}>
       {METHOD_CARDS.map((card) => {
         const Icon = card.icon;
+        const title = t(card.titleKey);
 
         return (
           <Pressable
             key={card.method}
             onPress={handlers[card.method]}
             accessibilityRole="button"
-            accessibilityLabel={card.title}
+            accessibilityLabel={title}
           >
             <Paper
               variant="soft"
@@ -92,14 +95,14 @@ export function AvatarStudioMethodCards({
               </Paper>
               <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
                 <Typography level="body-sm" weight={700}>
-                  {card.title}
+                  {title}
                 </Typography>
                 <Typography
                   level="body-xs"
                   textColor="muted"
                   truncate="double"
                 >
-                  {card.description}
+                  {t(card.descriptionKey)}
                 </Typography>
               </Box>
               <CaretRightIcon

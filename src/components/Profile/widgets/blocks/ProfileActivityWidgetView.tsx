@@ -1,5 +1,6 @@
 import { CustomStatusDisplay } from "@components/CustomStatus/CustomStatusDisplay";
 import { useAppStore } from "@hooks/useStores";
+import { presenceStatusKeys } from "@mutualzz/i18n";
 import type {
   MobileProfileActivityBlock,
   PresenceActivityType,
@@ -14,6 +15,7 @@ import {
   NotepadIcon,
   PulseIcon,
 } from "phosphor-react-native";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 interface Props {
@@ -45,10 +47,17 @@ const ACTIVITY_LIMIT: Record<ProfileBlockSize, number> = { s: 1, m: 2, l: 2 };
 
 export const ProfileActivityWidgetView = observer(
   ({ block, size, userId }: Props) => {
+    const { t } = useTranslation("settings");
+    const { t: tChat } = useTranslation("chat");
+    const { t: tCommon } = useTranslation("common");
     const app = useAppStore();
     const { theme } = useTheme();
     const isCompact = size === "s";
     const presence = app.presence.get(userId);
+    const statusKey = presence?.status
+      ? presenceStatusKeys[presence.status as keyof typeof presenceStatusKeys]
+      : null;
+    const statusLabel = statusKey ? tCommon(statusKey) : null;
     const customActivity = presence?.activities.find(
       (a) => a.type === "custom",
     );
@@ -68,18 +77,17 @@ export const ProfileActivityWidgetView = observer(
         <Stack direction="row" alignItems="center" style={{ gap: 6 }}>
           <PulseIcon size={isCompact ? 14 : 16} weight="fill" />
           <Typography level={isCompact ? "body-xs" : "body-sm"} weight="bold">
-            Activity
+            {t("profile.blocks.activity")}
           </Typography>
         </Stack>
 
-        {presence?.status ? (
+        {statusLabel ? (
           <Stack direction="column" style={{ gap: isCompact ? 4 : 6, minWidth: 0, flex: 1 }}>
             <Typography
               level="body-xs"
               textColor="muted"
-              style={{ textTransform: "capitalize" }}
             >
-              {presence.status}
+              {statusLabel}
             </Typography>
 
             {customActivity && block.showCustomStatus !== false ? (
@@ -118,7 +126,7 @@ export const ProfileActivityWidgetView = observer(
           </Stack>
         ) : (
           <Typography level="body-xs" textColor="muted">
-            Offline
+            {tChat("offline")}
           </Typography>
         )}
       </View>
@@ -134,19 +142,25 @@ export const ProfileActivityWidgetExpandedContent = observer(
     block: MobileProfileActivityBlock;
     userId: Snowflake;
   }) => {
+    const { t: tChat } = useTranslation("chat");
+    const { t: tCommon } = useTranslation("common");
     const app = useAppStore();
     const { theme } = useTheme();
     const presence = app.presence.get(userId);
+    const statusKey = presence?.status
+      ? presenceStatusKeys[presence.status as keyof typeof presenceStatusKeys]
+      : null;
+    const statusLabel = statusKey ? tCommon(statusKey) : null;
     const customActivity = presence?.activities.find(
       (a) => a.type === "custom",
     );
     const otherActivities =
       presence?.activities.filter((a) => a.type !== "custom") ?? [];
 
-    if (!presence?.status) {
+    if (!statusLabel) {
       return (
         <Typography level="body-sm" textColor="muted">
-          Offline
+          {tChat("offline")}
         </Typography>
       );
     }
@@ -156,9 +170,8 @@ export const ProfileActivityWidgetExpandedContent = observer(
         <Typography
           level="body-sm"
           textColor="muted"
-          style={{ textTransform: "capitalize" }}
         >
-          {presence.status}
+          {statusLabel}
         </Typography>
 
         {customActivity && block.showCustomStatus !== false ? (

@@ -4,6 +4,7 @@ import { Paper, useTheme } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import { CaretDownIcon } from "phosphor-react-native";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 import { getWidgetTileHeight } from "./profileWidget.constants";
 
@@ -24,6 +25,7 @@ export function ProfileWidgetTile({
   onMaximize,
   children,
 }: Props) {
+  const { t } = useTranslation("common");
   const { theme } = useTheme();
   const fadeBandHeight = useScaledSquareSize(28);
   const resolvedCornerRadius =
@@ -70,8 +72,8 @@ export function ProfileWidgetTile({
           <Pressable
             onPress={onMaximize}
             accessibilityRole="button"
-            accessibilityLabel={`Expand ${type} widget`}
-            accessibilityHint="Opens the full widget content"
+            accessibilityLabel={t("a11y.expandWidget", { type })}
+            accessibilityHint={t("a11y.expandWidgetHint")}
             style={{
               position: "absolute",
               left: 0,

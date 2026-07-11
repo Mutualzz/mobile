@@ -8,6 +8,7 @@ import type { Space } from "@stores/objects/Space";
 import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   space: Space;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export const ChannelInvitesSection = observer(({ space, channel }: Props) => {
+  const { t } = useTranslation("space");
   const { openModal } = useModal();
   const [now, setNow] = useState(new Date());
 
@@ -49,7 +51,7 @@ export const ChannelInvitesSection = observer(({ space, channel }: Props) => {
         }}
       >
         <Typography level="body-md" weight="bold">
-          Channel invites
+          {t("channels.channelInvites")}
         </Typography>
         <Button
           size="sm"
@@ -60,13 +62,13 @@ export const ChannelInvitesSection = observer(({ space, channel }: Props) => {
             )
           }
         >
-          Create invite
+          {t("channels.createInvite")}
         </Button>
       </Box>
 
       {invites.length === 0 ? (
         <Typography level="body-sm" textColor="muted">
-          No invites have been created for #{channel.name} yet.
+          {t("channels.noChannelInvites", { channel: channel.name })}
         </Typography>
       ) : (
         <Box style={{ gap: 8 }}>

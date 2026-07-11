@@ -26,6 +26,7 @@ import {
   TrashIcon,
 } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SpaceInviteToSpaceSheet } from "@components/Space/SpaceInviteToSpaceSheet";
@@ -49,6 +50,7 @@ export const ChannelActionSheet = observer(
     onDeleteCategory,
   }: Props) => {
     const app = useAppStore();
+    const { t } = useTranslation("chat");
     const insets = useSafeAreaInsets();
     const { openModal } = useModal();
 
@@ -172,7 +174,7 @@ export const ChannelActionSheet = observer(
                       }
                       onPress={markRead}
                     >
-                      Mark as read
+                      {t("contextMenu.markAsRead")}
                     </Button>
                   )}
 
@@ -185,7 +187,7 @@ export const ChannelActionSheet = observer(
                       }
                       onPress={openInvite}
                     >
-                      Invite to channel
+                      {t("contextMenu.inviteToChannel")}
                     </Button>
                   )}
 
@@ -198,7 +200,7 @@ export const ChannelActionSheet = observer(
                         startDecorator={<CaretUpIcon size={20} weight="fill" />}
                         onPress={() => moveChannel(-1)}
                       >
-                        Move up
+                        {t("contextMenu.moveUp")}
                       </Button>
                       <Button
                         fullWidth
@@ -209,7 +211,7 @@ export const ChannelActionSheet = observer(
                         }
                         onPress={() => moveChannel(1)}
                       >
-                        Move down
+                        {t("contextMenu.moveDown")}
                       </Button>
                     </>
                   )}
@@ -221,7 +223,9 @@ export const ChannelActionSheet = observer(
                       startDecorator={<GearIcon size={20} weight="fill" />}
                       onPress={openSettings}
                     >
-                      {isCategory ? "Edit category" : "Channel settings"}
+                      {isCategory
+                        ? t("contextMenu.editCategory")
+                        : t("contextMenu.channelSettings")}
                     </Button>
                   )}
 
@@ -233,7 +237,7 @@ export const ChannelActionSheet = observer(
                       startDecorator={<TrashIcon size={20} weight="fill" />}
                       onPress={deleteCategory}
                     >
-                      Delete category
+                      {t("contextMenu.deleteCategory")}
                     </Button>
                   )}
                 </ButtonGroup>

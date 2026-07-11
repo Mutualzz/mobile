@@ -18,6 +18,7 @@ import {
 } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { Image, Pressable, useWindowDimensions, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   post: NonNullable<APIMessageEmbed["post"]>;
@@ -117,6 +118,7 @@ export const PostEmbedPreview = observer(({ post: postData }: Props) => {
   const { theme } = useTheme();
   const { navigate } = useAppNavigation();
   const { width } = useWindowDimensions();
+  const { t } = useTranslation("chat");
   const cardWidth = Math.min(width - 80, 320);
 
   const { isLoading, isError } = useQuery({
@@ -146,7 +148,7 @@ export const PostEmbedPreview = observer(({ post: postData }: Props) => {
       >
         <ProhibitIcon size={18} color={theme.typography.colors.muted} />
         <Typography level="body-sm" textColor="muted" style={{ flex: 1 }}>
-          This post doesn&apos;t exist, or is no longer available.
+          {t("feed.empty.postUnavailable")}
         </Typography>
       </Paper>
     );
@@ -164,7 +166,7 @@ export const PostEmbedPreview = observer(({ post: postData }: Props) => {
         }}
       >
         <Typography level="body-sm" textColor="muted">
-          Loading post…
+          {t("feed.embed.loadingPost")}
         </Typography>
       </Paper>
     );
@@ -206,7 +208,7 @@ export const PostEmbedPreview = observer(({ post: postData }: Props) => {
             <UserAvatar user={post.author} size="sm" />
             <Box style={{ flex: 1, minWidth: 0 }}>
               <Typography level="body-sm" weight={600} truncate="single">
-                {post.author?.displayName ?? "Unknown User"}
+                {post.author?.displayName ?? t("unknownUser")}
               </Typography>
               <Typography level="body-xs" textColor="muted">
                 {dayjs(post.createdAt).calendar(undefined, calendarStrings)}
@@ -215,7 +217,7 @@ export const PostEmbedPreview = observer(({ post: postData }: Props) => {
           </Box>
 
           <IconButton
-            accessibilityLabel="Open post"
+            accessibilityLabel={t("feed.actions.openPost")}
             size="sm"
             onPress={openPost}
           >
@@ -246,9 +248,7 @@ export const PostEmbedPreview = observer(({ post: postData }: Props) => {
 
         {post.content && post.attachments.length > 0 && (
           <Typography level="body-xs" textColor="muted">
-            {post.attachments.length === 1
-              ? "1 attachment"
-              : `${post.attachments.length} attachments`}
+            {t("feed.embed.attachments", { count: post.attachments.length })}
           </Typography>
         )}
 

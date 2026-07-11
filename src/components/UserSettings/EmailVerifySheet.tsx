@@ -6,12 +6,15 @@ import { Box, InputDefault, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   onClose: () => void;
 }
 
 export const EmailVerifySheet = observer(({ onClose }: Props) => {
+  const { t } = useTranslation("settings");
+  const { t: tCommon } = useTranslation("common");
   const app = useAppStore();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -32,19 +35,23 @@ export const EmailVerifySheet = observer(({ onClose }: Props) => {
       embedded
       open
       onClose={onClose}
-      title="Verify Email"
+      title={t("account.verifyEmail")}
       elevation={app.settings?.preferEmbossed ? 4 : 2}
     >
       <InputDefault
         fullWidth
-        placeholder="Verification code"
-        accessibilityLabel="Verification code"
+        placeholder={t("account.verificationCode")}
+        accessibilityLabel={t("account.verificationCode")}
         keyboardType="number-pad"
         value={code}
         onChangeText={setCode}
       />
       {error && (
-        <Typography color="danger" level="body-sm" accessibilityLiveRegion="polite">
+        <Typography
+          color="danger"
+          level="body-sm"
+          accessibilityLiveRegion="polite"
+        >
           {error}
         </Typography>
       )}
@@ -53,14 +60,14 @@ export const EmailVerifySheet = observer(({ onClose }: Props) => {
         disabled={sendingCode}
         onPress={() => sendCode()}
       >
-        {sendingCode ? "Sending..." : "Send verification code"}
+        {sendingCode ? t("account.sending") : t("account.sendVerificationCode")}
       </Button>
       <Box style={{ flexDirection: "row", gap: 8 }}>
         <Button variant="plain" onPress={onClose}>
-          Cancel
+          {tCommon("cancel")}
         </Button>
         <Button disabled={isPending} onPress={() => mutate()}>
-          Verify
+          {t("account.verify")}
         </Button>
       </Box>
     </BottomSheet>

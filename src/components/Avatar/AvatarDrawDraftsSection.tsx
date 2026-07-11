@@ -5,6 +5,7 @@ import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { TrashIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView } from "react-native";
 import { SvgXml } from "react-native-svg";
 
@@ -17,6 +18,7 @@ export const AvatarDrawDraftsSection = observer(
   ({ onOpenDraft, embossed = false }: Props) => {
     const app = useAppStore();
     const { theme } = useTheme();
+    const { t } = useTranslation("settings");
     const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
 
     const drafts = app.drafts.avatars;
@@ -35,10 +37,10 @@ export const AvatarDrawDraftsSection = observer(
       >
         <Box style={{ gap: 4 }}>
           <Typography level="body-md" weight={700}>
-            Draw drafts
+            {t("profile.avatar.draw.drawDraftsTitle")}
           </Typography>
           <Typography level="body-sm" textColor="muted">
-            Pick up a saved sketch or continue editing one below.
+            {t("profile.avatar.draw.drawDraftsDescription")}
           </Typography>
         </Box>
 
@@ -58,7 +60,7 @@ export const AvatarDrawDraftsSection = observer(
                   onOpenDraft(draft.id);
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Open draw draft"
+                accessibilityLabel={t("profile.avatar.draw.openDrawDraft")}
                 style={{
                   width: 80,
                   height: 80,
@@ -84,7 +86,7 @@ export const AvatarDrawDraftsSection = observer(
             onPress={deleteSelectedDraft}
             style={{ alignSelf: "flex-start" }}
           >
-            Delete draft
+            {t("profile.avatar.draw.deleteDraft")}
           </Button>
         )}
       </Paper>

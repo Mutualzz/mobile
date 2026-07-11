@@ -12,6 +12,7 @@ import {
 import { searchShortcodeEmojis } from "@utils/emojis";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useScaledAutocompleteMaxHeight, useScaledSquareSize } from "@utils/accessibilityLayout";
 import { Image, Pressable, ScrollView } from "react-native";
 import type { Emoji } from "emojibase";
@@ -44,6 +45,7 @@ interface Props {
 
 export const EmojiAutocomplete = observer(
   ({ channel, search, onSelectStandard, onSelectCustom }: Props) => {
+    const { t } = useTranslation("chat");
     const app = useAppStore();
     const { theme } = useTheme();
     const autocompleteMaxHeight = useScaledAutocompleteMaxHeight();
@@ -124,7 +126,7 @@ export const EmojiAutocomplete = observer(
       >
         <Box style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 }}>
           <Typography level="body-xs" textColor="muted">
-            Emojis matching &quot;:{search}:&quot;
+            {t("expressionPreview.emojiMatching")} &quot;:{search}:&quot;
           </Typography>
         </Box>
         <ScrollView keyboardShouldPersistTaps="handled">

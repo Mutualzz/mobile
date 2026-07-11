@@ -15,6 +15,7 @@ import { resolveProfileBlockCornerRadius } from "@mutualzz/ui-core";
 import { Paper } from "@mutualzz/ui-native";
 import { CaretDownIcon, CaretUpIcon, XIcon } from "phosphor-react-native";
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Pressable,
   StyleSheet,
@@ -166,6 +167,7 @@ function DraggableWidgetTile({
   onMoveUp?: () => void;
   onMoveDown?: () => void;
 }) {
+  const { t } = useTranslation("settings");
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const dragging = useSharedValue(0);
@@ -220,8 +222,10 @@ function DraggableWidgetTile({
           onLongPress={onEnterEditMode}
           delayLongPress={LONG_PRESS_MS}
           accessibilityRole="button"
-          accessibilityLabel={`Edit ${block.type} widget`}
-          accessibilityHint="Opens the widget editor. Long press to rearrange widgets."
+          accessibilityLabel={t("profile.editor.editWidgetA11y", {
+            type: block.type,
+          })}
+          accessibilityHint={t("a11y.editWidgetHint", { ns: "common" })}
         />
       )}
 
@@ -360,6 +364,8 @@ function EditModeOverlay({
   onMoveUp?: () => void;
   onMoveDown?: () => void;
 }) {
+  const { t } = useTranslation("settings");
+
   return (
     <>
       <View
@@ -385,7 +391,7 @@ function EditModeOverlay({
         <IconButton
           variant="solid"
           color="danger"
-          accessibilityLabel="Delete widget"
+          accessibilityLabel={t("profile.editor.deleteWidget")}
           padding={4}
           onPress={onDelete}
         >
@@ -394,7 +400,7 @@ function EditModeOverlay({
         <IconButton
           variant="solid"
           color="neutral"
-          accessibilityLabel="Move widget up"
+          accessibilityLabel={t("profile.editor.moveWidgetUp")}
           disabled={!onMoveUp}
           padding={4}
           onPress={onMoveUp}
@@ -404,7 +410,7 @@ function EditModeOverlay({
         <IconButton
           variant="solid"
           color="neutral"
-          accessibilityLabel="Move widget down"
+          accessibilityLabel={t("profile.editor.moveWidgetDown")}
           disabled={!onMoveDown}
           padding={4}
           onPress={onMoveDown}

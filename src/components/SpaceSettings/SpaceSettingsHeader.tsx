@@ -4,6 +4,7 @@ import { Typography, useTheme } from "@mutualzz/ui-native";
 import { ArrowLeftIcon, XIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   title: string;
@@ -13,6 +14,7 @@ interface Props {
 
 export const SpaceSettingsHeader = observer(
   ({ title, showBack = false, onClose }: Props) => {
+    const { t: tSettings } = useTranslation("settings");
     const { back } = useAppNavigation();
     const { theme } = useTheme();
     const iconColor = theme.typography.colors.primary;
@@ -34,7 +36,7 @@ export const SpaceSettingsHeader = observer(
             hitSlop={11}
             onPress={() => back()}
             accessibilityRole="button"
-            accessibilityLabel="Back"
+            accessibilityLabel={tSettings("profile.inspector.back")}
           >
             <ArrowLeftIcon size={22} weight="bold" color={iconColor} />
           </Pressable>
@@ -52,7 +54,7 @@ export const SpaceSettingsHeader = observer(
             hitSlop={11}
             onPress={onClose}
             accessibilityRole="button"
-            accessibilityLabel="Close"
+            accessibilityLabel={tSettings("profile.close")}
           >
             <XIcon size={22} weight="bold" color={iconColor} />
           </Pressable>

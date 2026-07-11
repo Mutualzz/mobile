@@ -23,6 +23,7 @@ import { observer } from "mobx-react-lite";
 import { forwardRef, useRef, useState } from "react";
 import type { TextInput } from "react-native";
 import { Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface ApiErrors {
   email?: string;
@@ -88,6 +89,7 @@ const InputWithLabel = forwardRef<
 InputWithLabel.displayName = "InputWithLabel";
 
 const Register = () => {
+  const { t } = useTranslation("auth");
   const app = useAppStore();
   const router = useRouter();
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -163,7 +165,7 @@ const Register = () => {
             }}
           >
             <Typography level="body-lg" weight="bold">
-              Create an account
+              {t("register.title")}
             </Typography>
           </Box>
           <Box
@@ -178,7 +180,7 @@ const Register = () => {
               children={(field) => (
                 <InputWithLabel
                   field={field}
-                  label="Email"
+                  label={t("register.email")}
                   apiErrors={apiErrors}
                   onChangeText={field.handleChange}
                   onBlur={field.handleBlur}
@@ -208,7 +210,7 @@ const Register = () => {
                 <InputWithLabel
                   ref={usernameRef}
                   field={field}
-                  label="Username"
+                  label={t("register.username")}
                   apiErrors={apiErrors}
                   required
                   onChangeText={field.handleChange}
@@ -237,7 +239,7 @@ const Register = () => {
                 <InputWithLabel
                   ref={globalNameRef}
                   field={field}
-                  label="Display Name"
+                  label={t("register.displayName")}
                   apiErrors={apiErrors}
                   autoCapitalize="words"
                   onChangeText={(text) =>
@@ -268,7 +270,7 @@ const Register = () => {
                 <InputWithLabel
                   ref={passwordRef}
                   field={field}
-                  label="Password"
+                  label={t("register.password")}
                   apiErrors={apiErrors}
                   type="password"
                   onChangeText={field.handleChange}
@@ -288,7 +290,7 @@ const Register = () => {
                 <InputWithLabel
                   ref={confirmPasswordRef}
                   field={field}
-                  label="Confirm Password"
+                  label={t("register.confirmPassword")}
                   apiErrors={apiErrors}
                   type="password"
                   onChangeText={field.handleChange}
@@ -307,7 +309,7 @@ const Register = () => {
                 <DOBInput
                   apiErrors={apiErrors}
                   field={field}
-                  label="Date Of Birth"
+                  label={t("register.dateOfBirth")}
                   required
                 />
               )}
@@ -324,16 +326,16 @@ const Register = () => {
                     marginBottom: 16,
                   }}
                 >
-                  {isSubmitting ? "..." : "Create Account"}
+                  {isSubmitting ? t("actions.submitting") : t("actions.createAccount")}
                 </Button>
               )}
             />
           </Box>
           <Pressable onPress={() => router.replace("/login")}>
             <Typography>
-              Already have an account?{" "}
+              {t("register.hasAccount")}{" "}
               <Typography color="info" variant="plain">
-                Login
+                {t("actions.login")}
               </Typography>
             </Typography>
           </Pressable>

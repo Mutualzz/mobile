@@ -1,5 +1,6 @@
 import type { APIRole } from "@mutualzz/types";
 import { Box, Divider, Input, Switch, Typography } from "@mutualzz/ui-native";
+import { useTranslation } from "react-i18next";
 
 export type RoleEditable = Pick<
     APIRole,
@@ -16,11 +17,13 @@ interface Props {
 }
 
 export const SpaceRoleEditDisplay = ({ changes, setChanges }: Props) => {
+    const { t } = useTranslation("space");
+
     return (
         <Box style={{ gap: 16 }}>
             <Box style={{ gap: 8 }}>
                 <Typography level="body-xs" textColor="muted">
-                    Role name
+                    {t("roles.display.roleName")}
                 </Typography>
                 <Input
                     value={changes.name ?? ""}
@@ -35,7 +38,7 @@ export const SpaceRoleEditDisplay = ({ changes, setChanges }: Props) => {
 
             <Box style={{ gap: 8 }}>
                 <Typography level="body-xs" textColor="muted">
-                    Role color
+                    {t("roles.display.roleColor")}
                 </Typography>
                 <Input
                     value={String(changes.color ?? "#ffffff")}
@@ -58,7 +61,7 @@ export const SpaceRoleEditDisplay = ({ changes, setChanges }: Props) => {
                 }}
             >
                 <Typography level="body-sm" style={{ flex: 1 }}>
-                    Display role members separately from online members
+                    {t("roles.display.hoist")}
                 </Typography>
                 <Switch
                     checked={!!changes.hoist}
@@ -80,11 +83,10 @@ export const SpaceRoleEditDisplay = ({ changes, setChanges }: Props) => {
             >
                 <Box style={{ flex: 1, gap: 4 }}>
                     <Typography level="body-sm">
-                        Allow anyone to @mention this role
+                        {t("roles.display.mentionable")}
                     </Typography>
                     <Typography level="body-xs" textColor="muted">
-                        Members with the mention-everyone permission can still
-                        mention this role.
+                        {t("roles.display.mentionableHintShort")}
                     </Typography>
                 </Box>
                 <Switch

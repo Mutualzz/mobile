@@ -5,6 +5,7 @@ import { StaffHeader } from "@components/Staff/StaffHeader";
 import { useRequireStaffAccess } from "@hooks/useRequireStaffAccess";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
+import { reportReasonKeys } from "@mutualzz/i18n";
 import type {
   APIReportContent,
   APIReportDetail,
@@ -14,22 +15,14 @@ import { Box, Typography } from "@mutualzz/ui-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import { ScrollView } from "react-native";
 import dayjs from "dayjs";
 
-const reasonLabels: Record<string, string> = {
-  spam: "Spam",
-  harassment: "Harassment or Abuse",
-  hate_speech: "Hate Speech",
-  nsfw: "NSFW / Inappropriate Content",
-  self_harm: "Self-Harm or Suicide",
-  impersonation: "Impersonation",
-  misinformation: "Misinformation",
-  other: "Other",
-};
-
-function getTakedownLabel(targetType: string) {
-  return targetType === "space" ? "Shut Down Space" : "Take Down";
+function getTakedownKey(targetType: string) {
+  return targetType === "space"
+    ? "report.actions.shutDownSpace"
+    : "report.actions.takeDownContent";
 }
 
 function ReportContentPreview({
@@ -39,6 +32,8 @@ function ReportContentPreview({
   content: APIReportContent;
   reportedMessageId?: string;
 }) {
+  const { t } = useTranslation("staff");
+
   if (content.type === "unavailable") {
     return (
       <Typography level="body-sm" textColor="muted">
@@ -52,13 +47,15 @@ function ReportContentPreview({
       <Box style={{ gap: 8 }}>
         <Typography level="body-xs" textColor="muted">
           {content.data.isDirectMessage
-            ? "Direct message context"
-            : "Message context"}
+            ? t("report.content.dmContext")
+            : t("report.content.messageContext")}
         </Typography>
         {content.data.context.map((message) => {
           const isReported = message.id === reportedMessageId;
           const authorName =
-            message.author?.globalName || message.author?.username || "Unknown";
+            message.author?.globalName ||
+            message.author?.username ||
+            t("report.content.unknown");
 
           return (
             <Paper
@@ -74,10 +71,10 @@ function ReportContentPreview({
             >
               <Typography level="body-xs" weight={700}>
                 {authorName}
-                {isReported ? " · REPORTED" : ""}
+                {isReported ? ` · ${t("report.content.reported")}` : ""}
               </Typography>
               <Typography level="body-sm">
-                {message.content?.trim() || "(no text content)"}
+                {message.content?.trim() || t("report.content.noText")}
               </Typography>
             </Paper>
           );
@@ -90,7 +87,7 @@ function ReportContentPreview({
     const { post } = content.data;
     return (
       <Typography level="body-sm">
-        {post.content?.trim() || "(no text content)"}
+        {post.content?.trim() || t("report.content.noText")}
       </Typography>
     );
   }
@@ -99,7 +96,7 @@ function ReportContentPreview({
     const { comment } = content.data;
     return (
       <Typography level="body-sm">
-        {comment.content?.trim() || "(no text content)"}
+        {comment.content?.trim() || t("report.content.noText")}
       </Typography>
     );
   }
@@ -116,7 +113,9 @@ function ReportContentPreview({
   if (content.type === "space") {
     const { space } = content.data;
     const ownerName =
-      space.owner?.globalName || space.owner?.username || "Unknown";
+      space.owner?.globalName ||
+      space.owner?.username ||
+      t("report.content.unknown");
 
     return (
       <Box style={{ gap: 4 }}>
@@ -124,7 +123,10 @@ function ReportContentPreview({
           {space.name}
         </Typography>
         <Typography level="body-xs" textColor="muted">
-          {space.memberCount} members · owned by {ownerName}
+          {t("report.content.membersOwnedBy", {
+            count: space.memberCount,
+            owner: ownerName,
+          })}
         </Typography>
         {space.description && (
           <Typography level="body-sm">{space.description}</Typography>
@@ -137,6 +139,8 @@ function ReportContentPreview({
 }
 
 const StaffReportDetailScreen = () => {
+  const { t } = useTranslation("staff");
+  const { t: tCommon } = useTranslation("common");
   const { isStaff } = useRequireStaffAccess();
   const { reportId } = useLocalSearchParams<{ reportId: string }>();
   const app = useAppStore();
@@ -180,19 +184,27 @@ const StaffReportDetailScreen = () => {
 
   if (!isStaff) return null;
 
+  const reasonKey =
+    report &&
+    reportReasonKeys[report.reason as keyof typeof reportReasonKeys];
+
   return (
     <Screen style={{ flexDirection: "column" }}>
-      <StaffHeader title="Report Details" showBack backHref="/staff/reports" />
+      <StaffHeader
+        title={t("report.detailsTitle")}
+        showBack
+        backHref="/staff/reports"
+      />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
         {isLoading && (
           <Typography level="body-sm" textColor="muted">
-            Loading report...
+            {t("report.loadingReport")}
           </Typography>
         )}
 
         {error && (
           <Typography level="body-sm" color="danger">
-            Failed to load report
+            {t("report.loadFailed")}
           </Typography>
         )}
 
@@ -203,25 +215,27 @@ const StaffReportDetailScreen = () => {
           >
             <Box style={{ gap: 4 }}>
               <Typography level="body-md" weight={700}>
-                {reasonLabels[report.reason] ?? report.reason}
+                {reasonKey ? tCommon(reasonKey) : report.reason}
               </Typography>
               <Typography level="body-xs" textColor="muted">
                 {report.targetType} · {report.targetId}
               </Typography>
               <Typography level="body-xs" textColor="muted">
-                Reported by{" "}
-                {report.reporter.globalName || report.reporter.username} ·{" "}
-                {dayjs(report.createdAt).format("MMM D, YYYY h:mm A")}
+                {t("report.reportedBy", {
+                  name:
+                    report.reporter.globalName || report.reporter.username,
+                })}{" "}
+                · {dayjs(report.createdAt).format("MMM D, YYYY h:mm A")}
               </Typography>
               <Typography level="body-xs" textColor="muted">
-                Status: {report.status}
+                {t(`report.status.${report.status}`)}
               </Typography>
             </Box>
 
             {report.description && (
               <Box style={{ gap: 4 }}>
                 <Typography level="body-xs" weight={700}>
-                  Reporter notes
+                  {t("report.reporterNotes")}
                 </Typography>
                 <Typography level="body-sm">{report.description}</Typography>
               </Box>
@@ -229,7 +243,7 @@ const StaffReportDetailScreen = () => {
 
             <Box style={{ gap: 6 }}>
               <Typography level="body-sm" weight={700}>
-                Reported content
+                {t("report.reportedContent")}
               </Typography>
               <ReportContentPreview
                 content={report.content}
@@ -246,7 +260,7 @@ const StaffReportDetailScreen = () => {
                 variant="soft"
                 onPress={() => navigate(`/staff/users/${report.targetId}`)}
               >
-                Open staff user panel
+                {t("report.openUserPanel")}
               </Button>
             )}
 
@@ -267,8 +281,8 @@ const StaffReportDetailScreen = () => {
                     onPress={() => takedownContent()}
                   >
                     {takingDown
-                      ? "Working..."
-                      : getTakedownLabel(report.targetType)}
+                      ? t("working")
+                      : t(getTakedownKey(report.targetType))}
                   </Button>
                 )}
                 <Button
@@ -278,7 +292,7 @@ const StaffReportDetailScreen = () => {
                   disabled={updatingStatus || takingDown}
                   onPress={() => updateStatus("reviewed")}
                 >
-                  Reviewed
+                  {t("report.reviewedShort")}
                 </Button>
                 <Button
                   size="sm"
@@ -287,7 +301,7 @@ const StaffReportDetailScreen = () => {
                   disabled={updatingStatus || takingDown}
                   onPress={() => updateStatus("actioned")}
                 >
-                  Actioned
+                  {t("report.actionedShort")}
                 </Button>
                 <Button
                   size="sm"
@@ -296,7 +310,7 @@ const StaffReportDetailScreen = () => {
                   disabled={updatingStatus || takingDown}
                   onPress={() => updateStatus("dismissed")}
                 >
-                  Dismiss
+                  {t("report.dismiss")}
                 </Button>
               </Box>
             )}

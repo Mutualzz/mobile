@@ -8,10 +8,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, ScrollView } from "react-native";
 import { ArrowLeftIcon } from "phosphor-react-native";
 
 const PublicProfileScreen = () => {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const router = useRouter();
   const { username } = useLocalSearchParams<{ username: string }>();
@@ -49,7 +51,9 @@ const PublicProfileScreen = () => {
   if (!user && isFetched) {
     return (
       <Screen style={{ justifyContent: "center", padding: 24 }}>
-        <Typography style={{ textAlign: "center" }}>User not found</Typography>
+        <Typography style={{ textAlign: "center" }}>
+          {t("profile.viewer.userNotFound")}
+        </Typography>
       </Screen>
     );
   }
@@ -75,7 +79,7 @@ const PublicProfileScreen = () => {
           <ArrowLeftIcon size={20} />
         </IconButton>
         <Typography level="body-md" weight="bold" style={{ flex: 1 }}>
-          Profile
+          {t("profile.viewer.title")}
         </Typography>
       </ScreenHeader>
       {profile && user ? (

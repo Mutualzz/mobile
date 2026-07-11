@@ -1,10 +1,10 @@
 import { useAppStore } from "@hooks/useStores";
 import type { Space } from "@stores/objects/Space";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
-import { getSpaceLockdownMessage } from "@utils/spaceLockdown";
 import { LockSimpleIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   space: Space;
@@ -13,6 +13,7 @@ interface Props {
 
 export const SpaceLockdownOverlay = observer(
   ({ space, showMessage = true }: Props) => {
+    const { t } = useTranslation("space");
     const app = useAppStore();
     const { theme } = useTheme();
     const isOwner = space.ownerId === app.account?.id;
@@ -54,14 +55,14 @@ export const SpaceLockdownOverlay = observer(
               style={{ fontWeight: "700", textAlign: "center" }}
               textColor="primary"
             >
-              This space is in lockdown
+              {t("lockdown.title")}
             </Typography>
             <Typography
               style={{ textAlign: "center" }}
               textColor="secondary"
               level="body-sm"
             >
-              {getSpaceLockdownMessage(space, isOwner)}
+              {isOwner ? t("lockdown.ownerMessage") : t("lockdown.memberMessage")}
             </Typography>
           </Box>
         )}

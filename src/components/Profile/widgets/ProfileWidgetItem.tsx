@@ -15,35 +15,21 @@ import { ProfileTextWidgetExpandedContent } from "@components/Profile/widgets/bl
 import { ProfileWidgetMaximizeModal } from "@components/Profile/widgets/ProfileWidgetMaximizeModal";
 import { ProfileWidgetRenderer } from "@components/Profile/widgets/ProfileWidgetRenderer";
 import { ProfileWidgetTile } from "@components/Profile/widgets/ProfileWidgetTile";
+import { useOpenBottomSheet } from "@hooks/useOpenBottomSheet";
 import { useAppStore } from "@hooks/useStores";
 import type { AccountStore } from "@stores/Account.store";
 import type { User } from "@stores/objects/User";
 import type { UserProfile } from "@stores/objects/UserProfile";
-import type { APIMobileProfileBlock, ProfileBlockType } from "@mutualzz/types";
+import type { APIMobileProfileBlock } from "@mutualzz/types";
 import { resolveProfileBlockCornerRadius } from "@mutualzz/ui-core";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { clampWidgetSize } from "./profileWidget.constants";
 import { shouldShowWidgetExpand } from "./profileWidgetExpand.utils";
 
 const ROLES_VISIBLE = { s: 3, m: 6, l: 10 } as const;
 const MUTUAL_VISIBLE = { s: 3, m: 6, l: 10 } as const;
 const ACTIVITY_VISIBLE = { s: 1, m: 2, l: 2 } as const;
-
-const BLOCK_TITLES: Record<ProfileBlockType, string> = {
-  header: "Header",
-  text: "Text",
-  image: "Image",
-  sticker: "Sticker",
-  music: "Music",
-  links: "Links",
-  activity: "Activity",
-  roles: "Roles",
-  mutual: "Mutual",
-  divider: "Divider",
-  quote: "Quote",
-  draw: "Drawing",
-};
 
 interface Props {
   block: APIMobileProfileBlock;
@@ -85,11 +71,13 @@ export const ProfileWidgetItem = observer(function ProfileWidgetItem({
   profile,
   user,
 }: Props) {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
-  const [maximized, setMaximized] = useState(false);
+  const { openBottomSheet, closeBottomSheet } = useOpenBottomSheet();
   const size = clampWidgetSize(block.type, block.size);
   const overflowCount = getWidgetOverflowCount(block, size, app, user.id);
   const canExpand = shouldShowWidgetExpand(block, size, overflowCount);
+  const modalId = `profile-widget-maximize-${block.id}`;
 
   const expandedContent = (() => {
     switch (block.type) {
@@ -127,26 +115,27 @@ export const ProfileWidgetItem = observer(function ProfileWidgetItem({
     }
   })();
 
-  return (
-    <>
-      <ProfileWidgetTile
-        type={block.type}
-        size={size}
-        cornerRadius={resolveProfileBlockCornerRadius(block, "mobile")}
-        onMaximize={canExpand ? () => setMaximized(true) : undefined}
+  const openMaximize = () => {
+    openBottomSheet(
+      modalId,
+      <ProfileWidgetMaximizeModal
+        embedded
+        title={t(`profile.blocks.${block.type}`)}
+        onClose={() => closeBottomSheet(modalId)}
       >
-        <ProfileWidgetRenderer block={block} profile={profile} user={user} />
-      </ProfileWidgetTile>
+        {expandedContent}
+      </ProfileWidgetMaximizeModal>,
+    );
+  };
 
-      {canExpand && (
-        <ProfileWidgetMaximizeModal
-          visible={maximized}
-          title={BLOCK_TITLES[block.type]}
-          onClose={() => setMaximized(false)}
-        >
-          {expandedContent}
-        </ProfileWidgetMaximizeModal>
-      )}
-    </>
+  return (
+    <ProfileWidgetTile
+      type={block.type}
+      size={size}
+      cornerRadius={resolveProfileBlockCornerRadius(block, "mobile")}
+      onMaximize={canExpand ? openMaximize : undefined}
+    >
+      <ProfileWidgetRenderer block={block} profile={profile} user={user} />
+    </ProfileWidgetTile>
   );
 });

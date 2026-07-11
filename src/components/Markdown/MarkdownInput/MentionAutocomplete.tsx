@@ -6,6 +6,7 @@ import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useScaledAutocompleteMaxHeight,
   useScaledSquareSize,
@@ -28,6 +29,7 @@ interface Props {
 
 export const MentionAutocomplete = observer(
   ({ channel, search, onSelect }: Props) => {
+    const { t } = useTranslation("chat");
     const app = useAppStore();
     const { theme } = useTheme();
     const autocompleteMaxHeight = useScaledAutocompleteMaxHeight();
@@ -125,7 +127,9 @@ export const MentionAutocomplete = observer(
       >
         <Box style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 }}>
           <Typography level="body-xs" textColor="muted">
-            {search.length === 0 ? "Members" : `Members matching "${search}"`}
+            {search.length === 0
+              ? t("mentions.members")
+              : t("mentions.membersMatching", { query: search })}
           </Typography>
         </Box>
         <ScrollView keyboardShouldPersistTaps="handled">
@@ -158,7 +162,7 @@ export const MentionAutocomplete = observer(
               </Typography>
               {candidate.type === "role" && (
                 <Typography level="body-xs" textColor="muted">
-                  Role
+                  {t("mentions.role")}
                 </Typography>
               )}
             </Pressable>

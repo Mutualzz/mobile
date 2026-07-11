@@ -1,6 +1,9 @@
 import { KeyboardAwareView } from "@components/Keyboard/KeyboardAwareView";
 import { Paper } from "@components/Paper";
-import { MODAL_SHEET_WRAPPER_STYLE } from "@utils/modalSheet";
+import {
+  MODAL_SHEET_WRAPPER_STYLE,
+  useModalSheetMaxHeight,
+} from "@utils/modalSheet";
 import { Box, Modal, Typography } from "@mutualzz/ui-native";
 import type { PropsWithChildren, ReactNode } from "react";
 import { View, type StyleProp, type ViewStyle } from "react-native";
@@ -9,10 +12,10 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 type BottomSheetPanelProps = PropsWithChildren<{
   title?: string;
   headerRight?: ReactNode;
+  /** Fixed pixel height — only then does the body fill (e.g. comments). */
   height?: number;
   maxHeight?: number | `${number}%`;
   sheetStyle?: StyleProp<ViewStyle>;
-  scrollable?: boolean;
   elevation?: number;
   /**
    * - `scroll` — form fields in a KeyboardAwareScrollView (default)
@@ -29,6 +32,17 @@ type Props = BottomSheetPanelProps & {
   embedded?: boolean;
 };
 
+function resolveMaxHeightRatio(
+  maxHeight: number | `${number}%` | undefined,
+): number {
+  if (typeof maxHeight === "number") return 0.85;
+  if (typeof maxHeight === "string" && maxHeight.endsWith("%")) {
+    const parsed = Number.parseFloat(maxHeight);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed / 100;
+  }
+  return 0.85;
+}
+
 export function BottomSheetPanel({
   title,
   headerRight,
@@ -36,13 +50,16 @@ export function BottomSheetPanel({
   height,
   maxHeight = "85%",
   sheetStyle,
-  scrollable = false,
   elevation = 4,
   keyboard = "scroll",
 }: BottomSheetPanelProps) {
-  /** Only stretch body when the sheet has a fixed height (e.g. comments). */
-  const fillHeight = height != null || scrollable;
-  const boundedScroll = !fillHeight && maxHeight != null;
+  const ratioHeight = useModalSheetMaxHeight(resolveMaxHeightRatio(maxHeight));
+  const sheetMaxHeight =
+    typeof maxHeight === "number" ? maxHeight : ratioHeight;
+  // Only fixed-height sheets fill. Content sheets size to children — never
+  // flex:1 the scroll body or it collapses to a thin strip.
+  const fillHeight = height != null;
+  const bodyMaxHeight = Math.max(120, sheetMaxHeight - 72);
 
   const body = (() => {
     if (keyboard === "none") {
@@ -55,7 +72,9 @@ export function BottomSheetPanel({
 
     if (keyboard === "lift") {
       if (!fillHeight) {
-        return <View>{children}</View>;
+        return (
+          <View style={{ gap: 12, maxHeight: bodyMaxHeight }}>{children}</View>
+        );
       }
 
       return (
@@ -70,9 +89,7 @@ export function BottomSheetPanel({
         style={
           fillHeight
             ? { flex: 1, minHeight: 0 }
-            : boundedScroll
-              ? { flexShrink: 1 }
-              : undefined
+            : { maxHeight: bodyMaxHeight }
         }
         contentContainerStyle={{
           gap: 12,
@@ -81,6 +98,7 @@ export function BottomSheetPanel({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled
+        bounces={false}
       >
         {children}
       </KeyboardAwareScrollView>
@@ -89,48 +107,46 @@ export function BottomSheetPanel({
 
   return (
     <View pointerEvents="box-none" style={MODAL_SHEET_WRAPPER_STYLE}>
-      <View style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}>
-        <Paper
-          style={[
-            {
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
-              padding: 16,
-              gap: 12,
-              flexDirection: "column",
-              width: "100%",
-              alignSelf: "stretch",
-              ...(height != null
-                ? { height, maxHeight: height }
-                : { maxHeight }),
-            },
-            sheetStyle,
-          ]}
-          elevation={elevation}
-        >
-          {(title || headerRight) && (
-            <Box
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 8,
-              }}
-            >
-              {title ? (
-                <Typography level="body-lg" weight={700}>
-                  {title}
-                </Typography>
-              ) : (
-                <Box style={{ flex: 1 }} />
-              )}
-              {headerRight}
-            </Box>
-          )}
+      <Paper
+        style={[
+          {
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            padding: 16,
+            gap: 12,
+            flexDirection: "column",
+            width: "100%",
+            alignSelf: "stretch",
+            ...(height != null
+              ? { height, maxHeight: height }
+              : { maxHeight: sheetMaxHeight }),
+          },
+          sheetStyle,
+        ]}
+        elevation={elevation}
+      >
+        {(title || headerRight) && (
+          <Box
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+            }}
+          >
+            {title ? (
+              <Typography level="body-lg" weight={700}>
+                {title}
+              </Typography>
+            ) : (
+              <Box style={{ flex: 1 }} />
+            )}
+            {headerRight}
+          </Box>
+        )}
 
-          {body}
-        </Paper>
-      </View>
+        {body}
+      </Paper>
     </View>
   );
 }

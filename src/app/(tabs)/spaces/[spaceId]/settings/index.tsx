@@ -11,14 +11,20 @@ import {
   useRequireSpaceSettingsAccess,
   useSpaceSettingsAccess,
 } from "@hooks/useSpaceFromRoute";
+import type { SpaceSettingsPage } from "@components/SpaceSettings/spaceSettingsPages";
+import {
+  spaceCategoryTitleKeys,
+  spacePageTitleKeys,
+} from "@mutualzz/i18n";
 import { ButtonGroup, Divider, Typography } from "@mutualzz/ui-native";
 import type { Href } from "expo-router";
-import startCase from "lodash-es/startCase";
 import { observer } from "mobx-react-lite";
 import { Fragment } from "react";
 import { SignOutIcon, TrashIcon } from "phosphor-react-native";
+import { useTranslation } from "react-i18next";
 
 const SpaceSettingsIndex = () => {
+  const { t } = useTranslation("space");
   const app = useAppStore();
   const { navigate } = useAppNavigation();
   const { openModal } = useModal();
@@ -31,6 +37,11 @@ const SpaceSettingsIndex = () => {
 
   const isOwner = space.ownerId === app.account.id;
 
+  const pageLabel = (label: SpaceSettingsPage) => {
+    const key = spacePageTitleKeys[label];
+    return t(key);
+  };
+
   return (
     <Screen
       style={{
@@ -39,7 +50,7 @@ const SpaceSettingsIndex = () => {
         paddingBottom: 16,
       }}
     >
-      <SpaceSettingsHeader title="Space Settings" showBack />
+      <SpaceSettingsHeader title={t("title")} showBack />
 
       <Paper
         style={{
@@ -54,7 +65,7 @@ const SpaceSettingsIndex = () => {
           {space.name}
         </Typography>
         <Typography level="body-sm" textColor="muted">
-          Manage roles, invites, expressions, and moderation.
+          {t("overviewDescription")}
         </Typography>
       </Paper>
 
@@ -70,7 +81,7 @@ const SpaceSettingsIndex = () => {
             elevation={app.settings?.preferEmbossed ? 3 : 0}
           >
             <Typography level="body-sm" textColor="muted">
-              {startCase(category)}
+              {t(spaceCategoryTitleKeys[category])}
             </Typography>
             <ButtonGroup
               color="info"
@@ -94,7 +105,7 @@ const SpaceSettingsIndex = () => {
                     )
                   }
                 >
-                  {startCase(page.label)}
+                  {pageLabel(page.label)}
                 </Button>
               ))}
             </ButtonGroup>
@@ -138,7 +149,7 @@ const SpaceSettingsIndex = () => {
               )
             }
           >
-            Delete Space
+            {t("actions.deleteSpace")}
           </Button>
         ) : (
           <Button
@@ -162,7 +173,7 @@ const SpaceSettingsIndex = () => {
               )
             }
           >
-            Leave Space
+            {t("actions.leaveSpace")}
           </Button>
         )}
       </Paper>

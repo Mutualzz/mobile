@@ -39,7 +39,18 @@ const AppLayout = () => {
       <Box
         pointerEvents={hideChrome ? "none" : "box-none"}
         style={
-          hideChrome ? { height: 0, overflow: "hidden", opacity: 0 } : undefined
+          hideChrome
+            ? {
+                // Keep chrome mounted but out of the way until the keyboard
+                // height has fully settled — avoids the cramped flash on dismiss.
+                position: "absolute",
+                left: 0,
+                right: 0,
+                bottom: 0,
+                opacity: 0,
+                transform: [{ translateY: 24 }],
+              }
+            : undefined
         }
       >
         <TabBar>

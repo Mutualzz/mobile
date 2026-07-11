@@ -1,12 +1,12 @@
 import { Button } from "@components/Button";
 import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
+import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
 import type { VoiceMediaDevice } from "@stores/voice/webrtcBridge";
 import {
   Box,
   Checkbox,
-  Modal,
   Radio,
   RadioGroup,
   Slider,
@@ -17,6 +17,7 @@ import type { VoiceInputMode } from "@utils/voiceSettings.utils";
 import { CaretRightIcon, CheckIcon, XIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, View } from "react-native";
 import { type MediaStream, RTCView, mediaDevices } from "react-native-webrtc";
 
@@ -70,111 +71,104 @@ function DevicePickerRow({
   );
 }
 
-function DevicePickerModal({
+function DevicePickerContent({
   title,
   devices,
   selectedId,
-  open,
-  onClose,
+  modalId,
   onSelect,
 }: {
   title: string;
   devices: VoiceMediaDevice[];
   selectedId: string | null;
-  open: boolean;
-  onClose: () => void;
+  modalId: string;
   onSelect: (deviceId: string) => void;
 }) {
+  const { t } = useTranslation("settings");
   const { theme } = useTheme();
   const app = useAppStore();
+  const { closeModal } = useModal();
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      layout="center"
-      showCloseButton={false}
+    <Paper
+      elevation={app.settings?.preferEmbossed ? 4 : 2}
+      style={{
+        width: "100%",
+        maxWidth: 320,
+        borderRadius: 16,
+        padding: 8,
+        gap: 2,
+      }}
     >
-      <Paper
-        elevation={app.settings?.preferEmbossed ? 4 : 2}
-        style={{
-          width: "100%",
-          maxWidth: 320,
-          borderRadius: 16,
-          padding: 8,
-          gap: 2,
-        }}
+      <Typography
+        level="body-md"
+        weight={700}
+        style={{ paddingHorizontal: 12, paddingVertical: 8 }}
       >
+        {title}
+      </Typography>
+
+      {devices.length === 0 && (
         <Typography
-          level="body-md"
-          weight={700}
-          style={{ paddingHorizontal: 12, paddingVertical: 8 }}
+          level="body-sm"
+          textColor="muted"
+          style={{ paddingHorizontal: 12, paddingBottom: 8 }}
         >
-          {title}
+          {t("voice.noDevices")}
         </Typography>
+      )}
 
-        {devices.length === 0 && (
-          <Typography
-            level="body-sm"
-            textColor="muted"
-            style={{ paddingHorizontal: 12, paddingBottom: 8 }}
+      {devices.map((device) => {
+        const active = device.deviceId === selectedId;
+
+        return (
+          <Pressable
+            key={device.deviceId}
+            onPress={() => {
+              onSelect(device.deviceId);
+              closeModal(modalId);
+            }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingVertical: 10,
+              paddingHorizontal: 12,
+              borderRadius: 8,
+              backgroundColor: active
+                ? `${theme.colors.primary}18`
+                : undefined,
+            }}
           >
-            No devices detected.
-          </Typography>
-        )}
-
-        {devices.map((device) => {
-          const active = device.deviceId === selectedId;
-
-          return (
-            <Pressable
-              key={device.deviceId}
-              onPress={() => {
-                onSelect(device.deviceId);
-                onClose();
-              }}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                paddingVertical: 10,
-                paddingHorizontal: 12,
-                borderRadius: 8,
-                backgroundColor: active
-                  ? `${theme.colors.primary}18`
-                  : undefined,
-              }}
+            <Typography
+              level="body-sm"
+              weight={active ? 600 : undefined}
+              style={{ flex: 1 }}
+              truncate="single"
             >
-              <Typography
-                level="body-sm"
-                weight={active ? 600 : undefined}
-                style={{ flex: 1 }}
-                truncate="single"
-              >
-                {deviceLabel(device, "Unknown device")}
-              </Typography>
-              {active && (
-                <CheckIcon
-                  size={16}
-                  weight="bold"
-                  color={theme.colors.success}
-                />
-              )}
-            </Pressable>
-          );
-        })}
-      </Paper>
-    </Modal>
+              {deviceLabel(device, t("voice.unknownDevice"))}
+            </Typography>
+            {active && (
+              <CheckIcon
+                size={16}
+                weight="bold"
+                color={theme.colors.success}
+              />
+            )}
+          </Pressable>
+        );
+      })}
+    </Paper>
   );
 }
 
 export const AppVoiceVideoSettings = observer(() => {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const { theme } = useTheme();
+  const { openModal } = useModal();
   const voice = app.voice;
 
-  const [micPickerOpen, setMicPickerOpen] = useState(false);
-  const [cameraPickerOpen, setCameraPickerOpen] = useState(false);
   const [testingCamera, setTestingCamera] = useState(false);
   const [testStream, setTestStream] = useState<MediaStream | null>(null);
 
@@ -190,6 +184,26 @@ export const AppVoiceVideoSettings = observer(() => {
 
   const fallbackCameraId =
     selectedCamera?.deviceId ?? cameras[0]?.deviceId ?? null;
+
+  const openDevicePicker = (
+    modalId: string,
+    title: string,
+    devices: VoiceMediaDevice[],
+    selectedId: string | null,
+    onSelect: (deviceId: string) => void,
+  ) => {
+    openModal(
+      modalId,
+      <DevicePickerContent
+        title={title}
+        devices={devices}
+        selectedId={selectedId}
+        modalId={modalId}
+        onSelect={onSelect}
+      />,
+      { layout: "center", showCloseButton: false },
+    );
+  };
 
   useEffect(() => {
     void voice.setupDevices(true);
@@ -264,22 +278,30 @@ export const AppVoiceVideoSettings = observer(() => {
         elevation={app.settings?.preferEmbossed ? 2 : 0}
       >
         <Typography level="body-md" weight={700}>
-          Input devices
+          {t("voice.inputDevices")}
         </Typography>
         <Typography level="body-sm" textColor="muted">
-          Choose which microphone to use in voice channels.
+          {t("voice.inputDevicesDescription")}
         </Typography>
 
         <DevicePickerRow
-          label="Microphone"
+          label={t("voice.microphone")}
           value={deviceLabel(selectedInput, "")}
           placeholder={
             inputs.length === 0
-              ? "No microphones detected"
-              : "Select a microphone"
+              ? t("voice.noMicrophones")
+              : t("voice.selectMicrophone")
           }
           disabled={inputs.length === 0}
-          onPress={() => setMicPickerOpen(true)}
+          onPress={() =>
+            openDevicePicker(
+              "voice-mic-picker",
+              t("voice.microphone"),
+              inputs.slice(),
+              voice.currentInputDeviceId,
+              (deviceId) => voice.setInputDeviceId(deviceId),
+            )
+          }
         />
       </Paper>
 
@@ -292,11 +314,10 @@ export const AppVoiceVideoSettings = observer(() => {
         elevation={app.settings?.preferEmbossed ? 2 : 0}
       >
         <Typography level="body-md" weight={700}>
-          Input mode
+          {t("voice.inputMode")}
         </Typography>
         <Typography level="body-sm" textColor="muted">
-          Choose whether your microphone activates automatically or only while
-          you hold the push-to-talk button in voice channels.
+          {t("voice.inputModeDescription")}
         </Typography>
         <RadioGroup
           value={voice.voiceInputMode}
@@ -310,13 +331,12 @@ export const AppVoiceVideoSettings = observer(() => {
             }
           }}
         >
-          <Radio value="voice_activity" label="Voice activity" />
-          <Radio value="push_to_talk" label="Push to talk" />
+          <Radio value="voice_activity" label={t("voice.voiceActivityShort")} />
+          <Radio value="push_to_talk" label={t("voice.pushToTalkShort")} />
         </RadioGroup>
         {voice.isPushToTalkMode && (
           <Typography level="body-xs" textColor="muted">
-            While in a voice channel, hold the microphone button in the user bar
-            to transmit.
+            {t("voice.pushToTalkHint")}
           </Typography>
         )}
       </Paper>
@@ -330,16 +350,14 @@ export const AppVoiceVideoSettings = observer(() => {
         elevation={app.settings?.preferEmbossed ? 2 : 0}
       >
         <Typography level="body-md" weight={700}>
-          Voice activity
+          {t("voice.voiceActivitySection")}
         </Typography>
         <Typography level="body-sm" textColor="muted">
-          Your microphone only transmits while you are speaking. Adjust
-          sensitivity if voice detection feels too sensitive or not sensitive
-          enough.
+          {t("voice.voiceActivityDescription")}
         </Typography>
         {voice.isPushToTalkMode ? (
           <Typography level="body-sm" textColor="muted">
-            Sensitivity settings apply only in voice activity mode.
+            {t("voice.sensitivityPttOnly")}
           </Typography>
         ) : (
           <>
@@ -351,12 +369,14 @@ export const AppVoiceVideoSettings = observer(() => {
               onChange={(checked) =>
                 voice.setVoiceInputSensitivityAuto(checked)
               }
-              label="Automatic sensitivity"
+              label={t("voice.autoSensitivityShort")}
             />
             {!voice.voiceInputSensitivityAuto && (
               <Box style={{ gap: 4 }}>
                 <Typography level="body-xs" textColor="muted">
-                  Sensitivity {voice.voiceInputSensitivity}%
+                  {t("voice.sensitivityPercent", {
+                    value: voice.voiceInputSensitivity,
+                  })}
                 </Typography>
                 <Slider
                   min={0}
@@ -384,12 +404,10 @@ export const AppVoiceVideoSettings = observer(() => {
         elevation={app.settings?.preferEmbossed ? 2 : 0}
       >
         <Typography level="body-md" weight={700}>
-          Per-user volume
+          {t("voice.perUserVolume")}
         </Typography>
         <Typography level="body-sm" textColor="muted">
-          While in a voice channel, use the volume slider on each participant to
-          adjust how loud they sound for you. These settings are saved on this
-          device.
+          {t("voice.perUserVolumeDescription")}
         </Typography>
       </Paper>
 
@@ -402,21 +420,30 @@ export const AppVoiceVideoSettings = observer(() => {
         elevation={app.settings?.preferEmbossed ? 2 : 0}
       >
         <Typography level="body-md" weight={700}>
-          Camera
+          {t("voice.camera")}
         </Typography>
         <Typography level="body-sm" textColor="muted">
-          Camera works in voice channels on mobile. Screen share remains
-          desktop-only for now.
+          {t("voice.cameraDescription")}
         </Typography>
 
         <DevicePickerRow
-          label="Camera"
+          label={t("voice.camera")}
           value={deviceLabel(selectedCamera, "")}
           placeholder={
-            cameras.length === 0 ? "No cameras detected" : "Select a camera"
+            cameras.length === 0
+              ? t("voice.noCameras")
+              : t("voice.selectCamera")
           }
           disabled={cameras.length === 0}
-          onPress={() => setCameraPickerOpen(true)}
+          onPress={() =>
+            openDevicePicker(
+              "voice-camera-picker",
+              t("voice.camera"),
+              cameras.slice(),
+              voice.currentCameraDeviceId,
+              (deviceId) => voice.setCameraDeviceId(deviceId),
+            )
+          }
         />
 
         <View
@@ -441,7 +468,7 @@ export const AppVoiceVideoSettings = observer(() => {
               <IconButton
                 padding={8}
                 color="danger"
-                accessibilityLabel="Stop camera test"
+                accessibilityLabel={t("voice.stopCameraTest")}
                 onPress={() => setTestingCamera(false)}
                 style={{
                   position: "absolute",
@@ -464,29 +491,11 @@ export const AppVoiceVideoSettings = observer(() => {
               }}
               disabled={cameras.length === 0}
             >
-              Test camera
+              {t("voice.testCameraShort")}
             </Button>
           )}
         </View>
       </Paper>
-
-      <DevicePickerModal
-        title="Microphone"
-        devices={inputs.slice()}
-        selectedId={voice.currentInputDeviceId}
-        open={micPickerOpen}
-        onClose={() => setMicPickerOpen(false)}
-        onSelect={(deviceId) => voice.setInputDeviceId(deviceId)}
-      />
-
-      <DevicePickerModal
-        title="Camera"
-        devices={cameras.slice()}
-        selectedId={voice.currentCameraDeviceId}
-        open={cameraPickerOpen}
-        onClose={() => setCameraPickerOpen(false)}
-        onSelect={(deviceId) => voice.setCameraDeviceId(deviceId)}
-      />
     </ScrollView>
   );
 });

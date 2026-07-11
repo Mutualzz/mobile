@@ -5,12 +5,12 @@ import { UserAvatar } from "@components/User/UserAvatar";
 import { useOpenUserProfile } from "@hooks/useOpenUserProfile";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useModal } from "@hooks/useModal";
+import { useOpenBottomSheet } from "@hooks/useOpenBottomSheet";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { VoiceConnectionStatus } from "@stores/Voice.store";
 import { shouldShowVoiceUserBarPill } from "@utils/layout";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
 import { Pressable } from "react-native";
 import { HeadphonesOffIcon } from "@components/icons/HeadphonesOffIcon";
 import {
@@ -21,18 +21,22 @@ import {
   VideoCameraIcon,
   VideoCameraSlashIcon,
 } from "phosphor-react-native";
+import { useTranslation } from "react-i18next";
 
-function getVoiceTitle(status: VoiceConnectionStatus) {
+function getVoiceTitle(
+  status: VoiceConnectionStatus,
+  t: (key: string, options?: { ns?: string }) => string,
+) {
   switch (status) {
     case "connecting":
-      return "RTC Connecting";
+      return t("voice.connection.rtcConnecting", { ns: "chat" });
     case "connected":
-      return "Voice Connected";
+      return t("voice.connection.voiceConnected", { ns: "chat" });
     case "failed":
-      return "Connection Failed";
+      return t("voice.connection.failed", { ns: "chat" });
     case "idle":
     default:
-      return "Voice";
+      return t("voice.title", { ns: "chat" });
   }
 }
 
@@ -58,9 +62,20 @@ export const UserBar = observer(() => {
   const { theme } = useTheme();
   const { navigate } = useAppNavigation();
   const { openModal } = useModal();
+  const { openBottomSheet, closeBottomSheet } = useOpenBottomSheet();
   const account = app.account;
   const openProfile = useOpenUserProfile();
-  const [statusOpen, setStatusOpen] = useState(false);
+  const { t } = useTranslation("chat");
+
+  const openStatusSheet = () => {
+    openBottomSheet(
+      "change-online-status",
+      <ChangeOnlineStatusModal
+        embedded
+        onClose={() => closeBottomSheet("change-online-status")}
+      />,
+    );
+  };
 
   const openSpaceModerated = (type: "muted" | "deafened") => {
     const modalId = type === "muted" ? "space-muted" : "space-deafened";
@@ -76,15 +91,15 @@ export const UserBar = observer(() => {
 
   const showVoicePill = shouldShowVoiceUserBarPill(app.voice);
 
-  const voiceTitle = getVoiceTitle(voiceStatus);
+  const voiceTitle = getVoiceTitle(voiceStatus, t);
   const voiceTitleColor = getVoiceTitleColor(voiceStatus, theme.colors);
 
   let voiceSubtitle: string | undefined;
   if (voiceChannel) {
     voiceSubtitle =
-      `${voiceChannel.name ?? "Voice"} / ${voiceChannel.space?.name ?? ""}`.trim();
+      `${voiceChannel.name ?? t("voice.title")} / ${voiceChannel.space?.name ?? ""}`.trim();
   } else if (voiceStatus === "failed") {
-    voiceSubtitle = voiceError ?? "Unable to connect";
+    voiceSubtitle = voiceError ?? t("voice.connection.unableToConnect");
   }
 
   const canHangup =
@@ -143,7 +158,7 @@ export const UserBar = observer(() => {
                 padding={4}
                 disabled={!canHangup}
                 onPress={() => app.voice.leave()}
-                accessibilityLabel="Disconnect from voice"
+                accessibilityLabel={t("voice.connection.disconnectA11y")}
               >
                 <PhoneXIcon weight="fill" color={theme.colors.danger} />
               </IconButton>
@@ -170,7 +185,7 @@ export const UserBar = observer(() => {
                       : `${theme.colors.primary}22`,
                   }}
                   accessibilityRole="button"
-                  accessibilityLabel="Hold to talk"
+                  accessibilityLabel={t("voice.controls.holdToTalkA11y")}
                   accessibilityState={{ selected: pushToTalkActive }}
                 >
                   <MicrophoneIcon
@@ -191,7 +206,9 @@ export const UserBar = observer(() => {
                         : theme.typography.colors.primary,
                     }}
                   >
-                    {pushToTalkActive ? "Talking…" : "Hold to talk"}
+                    {pushToTalkActive
+                      ? t("voice.controls.talking")
+                      : t("voice.controls.holdToTalk")}
                   </Typography>
                 </Pressable>
               )}
@@ -211,7 +228,9 @@ export const UserBar = observer(() => {
                 }}
                 expand
                 accessibilityLabel={
-                  cameraEnabled ? "Disable camera" : "Enable camera"
+                  cameraEnabled
+                    ? t("voice.controls.disableCamera")
+                    : t("voice.controls.enableCamera")
                 }
               >
                 {cameraEnabled ? (
@@ -240,7 +259,7 @@ export const UserBar = observer(() => {
         >
           <Pressable
             onPress={() => openProfile(account, undefined, true)}
-            onLongPress={() => setStatusOpen(true)}
+            onLongPress={openStatusSheet}
             style={{
               flex: 1,
               flexDirection: "row",
@@ -284,10 +303,10 @@ export const UserBar = observer(() => {
               }}
               accessibilityLabel={
                 app.voice.spaceMute
-                  ? "Space muted"
+                  ? t("voice.controls.spaceMuted")
                   : app.voice.effectiveSelfMute
-                    ? "Unmute"
-                    : "Mute"
+                    ? t("voice.controls.unmute")
+                    : t("voice.controls.mute")
               }
             >
               {app.voice.effectiveSelfMute ? (
@@ -314,10 +333,10 @@ export const UserBar = observer(() => {
               }}
               accessibilityLabel={
                 app.voice.spaceDeaf
-                  ? "Space deafened"
+                  ? t("voice.controls.spaceDeafened")
                   : app.voice.effectiveSelfDeaf
-                    ? "Undeafen"
-                    : "Deafen"
+                    ? t("voice.controls.undeafen")
+                    : t("voice.controls.deafen")
               }
             >
               {app.voice.effectiveSelfDeaf ? (
@@ -337,11 +356,6 @@ export const UserBar = observer(() => {
           </Box>
         </Box>
       </Box>
-
-      <ChangeOnlineStatusModal
-        visible={statusOpen}
-        onClose={() => setStatusOpen(false)}
-      />
     </>
   );
 });

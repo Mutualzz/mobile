@@ -2,6 +2,7 @@ import { baseDarkTheme } from "@mutualzz/ui-core";
 import { WarningCircleIcon } from "phosphor-react-native";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -48,6 +49,8 @@ const styles = StyleSheet.create({
 });
 
 export function AppCrashFallback() {
+  const { t } = useTranslation("common");
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -57,15 +60,12 @@ export function AppCrashFallback() {
             weight="fill"
             color={baseDarkTheme.colors.warning}
           />
-          <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.body}>
-            Mutualzz ran into an unexpected error. Close the app completely, then
-            open it again.
-          </Text>
+          <Text style={styles.title}>{t("crash.title")}</Text>
+          <Text style={styles.body}>{t("crash.bodyMobile")}</Text>
           <Text style={styles.hint}>
             {Platform.OS === "ios"
-              ? "Swipe up from the bottom of the screen to open the app switcher, then swipe Mutualzz away."
-              : "Open your recent apps and swipe Mutualzz away, or use the back button until the app closes."}
+              ? t("crash.hintIos")
+              : t("crash.hintAndroid")}
           </Text>
         </View>
       </View>

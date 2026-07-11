@@ -1,6 +1,7 @@
 import { useVideoPlayer, VideoView } from "expo-video";
 import { PlayIcon } from "phosphor-react-native";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, View } from "react-native";
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function FeedVideoPlayer({ uri, isActive, muted = true }: Props) {
+  const { t } = useTranslation("common");
   const [userPaused, setUserPaused] = useState(false);
   const player = useVideoPlayer(uri, (instance) => {
     instance.loop = true;
@@ -50,7 +52,9 @@ export function FeedVideoPlayer({ uri, isActive, muted = true }: Props) {
         setUserPaused((paused) => !paused);
       }}
       accessibilityRole="button"
-      accessibilityLabel={userPaused ? "Play video" : "Pause video"}
+      accessibilityLabel={
+        userPaused ? t("a11y.playVideo") : t("a11y.pauseVideo")
+      }
     >
       <VideoView
         player={player}

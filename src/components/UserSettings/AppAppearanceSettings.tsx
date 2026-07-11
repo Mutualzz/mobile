@@ -1,7 +1,13 @@
 import { ThemeCreatorModal } from "@components/UserSettings/ThemeCreatorModal";
 import { Paper } from "@components/Paper";
 import { IconButton } from "@components/IconButton";
+import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
+import {
+  type AppLocale,
+  localeNativeNames,
+  supportedLocales,
+} from "@mutualzz/i18n";
 import {
   CheckIcon,
   PaletteIcon,
@@ -18,13 +24,15 @@ import {
 } from "@mutualzz/ui-native";
 import type { Theme as StoreTheme } from "@stores/objects/Theme";
 import { Theme } from "@stores/objects/Theme";
+import { getPreferredLocale, setPreferredLocale } from "../../i18n";
 import { getThemeSwatchStops, type ThemeSwatchStop } from "@utils/themeSwatch";
 import {
   useScaledSquareSize,
   useScaledThemeSwatchSize,
 } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useColorScheme,
   Image,
@@ -287,12 +295,45 @@ const SectionHeader = ({ title }: { title: string }) => (
 );
 
 export const AppAppearanceSettings = observer(() => {
+  const { t } = useTranslation("settings");
+  const { t: tCommon } = useTranslation("common");
   const app = useAppStore();
   const settings = app.settings;
   const { theme: currentTheme, changeTheme, type: currentType } = useTheme();
   const prefersDark = useColorScheme() === "dark";
+  const { openModal, closeModal } = useModal();
   const [deletingThemeId, setDeletingThemeId] = useState<string | null>(null);
-  const [themeCreatorOpen, setThemeCreatorOpen] = useState(false);
+  const [preferredLocale, setPreferredLocaleState] = useState<
+    AppLocale | "system"
+  >("system");
+
+  useEffect(() => {
+    void getPreferredLocale().then((locale) => {
+      setPreferredLocaleState(locale ?? "system");
+    });
+  }, []);
+
+  const selectLocale = (locale: AppLocale | "system") => {
+    setPreferredLocaleState(locale);
+    void setPreferredLocale(locale);
+  };
+
+  const openThemeCreator = () => {
+    openModal(
+      "theme-creator",
+      <ThemeCreatorModal
+        embedded
+        onClose={() => closeModal("theme-creator")}
+      />,
+      {
+        layout: "fullscreen",
+        hideBackdrop: true,
+        showCloseButton: false,
+        disableBackdropClick: true,
+        style: { paddingVertical: 0 },
+      },
+    );
+  };
 
   if (!settings) return null;
 
@@ -393,6 +434,82 @@ export const AppAppearanceSettings = observer(() => {
           }}
           elevation={app.settings?.preferEmbossed ? 2 : 0}
         >
+          <Typography level="body-md" weight={700}>
+            {tCommon("language.title")}
+          </Typography>
+          <Typography level="body-xs" textColor="muted">
+            {tCommon("language.description")}
+          </Typography>
+          <Box style={{ gap: 8 }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: preferredLocale === "system" }}
+              onPress={() => selectLocale("system")}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingVertical: 10,
+                paddingHorizontal: 12,
+                borderRadius: 10,
+                backgroundColor:
+                  preferredLocale === "system"
+                    ? "rgba(127,127,127,0.18)"
+                    : "transparent",
+              }}
+            >
+              <Typography level="body-sm">
+                {tCommon("language.systemDefault")}
+              </Typography>
+              {preferredLocale === "system" ? (
+                <CheckIcon size={18} weight="bold" color={currentTheme.colors.primary} />
+              ) : null}
+            </Pressable>
+            {supportedLocales.map((locale) => {
+              const selected = preferredLocale === locale;
+              return (
+                <Pressable
+                  key={locale}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  onPress={() => selectLocale(locale)}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    paddingVertical: 10,
+                    paddingHorizontal: 12,
+                    borderRadius: 10,
+                    backgroundColor: selected
+                      ? "rgba(127,127,127,0.18)"
+                      : "transparent",
+                  }}
+                >
+                  <Typography level="body-sm">
+                    {localeNativeNames[locale]}
+                  </Typography>
+                  {selected ? (
+                    <CheckIcon
+                      size={18}
+                      weight="bold"
+                      color={currentTheme.colors.primary}
+                    />
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </Box>
+        </Paper>
+
+        <Paper
+          style={{
+            padding: 16,
+            borderRadius: 12,
+            gap: 12,
+            minWidth: 0,
+          }}
+          elevation={app.settings?.preferEmbossed ? 2 : 0}
+        >
           <Box
             style={{
               flexDirection: "row",
@@ -412,14 +529,14 @@ export const AppAppearanceSettings = observer(() => {
               }}
             >
               <Typography level="body-md" weight={700}>
-                Themes
+                {t("appearance.themes")}
               </Typography>
               <IconButton
                 padding={6}
                 size={16}
                 variant="soft"
                 color="neutral"
-                onPress={() => setThemeCreatorOpen(true)}
+                onPress={openThemeCreator}
               >
                 <PaletteIcon weight="fill" />
               </IconButton>
@@ -442,7 +559,7 @@ export const AppAppearanceSettings = observer(() => {
             }}
           >
             <Typography level="body-xs" textColor="muted" style={{ flex: 1 }}>
-              Prefer embossed
+              {t("appearance.preferEmbossedShort")}
             </Typography>
             <Switch
               checked={settings.preferEmbossed}
@@ -453,7 +570,7 @@ export const AppAppearanceSettings = observer(() => {
             />
           </Pressable>
 
-          <SectionHeader title="Default Themes" />
+          <SectionHeader title={t("appearance.defaultThemes")} />
           <Box
             style={{
               flexDirection: "row",
@@ -484,7 +601,7 @@ export const AppAppearanceSettings = observer(() => {
 
           {userThemes.length > 0 && (
             <>
-              <SectionHeader title="Your Themes" />
+              <SectionHeader title={t("appearance.yourThemes")} />
               <ThemeGrid
                 themes={userThemes}
                 isSelected={isThemeSelected}
@@ -495,10 +612,10 @@ export const AppAppearanceSettings = observer(() => {
             </>
           )}
 
-          <SectionHeader title="Color Themes" />
+          <SectionHeader title={t("appearance.colorThemes")} />
 
           <Typography level="body-xs" weight={700}>
-            Normal
+            {t("appearance.normal")}
           </Typography>
           <ThemeGrid
             themes={normalThemes}
@@ -507,7 +624,7 @@ export const AppAppearanceSettings = observer(() => {
           />
 
           <Typography level="body-xs" weight={700}>
-            Gradient
+            {t("appearance.gradient")}
           </Typography>
           <ThemeGrid
             themes={gradientThemes}
@@ -526,10 +643,13 @@ export const AppAppearanceSettings = observer(() => {
           elevation={app.settings?.preferEmbossed ? 2 : 0}
         >
           <Typography level="body-md" weight={700}>
-            Icons
+            {t("appearance.icons")}
+          </Typography>
+          <Typography level="body-xs" textColor="muted">
+            {t("appearance.iconsDescriptionMobile")}
           </Typography>
 
-          <SectionHeader title="Default Icons" />
+          <SectionHeader title={t("appearance.defaultIcons")} />
           <Box
             style={{
               flexDirection: "row",
@@ -557,7 +677,7 @@ export const AppAppearanceSettings = observer(() => {
 
           {userThemes.length > 0 && (
             <>
-              <SectionHeader title="Your Icons" />
+              <SectionHeader title={t("appearance.yourIcons")} />
               <Box
                 style={{
                   flexDirection: "row",
@@ -579,10 +699,6 @@ export const AppAppearanceSettings = observer(() => {
           )}
         </Paper>
       </ScrollView>
-      <ThemeCreatorModal
-        visible={themeCreatorOpen}
-        onClose={() => setThemeCreatorOpen(false)}
-      />
     </>
   );
 });

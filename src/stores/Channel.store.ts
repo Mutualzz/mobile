@@ -6,6 +6,7 @@ import type { AppStore } from "./App.store";
 import { Channel } from "./objects/Channel";
 import { omitBooleanRelations } from "@utils/apiRelations";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import i18n from "../i18n";
 
 export interface OpenGroupDMOptions {
   recipientIds: Snowflake[];
@@ -230,9 +231,7 @@ export class ChannelStore {
     rounded,
   }: OpenGroupDMOptions): Promise<Channel> {
     if (recipientIds.length > 9) {
-      throw new Error(
-        "Group DMs cannot exceed 9 recipients (10 including you)",
-      );
+      throw new Error(i18n.t("groupDm.maxRecipients", { ns: "chat" }));
     }
 
     const formData = new FormData();

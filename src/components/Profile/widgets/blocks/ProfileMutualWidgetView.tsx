@@ -12,6 +12,7 @@ import type {
 import { Stack, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { UsersThreeIcon } from "phosphor-react-native";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 const VISIBLE_COUNT: Record<ProfileBlockSize, number> = { s: 3, m: 6, l: 10 };
@@ -24,6 +25,7 @@ interface Props {
 
 export const ProfileMutualWidgetView = observer(
   ({ block, size, userId }: Props) => {
+    const { t } = useTranslation("settings");
     const app = useAppStore();
     const maxItems = block.maxItems ?? 6;
 
@@ -37,7 +39,9 @@ export const ProfileMutualWidgetView = observer(
         <Stack direction="row" alignItems="center" style={{ gap: 6 }}>
           <UsersThreeIcon size={16} weight="fill" />
           <Typography level="body-sm" weight="bold">
-            {block.mode === "spaces" ? "Mutual Spaces" : "Friends"}
+            {block.mode === "spaces"
+              ? t("profile.blocks.mutualSpaces")
+              : t("profile.blocks.friendsStatus")}
           </Typography>
         </Stack>
 
@@ -46,11 +50,13 @@ export const ProfileMutualWidgetView = observer(
             level="body-sm"
             textColor={isFriend ? "primary" : "muted"}
           >
-            {isFriend ? "You are friends" : "Not friends yet"}
+            {isFriend
+              ? t("profile.blocks.youAreFriends")
+              : t("profile.blocks.notFriendsYet")}
           </Typography>
         ) : visible.length === 0 ? (
           <Typography level="body-sm" textColor="muted">
-            No mutual spaces
+            {t("profile.blocks.noMutualSpaces")}
           </Typography>
         ) : (
           <Stack direction="column" style={{ gap: 6 }}>
@@ -73,7 +79,9 @@ export const ProfileMutualWidgetView = observer(
             ))}
             {mutualSpaces.length > visible.length && (
               <Typography level="body-xs" textColor="muted">
-                +{mutualSpaces.length - visible.length} more
+                {t("profile.blocks.moreCount", {
+                  value: mutualSpaces.length - visible.length,
+                })}
               </Typography>
             )}
           </Stack>
@@ -91,6 +99,7 @@ export const ProfileMutualWidgetExpandedContent = observer(
     block: MobileProfileMutualBlock;
     userId: Snowflake;
   }) => {
+    const { t } = useTranslation("settings");
     const app = useAppStore();
     const maxItems = block.maxItems ?? 6;
     const mutualSpaces =
@@ -100,7 +109,9 @@ export const ProfileMutualWidgetExpandedContent = observer(
     if (block.mode === "friends") {
       return (
         <Typography level="body-sm" textColor={isFriend ? "primary" : "muted"}>
-          {isFriend ? "You are friends" : "Not friends yet"}
+          {isFriend
+            ? t("profile.blocks.youAreFriends")
+            : t("profile.blocks.notFriendsYet")}
         </Typography>
       );
     }
@@ -108,7 +119,7 @@ export const ProfileMutualWidgetExpandedContent = observer(
     if (mutualSpaces.length === 0) {
       return (
         <Typography level="body-sm" textColor="muted">
-          No mutual spaces
+          {t("profile.blocks.noMutualSpaces")}
         </Typography>
       );
     }

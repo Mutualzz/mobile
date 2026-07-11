@@ -6,10 +6,12 @@ import { Paper } from "@components/Paper";
 import { useUserRowStyle } from "@components/userRowStyle";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
+import { presenceStatusKeys } from "@mutualzz/i18n";
 import { Box, Typography } from "@mutualzz/ui-native";
 import type { Relationship } from "@stores/objects/Relationship";
 import { observer } from "mobx-react-lite";
 import { useEffect, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView } from "react-native";
 
 export type FriendsTab = "online" | "all" | "pending";
@@ -23,16 +25,18 @@ const RelationshipRow = ({
   actions?: ReactNode;
   showPresence?: boolean;
 }) => {
+  const { t } = useTranslation("common");
   const app = useAppStore();
   const user = relationship.otherUser;
   const rowStyle = useUserRowStyle();
   if (!user) return null;
 
   const presence = showPresence ? app.presence.get(user.id) : null;
-  const statusLabel =
+  const statusKey =
     presence?.status && presence.status !== "offline"
-      ? presence.status.charAt(0).toUpperCase() + presence.status.slice(1)
+      ? presenceStatusKeys[presence.status as keyof typeof presenceStatusKeys]
       : null;
+  const statusLabel = statusKey ? t(statusKey) : null;
 
   return (
     <UserProfileTrigger user={user}>
@@ -60,6 +64,7 @@ const RelationshipRow = ({
 
 const MessageActions = ({ relationship }: { relationship: Relationship }) => {
   const app = useAppStore();
+  const { t } = useTranslation("chat");
   const { navigate } = useAppNavigation();
 
   return (
@@ -75,7 +80,7 @@ const MessageActions = ({ relationship }: { relationship: Relationship }) => {
           app.setDMDrawerOpen(false);
         }}
       >
-        Message
+        {t("friends.message")}
       </Button>
       <Button
         size="sm"
@@ -87,7 +92,7 @@ const MessageActions = ({ relationship }: { relationship: Relationship }) => {
           void app.relationships.removeFriend(user.id);
         }}
       >
-        Remove
+        {t("friends.remove")}
       </Button>
     </>
   );
@@ -99,6 +104,7 @@ interface Props {
 
 export const FriendsHub = observer(({ tab }: Props) => {
   const app = useAppStore();
+  const { t } = useTranslation("chat");
 
   useEffect(() => {
     void app.relationships.resolveAll();
@@ -117,7 +123,7 @@ export const FriendsHub = observer(({ tab }: Props) => {
           textColor="muted"
           style={{ textAlign: "center", paddingVertical: 24 }}
         >
-          None of your friends are online right now.
+          {t("friends.emptyOnline")}
         </Typography>
       );
     }
@@ -125,7 +131,7 @@ export const FriendsHub = observer(({ tab }: Props) => {
     return (
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         <ListSection
-          name={`Online — ${online.length}`}
+          name={t("friends.onlineCount", { count: online.length })}
           items={online.map((relationship) => (
             <RelationshipRow
               key={relationship.id}
@@ -147,7 +153,7 @@ export const FriendsHub = observer(({ tab }: Props) => {
           textColor="muted"
           style={{ textAlign: "center", paddingVertical: 24 }}
         >
-          You don&apos;t have any friends yet.
+          {t("friends.emptyAll")}
         </Typography>
       );
     }
@@ -155,7 +161,7 @@ export const FriendsHub = observer(({ tab }: Props) => {
     return (
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         <ListSection
-          name={`All — ${friends.length}`}
+          name={t("friends.allCount", { count: friends.length })}
           items={friends.map((relationship) => (
             <RelationshipRow
               key={relationship.id}
@@ -175,7 +181,7 @@ export const FriendsHub = observer(({ tab }: Props) => {
         textColor="muted"
         style={{ textAlign: "center", paddingVertical: 24 }}
       >
-        There are no pending friend requests.
+        {t("friends.emptyPending")}
       </Typography>
     );
   }
@@ -183,7 +189,7 @@ export const FriendsHub = observer(({ tab }: Props) => {
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
       <ListSection
-        name={`Received — ${incoming.length}`}
+        name={t("friends.receivedCount", { count: incoming.length })}
         items={incoming.map((relationship) => (
           <RelationshipRow
             key={relationship.id}
@@ -199,7 +205,7 @@ export const FriendsHub = observer(({ tab }: Props) => {
                     )
                   }
                 >
-                  Accept
+                  {t("contextMenu.acceptFriendRequest")}
                 </Button>
                 <Button
                   size="sm"
@@ -210,7 +216,7 @@ export const FriendsHub = observer(({ tab }: Props) => {
                     )
                   }
                 >
-                  Decline
+                  {t("contextMenu.declineFriendRequest")}
                 </Button>
                 <Button
                   size="sm"
@@ -222,7 +228,7 @@ export const FriendsHub = observer(({ tab }: Props) => {
                     )
                   }
                 >
-                  Block
+                  {t("contextMenu.block")}
                 </Button>
               </>
             }
@@ -231,7 +237,7 @@ export const FriendsHub = observer(({ tab }: Props) => {
       />
 
       <ListSection
-        name={`Sent — ${outgoing.length}`}
+        name={t("friends.sentCount", { count: outgoing.length })}
         items={outgoing.map((relationship) => (
           <RelationshipRow
             key={relationship.id}
@@ -246,7 +252,7 @@ export const FriendsHub = observer(({ tab }: Props) => {
                   )
                 }
               >
-                Cancel
+                {t("contextMenu.cancelFriendRequest")}
               </Button>
             }
           />

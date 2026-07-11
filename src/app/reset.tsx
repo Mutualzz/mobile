@@ -8,8 +8,10 @@ import { useMutation } from "@tanstack/react-query";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const ResetPassword = () => {
+  const { t } = useTranslation("auth");
   const app = useAppStore();
   const router = useRouter();
   const { token } = useLocalSearchParams<{ token?: string }>();
@@ -52,18 +54,18 @@ const ResetPassword = () => {
         }}
       >
         <Typography level="body-lg" weight="bold">
-          Reset Password
+          {t("reset.title")}
         </Typography>
         <Box style={{ gap: 12 }}>
           <InputPassword
             fullWidth
-            placeholder="New password"
+            placeholder={t("reset.newPasswordPlaceholder")}
             value={password}
             onChangeText={setPassword}
           />
           <InputPassword
             fullWidth
-            placeholder="Confirm new password"
+            placeholder={t("reset.confirmNewPasswordPlaceholder")}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
           />
@@ -77,7 +79,7 @@ const ResetPassword = () => {
             disabled={isPending || !password || !confirmPassword}
             onPress={() => changePassword()}
           >
-            Change password
+            {t("actions.changePassword")}
           </Button>
         </Box>
       </Paper>

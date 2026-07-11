@@ -11,6 +11,7 @@ import {
   UserPlusIcon,
 } from "phosphor-react-native";
 import { Image, Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   channel: Channel;
@@ -27,21 +28,22 @@ export function DMChannelHeader({
   onOpenManage,
   onOpenUserMenu,
 }: Props) {
+  const { t } = useTranslation("chat");
   const { theme } = useTheme();
   const headerIconSize = useScaledSquareSize(32);
 
   const title =
     channel.type === ChannelType.DM
-      ? (channel.dmRecipient?.displayName ?? "Deleted User")
+      ? (channel.dmRecipient?.displayName ?? t("deletedUser"))
       : (channel.name ??
           channel.dmRecipients
             .map((user) => user.displayName)
             .filter(Boolean)
             .join(", ")) ||
-        "Group DM";
+        t("groupDm.title");
 
   const subtitle = channel.isGroupDM
-    ? `${channel.dmRecipientsList.length} member${channel.dmRecipientsList.length === 1 ? "" : "s"}`
+    ? `${channel.dmRecipientsList.length} ${t("groupDm.manage.members")}`
     : channel.dmRecipient
       ? `@${channel.dmRecipient.username}`
       : null;
@@ -109,7 +111,9 @@ export function DMChannelHeader({
             color="neutral"
             onPress={onOpenAddRecipient}
             disabled={isFull}
-            accessibilityLabel={isFull ? "Group is full" : "Add to group"}
+            accessibilityLabel={
+              isFull ? t("header.dm.groupFull") : t("header.dm.addToGroup")
+            }
           >
             <UserPlusIcon size={20} weight="fill" />
           </IconButton>
@@ -117,7 +121,7 @@ export function DMChannelHeader({
             padding={6}
             color="neutral"
             onPress={onOpenManage}
-            accessibilityLabel="Manage group"
+            accessibilityLabel={t("groupDm.manage.title")}
           >
             <DotsThreeOutlineVerticalIcon size={20} weight="bold" />
           </IconButton>
@@ -128,7 +132,7 @@ export function DMChannelHeader({
             padding={6}
             color="neutral"
             onPress={onOpenUserMenu}
-            accessibilityLabel="Conversation options"
+            accessibilityLabel={t("groupDm.conversationOptionsA11y")}
           >
             <DotsThreeOutlineVerticalIcon size={20} weight="bold" />
           </IconButton>

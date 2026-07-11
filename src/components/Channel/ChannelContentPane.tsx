@@ -11,10 +11,12 @@ import { ChannelType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Keyboard, Pressable } from "react-native";
 
 const EmptyChannelState = () => {
     const { theme } = useTheme();
+    const { t } = useTranslation("chat");
 
     return (
         <Screen style={{ flexDirection: "column" }}>
@@ -29,7 +31,7 @@ const EmptyChannelState = () => {
             >
                 <HashIcon size={40} color={theme.typography.colors.muted} />
                 <Typography textColor="muted" style={{ textAlign: "center" }}>
-                    Select a channel to start chatting
+                    {t("selectChannel")}
                 </Typography>
             </Box>
         </Screen>

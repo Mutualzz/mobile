@@ -1,4 +1,5 @@
 import { Paper } from "@components/Paper";
+import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
 import type {
   ThemeCreatorFilter,
@@ -6,14 +7,11 @@ import type {
 } from "@stores/ThemeCreator.store";
 import { Theme } from "@stores/objects/Theme";
 import { sortThemes } from "@utils/index";
-import { Box, Button, Modal, Typography, useTheme } from "@mutualzz/ui-native";
+import { Box, Button, Typography, useTheme } from "@mutualzz/ui-native";
 import { CaretDownIcon, CheckIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView } from "react-native";
-
-const capitalize = (value: string) =>
-  value.charAt(0).toUpperCase() + value.slice(1);
 
 const LOADED_TYPES: ThemeCreatorLoadedType[] = ["default", "draft", "custom"];
 const AVAILABLE_FILTERS: ThemeCreatorFilter[] = [
@@ -31,8 +29,10 @@ interface Props {
 
 export const ThemeCreatorManagePage = observer(
   ({ onDeleteTheme, deletingTheme }: Props) => {
+    const { t } = useTranslation("settings");
     const app = useAppStore();
     const { theme: uiTheme } = useTheme();
+    const { openModal, closeModal } = useModal();
     const themeCreator = app.themeCreator;
     const {
       loadedType,
@@ -44,7 +44,6 @@ export const ThemeCreatorManagePage = observer(
       removeFilter,
       resetFilters,
     } = themeCreator;
-    const [pickerOpen, setPickerOpen] = useState(false);
 
     const themes = themeCreator.filter(
       loadedType === "custom"
@@ -70,7 +69,7 @@ export const ThemeCreatorManagePage = observer(
       <Box style={{ gap: 16 }}>
         <Box style={{ gap: 8 }}>
           <Typography level="body-sm" weight={700}>
-            Source
+            {t("themeCreator.manage.source")}
           </Typography>
           <Box style={{ flexDirection: "row", gap: 6 }}>
             {LOADED_TYPES.map((type) => {
@@ -102,7 +101,7 @@ export const ThemeCreatorManagePage = observer(
                         : uiTheme.typography.colors.muted,
                     }}
                   >
-                    {capitalize(type)}
+                    {t(`themeCreator.loadedTypes.${type}`)}
                   </Typography>
                 </Pressable>
               );
@@ -110,7 +109,65 @@ export const ThemeCreatorManagePage = observer(
           </Box>
 
           <Pressable
-            onPress={() => setPickerOpen(true)}
+            onPress={() => {
+              openModal(
+                "theme-creator-picker",
+                <Paper
+                  elevation={app.settings?.preferEmbossed ? 4 : 2}
+                  style={{
+                    width: "100%",
+                    maxWidth: 320,
+                    maxHeight: "70%",
+                    borderRadius: 16,
+                    padding: 8,
+                    gap: 2,
+                  }}
+                >
+                  <ScrollView>
+                    {sortedThemes.map((theme) => {
+                      const active = theme.id === values.id;
+                      return (
+                        <Pressable
+                          key={theme.id}
+                          onPress={() => {
+                            loadValues(Theme.serialize(theme));
+                            closeModal("theme-creator-picker");
+                          }}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            paddingVertical: 10,
+                            paddingHorizontal: 12,
+                            borderRadius: 8,
+                            backgroundColor: active
+                              ? `${uiTheme.colors.primary}18`
+                              : undefined,
+                          }}
+                        >
+                          <Typography
+                            level="body-sm"
+                            weight={active ? 600 : undefined}
+                            truncate="single"
+                            style={{ flex: 1 }}
+                          >
+                            {theme.name}
+                          </Typography>
+                          {active && (
+                            <CheckIcon
+                              size={16}
+                              weight="bold"
+                              color={uiTheme.colors.success}
+                            />
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                </Paper>,
+                { layout: "center", showCloseButton: false },
+              );
+            }}
             disabled={sortedThemes.length === 0}
             style={{
               flexDirection: "row",
@@ -127,8 +184,8 @@ export const ThemeCreatorManagePage = observer(
           >
             <Typography level="body-sm" truncate="single" style={{ flex: 1 }}>
               {sortedThemes.length === 0
-                ? "No themes available"
-                : (selectedTheme?.name ?? "Pick a theme")}
+                ? t("themeCreator.manage.noThemesAvailable")
+                : (selectedTheme?.name ?? t("themeCreator.manage.pickTheme"))}
             </Typography>
             <CaretDownIcon
               size={14}
@@ -143,7 +200,7 @@ export const ThemeCreatorManagePage = observer(
               variant="soft"
               onPress={() => app.drafts.deleteThemeDraft(values)}
             >
-              Delete Draft
+              {t("themeCreator.actions.deleteDraft")}
             </Button>
           )}
           {isCustomOwned && (
@@ -153,14 +210,16 @@ export const ThemeCreatorManagePage = observer(
               disabled={deletingTheme}
               onPress={onDeleteTheme}
             >
-              {deletingTheme ? "Deleting..." : "Delete Theme"}
+              {deletingTheme
+                ? t("account.deleting")
+                : t("themeCreator.actions.deleteTheme")}
             </Button>
           )}
         </Box>
 
         <Box style={{ gap: 8 }}>
           <Typography level="body-sm" weight={700}>
-            Filters
+            {t("themeCreator.manage.filters")}
           </Typography>
           <ScrollView
             horizontal
@@ -168,79 +227,20 @@ export const ThemeCreatorManagePage = observer(
             contentContainerStyle={{ gap: 6, paddingRight: 4 }}
           >
             <FilterChip
-              label="All"
+              label={t("themeCreator.manage.all")}
               active={filters.length === 0}
               onPress={() => resetFilters()}
             />
             {AVAILABLE_FILTERS.map((filter) => (
               <FilterChip
                 key={filter}
-                label={capitalize(filter)}
+                label={t(`themeCreator.filters.${filter}`)}
                 active={filters.includes(filter)}
                 onPress={() => toggleFilter(filter)}
               />
             ))}
           </ScrollView>
         </Box>
-
-        <Modal
-          open={pickerOpen}
-          onClose={() => setPickerOpen(false)}
-          layout="center"
-          showCloseButton={false}
-        >
-          <Paper
-            elevation={app.settings?.preferEmbossed ? 4 : 2}
-            style={{
-              width: "100%",
-              maxWidth: 320,
-              maxHeight: "70%",
-              borderRadius: 16,
-              padding: 8,
-              gap: 2,
-            }}
-          >
-            {sortedThemes.map((theme) => {
-              const active = theme.id === values.id;
-              return (
-                <Pressable
-                  key={theme.id}
-                  onPress={() => {
-                    loadValues(Theme.serialize(theme));
-                    setPickerOpen(false);
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    paddingVertical: 10,
-                    paddingHorizontal: 12,
-                    borderRadius: 8,
-                    backgroundColor: active
-                      ? `${uiTheme.colors.primary}18`
-                      : undefined,
-                  }}
-                >
-                  <Typography
-                    level="body-sm"
-                    weight={active ? 600 : undefined}
-                    truncate="single"
-                    style={{ flex: 1 }}
-                  >
-                    {theme.name}
-                  </Typography>
-                  {active && (
-                    <CheckIcon
-                      size={16}
-                      weight="bold"
-                      color={uiTheme.colors.success}
-                    />
-                  )}
-                </Pressable>
-              );
-            })}
-          </Paper>
-        </Modal>
       </Box>
     );
   },

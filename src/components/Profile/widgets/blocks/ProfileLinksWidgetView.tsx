@@ -11,6 +11,7 @@ import { Stack, Typography } from "@mutualzz/ui-native";
 import { useScaledProfileWidgetLinkMetrics } from "@utils/accessibilityLayout";
 import { ArrowSquareOutIcon } from "phosphor-react-native";
 import { Linking, Pressable, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 const VISIBLE_COUNT: Record<ProfileBlockSize, number> = { s: 1, m: 2, l: 4 };
 
@@ -93,6 +94,7 @@ interface Props {
 }
 
 export function ProfileLinksWidgetView({ block, size }: Props) {
+  const { t } = useTranslation("settings");
   const metrics = useScaledProfileWidgetLinkMetrics();
   const links = (block.links ?? []).filter(
     (link) => link.label.trim() && link.url.trim(),
@@ -113,7 +115,7 @@ export function ProfileLinksWidgetView({ block, size }: Props) {
     >
       {links.length === 0 ? (
         <Typography level="body-sm" textColor="muted">
-          No links yet
+          {t("profile.blocks.noLinksYet")}
         </Typography>
       ) : (
         <>
@@ -127,7 +129,7 @@ export function ProfileLinksWidgetView({ block, size }: Props) {
           ))}
           {remaining > 0 ? (
             <Typography level="body-xs" textColor="muted">
-              +{remaining} more
+              {t("profile.blocks.moreCount", { value: remaining })}
             </Typography>
           ) : null}
         </>
@@ -141,6 +143,7 @@ export function ProfileLinksWidgetExpandedContent({
 }: {
   block: MobileProfileLinksBlock;
 }) {
+  const { t } = useTranslation("settings");
   const links = (block.links ?? []).filter(
     (link) => link.label.trim() && link.url.trim(),
   );
@@ -149,7 +152,7 @@ export function ProfileLinksWidgetExpandedContent({
     <View style={{ gap: 6 }}>
       {links.length === 0 ? (
         <Typography level="body-sm" textColor="muted">
-          No links yet
+          {t("profile.blocks.noLinksYet")}
         </Typography>
       ) : (
         links.map((link, index) => (

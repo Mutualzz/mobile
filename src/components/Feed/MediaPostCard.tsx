@@ -10,13 +10,14 @@ import { UserAvatar } from "@components/User/UserAvatar";
 import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
 import { ExpressionType } from "@mutualzz/types";
-import { Box, Typography } from "@mutualzz/ui-native";
+import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Post } from "@stores/objects/Post";
 import { useScaledFeedPreviewSizes } from "@utils/accessibilityLayout";
 import { MODE_SWITCHER_SNAP_CLEARANCE } from "@utils/layout";
 import { FlagIcon, TrashIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   FlatList,
   Pressable,
@@ -41,7 +42,9 @@ export const MediaPostCard = observer(
     itemHeight,
     isActive = false,
   }: Props) => {
+    const { theme } = useTheme();
     const app = useAppStore();
+    const { t } = useTranslation("chat");
     const feedSizes = useScaledFeedPreviewSizes();
     const { openModal } = useModal();
     const { width } = useWindowDimensions();
@@ -82,7 +85,7 @@ export const MediaPostCard = observer(
           {isOwner ? (
             <Pressable
               onPress={() => void post.delete()}
-              accessibilityLabel="Delete post"
+              accessibilityLabel={t("feed.actions.deletePost")}
               accessibilityRole="button"
             >
               <FeedOverlayChip size={36}>
@@ -97,16 +100,16 @@ export const MediaPostCard = observer(
                   <ReportContentSheet
                     targetType="post"
                     targetId={post.id}
-                    contentLabel="this post"
+                    contentLabel={t("feed.report.thisPost")}
                     modalId={`report-post-${post.id}`}
                   />,
                 )
               }
-              accessibilityLabel="Report post"
+              accessibilityLabel={t("feed.actions.reportPost")}
               accessibilityRole="button"
             >
               <FeedOverlayChip size={36}>
-                <FlagIcon size={18} color="#fff" />
+                <FlagIcon size={18} weight="fill" />
               </FeedOverlayChip>
             </Pressable>
           )}
@@ -132,7 +135,7 @@ export const MediaPostCard = observer(
               style={{ color: "#fff" }}
               truncate="single"
             >
-              {post.author?.displayName ?? "Unknown User"}
+              {post.author?.displayName ?? t("unknownUser")}
             </Typography>
           </Box>
 

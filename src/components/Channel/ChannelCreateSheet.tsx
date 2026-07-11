@@ -21,6 +21,7 @@ import type { Space } from "@stores/objects/Space";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView, View } from "react-native";
 
 interface Props {
@@ -33,6 +34,8 @@ interface Props {
 export const ChannelCreateSheet = observer(
   ({ visible, onClose, space, parent }: Props) => {
     const app = useAppStore();
+    const { t } = useTranslation("space");
+    const { t: tCommon } = useTranslation("common");
     const { navigate } = useAppNavigation();
     const [name, setName] = useState("");
     const [type, setType] = useState<ChannelType>(ChannelType.Text);
@@ -87,13 +90,13 @@ export const ChannelCreateSheet = observer(
             }}
           >
             <Typography level="body-lg" weight="bold">
-              Create Channel
+              {t("channels.create.title")}
             </Typography>
             <ScrollView keyboardShouldPersistTaps="handled">
               <Box style={{ gap: 12 }}>
                 <InputDefault
                   fullWidth
-                  placeholder="Channel name"
+                  placeholder={t("channels.create.namePlaceholder")}
                   value={name}
                   onChangeText={setName}
                   autoFocus
@@ -106,7 +109,9 @@ export const ChannelCreateSheet = observer(
                       onPress={() => setType(channelType)}
                       startDecorator={<ChannelIcon type={channelType} />}
                     >
-                      {channelType === ChannelType.Text ? "Text" : "Voice"}
+                      {channelType === ChannelType.Text
+                        ? t("channels.create.text")
+                        : t("channels.create.voice")}
                     </Button>
                   ))}
                 </ButtonGroup>
@@ -130,7 +135,7 @@ export const ChannelCreateSheet = observer(
                 disabled={isPending}
                 expand
               >
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button
                 expand
@@ -138,7 +143,7 @@ export const ChannelCreateSheet = observer(
                 disabled={isPending || !name.trim()}
                 onPress={() => createChannel()}
               >
-                Create
+                {tCommon("create")}
               </Button>
             </Box>
           </Paper>

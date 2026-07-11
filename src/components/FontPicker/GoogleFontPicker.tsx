@@ -12,6 +12,7 @@ import { CheckIcon, UploadSimpleIcon } from "phosphor-react-native";
 import * as DocumentPicker from "expo-document-picker";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FlatList, Pressable } from "react-native";
 
 interface Props {
@@ -26,14 +27,20 @@ export const GoogleFontPicker = observer(
   ({
     value,
     onChange,
-    label = "App font",
-    description = "Applies across the app when this theme is active.",
+    label,
+    description,
     fontOwnerId,
   }: Props) => {
+    const { t } = useTranslation("common");
+    const { t: tSettings } = useTranslation("settings");
     const app = useAppStore();
     const { theme } = useTheme();
     const [query, setQuery] = useState("");
     const [uploading, setUploading] = useState(false);
+
+    const resolvedLabel = label ?? tSettings("themeCreator.colors.appFont");
+    const resolvedDescription =
+      description ?? tSettings("themeCreator.colors.appFontDescriptionShort");
 
     const ownerId = fontOwnerId ?? app.account?.id ?? null;
     const resolvedValue = value ?? DEFAULT_FONT_FAMILY;
@@ -77,11 +84,11 @@ export const GoogleFontPicker = observer(
       <Box style={{ gap: 12 }}>
         <Box style={{ gap: 4 }}>
           <Typography level="body-xs" weight={700}>
-            {label}
+            {resolvedLabel}
           </Typography>
-          {description && (
+          {resolvedDescription && (
             <Typography level="body-xs" textColor="muted">
-              {description}
+              {resolvedDescription}
             </Typography>
           )}
           <Typography
@@ -99,7 +106,7 @@ export const GoogleFontPicker = observer(
         <Input
           value={query}
           onChangeText={setQuery}
-          placeholder="Search fonts"
+          placeholder={tSettings("fonts.searchPlaceholderShort")}
         />
 
         <FlatList
@@ -148,7 +155,9 @@ export const GoogleFontPicker = observer(
           disabled={!ownerId || uploading}
           onPress={() => void uploadFont()}
         >
-          {uploading ? "Uploading..." : "Upload custom font"}
+          {uploading
+            ? tSettings("expressions.uploading")
+            : t("uploadCustomFont")}
         </Button>
       </Box>
     );

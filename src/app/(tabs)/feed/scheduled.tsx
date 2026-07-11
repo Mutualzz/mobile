@@ -7,9 +7,11 @@ import { Box, Typography } from "@mutualzz/ui-native";
 import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { ActivityIndicator, ScrollView } from "react-native";
+import { useTranslation } from "react-i18next";
 
 const FeedScheduledScreen = () => {
   const app = useAppStore();
+  const { t } = useTranslation("chat");
   const tabBarInset = useKeyboardChromeInset();
 
   const { isLoading } = useQuery({
@@ -45,7 +47,7 @@ const FeedScheduledScreen = () => {
         }}
       >
         <Typography level="body-lg" weight={700}>
-          Scheduled Posts
+          {t("feed.scheduled.title")}
         </Typography>
 
         {isLoading && (
@@ -56,7 +58,7 @@ const FeedScheduledScreen = () => {
 
         {!isLoading && scheduledPosts.length === 0 && (
           <Typography level="body-sm" textColor="muted">
-            You have no scheduled posts.
+            {t("feed.empty.scheduled")}
           </Typography>
         )}
 

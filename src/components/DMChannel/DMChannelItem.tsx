@@ -17,12 +17,15 @@ import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Keyboard, Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   channel: Channel;
 }
 
 export const DMChannelItem = observer(({ channel }: Props) => {
+  const { t } = useTranslation("chat");
+  const { t: tCommon } = useTranslation("common");
   const app = useAppStore();
   const { navigate } = useAppNavigation();
   const openProfile = useOpenUserProfile();
@@ -52,13 +55,13 @@ export const DMChannelItem = observer(({ channel }: Props) => {
 
   const title = (() => {
     if (channel.type === ChannelType.DM)
-      return recipient?.displayName ?? "Deleted User";
+      return recipient?.displayName ?? t("deletedUser");
 
     if (channel.name) return channel.name;
 
     const names = recipients.map((user) => user.displayName).filter(Boolean);
 
-    if (!names.length) return "Group DM Channel";
+    if (!names.length) return tCommon("notifications.groupDmChannel");
     if (names.length <= 2) return names.join(", ");
     return `${names.slice(0, 2).join(", ")}, +${names.length - 2}`;
   })();
@@ -66,7 +69,7 @@ export const DMChannelItem = observer(({ channel }: Props) => {
   let preview: string | null = null;
   const lastMessage = channel.lastMessage;
   if (channel.isGroupDM) {
-    preview = `${recipients.length} Members`;
+    preview = `${recipients.length} ${t("groupDm.manage.members")}`;
   } else if (lastMessage && !("status" in lastMessage)) {
     preview = `${lastMessage.author?.displayName}: ${lastMessage.content}`;
   }
@@ -83,7 +86,13 @@ export const DMChannelItem = observer(({ channel }: Props) => {
     app.setDMDrawerOpen(false);
   };
 
-  const accessibilityLabel = `${title}${mentionCount > 0 ? `, ${mentionCount} mentions` : isUnread ? ", unread" : ""}`;
+  const accessibilityLabel = `${title}${
+    mentionCount > 0
+      ? `, ${t("a11y.mentionsCount", { value: mentionCount })}`
+      : isUnread
+        ? `, ${t("a11y.unread")}`
+        : ""
+  }`;
 
   return (
     <>

@@ -8,6 +8,7 @@ import {
 import { buildVideoHtml, VIDEO_SIZE_SCRIPT } from "@utils/webViewVideo";
 import { StarIcon } from "phosphor-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Image,
     Linking,
@@ -33,6 +34,7 @@ export function MessageGifEmbed({
     isFavorited,
     onToggleFavorite,
 }: Props) {
+    const { t } = useTranslation("chat");
     const { theme } = useTheme();
     const { width: windowWidth } = useWindowDimensions();
     const maxWidth = getMessageGifMaxWidth(windowWidth);
@@ -152,7 +154,7 @@ export function MessageGifEmbed({
                 color="neutral"
                 onPress={onToggleFavorite}
                 accessibilityLabel={
-                    isFavorited ? "Remove from favorites" : "Add to favorites"
+                    isFavorited ? t("favorites.remove") : t("favorites.add")
                 }
                 style={styles.favoriteBtn}
             >

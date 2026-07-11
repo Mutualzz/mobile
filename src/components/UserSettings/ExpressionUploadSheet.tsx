@@ -10,6 +10,7 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Image } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   type: ExpressionType;
@@ -29,6 +30,8 @@ export const ExpressionUploadSheet = observer(
     modalId = "expression-upload",
     spaceId,
   }: Props) => {
+    const { t } = useTranslation("settings");
+    const { t: tCommon } = useTranslation("common");
     const app = useAppStore();
     const { closeModal } = useModal();
     const feedSizes = useScaledFeedPreviewSizes();
@@ -38,7 +41,7 @@ export const ExpressionUploadSheet = observer(
     const [error, setError] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
 
-    const label = type === ExpressionType.Emoji ? "emoji" : "sticker";
+    const isEmoji = type === ExpressionType.Emoji;
 
     const handleUpload = async () => {
       const trimmed = name.trim();
@@ -83,7 +86,9 @@ export const ExpressionUploadSheet = observer(
                 "message" in e &&
                 typeof e.message === "string"
               ? e.message
-              : `Failed to upload ${label}`;
+              : isEmoji
+                ? t("expressions.uploadFailedEmoji")
+                : t("expressions.uploadFailedSticker");
         setError(message);
       } finally {
         setUploading(false);
@@ -102,7 +107,9 @@ export const ExpressionUploadSheet = observer(
         elevation={app.settings?.preferEmbossed ? 4 : 2}
       >
         <Typography level="body-md" weight={700}>
-          Upload {label}
+          {isEmoji
+            ? t("expressions.uploadEmojiTitle")
+            : t("expressions.uploadStickerTitle")}
         </Typography>
 
         <Box style={{ alignItems: "center", paddingVertical: 8 }}>
@@ -119,17 +126,23 @@ export const ExpressionUploadSheet = observer(
 
         <Box style={{ gap: 8 }}>
           <Typography level="body-xs" textColor="muted">
-            Name
+            {t("expressions.name")}
           </Typography>
           <Input
             value={name}
             onChangeText={setName}
-            placeholder={`my_${label}`}
+            placeholder={
+              isEmoji
+                ? t("expressions.namePlaceholderEmoji")
+                : t("expressions.namePlaceholderSticker")
+            }
             maxLength={32}
             autoCapitalize="none"
           />
           <Typography level="body-xs" textColor="muted">
-            Use as :{name.trim() || label}:
+            {t("expressions.useAs", {
+              name: name.trim() || (isEmoji ? "emoji" : "sticker"),
+            })}
           </Typography>
         </Box>
 
@@ -147,7 +160,7 @@ export const ExpressionUploadSheet = observer(
             disabled={uploading}
             onPress={() => closeModal(modalId)}
           >
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button
             color="success"
@@ -155,7 +168,7 @@ export const ExpressionUploadSheet = observer(
             disabled={!name.trim() || uploading}
             onPress={() => void handleUpload()}
           >
-            {uploading ? "Uploading..." : "Upload"}
+            {uploading ? t("expressions.uploading") : t("expressions.upload")}
           </Button>
         </Box>
       </Paper>

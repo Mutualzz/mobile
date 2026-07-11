@@ -34,6 +34,7 @@ import {
 import * as Clipboard from "expo-clipboard";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Image, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -47,10 +48,12 @@ const QuickReactionButton = ({
   item,
   onPress,
   backgroundColor,
+  accessibilityLabel,
 }: {
   item: QuickReactionItem;
   onPress: () => void;
   backgroundColor: string;
+  accessibilityLabel: string;
 }) => {
   const minHeight = useScaledTouchTarget(48);
   const iconSize = useScaledSquareSize(26);
@@ -58,6 +61,8 @@ const QuickReactionButton = ({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       style={{
         flex: 1,
         minWidth: 0,
@@ -84,6 +89,8 @@ const QuickReactionButton = ({
 export const MessageActionSheet = observer(
   ({ message, visible, onClose }: Props) => {
     const app = useAppStore();
+    const { t } = useTranslation("chat");
+    const { t: tCommon } = useTranslation("common");
     const { theme } = useTheme();
     const insets = useSafeAreaInsets();
     const minHeight = useScaledTouchTarget(48);
@@ -152,7 +159,7 @@ export const MessageActionSheet = observer(
         <ReportContentSheet
           targetType="message"
           targetId={message.id}
-          contentLabel="this message"
+          contentLabel={t("report.thisMessage")}
           modalId={`report-message-${message.id}`}
         />,
       );
@@ -226,11 +233,16 @@ export const MessageActionSheet = observer(
                           key={item.key}
                           item={item}
                           backgroundColor={`${theme.colors.neutral}22`}
+                          accessibilityLabel={t("actions.reactWith", {
+                            emoji: item.title,
+                          })}
                           onPress={() => handleQuickReaction(item)}
                         />
                       ))}
                       <Pressable
                         onPress={() => setPickerOpen(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t("composer.openEmojiPicker")}
                         style={{
                           flex: 1,
                           minWidth: 0,
@@ -270,7 +282,7 @@ export const MessageActionSheet = observer(
                           }
                           onPress={handleReply}
                         >
-                          Reply
+                          {t("actions.reply")}
                         </Button>
                       )}
                       {canCopy && (
@@ -280,7 +292,7 @@ export const MessageActionSheet = observer(
                           startDecorator={<CopyIcon size={20} />}
                           onPress={() => void handleCopy()}
                         >
-                          Copy Text
+                          {t("actions.copyText")}
                         </Button>
                       )}
                       {canEdit && (
@@ -292,7 +304,7 @@ export const MessageActionSheet = observer(
                           }
                           onPress={handleEdit}
                         >
-                          Edit Message
+                          {t("actions.editMessage")}
                         </Button>
                       )}
                       {canDelete && (
@@ -303,7 +315,7 @@ export const MessageActionSheet = observer(
                           startDecorator={<TrashIcon size={20} weight="fill" />}
                           onPress={() => void handleDelete()}
                         >
-                          Delete Message
+                          {t("actions.deleteMessage")}
                         </Button>
                       )}
                       {canReport && (
@@ -314,7 +326,7 @@ export const MessageActionSheet = observer(
                           startDecorator={<FlagIcon size={20} weight="fill" />}
                           onPress={handleReport}
                         >
-                          Report Message
+                          {t("actions.reportMessage")}
                         </Button>
                       )}
                     </ButtonGroup>
@@ -333,7 +345,7 @@ export const MessageActionSheet = observer(
                     padding={14}
                     onPress={onClose}
                   >
-                    Cancel
+                    {tCommon("cancel")}
                   </Button>
                 </Paper>
               </Box>

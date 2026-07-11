@@ -1,6 +1,7 @@
 import { Button } from "@components/Button";
 import { Typography, useTheme } from "@mutualzz/ui-native";
 import { SquaresFourIcon } from "phosphor-react-native";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function ProfileWidgetsEmptyEditor({ onCopyFromDesktop }: Props) {
+  const { t } = useTranslation("settings");
   const { theme } = useTheme();
 
   return (
@@ -26,11 +28,11 @@ export function ProfileWidgetsEmptyEditor({ onCopyFromDesktop }: Props) {
         textColor="muted"
         style={{ textAlign: "center" }}
       >
-        Add your first widget below to start customizing your mobile profile.
+        {t("profile.widgets.emptyEditor")}
       </Typography>
       {onCopyFromDesktop && (
         <Button variant="soft" color="neutral" onPress={onCopyFromDesktop}>
-          Copy layout from desktop
+          {t("profile.widgets.copyFromDesktop")}
         </Button>
       )}
     </View>

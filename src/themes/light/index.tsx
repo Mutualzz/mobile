@@ -1,6 +1,7 @@
 import { baseLightTheme } from "@mutualzz/ui-core";
 import { etherealWhisperTheme } from "./gradient/EtherealWhisper";
 import { floralRadianceTheme } from "./gradient/FloralRadiance";
+import { forestDayGradientTheme } from "./gradient/ForestDay";
 import { mourningMistTheme } from "./gradient/MourningMist";
 import { mysticAuroraTheme } from "./gradient/MysticAurora";
 import { roseDuskTheme } from "./gradient/RoseDusk";
@@ -13,6 +14,7 @@ import { violetNocturneTheme } from "./gradient/VioletNocturne";
 import { arcaneSunriseTheme } from "./normal/ArcaneSunrise";
 import { cemeteryDawnTheme } from "./normal/CemeteryDawn";
 import { chromeVeilTheme } from "./normal/ChromeVeil";
+import { forestDayTheme } from "./normal/ForestDay";
 import { mistOfHopeTheme } from "./normal/MistOfHope";
 import { oceanReverieTheme } from "./normal/OceanReverie";
 import { phantomGraceTheme } from "./normal/PhantomGrace";
@@ -25,6 +27,7 @@ import { victorianBloomTheme } from "./normal/VictorianBloom";
 export const lightThemes = [
     etherealWhisperTheme,
     floralRadianceTheme,
+    forestDayGradientTheme,
     mourningMistTheme,
     mysticAuroraTheme,
     roseDuskTheme,
@@ -38,6 +41,7 @@ export const lightThemes = [
     arcaneSunriseTheme,
     cemeteryDawnTheme,
     chromeVeilTheme,
+    forestDayTheme,
     mistOfHopeTheme,
     oceanReverieTheme,
     phantomGraceTheme,

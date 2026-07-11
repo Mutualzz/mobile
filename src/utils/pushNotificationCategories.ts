@@ -1,4 +1,5 @@
 import * as Notifications from "expo-notifications";
+import i18n from "../i18n";
 
 export const DM_REPLY_CATEGORY_ID = "dm_reply";
 export const DM_REPLY_ACTION_ID = "dm_reply";
@@ -11,10 +12,12 @@ export function ensureDmReplyNotificationCategory() {
     [
       {
         identifier: DM_REPLY_ACTION_ID,
-        buttonTitle: "Reply",
+        buttonTitle: i18n.t("notifications.reply", { ns: "common" }),
         textInput: {
-          placeholder: "Message",
-          submitButtonTitle: "Send",
+          placeholder: i18n.t("notifications.messagePlaceholder", {
+            ns: "common",
+          }),
+          submitButtonTitle: i18n.t("notifications.send", { ns: "common" }),
         },
         options: {
           opensAppToForeground: false,

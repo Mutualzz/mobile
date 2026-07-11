@@ -13,6 +13,7 @@ import type { Channel } from "@stores/objects/Channel";
 import { XIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { Keyboard, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   channel: Channel;
@@ -26,6 +27,7 @@ export const VoiceChannelChatSheet = observer(
     const { theme } = useTheme();
     const composerVisible = useScreenComposer();
     const sheetHeight = useModalSheetMaxHeight(0.85);
+    const { t } = useTranslation("chat");
 
     const handleClose = () => {
       Keyboard.dismiss();
@@ -77,7 +79,7 @@ export const VoiceChannelChatSheet = observer(
                 <IconButton
                   padding={6}
                   color="neutral"
-                  accessibilityLabel="Close chat"
+                  accessibilityLabel={t("header.voice.closeChatA11y")}
                   onPress={handleClose}
                 >
                   <XIcon size={20} />

@@ -55,6 +55,7 @@ import {
 } from "phosphor-react-native";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -80,6 +81,7 @@ export function ProfileWidgetContentEditorSheet({
   onDelete,
   presentation = "modal",
 }: Props) {
+  const { t } = useTranslation("settings");
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [drawMode, setDrawMode] = useState(false);
@@ -141,12 +143,12 @@ export function ProfileWidgetContentEditorSheet({
         <IconButton
           padding={6}
           onPress={() => (drawMode ? setDrawMode(false) : onClose())}
-          accessibilityLabel="Back"
+          accessibilityLabel={t("profile.inspector.back")}
         >
           <ArrowLeftIcon size={20} />
         </IconButton>
         <Typography level="title-md" weight="bold">
-          {drawMode ? "Draw" : "Edit Widget"}
+          {drawMode ? t("profile.blocks.draw") : t("profile.inspector.editWidget")}
         </Typography>
       </Box>
 
@@ -209,7 +211,7 @@ export function ProfileWidgetContentEditorSheet({
               onClose();
             }}
           >
-            Delete widget
+            {t("profile.editor.deleteWidget")}
           </Button>
         </KeyboardAwareScrollView>
       )}
@@ -364,17 +366,19 @@ function ProfileBlockCornerRadiusFields({
   block: APIMobileProfileBlock;
   update: (patch: Record<string, unknown>) => void;
 }) {
+  const { t } = useTranslation("settings");
   const radius = resolveProfileBlockCornerRadius(block, "mobile");
   const isCustom = isCustomProfileBlockCornerRadius(block);
 
   return (
-    <FieldSection title="Corner radius">
+    <FieldSection
+      title={t("profile.inspector.cornerRadius.title", { value: radius })}
+    >
       <Typography level="body-xs" textColor="muted">
-        Round widget corners from {PROFILE_BLOCK_CORNER_RADIUS_MIN}px to{" "}
-        {PROFILE_BLOCK_CORNER_RADIUS_MAX}px.
-      </Typography>
-      <Typography level="body-xs">
-        Radius ({radius}px)
+        {t("profile.inspector.cornerRadius.hint", {
+          min: PROFILE_BLOCK_CORNER_RADIUS_MIN,
+          max: PROFILE_BLOCK_CORNER_RADIUS_MAX,
+        })}
       </Typography>
       <Slider
         min={PROFILE_BLOCK_CORNER_RADIUS_MIN}
@@ -393,7 +397,7 @@ function ProfileBlockCornerRadiusFields({
           color="neutral"
           onPress={() => update({ cornerRadius: undefined })}
         >
-          Reset to default
+          {t("profile.inspector.cornerRadius.resetToDefault")}
         </Button>
       )}
     </FieldSection>
@@ -417,15 +421,19 @@ function ProfileWidgetContentFields({
   onOpenGifPicker?: () => void;
   onOpenStickerPicker?: () => void;
 }) {
+  const { t } = useTranslation("settings");
+
   switch (block.type) {
     case "header":
       return (
-        <FieldSection title="Banner crop">
+        <FieldSection title={t("profile.inspector.bannerCropPosition")}>
           <Typography level="body-xs" textColor="muted">
-            Shows your avatar, name, banner, and bio on the larger size.
+            {t("profile.inspector.headerWidgetHint")}
           </Typography>
           <Typography level="body-xs">
-            Crop position ({Math.round(block.bannerFocusY ?? 50)}%)
+            {t("profile.inspector.cropPosition", {
+              percent: Math.round(block.bannerFocusY ?? 50),
+            })}
           </Typography>
           <Slider
             min={0}
@@ -438,11 +446,11 @@ function ProfileWidgetContentFields({
       );
     case "text":
       return (
-        <FieldSection title="Text">
+        <FieldSection title={t("profile.blocks.text")}>
           <ProfileMarkdownField
             value={block.content}
             onChange={(content) => update({ content })}
-            placeholder="Write something..."
+            placeholder={t("profile.inspector.writeSomething")}
             maxLength={2000}
             minHeight={100}
           />
@@ -479,7 +487,7 @@ function ProfileWidgetContentFields({
       return <ProfileLinksFields links={block.links} update={update} />;
     case "activity":
       return (
-        <FieldSection title="Activity">
+        <FieldSection title={t("profile.blocks.activity")}>
           <Box
             style={{
               flexDirection: "row",
@@ -487,7 +495,9 @@ function ProfileWidgetContentFields({
               justifyContent: "space-between",
             }}
           >
-            <Typography level="body-sm">Show custom status</Typography>
+            <Typography level="body-sm">
+              {t("profile.blocks.showCustomStatus")}
+            </Typography>
             <Switch
               checked={block.showCustomStatus ?? true}
               onChange={(showCustomStatus) => update({ showCustomStatus })}
@@ -497,9 +507,11 @@ function ProfileWidgetContentFields({
       );
     case "roles":
       return (
-        <FieldSection title="Roles">
+        <FieldSection title={t("profile.blocks.roles")}>
           <Typography level="body-xs">
-            Max roles shown ({block.maxRoles ?? 6})
+            {t("profile.inspector.maxRolesShown", {
+              value: block.maxRoles ?? 6,
+            })}
           </Typography>
           <Slider
             min={1}
@@ -512,17 +524,25 @@ function ProfileWidgetContentFields({
       );
     case "mutual":
       return (
-        <FieldSection title="Mutual">
+        <FieldSection title={t("profile.blocks.mutual")}>
           <ChipGroup
             options={[
-              { value: "spaces" as const, label: "Mutual spaces" },
-              { value: "friends" as const, label: "Friends status" },
+              {
+                value: "spaces" as const,
+                label: t("profile.blocks.mutualSpaces"),
+              },
+              {
+                value: "friends" as const,
+                label: t("profile.blocks.friendsStatus"),
+              },
             ]}
             value={block.mode}
             onChange={(mode) => update({ mode })}
           />
           <Typography level="body-xs">
-            Max items shown ({block.maxItems ?? 6})
+            {t("profile.inspector.maxItemsShown", {
+              value: block.maxItems ?? 6,
+            })}
           </Typography>
           <Slider
             min={1}
@@ -535,12 +555,21 @@ function ProfileWidgetContentFields({
       );
     case "divider":
       return (
-        <FieldSection title="Divider style">
+        <FieldSection title={t("profile.blocks.divider")}>
           <ChipGroup
             options={[
-              { value: "line" as const, label: "Line" },
-              { value: "dotted" as const, label: "Dotted" },
-              { value: "space" as const, label: "Space" },
+              {
+                value: "line" as const,
+                label: t("profile.blocks.dividerLine"),
+              },
+              {
+                value: "dotted" as const,
+                label: t("profile.blocks.dividerDotted"),
+              },
+              {
+                value: "space" as const,
+                label: t("profile.blocks.dividerSpacer"),
+              },
             ]}
             value={block.style ?? "line"}
             onChange={(style) => update({ style })}
@@ -550,21 +579,30 @@ function ProfileWidgetContentFields({
     case "quote":
       return (
         <>
-          <FieldSection title="Quote">
+          <FieldSection title={t("profile.blocks.quote")}>
             <ProfileMarkdownField
               value={block.content}
               onChange={(content) => update({ content })}
-              placeholder="Write a quote..."
+              placeholder={t("profile.widgets.defaults.quoteContent")}
               maxLength={1000}
               minHeight={100}
             />
           </FieldSection>
-          <FieldSection title="Style">
+          <FieldSection title={t("profile.inspector.style")}>
             <ChipGroup
               options={[
-                { value: "default" as const, label: "Default" },
-                { value: "accent" as const, label: "Accent" },
-                { value: "warning" as const, label: "Warning" },
+                {
+                  value: "default" as const,
+                  label: t("profile.blocks.quoteDefault"),
+                },
+                {
+                  value: "accent" as const,
+                  label: t("profile.blocks.quoteAccent"),
+                },
+                {
+                  value: "warning" as const,
+                  label: t("profile.blocks.quoteWarning"),
+                },
               ]}
               value={block.variant ?? "default"}
               onChange={(variant) => update({ variant })}
@@ -572,7 +610,7 @@ function ProfileWidgetContentFields({
             <Input
               value={block.attribution ?? ""}
               onChangeText={(attribution) => update({ attribution })}
-              placeholder="Attribution (optional)"
+              placeholder={t("profile.inspector.attributionOptional")}
             />
           </FieldSection>
         </>
@@ -593,10 +631,11 @@ function ProfileDrawFields({
   block: Extract<APIMobileProfileBlock, { type: "draw" }>;
   onStartDrawing?: () => void;
 }) {
+  const { t } = useTranslation("settings");
   const drawPreviewHeight = useScaledProfilePreviewHeight(160);
 
   return (
-    <FieldSection title="Drawing">
+    <FieldSection title={t("profile.blocks.draw")}>
       {block.svgData ? (
         <Box
           style={{
@@ -611,7 +650,7 @@ function ProfileDrawFields({
         </Box>
       ) : (
         <Typography level="body-sm" textColor="muted">
-          No drawing yet. Open the canvas to sketch something for this widget.
+          {t("profile.inspector.noDrawingYet")}
         </Typography>
       )}
       <Button
@@ -619,7 +658,9 @@ function ProfileDrawFields({
         onPress={onStartDrawing}
         disabled={!onStartDrawing}
       >
-        {block.svgData ? "Edit drawing" : "Start drawing"}
+        {block.svgData
+          ? t("profile.inspector.editDrawing")
+          : t("profile.inspector.openDrawingEditor")}
       </Button>
     </FieldSection>
   );
@@ -634,31 +675,35 @@ function ProfileStickerFields({
   update: (patch: Record<string, unknown>) => void;
   onOpenStickerPicker?: () => void;
 }) {
+  const { t } = useTranslation("settings");
+  const { t: tChat } = useTranslation("chat");
   const stickerPreviewHeight = useScaledProfilePreviewHeight(140);
 
   return (
     <>
-      <FieldSection title="Preview">
+      <FieldSection title={t("profile.preview")}>
         <View style={{ width: "100%", height: stickerPreviewHeight }}>
           <ProfileStickerWidgetView block={block} />
         </View>
       </FieldSection>
 
-      <FieldSection title="Sticker">
+      <FieldSection title={t("profile.blocks.sticker")}>
         <Button
           color="neutral"
           onPress={onOpenStickerPicker}
           disabled={!onOpenStickerPicker}
         >
           <StickerIcon size={14} />{" "}
-          {block.expressionId ? "Change sticker" : "Choose sticker"}
+          {block.expressionId
+            ? t("profile.inspector.changeSticker")
+            : t("profile.inspector.chooseSticker")}
         </Button>
         {block.expressionId ? (
           <Button
             color="neutral"
             onPress={() => update({ expressionId: "" })}
           >
-            Remove sticker
+            {tChat("composer.removeSticker")}
           </Button>
         ) : null}
       </FieldSection>
@@ -681,6 +726,7 @@ function ProfileImageFields({
   update: (patch: Record<string, unknown>) => void;
   onOpenGifPicker?: () => void;
 }) {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const [uploading, setUploading] = useState(false);
   const [recropping, setRecropping] = useState(false);
@@ -712,12 +758,20 @@ function ProfileImageFields({
         });
         update({ src: result.hash, crop: null });
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to upload image");
+        setError(
+          e instanceof Error
+            ? e.message
+            : t("profile.inspector.failedUploadAsset", {
+                label: t("profile.inspector.assetLabels.image"),
+              }),
+        );
       } finally {
         setUploading(false);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to pick image");
+      setError(
+        e instanceof Error ? e.message : t("profile.inspector.failedPickImage"),
+      );
     }
   };
 
@@ -726,7 +780,7 @@ function ProfileImageFields({
 
     const sourceUrl = profile.constructBlockImageSourceUrl(src);
     if (!sourceUrl) {
-      setError("This image cannot be re-cropped");
+      setError(t("profile.inspector.cannotRecrop"));
       return;
     }
 
@@ -738,7 +792,11 @@ function ProfileImageFields({
         update({ crop: nextCrop });
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to adjust crop");
+      setError(
+        e instanceof Error
+          ? e.message
+          : t("profile.inspector.failedAdjustCrop"),
+      );
     } finally {
       setRecropping(false);
     }
@@ -747,7 +805,7 @@ function ProfileImageFields({
   return (
     <>
       {previewUrl && (
-        <FieldSection title="Preview">
+        <FieldSection title={t("profile.preview")}>
           {previewIsVideo ? (
             <ProfileBlockLoopingVideo
               uri={previewUrl}
@@ -774,17 +832,19 @@ function ProfileImageFields({
         </FieldSection>
       )}
 
-      <FieldSection title="Image source">
+      <FieldSection title={t("profile.blocks.image")}>
         <Button color="neutral" disabled={uploading} onPress={uploadImage}>
           <UploadSimpleIcon size={14} />{" "}
-          {uploading ? "Uploading..." : "Upload image"}
+          {uploading
+            ? t("expressions.uploading")
+            : t("profile.inspector.uploadImage")}
         </Button>
         <Button
           color="neutral"
           onPress={onOpenGifPicker}
           disabled={!onOpenGifPicker}
         >
-          <GifIcon size={14} /> Choose GIF
+          <GifIcon size={14} /> {t("profile.inspector.chooseGif")}
         </Button>
         {canAdjustCrop && (
           <Button
@@ -793,18 +853,20 @@ function ProfileImageFields({
             onPress={adjustCrop}
           >
             <CropIcon size={14} />{" "}
-            {recropping ? "Opening cropper..." : "Adjust crop"}
+            {recropping
+              ? t("profile.inspector.openingCropper")
+              : t("profile.inspector.adjustCrop")}
           </Button>
         )}
         {crop && canAdjustCrop && (
           <Button color="neutral" onPress={() => update({ crop: null })}>
-            Reset crop
+            {t("profile.editor.resetCrop")}
           </Button>
         )}
         <Input
           value={src}
           onChangeText={(next) => update({ src: next, crop: null })}
-          placeholder="Or paste an image URL"
+          placeholder={t("profile.inspector.pasteImageUrl")}
           autoCapitalize="none"
         />
         {error && (
@@ -814,19 +876,21 @@ function ProfileImageFields({
         )}
       </FieldSection>
 
-      <FieldSection title="Display">
+      <FieldSection title={t("profile.inspector.display")}>
         <ChipGroup
           options={[
-            { value: "cover" as const, label: "Cover" },
-            { value: "contain" as const, label: "Contain" },
+            { value: "cover" as const, label: t("profile.inspector.cover") },
+            {
+              value: "contain" as const,
+              label: t("profile.inspector.contain"),
+            },
           ]}
           value={objectFit ?? "cover"}
           onChange={(next) => update({ objectFit: next })}
         />
         {canAdjustCrop && (
           <Typography level="body-xs" textColor="muted">
-            Use Adjust crop to choose which part of the image shows in the
-            widget. Full view always shows the original image.
+            {t("profile.inspector.cropHint")}
           </Typography>
         )}
       </FieldSection>
@@ -843,6 +907,7 @@ function ProfileMusicFields({
   update: (patch: Record<string, unknown>) => void;
   onOpenMusicSearch?: () => void;
 }) {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -873,35 +938,41 @@ function ProfileMusicFields({
         trackUrl: null,
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to upload song");
+      setError(
+        e instanceof Error
+          ? e.message
+          : t("profile.inspector.failedUploadAsset", {
+              label: t("profile.inspector.assetLabels.music"),
+            }),
+      );
     } finally {
       setUploading(false);
     }
   };
 
   const currentLabel = block.audioHash
-    ? (block.title ?? "Uploaded song")
+    ? (block.title ?? t("profile.inspector.uploadedSong"))
     : block.track
       ? `${block.track.name} — ${block.track.artists}`
       : block.title || block.artists
         ? [block.title, block.artists].filter(Boolean).join(" — ")
-        : "No song selected";
+        : t("profile.inspector.noSongSelected");
 
   return (
     <>
-      <FieldSection title="Current song">
+      <FieldSection title={t("profile.inspector.trackInfo")}>
         <Typography level="body-sm" textColor="muted">
           {currentLabel}
         </Typography>
       </FieldSection>
 
-      <FieldSection title="Change song">
+      <FieldSection title={t("profile.blocks.music")}>
         <Button
           color="neutral"
           onPress={onOpenMusicSearch}
           disabled={!onOpenMusicSearch}
         >
-          Search for a song
+          {t("profile.editor.searchForSong")}
         </Button>
         <Button
           color="neutral"
@@ -909,7 +980,9 @@ function ProfileMusicFields({
           onPress={() => void uploadMp3()}
         >
           <UploadSimpleIcon size={14} />{" "}
-          {uploading ? "Uploading..." : "Upload MP3"}
+          {uploading
+            ? t("expressions.uploading")
+            : t("profile.inspector.uploadMp3")}
         </Button>
         {error && (
           <Typography level="body-xs" color="danger">
@@ -918,11 +991,11 @@ function ProfileMusicFields({
         )}
       </FieldSection>
 
-      <FieldSection title="YouTube link (optional)">
+      <FieldSection title={t("profile.inspector.youtubeLink")}>
         <Input
           value={block.youtubeUrl ?? ""}
           onChangeText={(youtubeUrl) => update({ youtubeUrl })}
-          placeholder="https://youtube.com/..."
+          placeholder={t("profile.editor.urlPlaceholder")}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
@@ -939,6 +1012,8 @@ function ProfileLinksFields({
   links: ProfileLinkItem[];
   update: (patch: Record<string, unknown>) => void;
 }) {
+  const { t } = useTranslation("settings");
+  const { t: tCommon } = useTranslation("common");
   const rows = links.length > 0 ? links : [{ label: "", url: "" }];
 
   const setLink = (index: number, patch: Partial<ProfileLinkItem>) => {
@@ -954,7 +1029,7 @@ function ProfileLinksFields({
   };
 
   return (
-    <FieldSection title="Links">
+    <FieldSection title={t("profile.blocks.links")}>
       <Box style={{ gap: 12 }}>
         {rows.map((link, index) => (
           <Box
@@ -965,19 +1040,19 @@ function ProfileLinksFields({
               <Input
                 value={link.label}
                 onChangeText={(label) => setLink(index, { label })}
-                placeholder="Label"
+                placeholder={t("profile.inspector.linkLabel")}
               />
               <Input
                 value={link.url}
                 onChangeText={(url) => setLink(index, { url })}
-                placeholder="https://..."
+                placeholder={t("profile.editor.urlPlaceholder")}
                 autoCapitalize="none"
               />
             </Box>
             <IconButton
               variant="plain"
               color="danger"
-              accessibilityLabel="Remove link"
+              accessibilityLabel={tCommon("remove")}
               onPress={() => removeLink(index)}
             >
               <TrashIcon size={16} />
@@ -991,7 +1066,7 @@ function ProfileLinksFields({
           color="neutral"
           onPress={() => update({ links: [...rows, { label: "", url: "" }] })}
         >
-          <PlusIcon size={14} /> Add link
+          <PlusIcon size={14} /> {t("profile.editor.addLink")}
         </Button>
       )}
     </FieldSection>

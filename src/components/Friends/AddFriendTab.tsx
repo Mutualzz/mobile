@@ -10,10 +10,12 @@ import { Box, InputDefault, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert } from "react-native";
 
 export const AddFriendTab = observer(() => {
   const app = useAppStore();
+  const { t } = useTranslation("chat");
   const [identifier, setIdentifier] = useState("");
 
   const trimmed = identifier.trim();
@@ -30,10 +32,10 @@ export const AddFriendTab = observer(() => {
     matchingRelationship?.type === RelationshipType.OutgoingRequest;
 
   const buttonLabel = isFriend
-    ? "Already friends"
+    ? t("friends.alreadyFriends")
     : alreadySent
-      ? "Request sent"
-      : "Send request";
+      ? t("friends.alreadySent")
+      : t("friends.sendRequest");
 
   const isDisabled = !trimmed || isBlocked || isFriend || alreadySent;
 
@@ -47,11 +49,11 @@ export const AddFriendTab = observer(() => {
       const status = err instanceof HttpException ? err.status : null;
       const message =
         status === HttpStatusCode.NotFound
-          ? "Unknown username. Check the spelling and try again."
+          ? t("friends.unknownUsername")
           : err instanceof Error
             ? err.message
-            : "Unknown username. Check the spelling and try again.";
-      Alert.alert("Could not send request", message);
+            : t("friends.unknownUsername");
+      Alert.alert(t("friends.sendFailed"), message);
     },
   });
 
@@ -66,10 +68,10 @@ export const AddFriendTab = observer(() => {
         elevation={app.settings?.preferEmbossed ? 2 : 0}
       >
         <Typography level="body-lg" weight={700}>
-          Add friend
+          {t("friends.addTitle")}
         </Typography>
         <Typography level="body-sm" textColor="muted">
-          You can add friends by their Mutualzz username.
+          {t("friends.addDescription")}
         </Typography>
       </Paper>
 
@@ -78,7 +80,7 @@ export const AddFriendTab = observer(() => {
           fullWidth
           value={identifier}
           onChangeText={setIdentifier}
-          placeholder="Enter username"
+          placeholder={t("friends.usernamePlaceholder")}
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="send"
@@ -91,11 +93,11 @@ export const AddFriendTab = observer(() => {
           disabled={isDisabled || isPending}
           onPress={() => sendFriendRequest()}
         >
-          {isPending ? "Sending..." : buttonLabel}
+          {isPending ? t("feed.share.sending") : buttonLabel}
         </Button>
         {isBlocked && (
           <Typography level="body-sm" color="danger">
-            You have blocked this user. Unblock them before sending a request.
+            {t("friends.blockedBeforeRequest")}
           </Typography>
         )}
       </Box>

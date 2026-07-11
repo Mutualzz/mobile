@@ -1,6 +1,7 @@
 import { Button } from "@components/Button";
 import { ReactionEmojiPicker } from "@components/Expression/ReactionEmojiPicker";
 import { UnicodeEmoji } from "@components/emojis/UnicodeEmoji";
+import { useOpenBottomSheet } from "@hooks/useOpenBottomSheet";
 import { useAppStore } from "@hooks/useStores";
 import {
   formatCustomStatusClearLabel,
@@ -12,15 +13,14 @@ import {
   Box,
   IconButton,
   InputDefault,
-  Modal,
-  Paper,
   Typography,
   useTheme,
 } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
-import { CaretDownIcon, CheckIcon, XIcon } from "phosphor-react-native";
+import { XIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Image, Pressable } from "react-native";
 
 const toDurationValue = (durationMs: number | null) =>
@@ -54,13 +54,13 @@ interface Props {
 
 export const CustomStatusEditor = observer(
   ({ active = true, onSaved }: Props) => {
+    const { t } = useTranslation("common");
     const app = useAppStore();
     const { theme } = useTheme();
+    const { openBottomSheet, closeBottomSheet } = useOpenBottomSheet();
     const [text, setText] = useState("");
     const [emoji, setEmoji] = useState<PresenceActivityEmoji | null>(null);
-    const [pickerOpen, setPickerOpen] = useState(false);
     const [durationValue, setDurationValue] = useState("forever");
-    const [durationPickerOpen, setDurationPickerOpen] = useState(false);
 
     useEffect(() => {
       if (!active) return;
@@ -72,23 +72,40 @@ export const CustomStatusEditor = observer(
           STATUS_DURATION_OPTIONS[4]?.durationMs ?? 24 * 60 * 60_000,
         ),
       );
-      setPickerOpen(false);
-      setDurationPickerOpen(false);
     }, [
       active,
       app.customStatus.effectiveEmoji,
       app.customStatus.effectiveText,
     ]);
 
-    const selectedDurationOption = STATUS_DURATION_OPTIONS.find(
-      (option) => toDurationValue(option.durationMs) === durationValue,
-    );
-
     const trimmedText = text.trim();
     const canSave =
       hasCustomStatusContent(trimmedText, emoji) && trimmedText.length <= 128;
     const canClear =
       app.customStatus.enabled || !!app.customStatus.scheduledCustomStatus;
+
+    const openEmojiPicker = () => {
+      openBottomSheet(
+        "custom-status-emoji",
+        <ReactionEmojiPicker
+          embedded
+          title={t("customStatus.pickEmoji")}
+          onClose={() => closeBottomSheet("custom-status-emoji")}
+          onSelectEmoji={(pickerEmoji) => {
+            setEmoji({ name: pickerEmoji.emoji });
+            closeBottomSheet("custom-status-emoji");
+          }}
+          onSelectCustomEmoji={(expression) => {
+            setEmoji({
+              id: expression.id,
+              name: expression.name,
+              animated: expression.animated,
+            });
+            closeBottomSheet("custom-status-emoji");
+          }}
+        />,
+      );
+    };
 
     const save = () => {
       if (!canSave) return;
@@ -119,193 +136,120 @@ export const CustomStatusEditor = observer(
     };
 
     return (
-      <>
-        <Box style={{ gap: 8, paddingHorizontal: 8 }}>
-          <Typography level="body-xs" weight={700}>
-            Custom status
-          </Typography>
+      <Box style={{ gap: 8, paddingHorizontal: 8 }}>
+        <Typography level="body-xs" weight={700}>
+          {t("customStatus.heading")}
+        </Typography>
 
+        <Box
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: `${theme.typography.colors.muted}48`,
+          }}
+        >
+          <Box style={{ position: "relative" }}>
+            <IconButton
+              variant="plain"
+              color="neutral"
+              padding={4}
+              accessibilityLabel={t("customStatus.pickEmoji")}
+              onPress={openEmojiPicker}
+            >
+              {emoji ? (
+                <EmojiPreview emoji={emoji} />
+              ) : (
+                <Typography style={{ fontSize: 20 }}>🙂</Typography>
+              )}
+            </IconButton>
+            {emoji && (
+              <IconButton
+                size="sm"
+                padding={2}
+                color="neutral"
+                variant="solid"
+                accessibilityLabel={t("customStatus.removeEmoji")}
+                onPress={() => setEmoji(null)}
+                style={{
+                  position: "absolute",
+                  top: -6,
+                  right: -6,
+                  borderRadius: 9999,
+                }}
+              >
+                <XIcon size={10} color={theme.typography.colors.primary} />
+              </IconButton>
+            )}
+          </Box>
+
+          <InputDefault
+            variant="plain"
+            fullWidth
+            placeholder={t("customStatus.whatsOnYourMind")}
+            value={text}
+            onChangeText={setText}
+            maxLength={128}
+            onSubmitEditing={save}
+          />
+        </Box>
+
+        <Box style={{ gap: 6 }}>
+          <Typography level="body-xs" weight={700}>
+            {t("status.clearCustomAfter")}
+          </Typography>
           <Box
             style={{
               flexDirection: "row",
-              alignItems: "center",
+              flexWrap: "wrap",
               gap: 8,
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              borderRadius: 8,
-              borderWidth: 1,
-              borderColor: `${theme.typography.colors.muted}48`,
-            }}
-          >
-            <Box style={{ position: "relative" }}>
-              <IconButton
-                variant="plain"
-                color="neutral"
-                padding={4}
-                accessibilityLabel="Pick an emoji"
-                onPress={() => setPickerOpen(true)}
-              >
-                {emoji ? (
-                  <EmojiPreview emoji={emoji} />
-                ) : (
-                  <Typography style={{ fontSize: 20 }}>🙂</Typography>
-                )}
-              </IconButton>
-              {emoji && (
-                <IconButton
-                  size="sm"
-                  padding={2}
-                  color="neutral"
-                  variant="solid"
-                  accessibilityLabel="Remove emoji"
-                  onPress={() => setEmoji(null)}
-                  style={{
-                    position: "absolute",
-                    top: -6,
-                    right: -6,
-                    borderRadius: 9999,
-                  }}
-                >
-                  <XIcon size={10} color={theme.typography.colors.primary} />
-                </IconButton>
-              )}
-            </Box>
-
-            <InputDefault
-              variant="plain"
-              fullWidth
-              placeholder="What's on your mind?"
-              value={text}
-              onChangeText={setText}
-              maxLength={128}
-              onSubmitEditing={save}
-            />
-          </Box>
-
-          <Box style={{ gap: 6 }}>
-            <Typography level="body-xs" weight={700}>
-              Clear custom status after
-            </Typography>
-            <Pressable
-              onPress={() => setDurationPickerOpen(true)}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 8,
-                paddingHorizontal: 10,
-                paddingVertical: 8,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: `${theme.typography.colors.muted}48`,
-              }}
-            >
-              <Typography level="body-sm" truncate="single">
-                {formatCustomStatusClearLabel(
-                  selectedDurationOption?.durationMs ?? null,
-                )}
-              </Typography>
-              <CaretDownIcon
-                size={14}
-                weight="bold"
-                color={theme.typography.colors.muted}
-              />
-            </Pressable>
-          </Box>
-
-          <Box style={{ flexDirection: "row", gap: 8 }}>
-            <Button expand disabled={!canSave} onPress={save}>
-              Save custom status
-            </Button>
-            {canClear && (
-              <Button
-                expand
-                variant="plain"
-                color="danger"
-                onPress={clearStatus}
-              >
-                Clear
-              </Button>
-            )}
-          </Box>
-        </Box>
-
-        <Modal
-          open={durationPickerOpen}
-          onClose={() => setDurationPickerOpen(false)}
-          layout="center"
-          showCloseButton={false}
-        >
-          <Paper
-            elevation={app.settings?.preferEmbossed ? 4 : 2}
-            style={{
-              width: "100%",
-              maxWidth: 280,
-              borderRadius: 16,
-              padding: 8,
-              gap: 2,
             }}
           >
             {STATUS_DURATION_OPTIONS.map((option) => {
               const value = toDurationValue(option.durationMs);
               const selected = durationValue === value;
-
               return (
                 <Pressable
-                  key={option.label}
-                  onPress={() => {
-                    setDurationValue(value);
-                    setDurationPickerOpen(false);
-                  }}
+                  key={`${option.labelKey}:${option.count ?? "forever"}`}
+                  onPress={() => setDurationValue(value)}
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    paddingVertical: 10,
-                    paddingHorizontal: 12,
-                    borderRadius: 8,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: 999,
                     backgroundColor: selected
                       ? `${theme.colors.primary}18`
-                      : undefined,
+                      : theme.colors.surface,
                   }}
                 >
-                  <Typography
-                    level="body-sm"
-                    weight={selected ? 600 : undefined}
-                  >
+                  <Typography level="body-xs" weight={selected ? 700 : 500}>
                     {formatCustomStatusClearLabel(option.durationMs)}
                   </Typography>
-                  {selected && (
-                    <CheckIcon
-                      size={16}
-                      weight="bold"
-                      color={theme.colors.success}
-                    />
-                  )}
                 </Pressable>
               );
             })}
-          </Paper>
-        </Modal>
+          </Box>
+        </Box>
 
-        <ReactionEmojiPicker
-          visible={pickerOpen}
-          title="Pick an emoji"
-          onClose={() => setPickerOpen(false)}
-          onSelectEmoji={(pickerEmoji) => {
-            setEmoji({ name: pickerEmoji.emoji });
-            setPickerOpen(false);
-          }}
-          onSelectCustomEmoji={(expression) => {
-            setEmoji({
-              id: expression.id,
-              name: expression.name,
-              animated: expression.animated,
-            });
-            setPickerOpen(false);
-          }}
-        />
-      </>
+        <Box style={{ flexDirection: "row", gap: 8 }}>
+          <Button expand disabled={!canSave} onPress={save}>
+            {t("status.saveCustom")}
+          </Button>
+          {canClear && (
+            <Button
+              expand
+              variant="plain"
+              color="danger"
+              onPress={clearStatus}
+            >
+              {t("clear")}
+            </Button>
+          )}
+        </Box>
+      </Box>
     );
   },
 );

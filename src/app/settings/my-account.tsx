@@ -15,6 +15,7 @@ import type { ColorLike } from "@mutualzz/ui-core";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { type PropsWithChildren, type ReactNode, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
 
 function maskEmail(email: string) {
@@ -62,6 +63,7 @@ function AccountRow({
 }
 
 const MyAccountSettings = () => {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const { theme } = useTheme();
   const { navigate } = useAppNavigation();
@@ -104,7 +106,10 @@ const MyAccountSettings = () => {
   const elevation = app.settings?.preferEmbossed ? 4 : 2;
 
   return (
-    <SettingsScreen title="My Account" contentStyle={{ padding: 16, gap: 20 }}>
+    <SettingsScreen
+      title={t("pages.myAccount")}
+      contentStyle={{ padding: 16, gap: 20 }}
+    >
       <Paper
         style={{
           borderRadius: 12,
@@ -147,7 +152,7 @@ const MyAccountSettings = () => {
               size="sm"
               onPress={() => navigate("/settings/avatar-editor")}
             >
-              Edit Avatar
+              {t("account.editAvatar")}
             </Button>
           </Box>
 
@@ -160,7 +165,7 @@ const MyAccountSettings = () => {
             elevation={app.settings?.preferEmbossed ? -2 : 0}
           >
             <AccountRow
-              label="Display Name"
+              label={t("account.displayName")}
               action={
                 <Button
                   size="sm"
@@ -168,17 +173,17 @@ const MyAccountSettings = () => {
                   color="neutral"
                   onPress={() => navigate("/settings/profile")}
                 >
-                  Edit
+                  {t("account.edit")}
                 </Button>
               }
             >
               <Typography level="body-sm" textColor="muted">
-                {account.globalName ?? "Not set"}
+                {account.globalName ?? t("account.notSet")}
               </Typography>
             </AccountRow>
 
             <AccountRow
-              label="Username"
+              label={t("account.username")}
               action={
                 <Button
                   size="sm"
@@ -193,7 +198,7 @@ const MyAccountSettings = () => {
                     )
                   }
                 >
-                  Edit
+                  {t("account.edit")}
                 </Button>
               }
             >
@@ -203,11 +208,11 @@ const MyAccountSettings = () => {
             </AccountRow>
 
             <AccountRow
-              label="Email"
+              label={t("account.email")}
               labelSuffix={
                 !isVerified && (
                   <Typography level="body-xs" color="danger">
-                    (Unverified)
+                    {t("account.unverified")}
                   </Typography>
                 )
               }
@@ -219,7 +224,7 @@ const MyAccountSettings = () => {
                   disabled={confirmingEmail}
                   onPress={() => sendConfirmEmail()}
                 >
-                  Edit
+                  {t("account.edit")}
                 </Button>
               }
             >
@@ -234,7 +239,7 @@ const MyAccountSettings = () => {
                 <Typography level="body-sm" textColor="muted">
                   {hideEmail && isVerified
                     ? maskEmail(account.email ?? "")
-                    : (account.email ?? "Not set")}
+                    : (account.email ?? t("account.notSet"))}
                 </Typography>
                 {isVerified ? (
                   <Pressable
@@ -242,7 +247,7 @@ const MyAccountSettings = () => {
                     accessibilityRole="button"
                   >
                     <Typography level="body-xs" color="info">
-                      {hideEmail ? "Show" : "Hide"}
+                      {hideEmail ? t("account.show") : t("account.hide")}
                     </Typography>
                   </Pressable>
                 ) : (
@@ -258,7 +263,7 @@ const MyAccountSettings = () => {
                     }}
                   >
                     <Typography level="body-xs" color="success" weight={600}>
-                      {sendingCode ? "Sending..." : "Verify"}
+                      {sendingCode ? t("account.sending") : t("account.verify")}
                     </Typography>
                   </Pressable>
                 )}
@@ -270,7 +275,7 @@ const MyAccountSettings = () => {
 
       <Box style={{ gap: 8 }}>
         <Typography level="body-sm" weight={700}>
-          Password
+          {t("account.password")}
         </Typography>
         <Button
           size="sm"
@@ -284,16 +289,16 @@ const MyAccountSettings = () => {
             )
           }
         >
-          Change Password
+          {t("account.changePassword")}
         </Button>
       </Box>
 
       <Box style={{ gap: 8 }}>
         <Typography level="body-sm" weight={700} color="danger">
-          Danger Zone
+          {t("account.dangerZone")}
         </Typography>
         <Typography level="body-sm" textColor="muted">
-          Permanently deactivate your account. This cannot be undone.
+          {t("account.dangerZoneDescription")}
         </Typography>
         <Button
           size="sm"
@@ -308,7 +313,7 @@ const MyAccountSettings = () => {
             )
           }
         >
-          Delete Account
+          {t("account.deleteAccount")}
         </Button>
       </Box>
     </SettingsScreen>

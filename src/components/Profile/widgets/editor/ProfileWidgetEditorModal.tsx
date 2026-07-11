@@ -20,13 +20,14 @@ import type {
 } from "@mutualzz/types";
 import { Box, Modal, Typography, useTheme } from "@mutualzz/ui-native";
 import { XIcon } from "phosphor-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "@components/IconButton";
 
 interface Props {
-  visible: boolean;
+  visible?: boolean;
   onClose: () => void;
   profile: UserProfile;
   user: AccountStore;
@@ -36,10 +37,12 @@ interface Props {
   onSave: () => void;
   saving: boolean;
   error: string | null;
+  /** Content only — open via ModalRoot from settings to avoid nested RN Modals. */
+  embedded?: boolean;
 }
 
 export function ProfileWidgetEditorModal({
-  visible,
+  visible = true,
   onClose,
   profile,
   user,
@@ -49,49 +52,52 @@ export function ProfileWidgetEditorModal({
   onSave,
   saving,
   error,
+  embedded = false,
 }: Props) {
+  const { t } = useTranslation("settings");
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [editMode, setEditMode] = useState(false);
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+  // Local copy so ModalRoot snapshots stay interactive after open.
+  const [blocks, setBlocks] = useState(mobileBlocks);
 
-  const sortedBlocks = [...mobileBlocks].sort((a, b) => a.order - b.order);
-  const editingBlock =
-    mobileBlocks.find((b) => b.id === editingBlockId) ?? null;
+  useEffect(() => {
+    if (visible || embedded) setBlocks(mobileBlocks);
+  }, [visible, embedded, mobileBlocks]);
+
+  const syncBlocks = (next: APIMobileProfileBlock[]) => {
+    setBlocks(next);
+    onMobileBlocksChange(next);
+  };
+
+  const sortedBlocks = [...blocks].sort((a, b) => a.order - b.order);
+  const editingBlock = blocks.find((b) => b.id === editingBlockId) ?? null;
 
   const handleAddWidget = (type: ProfileBlockType) => {
-    onMobileBlocksChange(addMobileWidget(mobileBlocks, type));
+    syncBlocks(addMobileWidget(blocks, type));
   };
 
   const handleDelete = (blockId: string) => {
-    onMobileBlocksChange(removeMobileWidget(mobileBlocks, blockId));
+    syncBlocks(removeMobileWidget(blocks, blockId));
   };
 
   const handleChangeSize = (blockId: string, size: ProfileBlockSize) => {
-    onMobileBlocksChange(updateMobileWidget(mobileBlocks, blockId, { size }));
+    syncBlocks(updateMobileWidget(blocks, blockId, { size }));
   };
 
   const handleUpdateContent = (
     blockId: string,
     patch: Record<string, unknown>,
   ) => {
-    onMobileBlocksChange(updateMobileWidget(mobileBlocks, blockId, patch));
+    syncBlocks(updateMobileWidget(blocks, blockId, patch));
   };
 
   const handleCopyFromDesktop = () => {
-    onMobileBlocksChange(copyDesktopBlocksToMobile(desktopBlocks));
+    syncBlocks(copyDesktopBlocksToMobile(desktopBlocks));
   };
 
-  return (
-    <Modal
-      open={visible}
-      onClose={onClose}
-      layout="fullscreen"
-      hideBackdrop
-      showCloseButton={false}
-      disableBackdropClick
-      style={{ paddingVertical: 0 }}
-    >
+  const body = (
       <Box
         style={{
           flex: 1,
@@ -118,7 +124,7 @@ export function ProfileWidgetEditorModal({
               color="neutral"
               onPress={() => setEditMode(false)}
             >
-              Done
+              {t("profile.done")}
             </Button>
           )}
         </Box>
@@ -146,7 +152,7 @@ export function ProfileWidgetEditorModal({
               user={user}
               editMode={editMode}
               onEnterEditMode={() => setEditMode(true)}
-              onChange={onMobileBlocksChange}
+              onChange={syncBlocks}
               onEditContent={(block) => setEditingBlockId(block.id)}
               onDelete={handleDelete}
               onChangeSize={handleChangeSize}
@@ -173,23 +179,38 @@ export function ProfileWidgetEditorModal({
           }}
         >
           <Button color="primary" fullWidth disabled={saving} onPress={onSave}>
-            {saving ? "Saving..." : "Save Profile"}
+            {saving ? t("profile.saving") : t("profile.editor.saveProfile")}
           </Button>
         </Box>
-      </Box>
 
-      <ProfileWidgetContentEditorSheet
-        visible={!!editingBlock}
-        onClose={() => setEditingBlockId(null)}
-        block={editingBlock}
-        profile={profile}
-        onUpdate={handleUpdateContent}
-        presentation="overlay"
-        onDelete={(blockId) => {
-          handleDelete(blockId);
-          setEditingBlockId(null);
-        }}
-      />
+        <ProfileWidgetContentEditorSheet
+          visible={!!editingBlock}
+          onClose={() => setEditingBlockId(null)}
+          block={editingBlock}
+          profile={profile}
+          onUpdate={handleUpdateContent}
+          presentation="overlay"
+          onDelete={(blockId) => {
+            handleDelete(blockId);
+            setEditingBlockId(null);
+          }}
+        />
+      </Box>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <Modal
+      open={visible}
+      onClose={onClose}
+      layout="fullscreen"
+      hideBackdrop
+      showCloseButton={false}
+      disableBackdropClick
+      style={{ paddingVertical: 0 }}
+    >
+      {body}
     </Modal>
   );
 }

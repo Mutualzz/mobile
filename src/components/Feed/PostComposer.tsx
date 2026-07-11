@@ -27,6 +27,7 @@ import {
 } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Image, Platform, Pressable, ScrollView } from "react-native";
 
 interface Props {
@@ -37,15 +38,10 @@ const MAX_STICKERS = 3;
 const MAX_FILES = 10;
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 export const PostComposer = observer(({ onPosted }: Props) => {
   const feedSizes = useScaledFeedPreviewSizes();
   const app = useAppStore();
+  const { t } = useTranslation("chat");
   const { theme } = useTheme();
   const { navigate } = useAppNavigation();
   const [content, setContent] = useState("");
@@ -149,7 +145,10 @@ export const PostComposer = observer(({ onPosted }: Props) => {
               <Box key={sticker.id} style={{ position: "relative" }}>
                 <Image
                   source={{ uri: sticker.url }}
-                  style={{ width: feedSizes.sticker, height: feedSizes.sticker }}
+                  style={{
+                    width: feedSizes.sticker,
+                    height: feedSizes.sticker,
+                  }}
                   resizeMode="contain"
                 />
                 <IconButton
@@ -178,7 +177,7 @@ export const PostComposer = observer(({ onPosted }: Props) => {
             onChange={setContent}
             selection={selection}
             onChangeSelection={setSelection}
-            placeholder="What's on your mind?"
+            placeholder={t("feed.composer.placeholder")}
             style={{ minHeight: feedSizes.composerMinHeight }}
           />
         </Box>
@@ -191,11 +190,18 @@ export const PostComposer = observer(({ onPosted }: Props) => {
               const isImage = asset.type.startsWith("image/");
 
               return (
-                <Box key={`${asset.name}-${index}`} style={{ position: "relative" }}>
+                <Box
+                  key={`${asset.name}-${index}`}
+                  style={{ position: "relative" }}
+                >
                   {isImage ? (
                     <Image
                       source={{ uri: asset.uri }}
-                      style={{ width: feedSizes.asset, height: feedSizes.asset, borderRadius: 8 }}
+                      style={{
+                        width: feedSizes.asset,
+                        height: feedSizes.asset,
+                        borderRadius: 8,
+                      }}
                     />
                   ) : (
                     <Paper
@@ -247,7 +253,7 @@ export const PostComposer = observer(({ onPosted }: Props) => {
             <Typography level="body-sm">
               {scheduledFor
                 ? scheduledFor.toLocaleString()
-                : "Pick date and time"}
+                : t("feed.composer.pickDateTime")}
             </Typography>
           </Pressable>
           {scheduledFor && (
@@ -256,7 +262,7 @@ export const PostComposer = observer(({ onPosted }: Props) => {
               size="sm"
               onPress={() => setScheduledFor(null)}
             >
-              Clear schedule
+              {t("feed.composer.clearSchedule")}
             </Button>
           )}
           {showDatePicker && (
@@ -283,7 +289,7 @@ export const PostComposer = observer(({ onPosted }: Props) => {
             padding={6}
             disabled={assets.length >= MAX_FILES}
             onPress={() => void pickMedia()}
-            accessibilityLabel="Add media"
+            accessibilityLabel={t("feed.composer.addMedia")}
           >
             <ImageIcon size={22} />
           </IconButton>
@@ -291,7 +297,7 @@ export const PostComposer = observer(({ onPosted }: Props) => {
             variant="plain"
             padding={6}
             onPress={() => setPickerOpen(true)}
-            accessibilityLabel="Add emoji or sticker"
+            accessibilityLabel={t("feed.composer.addEmojiOrSticker")}
           >
             <SmileyIcon size={22} />
           </IconButton>
@@ -299,7 +305,7 @@ export const PostComposer = observer(({ onPosted }: Props) => {
             variant="plain"
             padding={6}
             onPress={() => setShowScheduler((prev) => !prev)}
-            accessibilityLabel="Schedule post"
+            accessibilityLabel={t("feed.composer.schedulePost")}
           >
             <CalendarPlusIcon
               size={22}
@@ -310,7 +316,7 @@ export const PostComposer = observer(({ onPosted }: Props) => {
             variant="plain"
             padding={6}
             onPress={() => navigate("/(tabs)/feed/scheduled")}
-            accessibilityLabel="View scheduled posts"
+            accessibilityLabel={t("feed.composer.viewScheduled")}
           >
             <CalendarIcon size={22} />
           </IconButton>
@@ -322,7 +328,7 @@ export const PostComposer = observer(({ onPosted }: Props) => {
           size="sm"
           onPress={() => submit()}
         >
-          {scheduledFor ? "Schedule" : "Post"}
+          {scheduledFor ? t("feed.composer.schedule") : t("feed.composer.post")}
         </Button>
       </Box>
 

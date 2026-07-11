@@ -16,6 +16,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { FlashList } from "@shopify/flash-list";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Image,
@@ -45,6 +46,7 @@ const GifTile = ({
   onSelect: () => void;
   onToggleFavorite: () => void;
 }) => {
+  const { t } = useTranslation("chat");
   const { theme } = useTheme();
   const favoriteButtonSize = useScaledSquareSize(24);
   const preview = gif.preview || gif.url;
@@ -69,7 +71,7 @@ const GifTile = ({
           onPress={onSelect}
           style={{ width: "100%", height: "100%" }}
           accessibilityRole="button"
-          accessibilityLabel={gif.title || "GIF"}
+          accessibilityLabel={gif.title || t("picker.gifA11y")}
         >
           <Image
             source={{ uri: preview }}
@@ -82,7 +84,9 @@ const GifTile = ({
           onPress={onToggleFavorite}
           hitSlop={10}
           accessibilityRole="button"
-          accessibilityLabel={isFavorited ? "Remove favorite" : "Add favorite"}
+          accessibilityLabel={
+            isFavorited ? t("picker.removeFavorite") : t("picker.addFavorite")
+          }
           accessibilityState={{ selected: isFavorited }}
           style={{
             position: "absolute",
@@ -110,6 +114,7 @@ const GifTile = ({
 
 export const GifPickerContent = observer(
   ({ active = true, onSelectGif }: GifPickerContentProps) => {
+    const { t } = useTranslation("chat");
     const app = useAppStore();
     const { theme } = useTheme();
     const { width: windowWidth } = useWindowDimensions();
@@ -247,7 +252,7 @@ export const GifPickerContent = observer(
                   }}
                 >
                   <Typography level="body-sm" weight="bold">
-                    Favorites
+                    {t("picker.favorites")}
                   </Typography>
                 </View>
               </Pressable>
@@ -307,7 +312,7 @@ export const GifPickerContent = observer(
               textTransform: "uppercase",
             }}
           >
-            Favorites
+            {t("picker.favorites")}
           </Typography>
         )}
 
@@ -327,7 +332,7 @@ export const GifPickerContent = observer(
               textColor="muted"
               style={{ textAlign: "center", padding: 32 }}
             >
-              No GIFs found for &quot;{debouncedSearch}&quot;
+              {t("picker.noGifsFor", { query: debouncedSearch })}
             </Typography>
           )}
       </View>
@@ -360,7 +365,7 @@ export const GifPickerContent = observer(
             <Input
               value={search}
               onChangeText={setSearch}
-              placeholder="Search KLIPY"
+              placeholder={t("picker.searchKlipy")}
               fullWidth
               startDecorator={
                 <MagnifyingGlassIcon

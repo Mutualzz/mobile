@@ -9,6 +9,7 @@ import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useUserRelationshipActions } from "@hooks/useUserRelationshipActions";
 import { useModal } from "@hooks/useModal";
+import { useOpenBottomSheet } from "@hooks/useOpenBottomSheet";
 import { useAppStore } from "@hooks/useStores";
 import type { AccountStore } from "@stores/Account.store";
 import type { SpaceMember } from "@stores/objects/SpaceMember";
@@ -37,7 +38,8 @@ import {
 import { ProfileBackgroundLayer } from "@components/Profile/shared/ProfileBackgroundLayer";
 import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -51,23 +53,10 @@ interface Props {
 
 const DEFAULT_BANNER_HEIGHT_PERCENT = 58;
 
-function formatPresenceStatus(status: string) {
-  switch (status) {
-    case "online":
-      return "Online";
-    case "idle":
-      return "Idle";
-    case "dnd":
-      return "Do Not Disturb";
-    case "invisible":
-      return "Invisible";
-    default:
-      return null;
-  }
-}
-
 export const UserProfileSheet = observer(
   ({ user, member, modalId, accountMenu = false, onClose }: Props) => {
+    const { t } = useTranslation("common");
+    const { t: tChat } = useTranslation("chat");
     const app = useAppStore();
     const { theme } = useTheme();
     const insets = useSafeAreaInsets();
@@ -75,8 +64,19 @@ export const UserProfileSheet = observer(
     const profileMetrics = useScaledProfileMetrics();
     const avatarOverlap = profileMetrics.avatarSize / 2;
     const { closeModal, openModal } = useModal();
+    const { openBottomSheet, closeBottomSheet } = useOpenBottomSheet();
     const { navigate } = useAppNavigation();
-    const [statusModalOpen, setStatusModalOpen] = useState(false);
+
+    const openStatusSheet = () => {
+      openBottomSheet(
+        "change-online-status",
+        <ChangeOnlineStatusModal
+          embedded
+          onClose={() => closeBottomSheet("change-online-status")}
+          onDone={() => closeBottomSheet("change-online-status")}
+        />,
+      );
+    };
 
     useEffect(() => {
       app.gateway.subscribeUser(user.id);
@@ -125,9 +125,20 @@ export const UserProfileSheet = observer(
     const presenceLabel =
       customActivity?.state && !isSelf
         ? customActivity.state
-        : presence?.status
-          ? formatPresenceStatus(presence.status)
-          : null;
+        : (() => {
+            switch (presence?.status) {
+              case "online":
+                return t("status.online");
+              case "idle":
+                return t("status.idle");
+              case "dnd":
+                return t("status.dnd");
+              case "invisible":
+                return t("status.invisible");
+              default:
+                return null;
+            }
+          })();
 
     const headerBlock = profile?.blocks.find(
       (block): block is ProfileHeaderBlock => block.type === "header",
@@ -181,7 +192,7 @@ export const UserProfileSheet = observer(
         <ReportContentSheet
           targetType="user"
           targetId={user.id}
-          contentLabel="this user"
+          contentLabel={tChat("contextMenu.reportAccount")}
           modalId={`report-user-${user.id}`}
         />,
       );
@@ -243,7 +254,7 @@ export const UserProfileSheet = observer(
                   variant="solid"
                   color="neutral"
                   padding={4}
-                  accessibilityLabel="Close profile"
+                  accessibilityLabel={t("a11y.closeProfile")}
                   onPress={close}
                   style={{ borderRadius: 9999 }}
                   size="sm"
@@ -256,7 +267,7 @@ export const UserProfileSheet = observer(
                     variant="solid"
                     color="neutral"
                     padding={4}
-                    accessibilityLabel="Settings"
+                    accessibilityLabel={t("a11y.settings")}
                     onPress={() => go("/settings")}
                     style={{ borderRadius: 9999 }}
                     size="sm"
@@ -279,7 +290,7 @@ export const UserProfileSheet = observer(
               >
                 <Pressable
                   disabled={!showAccountMenu}
-                  onPress={() => showAccountMenu && setStatusModalOpen(true)}
+                  onPress={() => showAccountMenu && openStatusSheet()}
                 >
                   <UserAvatar
                     user={user}
@@ -291,7 +302,7 @@ export const UserProfileSheet = observer(
 
                 {showAccountMenu && (
                   <Pressable
-                    onPress={() => setStatusModalOpen(true)}
+                    onPress={openStatusSheet}
                     style={{ flex: 1, minWidth: 0, marginBottom: 4 }}
                   >
                     <Box
@@ -307,7 +318,7 @@ export const UserProfileSheet = observer(
                         textColor={customStatus ? undefined : "muted"}
                         truncate="double"
                       >
-                        {customStatus || "Set a custom status..."}
+                        {customStatus || t("customStatus.setShort")}
                       </Typography>
                     </Box>
                   </Pressable>
@@ -356,7 +367,7 @@ export const UserProfileSheet = observer(
                           <PencilSimpleIcon size={16} weight="fill" />
                         }
                       >
-                        Edit Profile
+                        {tChat("contextMenu.editProfile")}
                       </Button>
                     ) : (
                       <Button
@@ -368,7 +379,7 @@ export const UserProfileSheet = observer(
                           <ChatCircleIcon size={16} weight="fill" />
                         }
                       >
-                        Message
+                        {tChat("contextMenu.message")}
                       </Button>
                     )}
                     {!isSelf &&
@@ -382,7 +393,7 @@ export const UserProfileSheet = observer(
                           disabled={relationshipPending || iBlockedThem}
                           onPress={() => addFriend.mutate()}
                         >
-                          Add Friend
+                          {tChat("contextMenu.addFriend")}
                         </Button>
                       )}
                     {!isSelf && isIncomingRequest && (
@@ -393,7 +404,7 @@ export const UserProfileSheet = observer(
                           disabled={relationshipPending || iBlockedThem}
                           onPress={() => acceptFriend.mutate()}
                         >
-                          Accept
+                          {t("accept")}
                         </Button>
                         <Button
                           size="sm"
@@ -402,7 +413,7 @@ export const UserProfileSheet = observer(
                           disabled={relationshipPending || iBlockedThem}
                           onPress={() => declineFriend.mutate()}
                         >
-                          Decline
+                          {t("decline")}
                         </Button>
                       </>
                     )}
@@ -414,7 +425,7 @@ export const UserProfileSheet = observer(
                         disabled={relationshipPending}
                         onPress={() => declineFriend.mutate()}
                       >
-                        Cancel Request
+                        {tChat("contextMenu.cancelFriendRequest")}
                       </Button>
                     )}
                     {!isSelf && isFriend && (
@@ -425,7 +436,7 @@ export const UserProfileSheet = observer(
                         disabled={relationshipPending || iBlockedThem}
                         onPress={() => removeFriend.mutate()}
                       >
-                        Remove Friend
+                        {tChat("contextMenu.removeFriend")}
                       </Button>
                     )}
                     {!isSelf &&
@@ -437,7 +448,7 @@ export const UserProfileSheet = observer(
                           disabled={relationshipPending}
                           onPress={() => unblockUser.mutate()}
                         >
-                          Unblock
+                          {tChat("contextMenu.unblock")}
                         </Button>
                       ) : (
                         <Button
@@ -447,7 +458,7 @@ export const UserProfileSheet = observer(
                           disabled={relationshipPending}
                           onPress={() => blockUser.mutate()}
                         >
-                          Block
+                          {tChat("contextMenu.block")}
                         </Button>
                       ))}
                     {!isSelf && (
@@ -457,7 +468,7 @@ export const UserProfileSheet = observer(
                         variant="soft"
                         onPress={() => go(`/users/${user.username}`)}
                       >
-                        View Profile
+                        {tChat("contextMenu.viewProfile")}
                       </Button>
                     )}
                     {isViewerStaff && !isSelf && (
@@ -467,7 +478,7 @@ export const UserProfileSheet = observer(
                         variant="soft"
                         onPress={openStaffPanel}
                       >
-                        Open in Staff Panel
+                        {tChat("contextMenu.openInStaffPanel")}
                       </Button>
                     )}
                     {!isSelf && (
@@ -478,7 +489,7 @@ export const UserProfileSheet = observer(
                         startDecorator={<FlagIcon size={16} weight="fill" />}
                         onPress={openReport}
                       >
-                        Report
+                        {t("report.action")}
                       </Button>
                     )}
                   </Box>
@@ -496,14 +507,6 @@ export const UserProfileSheet = observer(
             </Box>
           </View>
         </ScrollView>
-
-        {showAccountMenu && (
-          <ChangeOnlineStatusModal
-            visible={statusModalOpen}
-            onClose={() => setStatusModalOpen(false)}
-            onDone={() => setStatusModalOpen(false)}
-          />
-        )}
       </Paper>
     );
   },

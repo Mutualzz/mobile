@@ -8,6 +8,7 @@ import {
 } from "phosphor-react-native";
 import type { ReactNode } from "react";
 import { Pressable, type TextStyle } from "react-native";
+import { useTranslation } from "react-i18next";
 
 const OVERLAY_CHIP_BG = "rgba(0,0,0,0.32)";
 
@@ -131,6 +132,7 @@ export function PostActions({
   layout = "row",
   overlay = false,
 }: PostActionsProps) {
+  const { t } = useTranslation("chat");
   const weight = (active: boolean) => (active ? "fill" : "regular");
   const isRail = layout === "rail";
   const iconSize = isRail ? 28 : 22;
@@ -183,7 +185,9 @@ export function PostActions({
           onPress={onSave}
           style={{ alignItems: "center", gap: 4 }}
           accessibilityRole="button"
-          accessibilityLabel={saved ? "Unsave post" : "Save post"}
+          accessibilityLabel={
+            saved ? t("feed.actions.unsavePost") : t("feed.actions.savePost")
+          }
         >
           {overlay ? (
             <FeedOverlayChip size={44}>
@@ -206,7 +210,9 @@ export function PostActions({
           variant="plain"
           padding={2}
           onPress={onSave}
-          accessibilityLabel={saved ? "Unsave post" : "Save post"}
+          accessibilityLabel={
+            saved ? t("feed.actions.unsavePost") : t("feed.actions.savePost")
+          }
         >
           <BookmarkSimpleIcon
             size={iconSize}

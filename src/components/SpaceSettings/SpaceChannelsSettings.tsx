@@ -14,6 +14,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { FolderIcon } from "phosphor-react-native";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   space: Space;
@@ -28,6 +29,7 @@ const ChannelRow = observer(
     categoryLabel: string | null;
   }) => {
     const { theme } = useTheme();
+    const { t } = useTranslation("space");
     const isCategory = channel.type === ChannelType.Category;
     const isChild = !!channel.parent;
 
@@ -65,7 +67,7 @@ const ChannelRow = observer(
           </Typography>
           {!isCategory && (
             <Typography level="body-xs" textColor="muted" truncate="single">
-              {categoryLabel ?? "No category"}
+              {categoryLabel ?? t("channels.noCategory")}
             </Typography>
           )}
         </Box>
@@ -76,6 +78,7 @@ const ChannelRow = observer(
 
 export const SpaceChannelsSettings = observer(({ space }: Props) => {
   const app = useAppStore();
+  const { t } = useTranslation("space");
 
   const allChannels = space.channels;
 
@@ -110,7 +113,7 @@ export const SpaceChannelsSettings = observer(({ space }: Props) => {
     return (
       <Box style={{ padding: 16 }}>
         <Typography level="body-sm" textColor="muted">
-          No channels to reorder.
+          {t("channels.empty")}
         </Typography>
       </Box>
     );
@@ -120,9 +123,7 @@ export const SpaceChannelsSettings = observer(({ space }: Props) => {
     <Box style={{ flex: 1 }}>
       <Box style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
         <Typography level="body-sm" textColor="muted">
-          Drag channels to reorder them. Place a channel directly under a
-          category to add it to that group. Drag above a category to remove it
-          from the group.
+          {t("channels.reorderHint")}
         </Typography>
       </Box>
       <ReorderableVerticalList

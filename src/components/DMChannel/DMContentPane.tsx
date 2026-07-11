@@ -11,10 +11,12 @@ import { useAppStore } from "@hooks/useStores";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Keyboard } from "react-native";
 
 const EmptyDMState = () => {
   const { theme } = useTheme();
+  const { t } = useTranslation("chat");
 
   return (
     <Screen style={{ flexDirection: "column" }}>
@@ -29,7 +31,7 @@ const EmptyDMState = () => {
       >
         <ChatCircleIcon size={40} color={theme.typography.colors.muted} />
         <Typography textColor="muted" style={{ textAlign: "center" }}>
-          Select a conversation to start chatting
+          {t("selectConversation")}
         </Typography>
       </Box>
     </Screen>

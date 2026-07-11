@@ -1,6 +1,7 @@
 import { ExpressionPreviewSheetLayout } from "@components/Preview/ExpressionPreviewSheetLayout";
 import { Twemoji } from "@components/emojis/Twemoji";
 import { Box, Typography } from "@mutualzz/ui-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   name: string;
@@ -13,6 +14,7 @@ export const DefaultEmojiPreviewSheet = ({
   unicode,
   onClose,
 }: Props) => {
+  const { t } = useTranslation("chat");
   return (
     <ExpressionPreviewSheetLayout onClose={onClose}>
         <Box
@@ -28,7 +30,7 @@ export const DefaultEmojiPreviewSheet = ({
               :{name}:
             </Typography>
             <Typography level="body-xs" textColor="muted">
-              This is a default emoji. You can use it anywhere on Mutualzz
+              {t("expressionPreview.defaultEmoji")}
             </Typography>
           </Box>
         </Box>

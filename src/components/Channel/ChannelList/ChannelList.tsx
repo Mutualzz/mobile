@@ -16,10 +16,12 @@ import { type Channel } from "@stores/objects/Channel";
 import { flattenChannels } from "@utils/channelReorder";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 
 export const ChannelList = observer(() => {
   const app = useAppStore();
+  const { t } = useTranslation("space");
 
   const [createChannelOpen, setCreateChannelOpen] = useState(false);
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
@@ -86,21 +88,21 @@ export const ChannelList = observer(() => {
         >
           <ButtonGroup size={12} spacing={4} variant="plain">
             <IconButton
-              accessibilityLabel="Create invite"
+              accessibilityLabel={t("chrome.createInviteA11y")}
               onPress={() => setInviteOpen(true)}
             >
               <UserPlusIcon weight="fill" />
             </IconButton>
             {canManageChannels && (
               <IconButton
-                accessibilityLabel="Create category"
+                accessibilityLabel={t("chrome.createCategoryA11y")}
                 onPress={() => setCreateCategoryOpen(true)}
               >
                 <PlusIcon weight="bold" />
               </IconButton>
             )}
             <IconButton
-              accessibilityLabel="Space menu"
+              accessibilityLabel={t("chrome.spaceMenuA11y")}
               onPress={() => setSpaceMenuOpen(true)}
             >
               <CaretDownIcon weight="bold" />

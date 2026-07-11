@@ -1,8 +1,10 @@
 import { Typography, useTheme } from "@mutualzz/ui-native";
 import { DeviceMobileIcon } from "phosphor-react-native";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 export function ProfileWidgetsEmptyViewer() {
+  const { t } = useTranslation("settings");
   const { theme } = useTheme();
 
   return (
@@ -17,7 +19,7 @@ export function ProfileWidgetsEmptyViewer() {
     >
       <DeviceMobileIcon size={28} color={theme.typography.colors.muted} />
       <Typography level="body-sm" textColor="muted" style={{ textAlign: "center" }}>
-        This user hasn't set up their mobile profile yet.
+        {t("profile.viewer.emptyMobile")}
       </Typography>
     </View>
   );

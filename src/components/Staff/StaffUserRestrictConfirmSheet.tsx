@@ -7,6 +7,7 @@ import { Box, InputDefault, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
 
 interface Props {
@@ -17,16 +18,18 @@ interface Props {
 }
 
 const durationOptions = [
-    { value: 1, label: "1 hour" },
-    { value: 6, label: "6 hours" },
-    { value: 24, label: "1 day" },
-    { value: 72, label: "3 days" },
-    { value: 168, label: "7 days" },
-    { value: 720, label: "30 days" },
-];
+    { value: 1, key: "1h" },
+    { value: 6, key: "6h" },
+    { value: 24, key: "1d" },
+    { value: 72, key: "3d" },
+    { value: 168, key: "7d" },
+    { value: 720, key: "30d" },
+] as const;
 
 export const StaffUserRestrictConfirmSheet = observer(
-    ({ userId, username, onSuccess, modalId }: Props) => {
+    ({ userId, onSuccess, modalId }: Props) => {
+        const { t } = useTranslation("staff");
+        const { t: tCommon } = useTranslation("common");
         const app = useAppStore();
         const { closeModal } = useModal();
         const [hours, setHours] = useState(24);
@@ -58,12 +61,10 @@ export const StaffUserRestrictConfirmSheet = observer(
                 elevation={app.settings?.preferEmbossed ? 4 : 2}
             >
                 <Typography level="body-md" weight={700}>
-                    Restrict User
+                    {t("user.modals.restrict.title")}
                 </Typography>
                 <Typography level="body-sm" textColor="muted">
-                    @{username} won&apos;t be able to send messages, create
-                    posts, or comment until the restriction expires or is
-                    lifted early.
+                    {t("user.modals.restrict.body")}
                 </Typography>
 
                 <Box style={{ gap: 6 }}>
@@ -75,7 +76,7 @@ export const StaffUserRestrictConfirmSheet = observer(
                                 style={{ padding: 10, borderRadius: 8 }}
                             >
                                 <Typography level="body-sm">
-                                    {o.label}
+                                    {t(`user.modals.restrict.durations.${o.key}`)}
                                 </Typography>
                             </Paper>
                         </Pressable>
@@ -84,7 +85,7 @@ export const StaffUserRestrictConfirmSheet = observer(
 
                 <InputDefault
                     fullWidth
-                    placeholder="Reason (required)"
+                    placeholder={t("user.modals.reasonRequired")}
                     value={reason}
                     onChangeText={setReason}
                 />
@@ -98,7 +99,9 @@ export const StaffUserRestrictConfirmSheet = observer(
                     disabled={isPending || !reason.trim()}
                     onPress={() => mutate()}
                 >
-                    {isPending ? "Working..." : "Restrict"}
+                    {isPending
+                        ? t("working")
+                        : t("user.modals.restrict.submit")}
                 </Button>
                 <Button
                     variant="soft"
@@ -106,7 +109,7 @@ export const StaffUserRestrictConfirmSheet = observer(
                     disabled={isPending}
                     onPress={() => closeModal(modalId)}
                 >
-                    Cancel
+                    {tCommon("cancel")}
                 </Button>
             </Paper>
         );

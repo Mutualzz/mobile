@@ -15,8 +15,10 @@ import {
 } from "phosphor-react-native";
 import { useEffect, useState } from "react";
 import ImagePicker from "react-native-image-crop-picker";
+import { useTranslation } from "react-i18next";
 
 export const UserProfileSettings = observer(() => {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const { navigate } = useAppNavigation();
   const primaryIconColor = useSettingsIconColor("primary");
@@ -54,7 +56,7 @@ export const UserProfileSettings = observer(() => {
         app.users.update(updated);
       }
     } catch (e) {
-      setError(getErrorMessage(e, "Failed to update display name"));
+      setError(getErrorMessage(e, t("profile.failedUpdateDisplayName")));
     } finally {
       setSavingName(false);
     }
@@ -94,7 +96,7 @@ export const UserProfileSettings = observer(() => {
             app.users.update(updated);
           }
         } catch (e) {
-          setError(getErrorMessage(e, "Failed to upload avatar"));
+          setError(getErrorMessage(e, t("profile.failedUploadAvatar")));
         } finally {
           setUploadingAvatar(false);
           void ImagePicker.clean();
@@ -121,7 +123,7 @@ export const UserProfileSettings = observer(() => {
         app.users.update(updated);
       }
     } catch (e) {
-      setError(getErrorMessage(e, "Failed to remove avatar"));
+      setError(getErrorMessage(e, t("profile.failedRemoveAvatar")));
     } finally {
       setRemovingAvatar(false);
     }
@@ -178,10 +180,10 @@ export const UserProfileSettings = observer(() => {
       >
         <Box style={{ gap: 4 }}>
           <Typography level="body-md" weight={700}>
-            Avatar studio
+            {t("profile.avatarStudio")}
           </Typography>
           <Typography level="body-sm" textColor="muted">
-            Upload a new avatar or jump in quickly below.
+            {t("profile.avatarStudioDescriptionMobile")}
           </Typography>
         </Box>
         <Button
@@ -189,7 +191,9 @@ export const UserProfileSettings = observer(() => {
           disabled={uploadingAvatar}
           onPress={uploadAvatar}
         >
-          {uploadingAvatar ? "Uploading..." : "Upload Avatar"}
+          {uploadingAvatar
+            ? t("expressions.uploading")
+            : t("profile.uploadAvatar")}
         </Button>
       </Paper>
 
@@ -207,7 +211,7 @@ export const UserProfileSettings = observer(() => {
         onPress={() => removeAvatar()}
         style={{ alignSelf: "flex-start" }}
       >
-        Remove current avatar
+        {t("profile.removeCurrentAvatar")}
       </Button>
 
       <Divider lineColor="muted" style={{ opacity: 0.35 }} />
@@ -223,10 +227,10 @@ export const UserProfileSettings = observer(() => {
       >
         <Box style={{ gap: 4 }}>
           <Typography level="body-md" weight={700}>
-            Display name
+            {t("account.displayName")}
           </Typography>
           <Typography level="body-sm" textColor="muted">
-            Update how your name appears across Mutualzz.
+            {t("profile.displayNameDescription")}
           </Typography>
         </Box>
 
@@ -239,7 +243,7 @@ export const UserProfileSettings = observer(() => {
 
         <Box style={{ gap: 4 }}>
           <Typography level="body-xs" textColor="muted">
-            Username
+            {t("account.username")}
           </Typography>
           <Typography level="body-md">@{account.username}</Typography>
         </Box>
@@ -255,7 +259,7 @@ export const UserProfileSettings = observer(() => {
           disabled={!hasNameChanges || !trimmedName || savingName}
           onPress={() => void saveDisplayName()}
         >
-          {savingName ? "Saving..." : "Save changes"}
+          {savingName ? t("profile.saving") : t("profile.saveChanges")}
         </Button>
       </Paper>
 
@@ -272,11 +276,10 @@ export const UserProfileSettings = observer(() => {
       >
         <Box style={{ gap: 4 }}>
           <Typography level="body-md" weight={700}>
-            Profile page
+            {t("profile.profilePage")}
           </Typography>
           <Typography level="body-sm" textColor="muted">
-            Customize your MySpace-style page with blocks, banner, bio, and
-            profile music.
+            {t("profile.profilePageDescription")}
           </Typography>
         </Box>
         <Button
@@ -286,7 +289,7 @@ export const UserProfileSettings = observer(() => {
           }
           onPress={() => navigate("/settings/profile-editor")}
         >
-          Customize Profile
+          {t("profile.customizeProfile")}
         </Button>
       </Paper>
     </Box>

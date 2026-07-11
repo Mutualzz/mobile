@@ -8,6 +8,7 @@ import { useScaledProfileMusicSizes } from "@utils/accessibilityLayout";
 import { MusicNotesIcon, XIcon } from "phosphor-react-native";
 import { Image } from "expo-image";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Pressable,
@@ -38,6 +39,7 @@ function MusicSearchResults({
   results: APIProfileMusicSearchTrack[];
   onSelect: (track: APIProfileMusicSearchTrack) => void;
 }) {
+  const { t } = useTranslation("settings");
   const { theme } = useTheme();
   const musicSizes = useScaledProfileMusicSizes();
 
@@ -56,7 +58,7 @@ function MusicSearchResults({
   if (results.length === 0 && query.trim()) {
     return (
       <Typography level="body-sm" textColor="muted">
-        No results
+        {t("profile.blocks.noResults")}
       </Typography>
     );
   }
@@ -122,6 +124,8 @@ export function ProfileWidgetMusicPicker({
   onSelect,
   presentation = "modal",
 }: Props) {
+  const { t } = useTranslation("settings");
+  const { t: tCommon } = useTranslation("common");
   const app = useAppStore();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -129,6 +133,7 @@ export function ProfileWidgetMusicPicker({
   const [results, setResults] = useState<APIProfileMusicSearchTrack[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const title = t("profile.editor.searchForSong");
 
   useEffect(() => {
     if (!visible) {
@@ -162,7 +167,7 @@ export function ProfileWidgetMusicPicker({
         })
         .catch(() => {
           if (cancelled) return;
-          setError("Search failed");
+          setError(t("profile.inspector.searchFailed"));
         })
         .finally(() => {
           if (cancelled) return;
@@ -202,13 +207,13 @@ export function ProfileWidgetMusicPicker({
           }}
         >
           <Typography level="title-md" weight="bold">
-            Search for a song
+            {title}
           </Typography>
           <IconButton
             variant="plain"
             color="neutral"
             padding={4}
-            accessibilityLabel="Close"
+            accessibilityLabel={tCommon("close")}
             onPress={onClose}
           >
             <XIcon size={18} />
@@ -219,7 +224,7 @@ export function ProfileWidgetMusicPicker({
           <Input
             value={query}
             onChangeText={setQuery}
-            placeholder="Song or artist name"
+            placeholder={t("profile.inspector.songOrArtist")}
             autoFocus
             autoCorrect={false}
           />
@@ -251,15 +256,14 @@ export function ProfileWidgetMusicPicker({
     <BottomSheet
       open={visible}
       onClose={onClose}
-      title="Search for a song"
+      title={title}
       maxHeight="80%"
-      scrollable
       headerRight={
         <IconButton
           variant="plain"
           color="neutral"
           padding={4}
-          accessibilityLabel="Close"
+          accessibilityLabel={tCommon("close")}
           onPress={onClose}
         >
           <XIcon size={18} />
@@ -269,7 +273,7 @@ export function ProfileWidgetMusicPicker({
       <Input
         value={query}
         onChangeText={setQuery}
-        placeholder="Song or artist name"
+        placeholder={t("profile.inspector.songOrArtist")}
         autoFocus
         autoCorrect={false}
       />

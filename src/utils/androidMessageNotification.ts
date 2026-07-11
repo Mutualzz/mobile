@@ -7,6 +7,7 @@ import {
   ANDROID_MESSAGE_CHANNEL_ID,
   MESSAGE_PUSH_DISPLAY_MODE,
 } from "@utils/messageNotification.constants";
+import i18n from "../i18n";
 
 export interface MessagePushData {
   url: string;
@@ -67,7 +68,7 @@ export function ensureAndroidMessageChannel() {
   channelReady ??= notifee
     .createChannel({
       id: ANDROID_MESSAGE_CHANNEL_ID,
-      name: "Messages",
+      name: i18n.t("notifications.messagesChannel", { ns: "common" }),
       importance: AndroidImportance.HIGH,
       sound: "default",
     })
@@ -89,7 +90,7 @@ export async function displayAndroidMessageNotification(
   const isDm = data.pushType === "dm";
 
   await notifee.displayNotification({
-    id: `${data.conversationId}-${Date.now()}`,
+    id: data.conversationId,
     title: data.senderName,
     ...(data.subtitle ? { subtitle: data.subtitle } : {}),
     body: data.body,
@@ -122,10 +123,12 @@ export async function displayAndroidMessageNotification(
         ? {
             actions: [
               {
-                title: "Reply",
+                title: i18n.t("notifications.reply", { ns: "common" }),
                 pressAction: { id: DM_REPLY_ACTION_ID },
                 input: {
-                  placeholder: "Message",
+                  placeholder: i18n.t("notifications.messagePlaceholder", {
+                    ns: "common",
+                  }),
                   allowFreeFormInput: true,
                 },
               },

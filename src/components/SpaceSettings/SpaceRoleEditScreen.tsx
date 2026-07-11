@@ -18,6 +18,7 @@ import type { Space } from "@stores/objects/Space";
 import { normalizeJSON } from "@utils/JSON";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView } from "react-native";
 
 type RoleTab = "display" | "permissions" | "members";
@@ -47,6 +48,9 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
   const [tab, setTab] = useState<RoleTab>(
     isEveryone ? "permissions" : "display",
   );
+  const { t } = useTranslation("common");
+  const { t: tSpace } = useTranslation("space");
+  const { t: tSettings } = useTranslation("settings");
   const [base, setBase] = useState<RoleEditable>(() => pickEditable(role));
   const [changes, setChanges] = useState<RoleEditable>(() =>
     pickEditable(role),
@@ -103,7 +107,7 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
         setChanges(next);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save role");
+      setError(e instanceof Error ? e.message : tSpace("roles.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -126,7 +130,7 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
               weight={tab === "display" ? 700 : 400}
               textColor={tab === "display" ? undefined : "muted"}
             >
-              Display
+              {tSpace("roles.tabs.display")}
             </Typography>
           </Pressable>
         )}
@@ -136,7 +140,7 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
             weight={tab === "permissions" ? 700 : 400}
             textColor={tab === "permissions" ? undefined : "muted"}
           >
-            Permissions
+            {tSpace("roles.tabs.permissions")}
           </Typography>
         </Pressable>
         {!isEveryone && (
@@ -146,7 +150,7 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
               weight={tab === "members" ? 700 : 400}
               textColor={tab === "members" ? undefined : "muted"}
             >
-              Members
+              {tSpace("roles.tabs.members")}
             </Typography>
           </Pressable>
         )}
@@ -174,8 +178,7 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
           >
             <RoleHierarchyAssignLock />
             <Typography level="body-sm" textColor="muted" style={{ flex: 1 }}>
-              You can&apos;t edit this role because it&apos;s at or above your
-              highest role.
+              {tSpace("roles.hierarchy.cantEditRole")}
             </Typography>
           </Box>
         )}
@@ -204,14 +207,16 @@ export const SpaceRoleEditScreen = observer(({ space, role }: Props) => {
           }}
         >
           <Button color="neutral" variant="soft" expand onPress={() => back()}>
-            Back
+            {t("back")}
           </Button>
           <Button
             expand
             disabled={!dirty || saving || !canEditRole}
             onPress={() => void saveRole()}
           >
-            {saving ? "Saving..." : "Save changes"}
+            {saving
+              ? tSettings("profile.saving")
+              : tSettings("profile.saveChanges")}
           </Button>
         </Box>
       </ScrollView>

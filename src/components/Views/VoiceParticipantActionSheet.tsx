@@ -19,6 +19,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   state: VoiceState;
@@ -32,6 +33,7 @@ export const VoiceParticipantActionSheet = observer(
   ({ state, space, visible, onRequestClose, onClose }: Props) => {
     const app = useAppStore();
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation("chat");
     const user = state.user;
     const member = state.member;
     const isSelf = state.userId === app.account?.id;
@@ -110,7 +112,7 @@ export const VoiceParticipantActionSheet = observer(
                     {user.displayName}
                   </Typography>
                   <Typography level="body-xs" textColor="muted">
-                    Voice moderation
+                    {t("voice.moderation.title")}
                   </Typography>
                 </Box>
 
@@ -135,7 +137,9 @@ export const VoiceParticipantActionSheet = observer(
                       disabled={moderating}
                       onPress={() => moderateMember("mute")}
                     >
-                      {state.spaceMute ? "Remove space mute" : "Space mute"}
+                      {state.spaceMute
+                        ? t("voice.moderation.removeSpaceMute")
+                        : t("voice.moderation.spaceMute")}
                     </Button>
                   )}
 
@@ -151,7 +155,9 @@ export const VoiceParticipantActionSheet = observer(
                       disabled={moderating}
                       onPress={() => moderateMember("deafen")}
                     >
-                      {state.spaceDeaf ? "Remove space deafen" : "Space deafen"}
+                      {state.spaceDeaf
+                        ? t("voice.moderation.removeSpaceDeafen")
+                        : t("voice.moderation.spaceDeafen")}
                     </Button>
                   )}
 
@@ -164,7 +170,7 @@ export const VoiceParticipantActionSheet = observer(
                       disabled={moderating}
                       onPress={() => moderateMember("disconnect")}
                     >
-                      Disconnect
+                      {t("voice.moderation.disconnect")}
                     </Button>
                   )}
                 </ButtonGroup>

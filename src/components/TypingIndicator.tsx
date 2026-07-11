@@ -3,6 +3,7 @@ import { Box, Typography } from "@mutualzz/ui-native";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 
 interface Props {
     channelId: string;
@@ -10,6 +11,7 @@ interface Props {
 
 export const TypingIndicator = observer(({ channelId }: Props) => {
     const app = useAppStore();
+    const { t } = useTranslation("chat");
     const typingAvatarSize = useScaledSquareSize(20);
     const users = app.typing.getUsersTyping(channelId);
 
@@ -17,10 +19,16 @@ export const TypingIndicator = observer(({ channelId }: Props) => {
 
     const text =
         users.length === 1
-            ? `${users[0].displayName} is typing...`
+            ? t("typing.one", { name: users[0].displayName })
             : users.length === 2
-              ? `${users[0].displayName} and ${users[1].displayName} are typing...`
-              : `${users[0].displayName}, ${users[1].displayName}, and others are typing...`;
+              ? t("typing.two", {
+                    name1: users[0].displayName,
+                    name2: users[1].displayName,
+                })
+              : t("typing.many", {
+                    name1: users[0].displayName,
+                    name2: users[1].displayName,
+                });
 
     return (
         <Box

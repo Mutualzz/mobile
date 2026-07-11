@@ -6,6 +6,7 @@ import type { APIMessageEmbed } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import { Image, Linking, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import WebView from "react-native-webview";
 import { MessageGifEmbed } from "./MessageGifEmbed";
@@ -17,6 +18,7 @@ function openUrl(url?: string | null) {
 
 export const MessageEmbed = observer(
     ({ embed }: { embed: APIMessageEmbed }) => {
+        const { t } = useTranslation("chat");
         const app = useAppStore();
         const { theme } = useTheme();
         const { width } = useWindowDimensions();
@@ -135,7 +137,7 @@ export const MessageEmbed = observer(
                     >
                         <Image
                             source={{ uri: embed.image }}
-                            accessibilityLabel={embed.title ?? "Embed image"}
+                            accessibilityLabel={embed.title ?? t("a11y.embedImage")}
                             style={styles.image}
                             resizeMode="cover"
                         />

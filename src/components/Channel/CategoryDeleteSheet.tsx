@@ -5,6 +5,7 @@ import { Box, ButtonGroup, Modal, Typography } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 interface Props {
@@ -16,6 +17,8 @@ interface Props {
 export const CategoryDeleteSheet = observer(
   ({ visible, onClose, channel }: Props) => {
     const app = useAppStore();
+    const { t } = useTranslation("space");
+    const { t: tCommon } = useTranslation("common");
     const { mutate: deleteCategory, isPending } = useMutation({
       mutationKey: ["delete-category", channel.id],
       mutationFn: (parentOnly: boolean) => channel.delete(parentOnly),
@@ -46,10 +49,10 @@ export const CategoryDeleteSheet = observer(
             }}
           >
             <Typography level="body-md" weight="bold">
-              Delete category &quot;{channel.name}&quot;?
+              {t("channels.deleteCategory.title", { name: channel.name })}
             </Typography>
             <Typography textColor="muted" level="body-sm">
-              Choose whether to keep channels inside this category.
+              {t("channels.deleteCategory.body")}
             </Typography>
             <ButtonGroup orientation="vertical" spacing={8}>
               <Button
@@ -57,7 +60,7 @@ export const CategoryDeleteSheet = observer(
                 disabled={isPending}
                 onPress={() => deleteCategory(true)}
               >
-                Delete category only
+                {t("channels.deleteCategory.categoryOnly")}
               </Button>
               <Button
                 color="danger"
@@ -65,10 +68,10 @@ export const CategoryDeleteSheet = observer(
                 disabled={isPending}
                 onPress={() => deleteCategory(false)}
               >
-                Delete category and channels
+                {t("channels.deleteCategory.categoryAndChannels")}
               </Button>
               <Button variant="plain" onPress={onClose}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
             </ButtonGroup>
           </Paper>

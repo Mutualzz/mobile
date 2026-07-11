@@ -10,6 +10,10 @@ import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
 import { useSpaceSettingsAccess } from "@hooks/useSpaceFromRoute";
+import {
+  spaceCategoryTitleKeys,
+  spacePageTitleKeys,
+} from "@mutualzz/i18n";
 import { Box, Modal, Typography } from "@mutualzz/ui-native";
 import type { Space } from "@stores/objects/Space";
 import {
@@ -20,9 +24,9 @@ import {
   FlagIcon,
 } from "phosphor-react-native";
 import { ReportContentSheet } from "@components/Report/ReportContentSheet";
-import startCase from "lodash-es/startCase";
 import { observer } from "mobx-react-lite";
 import { ScrollView, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   space: Space;
@@ -31,6 +35,8 @@ interface Props {
 }
 
 export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
+  const { t } = useTranslation("space");
+  const { t: tCommon } = useTranslation("common");
   const app = useAppStore();
   const { navigate } = useAppNavigation();
   const { openModal } = useModal();
@@ -42,6 +48,11 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
   const { canManage } = useSpaceSettingsAccess(space);
   const isOwner = space.ownerId === app.account?.id;
   const hasUnread = space.hasUnread();
+
+  const pageLabel = (label: SpaceSettingsPage) => {
+    const key = spacePageTitleKeys[label];
+    return t(key);
+  };
 
   const markAllRead = () => {
     void space.markAsRead();
@@ -64,7 +75,7 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
       <ReportContentSheet
         targetType="space"
         targetId={space.id}
-        contentLabel="this space"
+        contentLabel={t("contextMenu.reportSpaceLabel", { ns: "chat" })}
         modalId={`report-space-${space.id}`}
       />,
     );
@@ -144,7 +155,7 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
                 fullWidth
                 onPress={markAllRead}
               >
-                Mark all as read
+                {t("actions.markAllAsRead")}
               </Button>
             )}
 
@@ -158,14 +169,14 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
                 fullWidth
                 onPress={() => openSettings()}
               >
-                Space settings
+                {t("menu.spaceSettings")}
               </Button>
             )}
 
             {categories.map(({ category, pages }) => (
               <Box key={category} style={{ gap: 6 }}>
                 <Typography level="body-xs" textColor="muted">
-                  {startCase(category)}
+                  {t(spaceCategoryTitleKeys[category])}
                 </Typography>
                 {pages.map((page) => (
                   <Button
@@ -178,7 +189,7 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
                     }
                     onPress={() => openSettings(page.label)}
                   >
-                    {startCase(page.label)}
+                    {pageLabel(page.label)}
                   </Button>
                 ))}
               </Box>
@@ -196,7 +207,7 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
                   fullWidth
                   onPress={confirmReport}
                 >
-                  Report space
+                  {t("menu.reportSpace")}
                 </Button>
                 <Button
                   variant="plain"
@@ -212,7 +223,7 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
                   fullWidth
                   onPress={confirmLeave}
                 >
-                  Leave space
+                  {t("menu.leaveSpace")}
                 </Button>
               </>
             ) : (
@@ -226,13 +237,13 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
                 }
                 onPress={confirmDelete}
               >
-                Delete space
+                {t("menu.deleteSpace")}
               </Button>
             )}
           </ScrollView>
 
           <Button variant="plain" fullWidth onPress={onClose}>
-            Cancel
+            {tCommon("cancel")}
           </Button>
         </Paper>
       </View>

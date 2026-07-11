@@ -20,11 +20,15 @@ import {
 } from "phosphor-react-native";
 import { useAppStore } from "@hooks/useStores";
 import { useAppNavigation } from "@hooks/useAppNavigation";
+import {
+  settingsCategoryTitleKeys,
+  settingsPageTitleKeys,
+} from "@mutualzz/i18n";
 import { ButtonGroup, Divider, Typography } from "@mutualzz/ui-native";
 import { type Href } from "expo-router";
-import startCase from "lodash-es/startCase";
 import { observer } from "mobx-react-lite";
 import { Fragment, type ComponentType } from "react";
+import { useTranslation } from "react-i18next";
 import type { IconProps } from "phosphor-react-native";
 
 type SettingsPages = Record<UserSettingsSidebarCategories, Pages[]>;
@@ -48,6 +52,7 @@ const settingsPages: SettingsPages = {
 };
 
 const SettingsIndex = () => {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const { navigate } = useAppNavigation();
   const navIconColor = useSettingsIconColor("info");
@@ -56,6 +61,12 @@ const SettingsIndex = () => {
   if (!app.account) return;
 
   const categories = Object.entries(settingsPages);
+
+  const pageLabel = (label: UserSettingsSidebarPage) => {
+    const key =
+      settingsPageTitleKeys[label as keyof typeof settingsPageTitleKeys];
+    return key ? t(key) : label;
+  };
 
   return (
     <Screen
@@ -71,7 +82,7 @@ const SettingsIndex = () => {
         borderRightWidth: 0,
       }}
     >
-      <SettingsHeader title="Settings" />
+      <SettingsHeader title={t("title")} />
       {categories.map(([category, pages], index) => (
         <Fragment key={`settings-sidebar-category-fragment-${category}`}>
           <Paper
@@ -85,7 +96,11 @@ const SettingsIndex = () => {
             elevation={app.settings?.preferEmbossed ? 3 : 0}
           >
             <Typography level="body-sm" textColor="muted">
-              {startCase(category)}
+              {t(
+                settingsCategoryTitleKeys[
+                  category as keyof typeof settingsCategoryTitleKeys
+                ],
+              )}
             </Typography>
             <ButtonGroup
               orientation="vertical"
@@ -104,11 +119,7 @@ const SettingsIndex = () => {
                   style={{ minWidth: 0 }}
                   onPress={() => navigate(`/settings/${page.label}` as Href)}
                 >
-                  {page.label === "voice_and_video"
-                    ? "Voice & Video"
-                    : page.label === "support"
-                      ? "Help & Support"
-                      : startCase(page.label)}
+                  {pageLabel(page.label)}
                 </Button>
               ))}
             </ButtonGroup>
@@ -145,7 +156,7 @@ const SettingsIndex = () => {
           }
           onPress={() => navigate("/settings/support" as Href)}
         >
-          Help & Support
+          {t("helpAndSupport")}
         </Button>
       </Paper>
 
@@ -170,7 +181,7 @@ const SettingsIndex = () => {
             }
             onPress={() => navigate("/staff")}
           >
-            Staff Panel
+            {t("staffPanel")}
           </Button>
         </Paper>
       )}
@@ -196,7 +207,7 @@ const SettingsIndex = () => {
           }
           onPress={() => app.logout()}
         >
-          Log Out
+          {t("logOut")}
         </Button>
       </Paper>
     </Screen>

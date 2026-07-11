@@ -7,6 +7,7 @@ import { Image } from "expo-image";
 import { StickerIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 const STICKER_RENDER_SIZE = 256 satisfies Sizes;
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export const ProfileStickerWidgetView = observer(({ block }: Props) => {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const [sticker, setSticker] = useState<Expression | null>(null);
   const expressionId = block.expressionId?.trim() ?? "";
@@ -84,7 +86,9 @@ export const ProfileStickerWidgetView = observer(({ block }: Props) => {
       <View style={{ alignItems: "center", gap: 6, opacity: 0.45, padding: 12 }}>
         <StickerIcon size={28} />
         <Typography level="body-xs" textColor="muted">
-          {expressionId ? "Sticker unavailable" : "Choose a sticker"}
+          {expressionId
+            ? t("profile.blocks.stickerUnavailable")
+            : t("profile.inspector.chooseSticker")}
         </Typography>
       </View>
     </View>

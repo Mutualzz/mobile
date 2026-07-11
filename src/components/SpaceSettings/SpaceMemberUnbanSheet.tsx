@@ -7,6 +7,7 @@ import type { SpaceBan } from "@stores/objects/SpaceBan";
 import type { Space } from "@stores/objects/Space";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   ban: SpaceBan;
@@ -16,6 +17,8 @@ interface Props {
 
 export const SpaceMemberUnbanSheet = observer(
   ({ ban, space, modalId }: Props) => {
+    const { t } = useTranslation("common");
+    const { t: tSpace } = useTranslation("space");
     const app = useAppStore();
     const { closeModal } = useModal();
     const [pending, setPending] = useState(false);
@@ -46,15 +49,19 @@ export const SpaceMemberUnbanSheet = observer(
         elevation={app.settings?.preferEmbossed ? 4 : 2}
       >
         <Typography level="body-md" weight={700}>
-          Unban {ban.user?.displayName ?? ban.userId}?
+          {tSpace("bans.unbanTitle", {
+            name: ban.user?.displayName ?? ban.userId,
+          })}
         </Typography>
         {ban.reason && (
           <Typography level="body-sm" textColor="muted">
-            Reason: {ban.reason}
+            {tSpace("bans.reason")}: {ban.reason}
           </Typography>
         )}
         <Button color="danger" disabled={pending} onPress={() => void unban()}>
-          {pending ? "Unbanning..." : "Unban member"}
+          {pending
+            ? tSpace("actions.unbanning")
+            : tSpace("actions.unbanMember")}
         </Button>
         <Button
           variant="soft"
@@ -62,7 +69,7 @@ export const SpaceMemberUnbanSheet = observer(
           disabled={pending}
           onPress={() => closeModal(id)}
         >
-          Cancel
+          {t("cancel")}
         </Button>
       </Paper>
     );

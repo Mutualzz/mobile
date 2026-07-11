@@ -8,6 +8,7 @@ import {
   validateMobileBlocksForSave,
 } from "@components/Profile/widgets/editor/profileWidgetEditor.utils";
 import { useAppNavigation } from "@hooks/useAppNavigation";
+import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
 import { ProfileBackgroundLayer } from "@components/Profile/shared/ProfileBackgroundLayer";
 import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
@@ -18,6 +19,7 @@ import { pickProfileImageAsset } from "@utils/profileImagePicker";
 import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -32,9 +34,11 @@ import type { Selection } from "@utils/markdown/types";
 const BIO_MAX_LENGTH = 2000;
 
 export const ProfileEditorScreen = observer(() => {
+  const { t } = useTranslation("settings");
   const app = useAppStore();
   const account = app.account;
   const { back } = useAppNavigation();
+  const { openModal, closeModal } = useModal();
 
   const [bio, setBio] = useState("");
   const [bioSelection, setBioSelection] = useState<Selection>({
@@ -51,7 +55,6 @@ export const ProfileEditorScreen = observer(() => {
   const bannerPreviewHeight = useScaledProfilePreviewHeight(120);
   const bioMinHeight = useScaledProfilePreviewHeight(120);
   const [mobileBlocks, setMobileBlocks] = useState<APIMobileProfileBlock[]>([]);
-  const [widgetEditorOpen, setWidgetEditorOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,17 +103,21 @@ export const ProfileEditorScreen = observer(() => {
 
     if (isDirty) {
       Alert.alert(
-        "Leave without saving?",
-        "You have unsaved changes. If you leave now, your changes will be lost.",
+        t("profile.editor.leaveTitle"),
+        t("profile.editor.leaveDescription"),
         [
-          { text: "Keep editing", style: "cancel" },
-          { text: "Leave", style: "destructive", onPress: () => back() },
+          { text: t("profile.editor.keepEditing"), style: "cancel" },
+          {
+            text: t("profile.editor.leave"),
+            style: "destructive",
+            onPress: () => back(),
+          },
         ],
       );
     } else {
       back();
     }
-  }, [back]);
+  }, [back, t]);
 
   const handleBackRef = useRef(handleBack);
   handleBackRef.current = handleBack;
@@ -164,12 +171,12 @@ export const ProfileEditorScreen = observer(() => {
         setBannerHash(result.hash);
         setBannerPreview(image.path);
       } catch (e) {
-        setError(getErrorMessage(e, "Failed to upload banner"));
+        setError(getErrorMessage(e, t("profile.editor.failedUploadBanner")));
       } finally {
         setUploadingBanner(false);
       }
     } catch (e) {
-      setError(getErrorMessage(e, "Failed to pick banner image"));
+      setError(getErrorMessage(e, t("profile.editor.failedPickBanner")));
     }
   };
 
@@ -201,7 +208,7 @@ export const ProfileEditorScreen = observer(() => {
         mobileBlocks: prepareMobileBlocksForSave(mobileBlocks),
       });
     } catch (e) {
-      setError(getErrorMessage(e, "Failed to save profile"));
+      setError(getErrorMessage(e, t("profile.editor.failedSaveProfile")));
     } finally {
       setSaving(false);
     }
@@ -209,7 +216,7 @@ export const ProfileEditorScreen = observer(() => {
 
   return (
     <SettingsScreen
-      title="Profile Editor"
+      title={t("profile.editor.mobileTitle")}
       onBack={handleBack}
       contentStyle={{ flex: 1 }}
     >
@@ -234,7 +241,7 @@ export const ProfileEditorScreen = observer(() => {
           keyboardShouldPersistTaps="handled"
         >
           <Typography level="body-sm" textColor="muted">
-            Edit your profile page content and block layout.
+            {t("profile.editor.mobileDescription")}
           </Typography>
 
           <Paper
@@ -247,7 +254,7 @@ export const ProfileEditorScreen = observer(() => {
             elevation={app.settings?.preferEmbossed ? 2 : 0}
           >
             <Typography level="body-md" weight={700}>
-              Banner
+              {t("profile.editor.banner")}
             </Typography>
             {bannerPreview ? (
               <ProfileBlockImage
@@ -271,7 +278,7 @@ export const ProfileEditorScreen = observer(() => {
                 }}
               >
                 <Typography level="body-sm" textColor="muted">
-                  No banner yet
+                  {t("profile.editor.noBannerYet")}
                 </Typography>
               </Box>
             )}
@@ -280,7 +287,9 @@ export const ProfileEditorScreen = observer(() => {
               disabled={uploadingBanner}
               onPress={uploadBanner}
             >
-              {uploadingBanner ? "Uploading..." : "Change Banner"}
+              {uploadingBanner
+                ? t("expressions.uploading")
+                : t("profile.editor.changeBanner")}
             </Button>
           </Paper>
 
@@ -293,7 +302,7 @@ export const ProfileEditorScreen = observer(() => {
             elevation={app.settings?.preferEmbossed ? 2 : 0}
           >
             <Typography level="body-md" weight={700}>
-              Bio
+              {t("profile.editor.bio")}
             </Typography>
             <MarkdownInput
               value={bio}
@@ -302,7 +311,7 @@ export const ProfileEditorScreen = observer(() => {
               onChangeSelection={setBioSelection}
               enableMentions={false}
               enableEmojiAutocomplete
-              placeholder="Tell people about yourself"
+              placeholder={t("profile.editor.bioPlaceholder")}
               elevation={0}
               style={{ minHeight: bioMinHeight }}
             />
@@ -319,7 +328,7 @@ export const ProfileEditorScreen = observer(() => {
             elevation={app.settings?.preferEmbossed ? 2 : 0}
           >
             <Typography level="body-md" weight={700}>
-              Background
+              {t("profile.editor.background")}
             </Typography>
             {profile ? (
               <Box
@@ -354,12 +363,12 @@ export const ProfileEditorScreen = observer(() => {
             elevation={app.settings?.preferEmbossed ? 2 : 0}
           >
             <Typography level="body-md" weight={700}>
-              Page font
+              {t("profile.editor.pageFont")}
             </Typography>
             <Input
               value={pageFontFamily}
               onChangeText={setPageFontFamily}
-              placeholder="Inter, Rubik, etc."
+              placeholder={t("profile.editor.pageFontPlaceholder")}
               autoCapitalize="none"
             />
           </Paper>
@@ -373,14 +382,14 @@ export const ProfileEditorScreen = observer(() => {
             elevation={app.settings?.preferEmbossed ? 2 : 0}
           >
             <Typography level="body-md" weight={700}>
-              Profile music URL
+              {t("profile.editor.profileMusicUrl")}
             </Typography>
             <Input
               value={profileMusic?.url ?? ""}
               onChangeText={(value) =>
                 setProfileMusic({ ...profileMusic, url: value })
               }
-              placeholder="https://..."
+              placeholder={t("profile.editor.urlPlaceholder")}
               autoCapitalize="none"
             />
           </Paper>
@@ -395,19 +404,45 @@ export const ProfileEditorScreen = observer(() => {
             elevation={app.settings?.preferEmbossed ? 2 : 0}
           >
             <Typography level="body-md" weight={700}>
-              Mobile Widgets
+              {t("profile.editor.mobileWidgets")}
             </Typography>
             <Typography level="body-sm" textColor="muted">
               {mobileBlocks.length > 0
-                ? `${mobileBlocks.length} widget${mobileBlocks.length === 1 ? "" : "s"} on your mobile profile.`
-                : "No widgets yet."}
+                ? t("profile.editor.widgetCount", {
+                    count: mobileBlocks.length,
+                  })
+                : t("profile.editor.noWidgetsYet")}
             </Typography>
             <Button
               color="neutral"
               disabled={!profile}
-              onPress={() => setWidgetEditorOpen(true)}
+              onPress={() => {
+                if (!profile || !account) return;
+                openModal(
+                  "profile-widget-editor",
+                  <ProfileWidgetEditorModal
+                    embedded
+                    onClose={() => closeModal("profile-widget-editor")}
+                    profile={profile}
+                    user={account}
+                    mobileBlocks={mobileBlocks}
+                    onMobileBlocksChange={setMobileBlocks}
+                    desktopBlocks={profile.blocks}
+                    onSave={() => void saveProfile()}
+                    saving={saving}
+                    error={error}
+                  />,
+                  {
+                    layout: "fullscreen",
+                    hideBackdrop: true,
+                    showCloseButton: false,
+                    disableBackdropClick: true,
+                    style: { paddingVertical: 0 },
+                  },
+                );
+              }}
             >
-              Edit Widgets
+              {t("profile.editor.editWidgets")}
             </Button>
           </Paper>
 
@@ -422,24 +457,9 @@ export const ProfileEditorScreen = observer(() => {
             disabled={saving || !profile}
             onPress={() => void saveProfile()}
           >
-            {saving ? "Saving..." : "Save Profile"}
+            {saving ? t("profile.saving") : t("profile.editor.saveProfile")}
           </Button>
         </ScrollView>
-      )}
-
-      {profile && (
-        <ProfileWidgetEditorModal
-          visible={widgetEditorOpen}
-          onClose={() => setWidgetEditorOpen(false)}
-          profile={profile}
-          user={account}
-          mobileBlocks={mobileBlocks}
-          onMobileBlocksChange={setMobileBlocks}
-          desktopBlocks={profile.blocks}
-          onSave={() => void saveProfile()}
-          saving={saving}
-          error={error}
-        />
       )}
     </SettingsScreen>
   );

@@ -11,6 +11,7 @@ import { Box, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { TrashIcon } from "phosphor-react-native";
 import { useExpressionThumbnailStyle } from "@utils/accessibilityLayout";
+import { useTranslation } from "react-i18next";
 import { Image } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
 
@@ -20,6 +21,7 @@ interface Props {
 
 const EmojiRow = observer(
   ({ expression, space }: { expression: Expression; space: Space }) => {
+    const { t } = useTranslation("common");
     const app = useAppStore();
     const thumbnailStyle = useExpressionThumbnailStyle();
     const canManage =
@@ -51,7 +53,9 @@ const EmojiRow = observer(
             color="danger"
             variant="soft"
             onPress={() => void expression.delete()}
-            accessibilityLabel={`Delete :${expression.name}:`}
+            accessibilityLabel={t("a11y.deleteExpression", {
+              name: expression.name,
+            })}
           >
             <TrashIcon weight="fill" />
           </IconButton>
@@ -62,6 +66,7 @@ const EmojiRow = observer(
 );
 
 export const SpaceEmojisSettings = observer(({ space }: Props) => {
+  const { t } = useTranslation("space");
   const { openModal } = useModal();
 
   const emojis = Array.from(space.expressions.values()).filter(
@@ -104,7 +109,7 @@ export const SpaceEmojisSettings = observer(({ space }: Props) => {
     <Box style={{ gap: 16 }}>
       {canUpload && (
         <Button style={{ alignSelf: "flex-start" }} onPress={handleUpload}>
-          Upload emoji
+          {t("channels.uploadEmoji")}
         </Button>
       )}
 
@@ -114,7 +119,7 @@ export const SpaceEmojisSettings = observer(({ space }: Props) => {
           textColor="muted"
           style={{ textAlign: "center", paddingVertical: 32 }}
         >
-          No space emojis yet
+          {t("channels.noSpaceEmojis")}
         </Typography>
       ) : (
         <Box style={{ gap: 8 }}>

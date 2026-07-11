@@ -25,6 +25,7 @@ import {
   XCircleIcon,
 } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -38,6 +39,7 @@ interface Props {
 export const UserActionSheet = observer(
   ({ user, visible, onClose, insideDMs = false }: Props) => {
     const app = useAppStore();
+    const { t } = useTranslation("chat");
     const insets = useSafeAreaInsets();
     const { navigate } = useAppNavigation();
     const { openModal } = useModal();
@@ -92,7 +94,7 @@ export const UserActionSheet = observer(
         <ReportContentSheet
           targetType="user"
           targetId={user.id}
-          contentLabel="this user"
+          contentLabel={t("contextMenu.reportAccount")}
           modalId={`report-user-${user.id}`}
         />,
       );
@@ -175,7 +177,7 @@ export const UserActionSheet = observer(
                         onClose();
                       }}
                     >
-                      Mark as read
+                      {t("contextMenu.markAsRead")}
                     </Button>
                   )}
 
@@ -185,7 +187,7 @@ export const UserActionSheet = observer(
                     startDecorator={<UserIcon size={20} weight="fill" />}
                     onPress={viewProfile}
                   >
-                    View Profile
+                    {t("contextMenu.viewProfile")}
                   </Button>
 
                   {!insideDMs ? (
@@ -198,7 +200,7 @@ export const UserActionSheet = observer(
                       disabled={openingDm || iBlockedThem}
                       onPress={() => openDm()}
                     >
-                      Message
+                      {t("contextMenu.message")}
                     </Button>
                   ) : (
                     <Button
@@ -208,7 +210,7 @@ export const UserActionSheet = observer(
                       disabled={closingDm}
                       onPress={() => closeDm()}
                     >
-                      Close DM
+                      {t("contextMenu.closeDm")}
                     </Button>
                   )}
 
@@ -220,7 +222,7 @@ export const UserActionSheet = observer(
                       disabled={relationshipPending || iBlockedThem}
                       onPress={() => addFriend.mutate()}
                     >
-                      Add Friend
+                      {t("contextMenu.addFriend")}
                     </Button>
                   )}
 
@@ -236,7 +238,7 @@ export const UserActionSheet = observer(
                         disabled={relationshipPending || iBlockedThem}
                         onPress={() => acceptFriend.mutate()}
                       >
-                        Accept Friend Request
+                        {t("contextMenu.acceptFriendRequest")}
                       </Button>
                       <Button
                         fullWidth
@@ -244,7 +246,7 @@ export const UserActionSheet = observer(
                         disabled={relationshipPending || iBlockedThem}
                         onPress={() => declineFriend.mutate()}
                       >
-                        Decline Friend Request
+                        {t("contextMenu.declineFriendRequest")}
                       </Button>
                     </>
                   )}
@@ -256,7 +258,7 @@ export const UserActionSheet = observer(
                       disabled={relationshipPending}
                       onPress={() => declineFriend.mutate()}
                     >
-                      Cancel Friend Request
+                      {t("contextMenu.cancelFriendRequest")}
                     </Button>
                   )}
 
@@ -268,7 +270,7 @@ export const UserActionSheet = observer(
                       disabled={relationshipPending || iBlockedThem}
                       onPress={() => removeFriend.mutate()}
                     >
-                      Remove Friend
+                      {t("contextMenu.removeFriend")}
                     </Button>
                   )}
 
@@ -280,7 +282,7 @@ export const UserActionSheet = observer(
                       disabled={relationshipPending}
                       onPress={() => unblockUser.mutate()}
                     >
-                      Unblock
+                      {t("contextMenu.unblock")}
                     </Button>
                   ) : (
                     <Button
@@ -290,7 +292,7 @@ export const UserActionSheet = observer(
                       disabled={relationshipPending}
                       onPress={() => blockUser.mutate()}
                     >
-                      Block
+                      {t("contextMenu.block")}
                     </Button>
                   )}
 
@@ -301,7 +303,7 @@ export const UserActionSheet = observer(
                     startDecorator={<FlagIcon size={20} weight="fill" />}
                     onPress={openReport}
                   >
-                    Report User
+                    {t("contextMenu.reportUser")}
                   </Button>
                 </ButtonGroup>
               </Paper>

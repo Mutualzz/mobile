@@ -8,8 +8,10 @@ import { useMutation } from "@tanstack/react-query";
 import { Redirect, useLocalSearchParams } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const SubmitAppeal = () => {
+  const { t } = useTranslation("auth");
   const app = useAppStore();
   const { token } = useLocalSearchParams<{ token?: string }>();
   const [message, setMessage] = useState("");
@@ -50,23 +52,19 @@ const SubmitAppeal = () => {
         }}
       >
         <Typography level="body-lg" weight="bold">
-          Submit an Appeal
+          {t("appeal.title")}
         </Typography>
         {isSuccess ? (
-          <Typography textColor="secondary">
-            Your appeal has been submitted. Our staff team will review it and
-            follow up by email.
-          </Typography>
+          <Typography textColor="secondary">{t("appeal.success")}</Typography>
         ) : (
           <Box style={{ gap: 12 }}>
             <Typography textColor="secondary">
-              Explain why you believe this decision should be reconsidered. A
-              staff member will review your appeal.
+              {t("appeal.descriptionShort")}
             </Typography>
             <InputDefault
               fullWidth
               multiline
-              placeholder="Tell us why this decision should be reconsidered"
+              placeholder={t("appeal.placeholder")}
               value={message}
               onChangeText={setMessage}
             />
@@ -80,7 +78,7 @@ const SubmitAppeal = () => {
               disabled={isPending || !message.trim()}
               onPress={() => submitAppeal()}
             >
-              Submit Appeal
+              {t("actions.submitAppeal")}
             </Button>
           </Box>
         )}

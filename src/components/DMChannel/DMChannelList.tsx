@@ -3,11 +3,10 @@ import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import { Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
-
-const EMPTY_DM_MESSAGE =
-  'You have no direct messages yet. Start a conversation by clicking "Message" on a user\'s profile or by creating a new group DM!';
+import { useTranslation } from "react-i18next";
 
 export const DMChannelList = observer(() => {
+  const { t } = useTranslation("chat");
   const app = useAppStore();
   const dms = app.channels.dms;
 
@@ -22,7 +21,7 @@ export const DMChannelList = observer(() => {
       elevation={app.settings?.preferEmbossed ? 2 : 0}
     >
       <Typography level="label-xs" textColor="muted">
-        Direct Messages
+        {t("dm.title")}
       </Typography>
 
       {dms.length === 0 ? (
@@ -31,7 +30,7 @@ export const DMChannelList = observer(() => {
           textColor="muted"
           style={{ textAlign: "center", paddingVertical: 24 }}
         >
-          {EMPTY_DM_MESSAGE}
+          {t("dm.empty")}
         </Typography>
       ) : (
         dms.map((dm) => <DMChannelItem key={dm.id} channel={dm} />)

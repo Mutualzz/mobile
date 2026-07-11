@@ -19,6 +19,7 @@ import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Image, Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 import ImagePicker, { CropRect } from "react-native-image-crop-picker";
 
 interface CreateSpace {
@@ -31,6 +32,8 @@ interface Props {
 }
 
 export const SpaceCreate = observer(({ setCreating }: Props) => {
+  const { t } = useTranslation("auth");
+  const { t: tSpace } = useTranslation("space");
   const app = useAppStore();
   const { theme } = useTheme();
   const cardHeight = useScaledSpaceCreateCardHeight();
@@ -63,7 +66,9 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
       closeAllModals();
     },
     onError: (err: HttpException) => {
-      setError(err.errors?.[0].message ?? err.message ?? "An error occurred");
+      setError(
+        err.errors?.[0].message ?? err.message ?? tSpace("profile.genericError"),
+      );
     },
   });
 
@@ -122,7 +127,7 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
 
   const handleCreate = async () => {
     if (name.trim() === "") {
-      setError("Name is required");
+      setError(t("onboarding.createSpace.nameRequired"));
       return;
     }
 
@@ -148,7 +153,7 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
       }}
     >
       <Typography level="h5" weight="bold">
-        Create a space
+        {t("onboarding.createSpace.title")}
       </Typography>
       <Box
         style={{
@@ -195,7 +200,7 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
                 weight="fill"
               />
               <Typography weight="bold" level="body-xs">
-                Upload
+                {t("onboarding.createSpace.upload")}
               </Typography>
             </Box>
           )}
@@ -210,7 +215,7 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
         }}
       >
         <Typography weight={500} level="body-sm">
-          Name{" "}
+          {t("onboarding.createSpace.name")}{" "}
           <Typography variant="plain" color="danger">
             *
           </Typography>
@@ -219,7 +224,7 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
           fullWidth
           value={name}
           onChangeText={handleName}
-          accessibilityLabel="Space name"
+          accessibilityLabel={t("onboarding.createSpace.spaceNameA11y")}
         />
         {error && (
           <Typography variant="plain" color="danger" level="body-sm">
@@ -243,11 +248,11 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
             variant="solid"
             color="success"
           >
-            Create Space
+            {t("onboarding.createSpace.createSpace")}
           </Button>
           {imageFile && (
             <Button disabled={creating} onPress={onClear}>
-              Reset
+              {t("onboarding.createSpace.reset")}
             </Button>
           )}
         </ButtonGroup>
@@ -261,10 +266,10 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
           marginTop: 12,
         }}
       >
-        <Typography>Already have an invite?</Typography>
+        <Typography>{t("onboarding.createSpace.alreadyHaveInvite")}</Typography>
         <Pressable onPress={() => setCreating(false)}>
           <Typography variant="plain" color="primary" disabled={creating}>
-            Back to join
+            {t("onboarding.createSpace.backToJoin")}
           </Typography>
         </Pressable>
       </Box>

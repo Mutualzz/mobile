@@ -10,24 +10,28 @@ import { usePathname } from "expo-router";
 import { HouseIcon, PaletteIcon, PlusIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView } from "react-native";
 
 const TABS = [
-  { label: "For You", href: "/(tabs)/feed" as Href },
-  { label: "Friends", href: "/(tabs)/feed/friends" as Href },
-  { label: "Saved", href: "/(tabs)/feed/saved" as Href },
-  { label: "Scheduled", href: "/(tabs)/feed/scheduled" as Href },
+  { labelKey: "feed.tabs.forYou", href: "/(tabs)/feed" as Href },
+  { labelKey: "feed.tabs.friends", href: "/(tabs)/feed/friends" as Href },
+  { labelKey: "feed.tabs.saved", href: "/(tabs)/feed/saved" as Href },
+  { labelKey: "feed.tabs.scheduled", href: "/(tabs)/feed/scheduled" as Href },
 ] as const;
 
 export const FeedHeader = observer(() => {
   const app = useAppStore();
+  const { t } = useTranslation("chat");
   const { theme } = useTheme();
   const { navigate } = useAppNavigation();
   const queryClient = useQueryClient();
   const pathname = usePathname();
   const username = app.account?.username;
   const [composeOpen, setComposeOpen] = useState(false);
-  const isForYou = pathname === "/feed" || pathname === "/feed/";
+  const isScheduled =
+    pathname === "/feed/scheduled" || pathname.endsWith("/feed/scheduled");
+  const canCompose = !isScheduled;
 
   const isActive = (suffix: string) => {
     if (suffix === "/feed") {
@@ -74,7 +78,7 @@ export const FeedHeader = observer(() => {
 
             return (
               <Pressable
-                key={tab.label}
+                key={tab.labelKey}
                 onPress={() => navigate(tab.href)}
                 style={{
                   paddingHorizontal: 14,
@@ -86,7 +90,7 @@ export const FeedHeader = observer(() => {
                 }}
               >
                 <Typography level="body-sm" weight={active ? 700 : 500}>
-                  {tab.label}
+                  {t(tab.labelKey)}
                 </Typography>
               </Pressable>
             );
@@ -95,10 +99,10 @@ export const FeedHeader = observer(() => {
 
         {username && (
           <Box style={{ flexDirection: "row", gap: 4, flexShrink: 0 }}>
-            {isForYou && (
+            {canCompose && (
               <IconButton
                 padding={6}
-                accessibilityLabel="Create post"
+                accessibilityLabel={t("feed.header.createPost")}
                 onPress={() => setComposeOpen(true)}
               >
                 <PlusIcon size={20} weight="bold" />
@@ -106,14 +110,14 @@ export const FeedHeader = observer(() => {
             )}
             <IconButton
               padding={6}
-              accessibilityLabel="My profile"
+              accessibilityLabel={t("feed.header.myProfile")}
               onPress={openMyProfile}
             >
               <HouseIcon size={20} weight="fill" />
             </IconButton>
             <IconButton
               padding={6}
-              accessibilityLabel="Customize profile"
+              accessibilityLabel={t("feed.header.customizeProfile")}
               onPress={openProfileEditor}
             >
               <PaletteIcon size={20} weight="fill" />
@@ -125,16 +129,14 @@ export const FeedHeader = observer(() => {
       <BottomSheet
         open={composeOpen}
         onClose={() => setComposeOpen(false)}
-        title="Create post"
+        title={t("feed.header.createPostSheetTitle")}
         maxHeight="85%"
-        scrollable
         elevation={app.settings?.preferEmbossed ? 4 : 2}
       >
         <PostComposer
           onPosted={() => {
-            void queryClient.invalidateQueries({
-              queryKey: ["posts", "for-you"],
-            });
+            void queryClient.invalidateQueries({ queryKey: ["posts", "for-you"] });
+            void queryClient.invalidateQueries({ queryKey: ["posts", "friends"] });
             setComposeOpen(false);
           }}
         />

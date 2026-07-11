@@ -37,39 +37,44 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView } from "react-native";
 import dayjs from "dayjs";
+import type { TFunction } from "i18next";
 
 const AUDIT_PAGE_LIMIT = 50;
 const NOTES_PAGE_LIMIT = 50;
 
-const actionLabels: Record<string, string> = {
-  "user.disable": "disabled this account",
-  "user.enable": "enabled this account",
-  "user.delete": "soft deleted this account",
-  "user.hard_delete": "hard deleted this account",
-  "user.force_logout": "forced a logout on this account",
-  "user.session_revoke": "revoked a session on this account",
-  "user.profile_update": "updated this account's profile",
-  "user.verify_reminder_sent": "sent a verification reminder to this account",
-  "user.warn": "sent this account a warning",
-  "user.restrict": "temporarily restricted this account",
-  "user.restrict_lift": "lifted a restriction on this account",
-};
+const describeAction = (action: string, t: TFunction<"staff">) => {
+  const actionLabels: Record<string, string> = {
+    "user.disable": t("auditActions.disabledAccount"),
+    "user.enable": t("auditActions.enabledAccount"),
+    "user.delete": t("auditActions.softDeletedAccount"),
+    "user.hard_delete": t("auditActions.hardDeletedAccount"),
+    "user.force_logout": t("auditActions.forcedLogout"),
+    "user.session_revoke": t("auditActions.revokedSession"),
+    "user.profile_update": t("auditActions.updatedProfile"),
+    "user.warn": t("auditActions.warnedUser"),
+    "user.restrict": t("auditActions.restrictedUser"),
+    "user.restrict_lift": t("auditActions.liftedRestriction"),
+  };
 
-const describeAction = (action: string) => {
   if (actionLabels[action]) return actionLabels[action];
 
   const flagMatch = action.match(/^user\.flag\.(.+)\.(grant|revoke)$/);
   if (flagMatch) {
     const [, flag, verb] = flagMatch;
     return verb === "grant"
-      ? `granted the ${flag} flag`
-      : `revoked the ${flag} flag`;
+      ? t("auditActions.grantedFlag", { flag })
+      : t("auditActions.revokedFlag", { flag });
   }
 
   const takedownMatch = action.match(/^content\.takedown\.(.+)$/);
-  if (takedownMatch) return `took down a reported ${takedownMatch[1]}`;
+  if (takedownMatch)
+    return t("auditActions.tookDownContent", { type: takedownMatch[1] });
+
+  if (action === "space.delete") return t("auditActions.shutDownSpace");
+  if (action === "space.lockdown") return t("auditActions.lockedDownSpace");
 
   return action;
 };
@@ -92,6 +97,8 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 const StaffUserScreen = () => {
+  const { t } = useTranslation("staff");
+  const { t: tSettings } = useTranslation("settings");
   const { isStaff } = useRequireStaffAccess();
   const app = useAppStore();
   const { openModal } = useModal();
@@ -292,7 +299,7 @@ const StaffUserScreen = () => {
       mutationFn: () => app.rest.post(`/staff/users/${userId}/verify-reminder`),
       onSuccess: () =>
         setReminderMessage({
-          text: "Verification reminder sent",
+          text: t("user.info.verifyReminderSent"),
           error: false,
         }),
       onError: (err: HttpException) =>
@@ -304,7 +311,7 @@ const StaffUserScreen = () => {
   if (isLoading) {
     return (
       <Screen style={{ flexDirection: "column" }}>
-        <StaffHeader title="Staff" showBack backHref="/staff" />
+        <StaffHeader title={t("title")} showBack backHref="/staff" />
         <Box
           style={{
             flex: 1,
@@ -321,7 +328,7 @@ const StaffUserScreen = () => {
   if (isError || !user || !privateUser) {
     return (
       <Screen style={{ flexDirection: "column" }}>
-        <StaffHeader title="Staff" showBack backHref="/staff" />
+        <StaffHeader title={t("title")} showBack backHref="/staff" />
         <Box
           style={{
             flex: 1,
@@ -329,7 +336,9 @@ const StaffUserScreen = () => {
             justifyContent: "center",
           }}
         >
-          <Typography textColor="muted">User not found</Typography>
+          <Typography textColor="muted">
+            {tSettings("profile.viewer.userNotFound")}
+          </Typography>
         </Box>
       </Screen>
     );
@@ -365,11 +374,11 @@ const StaffUserScreen = () => {
 
         <Box style={{ gap: 8 }}>
           <Typography level="body-md" weight={700}>
-            Info
+            {t("sections.info")}
           </Typography>
           <Box style={{ gap: 4 }}>
             <Typography level="body-xs" textColor="muted">
-              Username
+              {t("user.info.username")}
             </Typography>
             <InputDefault
               fullWidth
@@ -380,11 +389,11 @@ const StaffUserScreen = () => {
           </Box>
           <Box style={{ gap: 4 }}>
             <Typography level="body-xs" textColor="muted">
-              Display Name
+              {t("user.info.displayName")}
             </Typography>
             <InputDefault
               fullWidth
-              placeholder="No display name set"
+              placeholder={t("user.info.noDisplayName")}
               value={globalNameDraft}
               onChangeText={setGlobalNameDraft}
             />
@@ -403,11 +412,11 @@ const StaffUserScreen = () => {
             }
             onPress={() => saveProfile()}
           >
-            Save Changes
+            {t("user.info.saveChanges")}
           </Button>
 
           <Box style={{ gap: 4, marginTop: 8 }}>
-            <DetailRow label="Email" value={privateUser.email} />
+            <DetailRow label={t("user.info.email")} value={privateUser.email} />
             <Box
               style={{
                 flexDirection: "row",
@@ -417,10 +426,10 @@ const StaffUserScreen = () => {
               }}
             >
               <Typography level="body-xs" textColor="muted">
-                Email Verified
+                {t("user.info.emailVerified")}
               </Typography>
               {user.flags.has("Verified") ? (
-                <Typography level="body-xs">Yes</Typography>
+                <Typography level="body-xs">{t("user.info.yes")}</Typography>
               ) : (
                 <Button
                   size="sm"
@@ -429,7 +438,7 @@ const StaffUserScreen = () => {
                   disabled={sendingReminder}
                   onPress={() => sendVerifyReminder()}
                 >
-                  Send Reminder
+                  {t("user.info.sendReminder")}
                 </Button>
               )}
             </Box>
@@ -442,18 +451,18 @@ const StaffUserScreen = () => {
                 {reminderMessage.text}
               </Typography>
             )}
-            <DetailRow label="User ID" value={privateUser.id} />
+            <DetailRow label={t("user.info.userId")} value={privateUser.id} />
             <DetailRow
-              label="Date of Birth"
+              label={t("user.info.dateOfBirth")}
               value={dayjs(privateUser.dateOfBirth).format("MMM D, YYYY")}
             />
             <DetailRow
-              label="Created"
+              label={t("user.info.created")}
               value={dayjs(privateUser.createdAt).format("MMM D, YYYY h:mm A")}
             />
             {isRestricted && (
               <DetailRow
-                label="Restricted Until"
+                label={t("user.info.restrictedUntil")}
                 value={dayjs(privateUser.restrictedUntil).format(
                   "MMM D, YYYY h:mm A",
                 )}
@@ -466,19 +475,19 @@ const StaffUserScreen = () => {
 
         <Box style={{ gap: 8 }}>
           <Typography level="body-md" weight={700}>
-            Flags
+            {t("sections.flags")}
           </Typography>
           <Typography level="body-sm" textColor="muted">
             {user.flags.toArray().length
               ? user.flags.toArray().join(", ")
-              : "No flags set"}
+              : t("user.flags.none")}
           </Typography>
         </Box>
 
         {app.account?.isFounder && (
           <Box style={{ gap: 8 }}>
             <Typography level="body-md" weight={700}>
-              Manage Flags
+              {t("user.flags.manage")}
             </Typography>
             {staffToggleableUserFlags.map((flag, index) => (
               <Box key={flag} style={{ gap: 8 }}>
@@ -523,12 +532,11 @@ const StaffUserScreen = () => {
 
         <Box style={{ gap: 8 }}>
           <Typography level="body-md" weight={700}>
-            Actions
+            {t("sections.actions")}
           </Typography>
           {isDeleted && (
             <Typography level="body-sm" textColor="muted">
-              This account is soft deleted. The user cannot log in, but their
-              data is retained.
+              {t("user.actions.softDeletedBanner")}
             </Typography>
           )}
           {!isDeleted && (
@@ -548,7 +556,9 @@ const StaffUserScreen = () => {
                   )
                 }
               >
-                {isDisabled ? "Enable Account" : "Disable Account"}
+                {isDisabled
+                  ? t("user.actions.enableAccount")
+                  : t("user.actions.disableAccount")}
               </Button>
               <Button
                 color="danger"
@@ -564,7 +574,7 @@ const StaffUserScreen = () => {
                   )
                 }
               >
-                Force Logout
+                {t("user.actions.forceLogout")}
               </Button>
               <Button
                 color="warning"
@@ -580,7 +590,7 @@ const StaffUserScreen = () => {
                   )
                 }
               >
-                Warn User
+                {t("user.actions.warnUser")}
               </Button>
               {isRestricted ? (
                 <Button
@@ -588,7 +598,7 @@ const StaffUserScreen = () => {
                   disabled={liftingRestriction}
                   onPress={() => liftRestriction()}
                 >
-                  Lift Restriction
+                  {t("user.actions.liftRestriction")}
                 </Button>
               ) : (
                 <Button
@@ -605,7 +615,7 @@ const StaffUserScreen = () => {
                     )
                   }
                 >
-                  Restrict User
+                  {t("user.actions.restrictUser")}
                 </Button>
               )}
               <Button
@@ -624,7 +634,7 @@ const StaffUserScreen = () => {
                   )
                 }
               >
-                Soft Delete Account
+                {t("user.actions.softDeleteAccount")}
               </Button>
             </>
           )}
@@ -646,7 +656,7 @@ const StaffUserScreen = () => {
                 )
               }
             >
-              Hard Delete Account
+              {t("user.actions.hardDeleteAccount")}
             </Button>
           )}
         </Box>
@@ -655,11 +665,11 @@ const StaffUserScreen = () => {
 
         <Box style={{ gap: 8 }}>
           <Typography level="body-md" weight={700}>
-            Active Sessions
+            {t("sections.sessions")}
           </Typography>
           {sessions.length === 0 ? (
             <Typography level="body-sm" textColor="muted">
-              No active sessions
+              {t("user.sessions.empty")}
             </Typography>
           ) : (
             <Box style={{ gap: 12 }}>
@@ -675,10 +685,14 @@ const StaffUserScreen = () => {
                 >
                   <Box style={{ gap: 2 }}>
                     <Typography level="body-sm">
-                      Created {dayjs(session.createdAt).fromNow()}
+                      {t("user.sessions.created", {
+                        relative: dayjs(session.createdAt).fromNow(),
+                      })}
                     </Typography>
                     <Typography level="body-xs" textColor="muted">
-                      Last used {dayjs(session.lastUsedAt).fromNow()}
+                      {t("user.sessions.lastUsed", {
+                        relative: dayjs(session.lastUsedAt).fromNow(),
+                      })}
                     </Typography>
                   </Box>
                   <Button
@@ -688,7 +702,7 @@ const StaffUserScreen = () => {
                     disabled={revokingSession}
                     onPress={() => revokeSession(session.sessionId)}
                   >
-                    Revoke
+                    {t("user.sessions.revoke")}
                   </Button>
                 </Box>
               ))}
@@ -700,12 +714,12 @@ const StaffUserScreen = () => {
 
         <Box style={{ gap: 8 }}>
           <Typography level="body-md" weight={700}>
-            Staff Notes
+            {t("sections.notes")}
           </Typography>
           <InputDefault
             fullWidth
             multiline
-            placeholder="Leave a note for other staff — not visible to the user"
+            placeholder={t("user.notes.placeholder")}
             value={noteDraft}
             onChangeText={setNoteDraft}
           />
@@ -715,11 +729,11 @@ const StaffUserScreen = () => {
             disabled={addingNote || !noteDraft.trim()}
             onPress={() => addNote()}
           >
-            {addingNote ? "Adding..." : "Add Note"}
+            {addingNote ? t("user.notes.adding") : t("user.notes.add")}
           </Button>
           {!isFetchingNotes && notes.length === 0 ? (
             <Typography level="body-sm" textColor="muted">
-              No staff notes yet
+              {t("user.notes.empty")}
             </Typography>
           ) : (
             <Box style={{ gap: 12 }}>
@@ -740,7 +754,9 @@ const StaffUserScreen = () => {
                   disabled={isFetchingNextNotesPage}
                   onPress={() => fetchNextNotesPage()}
                 >
-                  {isFetchingNextNotesPage ? "Loading..." : "Load more"}
+                  {isFetchingNextNotesPage
+                    ? t("home.loading")
+                    : t("home.loadMore")}
                 </Button>
               )}
             </Box>
@@ -751,11 +767,11 @@ const StaffUserScreen = () => {
 
         <Box style={{ gap: 8 }}>
           <Typography level="body-md" weight={700}>
-            Audit Log
+            {t("sections.audit")}
           </Typography>
           {!isFetchingActions && actions.length === 0 ? (
             <Typography level="body-sm" textColor="muted">
-              No staff actions yet
+              {t("user.audit.empty")}
             </Typography>
           ) : (
             <Box style={{ gap: 12 }}>
@@ -763,7 +779,7 @@ const StaffUserScreen = () => {
                 <Box key={entry.id} style={{ gap: 2 }}>
                   <Typography level="body-sm">
                     {entry.actor.globalName || entry.actor.username}{" "}
-                    {describeAction(entry.action)}
+                    {describeAction(entry.action, t)}
                   </Typography>
                   {entry.reason && (
                     <Typography level="body-sm" textColor="muted">
@@ -782,7 +798,9 @@ const StaffUserScreen = () => {
                   disabled={isFetchingNextActionsPage}
                   onPress={() => fetchNextActionsPage()}
                 >
-                  {isFetchingNextActionsPage ? "Loading..." : "Load more"}
+                  {isFetchingNextActionsPage
+                    ? t("home.loading")
+                    : t("home.loadMore")}
                 </Button>
               )}
             </Box>

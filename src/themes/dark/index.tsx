@@ -2,6 +2,7 @@ import { baseDarkTheme } from "@mutualzz/ui-core";
 import { abyssalNocturneTheme } from "./gradient/AbyssalNocturne";
 import { arcaneMidnightTheme } from "./gradient/ArcaneMidnight";
 import { bloodMoonSerenadeTheme } from "./gradient/BloodMoonSerenade";
+import { forestNightGradientTheme } from "./gradient/ForestNight";
 import { gravestoneChillTheme } from "./gradient/GravestoneChill";
 import { noirElegyTheme } from "./gradient/NoirElegy";
 import { obsidianRequiemTheme } from "./gradient/ObsidianRequiem";
@@ -13,6 +14,7 @@ import { vintageSorrowTheme } from "./gradient/VintageSorrow";
 import { crimsonLamentTheme } from "./normal/CrimsonLament";
 import { eternalMourningTheme } from "./normal/EternalMourning";
 import { fogOfDespairTheme } from "./normal/FogOfDespair";
+import { forestNightTheme } from "./normal/ForestNight";
 import { graveyardWhispersTheme } from "./normal/GraveyardWhispers";
 import { grungeIndustrialTheme } from "./normal/GrungeIndustrial";
 import { hauntedAestheticTheme } from "./normal/HauntedAesthetic";
@@ -27,6 +29,7 @@ export const darkThemes = [
     crimsonLamentTheme,
     eternalMourningTheme,
     fogOfDespairTheme,
+    forestNightTheme,
     graveyardWhispersTheme,
     grungeIndustrialTheme,
     hauntedAestheticTheme,
@@ -38,6 +41,7 @@ export const darkThemes = [
     abyssalNocturneTheme,
     arcaneMidnightTheme,
     bloodMoonSerenadeTheme,
+    forestNightGradientTheme,
     gravestoneChillTheme,
     noirElegyTheme,
     phantomMistTheme,
