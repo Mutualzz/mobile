@@ -51,6 +51,13 @@ const IndexRoute = () => {
             >
               {t("landing.privacyPolicy")}
             </Button>
+            <Button
+              onPress={() =>
+                Linking.openURL("https://mutualzz.com/tos").catch(() => {})
+              }
+            >
+              {t("landing.termsOfService")}
+            </Button>
             <Button onPress={() => router.replace("/register")}>
               {t("landing.register")}
             </Button>
