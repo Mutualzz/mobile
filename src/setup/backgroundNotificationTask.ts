@@ -79,6 +79,17 @@ export function extractBackgroundPushData(
 TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => {
   if (Platform.OS !== "android" || error || !data) return;
 
+  // Notification+data pushes are already shown by the system tray. Only
+  // upgrade headless/data-only deliveries through Notifee.
+  if (
+    typeof data === "object" &&
+    data !== null &&
+    "notification" in data &&
+    (data as { notification?: unknown }).notification
+  ) {
+    return;
+  }
+
   const raw = extractBackgroundPushData(data);
   if (!raw) return;
 

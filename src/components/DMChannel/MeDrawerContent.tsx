@@ -1,3 +1,4 @@
+import { BridgeChannelList } from "@components/Bridge/BridgeChannelList";
 import { DMChannelCreateSheet } from "@components/DMChannel/DMChannelCreateSheet";
 import { Button } from "@components/Button";
 import { DMChannelList } from "@components/DMChannel/DMChannelList";
@@ -9,22 +10,24 @@ import { Screen } from "@components/Screen/Screen";
 import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography } from "@mutualzz/ui-native";
-import { PlusIcon } from "phosphor-react-native";
+import { CubeIcon, PlusIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-type Tab = "direct-messages" | "friends";
+type Tab = "direct-messages" | "friends" | "bridges";
 type FriendsSubTab = FriendsTab | "add-friend";
 
 export const MeDrawerContent = observer(() => {
   const app = useAppStore();
   const { t } = useTranslation("chat");
   const { t: tSpace } = useTranslation("space");
+  const { t: tSettings } = useTranslation("settings");
   const tabBarInset = useKeyboardChromeInset();
   const [tab, setTab] = useState<Tab>("direct-messages");
   const [friendsSubTab, setFriendsSubTab] = useState<FriendsSubTab>("online");
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
+  const bridgesUnread = app.bridgeChat.hasAnyUnread;
 
   if (!app.isReady) {
     return (
@@ -57,6 +60,8 @@ export const MeDrawerContent = observer(() => {
           flexDirection: "row",
           justifyContent: "space-evenly",
           alignItems: "center",
+          flexWrap: "wrap",
+          gap: 4,
         }}
         elevation={app.settings?.preferEmbossed ? 3 : 0}
       >
@@ -72,6 +77,15 @@ export const MeDrawerContent = observer(() => {
         >
           {t("friends.title")}
         </Button>
+        <Button
+          variant={tab === "bridges" ? "soft" : "plain"}
+          onPress={() => setTab("bridges")}
+          startDecorator={<CubeIcon weight="fill" size={16} />}
+        >
+          {bridgesUnread
+            ? `${tSettings("minecraftBridge.sidebarTitle")} ·`
+            : tSettings("minecraftBridge.sidebarTitle")}
+        </Button>
         {tab === "direct-messages" && (
           <IconButton
             accessibilityLabel={t("dm.createGroupA11y")}
@@ -84,6 +98,8 @@ export const MeDrawerContent = observer(() => {
 
       {tab === "direct-messages" ? (
         <DMChannelList />
+      ) : tab === "bridges" ? (
+        <BridgeChannelList />
       ) : (
         <Box style={{ flex: 1, paddingHorizontal: 12, gap: 12 }}>
           <Paper

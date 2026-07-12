@@ -27,6 +27,9 @@ export class VoiceStatesStore {
             existing.spaceDeaf = state.spaceDeaf;
             existing.sessionId = state.sessionId;
             existing.updatedAt = state.updatedAt;
+            if (state.client != null || state.channelId == null) {
+                existing.client = state.client;
+            }
             existing.disconnectedAt = state.disconnectedAt ?? null;
             return existing;
         }

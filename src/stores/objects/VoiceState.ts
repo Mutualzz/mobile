@@ -12,6 +12,7 @@ export class VoiceState {
   spaceDeaf: boolean;
   sessionId: string;
   updatedAt: number;
+  client?: MzVoiceState["client"];
   disconnectedAt?: number | null;
 
   constructor(
@@ -27,6 +28,7 @@ export class VoiceState {
     this.spaceDeaf = state.spaceDeaf;
     this.sessionId = state.sessionId;
     this.updatedAt = state.updatedAt;
+    this.client = state.client;
     this.disconnectedAt = state.disconnectedAt ?? null;
 
     makeAutoObservable(this, {}, { autoBind: true });

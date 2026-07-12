@@ -35,6 +35,7 @@ import { VoiceStore } from "@stores/Voice.store";
 import type { Message } from "@stores/objects/Message";
 import { VoiceStatesStore } from "@stores/VoiceStates.store";
 import type { User } from "@stores/objects/User";
+import { BridgeChatStore } from "@stores/BridgeChat.store";
 
 export class AppStore {
   isGatewayReady = false;
@@ -62,6 +63,7 @@ export class AppStore {
   posts = new PostStore(this);
   profiles = new ProfileStore(this);
   typing = new TypingStore(this);
+  bridgeChat = new BridgeChatStore();
   settings: AccountSettingsStore | null = null;
   version: string | null = null;
   mode: AppMode | null = null;

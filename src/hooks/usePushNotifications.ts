@@ -190,19 +190,19 @@ export function usePushNotifications(enabled: boolean) {
         return;
       }
 
-      if (Platform.OS === "ios") {
-        const response = await Notifications.getLastNotificationResponseAsync();
-        if (!response) return;
+      // Android killed-state taps open the FCM/Expo system notification, not
+      // a Notifee one — same cold-start path as iOS.
+      const response = await Notifications.getLastNotificationResponseAsync();
+      if (!response) return;
 
-        const data = getNotificationData(response);
-        if (response.actionIdentifier === DM_REPLY_ACTION_ID) return;
+      const data = getNotificationData(response);
+      if (response.actionIdentifier === DM_REPLY_ACTION_ID) return;
 
-        await navigateToNotificationTarget(
-          data,
-          navigateRef.current,
-          appRef.current,
-        );
-      }
+      await navigateToNotificationTarget(
+        data,
+        navigateRef.current,
+        appRef.current,
+      );
     };
 
     void openInitialNotification();

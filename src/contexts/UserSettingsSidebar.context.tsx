@@ -12,6 +12,7 @@ export type UserSettingsSidebarPage =
     | "appearance"
     | "notifications"
     | "voice_and_video"
+    | "minecraft-bridge"
     | "support";
 export type UserSettingsSidebarCategories = "user-settings" | "app-settings";
 

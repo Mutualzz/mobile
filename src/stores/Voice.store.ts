@@ -125,7 +125,13 @@ export class VoiceStore {
     this.session = new MediasoupSession({
       callbacks: {
         onSocketClosed: (reason) => {
+          const reasonLower = String(reason ?? "").toLowerCase();
+          const isSuperseded =
+            reasonLower.includes("superseded") ||
+            reasonLower.includes("minecraft") ||
+            reasonLower.includes("different device");
           const canAutoRejoin =
+            !isSuperseded &&
             this.connectionStatus === "connected" &&
             !!this.currentVoiceTarget &&
             this.app.isGatewayReady;
@@ -544,6 +550,17 @@ export class VoiceStore {
   onGatewayReconnected() {
     if (!this.currentVoiceTarget) return;
 
+    const selfId = this.app.account?.id;
+    const selfState = selfId ? this.app.voiceStates.get(selfId) : null;
+    if (selfState?.client === "minecraft" && selfState.channelId) {
+      runInAction(() => {
+        this.connectionStatus = "idle";
+        this.currentVoiceTarget = null;
+      });
+      this.stopKeepAlive();
+      return;
+    }
+
     if (this.connectionStatus === "connected") {
       this.startKeepAlive();
       void this.sendVoiceStateUpdate();
@@ -936,6 +953,7 @@ export class VoiceStore {
       channelId: this.currentVoiceTarget?.channelId ?? null,
       selfMute: this.effectiveSelfMute,
       selfDeaf: this.effectiveSelfDeaf,
+      client: "mobile",
       refreshRtc: options?.refreshRtc === true,
     });
   }

@@ -7,6 +7,7 @@ import {
   ANDROID_MESSAGE_CHANNEL_ID,
   MESSAGE_PUSH_DISPLAY_MODE,
 } from "@utils/messageNotification.constants";
+import * as Notifications from "expo-notifications";
 import i18n from "../i18n";
 
 export interface MessagePushData {
@@ -65,14 +66,25 @@ export function parseMessagePushData(
 let channelReady: Promise<void> | null = null;
 
 export function ensureAndroidMessageChannel() {
-  channelReady ??= notifee
-    .createChannel({
+  channelReady ??= (async () => {
+    const name = i18n.t("notifications.messagesChannel", { ns: "common" });
+
+    // Expo/FCM notification messages require this channel to already exist,
+    // otherwise Android 8+ silently drops them when the app is killed.
+    await Notifications.setNotificationChannelAsync(ANDROID_MESSAGE_CHANNEL_ID, {
+      name,
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: "default",
+      enableVibrate: true,
+    });
+
+    await notifee.createChannel({
       id: ANDROID_MESSAGE_CHANNEL_ID,
-      name: i18n.t("notifications.messagesChannel", { ns: "common" }),
+      name,
       importance: AndroidImportance.HIGH,
       sound: "default",
-    })
-    .then(() => undefined);
+    });
+  })();
 
   return channelReady;
 }

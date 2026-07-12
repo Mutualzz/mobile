@@ -1,17 +1,24 @@
+import { BridgeChatView } from "@components/Bridge/BridgeChatView";
 import { DMContentPane } from "@components/DMChannel/DMContentPane";
 import { MeDrawerContent } from "@components/DMChannel/MeDrawerContent";
 import { SwipeableDrawer } from "@components/Navigation/SwipeableDrawer";
 import { useAppStore } from "@hooks/useStores";
 import { hasOpenModals } from "@mutualzz/ui-native";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, usePathname } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef } from "react";
 import { BackHandler } from "react-native";
 
 const MeLayout = () => {
   const app = useAppStore();
-  const { channelId } = useLocalSearchParams<{ channelId?: string }>();
+  const pathname = usePathname();
+  const { channelId, bridgeId } = useLocalSearchParams<{
+    channelId?: string;
+    bridgeId?: string;
+  }>();
   const lastSyncedChannelIdRef = useRef<string | undefined>(undefined);
+  const onBridgeRoute =
+    pathname.includes("/bridges/") || Boolean(bridgeId);
 
   useEffect(() => {
     return () => {
@@ -21,6 +28,13 @@ const MeLayout = () => {
 
   const syncDM = useCallback(() => {
     if (app.mode !== "@me") app.setMode("@me");
+
+    if (onBridgeRoute) {
+      lastSyncedChannelIdRef.current = undefined;
+      app.spaces.unsetActive();
+      app.setDMDrawerOpen(false);
+      return;
+    }
 
     if (channelId) {
       if (lastSyncedChannelIdRef.current === channelId) return;
@@ -35,7 +49,7 @@ const MeLayout = () => {
 
     lastSyncedChannelIdRef.current = undefined;
     app.spaces.setActive("@me");
-  }, [channelId, app]);
+  }, [channelId, onBridgeRoute, app]);
 
   useEffect(() => {
     syncDM();
@@ -53,6 +67,12 @@ const MeLayout = () => {
       () => {
         if (hasOpenModals()) return false;
         if (app.mode !== "@me") return false;
+        if (onBridgeRoute) {
+          if (!app.dmDrawerOpen) {
+            app.setDMDrawerOpen(true);
+          }
+          return true;
+        }
         if (!app.channels.activeId) return false;
 
         if (!app.dmDrawerOpen) {
@@ -62,7 +82,7 @@ const MeLayout = () => {
       },
     );
     return () => subscription.remove();
-  }, [app]);
+  }, [app, onBridgeRoute]);
 
   return (
     <SwipeableDrawer
@@ -70,7 +90,11 @@ const MeLayout = () => {
       onOpenChange={(open) => app.setDMDrawerOpen(open)}
       drawerContent={<MeDrawerContent />}
     >
-      <DMContentPane />
+      {bridgeId ? (
+        <BridgeChatView bridgeId={bridgeId} />
+      ) : (
+        <DMContentPane />
+      )}
     </SwipeableDrawer>
   );
 };
