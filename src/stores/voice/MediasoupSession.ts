@@ -100,6 +100,7 @@ export interface MediasoupSessionOptions {
   getSelfUserId: () => string | undefined;
   getSpeakingThreshold: () => number;
   shouldReportSpeaking: (userId: string) => boolean;
+  getNoiseSuppression: () => boolean;
 }
 
 export class MediasoupSession {
@@ -136,6 +137,7 @@ export class MediasoupSession {
 
   private readonly callbacks: MediasoupSessionCallbacks;
   private readonly getSelfUserId: () => string | undefined;
+  private readonly getNoiseSuppression: () => boolean;
   private readonly speakingDetector: SpeakingDetector;
   private readonly statsSources = new Map<string, () => Promise<RTCStatsReport>>();
 
@@ -144,6 +146,7 @@ export class MediasoupSession {
   constructor(options: MediasoupSessionOptions) {
     this.callbacks = options.callbacks;
     this.getSelfUserId = options.getSelfUserId;
+    this.getNoiseSuppression = options.getNoiseSuppression;
     this.speakingDetector = new SpeakingDetector(
       (userId, speaking) => {
         this.callbacks.onSpeakingChange(userId, speaking);
@@ -571,26 +574,26 @@ export class MediasoupSession {
   }
 
   private async acquireMicMedia(signal: AbortSignal) {
-    const attempts: Array<boolean | { deviceId: string }> = [];
+    const noiseSuppression = this.getNoiseSuppression();
+    const attempts: Array<Record<string, unknown>> = [];
+    const audioBase = {
+      echoCancellation: true,
+      noiseSuppression,
+      autoGainControl: true,
+    };
     if (this.currentInputDeviceId) {
-      attempts.push({ deviceId: this.currentInputDeviceId });
+      attempts.push({
+        ...audioBase,
+        deviceId: this.currentInputDeviceId,
+      });
     }
-    attempts.push(true);
+    attempts.push(audioBase);
 
     for (const audio of attempts) {
       if (signal.aborted) throw new Error("Voice disconnected");
       try {
-        const audioConstraints =
-          typeof audio === "object" && "deviceId" in audio
-            ? {
-                deviceId: audio.deviceId,
-                echoCancellation: true,
-                noiseSuppression: true,
-              }
-            : true;
-
         return await mediaDevices.getUserMedia({
-          audio: audioConstraints,
+          audio: audio as never,
           video: false,
         });
       } catch (error) {

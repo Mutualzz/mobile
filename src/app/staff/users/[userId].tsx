@@ -346,6 +346,7 @@ const StaffUserScreen = () => {
 
   const isDisabled = user.flags.has("Disabled");
   const isDeleted = user.flags.has("Deleted");
+  const isTargetFounder = user.flags.has("Founder");
   const isRestricted =
     !!privateUser.restrictedUntil &&
     new Date(privateUser.restrictedUntil) > new Date();
@@ -376,44 +377,52 @@ const StaffUserScreen = () => {
           <Typography level="body-md" weight={700}>
             {t("sections.info")}
           </Typography>
-          <Box style={{ gap: 4 }}>
-            <Typography level="body-xs" textColor="muted">
-              {t("user.info.username")}
+          {isTargetFounder ? (
+            <Typography level="body-sm" textColor="muted">
+              {t("user.actions.founderProtectedBanner")}
             </Typography>
-            <InputDefault
-              fullWidth
-              autoCapitalize="none"
-              value={usernameDraft}
-              onChangeText={setUsernameDraft}
-            />
-          </Box>
-          <Box style={{ gap: 4 }}>
-            <Typography level="body-xs" textColor="muted">
-              {t("user.info.displayName")}
-            </Typography>
-            <InputDefault
-              fullWidth
-              placeholder={t("user.info.noDisplayName")}
-              value={globalNameDraft}
-              onChangeText={setGlobalNameDraft}
-            />
-          </Box>
-          {profileError && (
-            <Typography level="body-sm" color="danger">
-              {profileError}
-            </Typography>
+          ) : (
+            <>
+              <Box style={{ gap: 4 }}>
+                <Typography level="body-xs" textColor="muted">
+                  {t("user.info.username")}
+                </Typography>
+                <InputDefault
+                  fullWidth
+                  autoCapitalize="none"
+                  value={usernameDraft}
+                  onChangeText={setUsernameDraft}
+                />
+              </Box>
+              <Box style={{ gap: 4 }}>
+                <Typography level="body-xs" textColor="muted">
+                  {t("user.info.displayName")}
+                </Typography>
+                <InputDefault
+                  fullWidth
+                  placeholder={t("user.info.noDisplayName")}
+                  value={globalNameDraft}
+                  onChangeText={setGlobalNameDraft}
+                />
+              </Box>
+              {profileError && (
+                <Typography level="body-sm" color="danger">
+                  {profileError}
+                </Typography>
+              )}
+              <Button
+                color="primary"
+                disabled={
+                  savingProfile ||
+                  !trimmedUsername ||
+                  (!usernameChanged && !globalNameChanged)
+                }
+                onPress={() => saveProfile()}
+              >
+                {t("user.info.saveChanges")}
+              </Button>
+            </>
           )}
-          <Button
-            color="primary"
-            disabled={
-              savingProfile ||
-              !trimmedUsername ||
-              (!usernameChanged && !globalNameChanged)
-            }
-            onPress={() => saveProfile()}
-          >
-            {t("user.info.saveChanges")}
-          </Button>
 
           <Box style={{ gap: 4, marginTop: 8 }}>
             <DetailRow label={t("user.info.email")} value={privateUser.email} />
@@ -484,49 +493,54 @@ const StaffUserScreen = () => {
           </Typography>
         </Box>
 
-        {app.account?.isFounder && (
-          <Box style={{ gap: 8 }}>
-            <Typography level="body-md" weight={700}>
-              {t("user.flags.manage")}
+        {app.account?.isFounder &&
+          (isTargetFounder ? (
+            <Typography level="body-sm" textColor="muted">
+              {t("user.actions.founderProtectedBanner")}
             </Typography>
-            {staffToggleableUserFlags.map((flag, index) => (
-              <Box key={flag} style={{ gap: 8 }}>
-                <Pressable
-                  onPress={() =>
-                    setFlag({
-                      flag,
-                      enabled: !user.flags.has(flag),
-                    })
-                  }
-                >
-                  <Box
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 12,
-                    }}
+          ) : (
+            <Box style={{ gap: 8 }}>
+              <Typography level="body-md" weight={700}>
+                {t("user.flags.manage")}
+              </Typography>
+              {staffToggleableUserFlags.map((flag, index) => (
+                <Box key={flag} style={{ gap: 8 }}>
+                  <Pressable
+                    onPress={() =>
+                      setFlag({
+                        flag,
+                        enabled: !user.flags.has(flag),
+                      })
+                    }
                   >
-                    <Typography level="body-sm">{flag}</Typography>
-                    <Switch
-                      checked={user.flags.has(flag)}
-                      disabled={settingFlag}
-                      onChange={() =>
-                        setFlag({
-                          flag,
-                          enabled: !user.flags.has(flag),
-                        })
-                      }
-                    />
-                  </Box>
-                </Pressable>
-                {index < staffToggleableUserFlags.length - 1 && (
-                  <Divider lineColor="muted" style={{ opacity: 0.25 }} />
-                )}
-              </Box>
-            ))}
-          </Box>
-        )}
+                    <Box
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                      }}
+                    >
+                      <Typography level="body-sm">{flag}</Typography>
+                      <Switch
+                        checked={user.flags.has(flag)}
+                        disabled={settingFlag}
+                        onChange={() =>
+                          setFlag({
+                            flag,
+                            enabled: !user.flags.has(flag),
+                          })
+                        }
+                      />
+                    </Box>
+                  </Pressable>
+                  {index < staffToggleableUserFlags.length - 1 && (
+                    <Divider lineColor="muted" style={{ opacity: 0.25 }} />
+                  )}
+                </Box>
+              ))}
+            </Box>
+          ))}
 
         <Divider lineColor="muted" style={{ opacity: 0.35 }} />
 
@@ -534,130 +548,138 @@ const StaffUserScreen = () => {
           <Typography level="body-md" weight={700}>
             {t("sections.actions")}
           </Typography>
-          {isDeleted && (
+          {isTargetFounder ? (
             <Typography level="body-sm" textColor="muted">
-              {t("user.actions.softDeletedBanner")}
+              {t("user.actions.founderProtectedBanner")}
             </Typography>
-          )}
-          {!isDeleted && (
+          ) : (
             <>
-              <Button
-                color="danger"
-                onPress={() =>
-                  openModal(
-                    `staff-disable-user-${user.id}`,
-                    <StaffUserDisableConfirmSheet
-                      userId={user.id}
-                      username={user.username}
-                      disable={!isDisabled}
-                      onSuccess={handleUpdated}
-                      modalId={`staff-disable-user-${user.id}`}
-                    />,
-                  )
-                }
-              >
-                {isDisabled
-                  ? t("user.actions.enableAccount")
-                  : t("user.actions.disableAccount")}
-              </Button>
-              <Button
-                color="danger"
-                onPress={() =>
-                  openModal(
-                    `staff-force-logout-user-${user.id}`,
-                    <StaffUserForceLogoutConfirmSheet
-                      userId={user.id}
-                      username={user.username}
-                      onSuccess={handleForcedLogout}
-                      modalId={`staff-force-logout-user-${user.id}`}
-                    />,
-                  )
-                }
-              >
-                {t("user.actions.forceLogout")}
-              </Button>
-              <Button
-                color="warning"
-                onPress={() =>
-                  openModal(
-                    `staff-warn-user-${user.id}`,
-                    <StaffUserWarnConfirmSheet
-                      userId={user.id}
-                      username={user.username}
-                      onSuccess={handleWarned}
-                      modalId={`staff-warn-user-${user.id}`}
-                    />,
-                  )
-                }
-              >
-                {t("user.actions.warnUser")}
-              </Button>
-              {isRestricted ? (
+              {isDeleted && (
+                <Typography level="body-sm" textColor="muted">
+                  {t("user.actions.softDeletedBanner")}
+                </Typography>
+              )}
+              {!isDeleted && (
+                <>
+                  <Button
+                    color="danger"
+                    onPress={() =>
+                      openModal(
+                        `staff-disable-user-${user.id}`,
+                        <StaffUserDisableConfirmSheet
+                          userId={user.id}
+                          username={user.username}
+                          disable={!isDisabled}
+                          onSuccess={handleUpdated}
+                          modalId={`staff-disable-user-${user.id}`}
+                        />,
+                      )
+                    }
+                  >
+                    {isDisabled
+                      ? t("user.actions.enableAccount")
+                      : t("user.actions.disableAccount")}
+                  </Button>
+                  <Button
+                    color="danger"
+                    onPress={() =>
+                      openModal(
+                        `staff-force-logout-user-${user.id}`,
+                        <StaffUserForceLogoutConfirmSheet
+                          userId={user.id}
+                          username={user.username}
+                          onSuccess={handleForcedLogout}
+                          modalId={`staff-force-logout-user-${user.id}`}
+                        />,
+                      )
+                    }
+                  >
+                    {t("user.actions.forceLogout")}
+                  </Button>
+                  <Button
+                    color="warning"
+                    onPress={() =>
+                      openModal(
+                        `staff-warn-user-${user.id}`,
+                        <StaffUserWarnConfirmSheet
+                          userId={user.id}
+                          username={user.username}
+                          onSuccess={handleWarned}
+                          modalId={`staff-warn-user-${user.id}`}
+                        />,
+                      )
+                    }
+                  >
+                    {t("user.actions.warnUser")}
+                  </Button>
+                  {isRestricted ? (
+                    <Button
+                      color="warning"
+                      disabled={liftingRestriction}
+                      onPress={() => liftRestriction()}
+                    >
+                      {t("user.actions.liftRestriction")}
+                    </Button>
+                  ) : (
+                    <Button
+                      color="warning"
+                      onPress={() =>
+                        openModal(
+                          `staff-restrict-user-${user.id}`,
+                          <StaffUserRestrictConfirmSheet
+                            userId={user.id}
+                            username={user.username}
+                            onSuccess={handleUpdated}
+                            modalId={`staff-restrict-user-${user.id}`}
+                          />,
+                        )
+                      }
+                    >
+                      {t("user.actions.restrictUser")}
+                    </Button>
+                  )}
+                  <Button
+                    color="danger"
+                    onPress={() =>
+                      openModal(
+                        `staff-delete-user-${user.id}`,
+                        <StaffUserDeleteConfirmSheet
+                          userId={user.id}
+                          username={user.username}
+                          isFounder={!!app.account?.isFounder}
+                          onSoftDeleted={handleUpdated}
+                          onHardDeleted={handleHardDeleted}
+                          modalId={`staff-delete-user-${user.id}`}
+                        />,
+                      )
+                    }
+                  >
+                    {t("user.actions.softDeleteAccount")}
+                  </Button>
+                </>
+              )}
+              {app.account?.isFounder && (
                 <Button
-                  color="warning"
-                  disabled={liftingRestriction}
-                  onPress={() => liftRestriction()}
-                >
-                  {t("user.actions.liftRestriction")}
-                </Button>
-              ) : (
-                <Button
-                  color="warning"
+                  color="danger"
                   onPress={() =>
                     openModal(
-                      `staff-restrict-user-${user.id}`,
-                      <StaffUserRestrictConfirmSheet
+                      `staff-hard-delete-user-${user.id}`,
+                      <StaffUserDeleteConfirmSheet
                         userId={user.id}
                         username={user.username}
-                        onSuccess={handleUpdated}
-                        modalId={`staff-restrict-user-${user.id}`}
+                        isFounder
+                        allowHardDeleteOnly
+                        onSoftDeleted={handleUpdated}
+                        onHardDeleted={handleHardDeleted}
+                        modalId={`staff-hard-delete-user-${user.id}`}
                       />,
                     )
                   }
                 >
-                  {t("user.actions.restrictUser")}
+                  {t("user.actions.hardDeleteAccount")}
                 </Button>
               )}
-              <Button
-                color="danger"
-                onPress={() =>
-                  openModal(
-                    `staff-delete-user-${user.id}`,
-                    <StaffUserDeleteConfirmSheet
-                      userId={user.id}
-                      username={user.username}
-                      isFounder={!!app.account?.isFounder}
-                      onSoftDeleted={handleUpdated}
-                      onHardDeleted={handleHardDeleted}
-                      modalId={`staff-delete-user-${user.id}`}
-                    />,
-                  )
-                }
-              >
-                {t("user.actions.softDeleteAccount")}
-              </Button>
             </>
-          )}
-          {app.account?.isFounder && (
-            <Button
-              color="danger"
-              onPress={() =>
-                openModal(
-                  `staff-hard-delete-user-${user.id}`,
-                  <StaffUserDeleteConfirmSheet
-                    userId={user.id}
-                    username={user.username}
-                    isFounder
-                    allowHardDeleteOnly
-                    onSoftDeleted={handleUpdated}
-                    onHardDeleted={handleHardDeleted}
-                    modalId={`staff-hard-delete-user-${user.id}`}
-                  />,
-                )
-              }
-            >
-              {t("user.actions.hardDeleteAccount")}
-            </Button>
           )}
         </Box>
 
@@ -667,6 +689,11 @@ const StaffUserScreen = () => {
           <Typography level="body-md" weight={700}>
             {t("sections.sessions")}
           </Typography>
+          {isTargetFounder && (
+            <Typography level="body-sm" textColor="muted">
+              {t("user.actions.founderProtectedBanner")}
+            </Typography>
+          )}
           {sessions.length === 0 ? (
             <Typography level="body-sm" textColor="muted">
               {t("user.sessions.empty")}
@@ -695,15 +722,17 @@ const StaffUserScreen = () => {
                       })}
                     </Typography>
                   </Box>
-                  <Button
-                    size="sm"
-                    color="danger"
-                    variant="soft"
-                    disabled={revokingSession}
-                    onPress={() => revokeSession(session.sessionId)}
-                  >
-                    {t("user.sessions.revoke")}
-                  </Button>
+                  {!isTargetFounder && (
+                    <Button
+                      size="sm"
+                      color="danger"
+                      variant="soft"
+                      disabled={revokingSession}
+                      onPress={() => revokeSession(session.sessionId)}
+                    >
+                      {t("user.sessions.revoke")}
+                    </Button>
+                  )}
                 </Box>
               ))}
             </Box>

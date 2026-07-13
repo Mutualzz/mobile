@@ -2,6 +2,7 @@ import { ChangeOnlineStatusModal } from "@components/User/ChangeOnlineStatusModa
 import { IconButton } from "@components/IconButton";
 import { SpaceModeratedSheet } from "@components/Modals/SpaceModeratedSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
+import { useElapsedClock } from "@hooks/useElapsedClock";
 import { useOpenUserProfile } from "@hooks/useOpenUserProfile";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useModal } from "@hooks/useModal";
@@ -10,6 +11,7 @@ import { useAppStore } from "@hooks/useStores";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { VoiceConnectionStatus } from "@stores/Voice.store";
 import { shouldShowVoiceUserBarPill } from "@utils/layout";
+import { getChannelOccupiedAt } from "@utils/voiceElapsed";
 import { observer } from "mobx-react-lite";
 import { Pressable } from "react-native";
 import { HeadphonesOffIcon } from "@components/icons/HeadphonesOffIcon";
@@ -20,8 +22,10 @@ import {
   PhoneXIcon,
   VideoCameraIcon,
   VideoCameraSlashIcon,
+  WaveformIcon,
 } from "phosphor-react-native";
 import { useTranslation } from "react-i18next";
+import { useNoiseSuppressionSheet } from "@components/User/NoiseSuppressionSheet";
 
 function getVoiceTitle(
   status: VoiceConnectionStatus,
@@ -66,6 +70,7 @@ export const UserBar = observer(() => {
   const account = app.account;
   const openProfile = useOpenUserProfile();
   const { t } = useTranslation("chat");
+  const openNoiseSuppression = useNoiseSuppressionSheet();
 
   const openStatusSheet = () => {
     openBottomSheet(
@@ -93,6 +98,20 @@ export const UserBar = observer(() => {
 
   const voiceTitle = getVoiceTitle(voiceStatus, t);
   const voiceTitleColor = getVoiceTitleColor(voiceStatus, theme.colors);
+
+  const selfVoiceState = account
+    ? app.voiceStates.get(account.id)
+    : undefined;
+  const selfElapsed = useElapsedClock(
+    selfVoiceState?.channelId && !selfVoiceState.disconnectedAt
+      ? selfVoiceState.joinedAt
+      : null,
+  );
+  const channelElapsed = useElapsedClock(
+    voiceChannel
+      ? getChannelOccupiedAt(app.voiceStates.getAllByChannel(voiceChannel.id))
+      : null,
+  );
 
   let voiceSubtitle: string | undefined;
   if (voiceChannel) {
@@ -151,17 +170,51 @@ export const UserBar = observer(() => {
                     {voiceSubtitle}
                   </Typography>
                 )}
+                {channelElapsed && (
+                  <Typography
+                    level="body-xs"
+                    textColor="muted"
+                    accessibilityLabel={t("voice.channelOccupied", {
+                      time: channelElapsed,
+                    })}
+                    style={{ fontVariant: ["tabular-nums"] }}
+                  >
+                    {channelElapsed}
+                  </Typography>
+                )}
               </Box>
 
-              <IconButton
-                variant="plain"
-                padding={4}
-                disabled={!canHangup}
-                onPress={() => app.voice.leave()}
-                accessibilityLabel={t("voice.connection.disconnectA11y")}
-              >
-                <PhoneXIcon weight="fill" color={theme.colors.danger} />
-              </IconButton>
+              <Box style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+                {voiceStatus === "connected" && (
+                  <IconButton
+                    variant="plain"
+                    padding={4}
+                    onPress={openNoiseSuppression}
+                    accessibilityLabel={t("voice.controls.noiseSuppressionA11y")}
+                    accessibilityState={{
+                      selected: app.voice.noiseSuppression,
+                    }}
+                  >
+                    <WaveformIcon
+                      weight="fill"
+                      color={
+                        app.voice.noiseSuppression
+                          ? theme.colors.success
+                          : theme.typography.colors.muted
+                      }
+                    />
+                  </IconButton>
+                )}
+                <IconButton
+                  variant="plain"
+                  padding={4}
+                  disabled={!canHangup}
+                  onPress={() => app.voice.leave()}
+                  accessibilityLabel={t("voice.connection.disconnectA11y")}
+                >
+                  <PhoneXIcon weight="fill" color={theme.colors.danger} />
+                </IconButton>
+              </Box>
             </Box>
 
             <Box style={{ flexDirection: "row", gap: 6 }}>
@@ -280,9 +333,30 @@ export const UserBar = observer(() => {
               }
             />
             <Box style={{ flex: 1, minWidth: 0 }}>
-              <Typography level="body-sm" truncate="single">
-                {account.displayName}
-              </Typography>
+              <Box
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  minWidth: 0,
+                }}
+              >
+                <Typography level="body-sm" truncate="single" style={{ flexShrink: 1 }}>
+                  {account.displayName}
+                </Typography>
+                {selfElapsed && (
+                  <Typography
+                    level="body-xs"
+                    textColor="muted"
+                    accessibilityLabel={t("voice.elapsedInChannel", {
+                      time: selfElapsed,
+                    })}
+                    style={{ fontVariant: ["tabular-nums"] }}
+                  >
+                    {selfElapsed}
+                  </Typography>
+                )}
+              </Box>
               <Typography level="body-xs" textColor="muted" truncate="single">
                 {customStatus || `@${account.username}`}
               </Typography>

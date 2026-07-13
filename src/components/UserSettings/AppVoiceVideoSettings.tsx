@@ -10,6 +10,7 @@ import {
   Radio,
   RadioGroup,
   Slider,
+  Switch,
   Typography,
   useTheme,
 } from "@mutualzz/ui-native";
@@ -303,6 +304,46 @@ export const AppVoiceVideoSettings = observer(() => {
             )
           }
         />
+      </Paper>
+
+      <Paper
+        style={{
+          padding: 16,
+          borderRadius: 12,
+          gap: 12,
+        }}
+        elevation={app.settings?.preferEmbossed ? 2 : 0}
+      >
+        <Box
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <Box style={{ flex: 1, minWidth: 0, gap: 4 }}>
+            <Typography level="body-md" weight={700}>
+              {t("voice.noiseSuppression")}
+            </Typography>
+            <Typography level="body-sm" textColor="muted">
+              {t("voice.noiseSuppressionDescriptionMobile")}
+            </Typography>
+            {voice.noiseSuppressionPending && (
+              <Typography level="body-xs" textColor="muted">
+                {t("voice.noiseSuppressionApplying")}
+              </Typography>
+            )}
+          </Box>
+          <Switch
+            checked={voice.noiseSuppression}
+            disabled={voice.noiseSuppressionPending}
+            color="primary"
+            onChange={(checked) => {
+              void voice.setNoiseSuppression(checked);
+            }}
+          />
+        </Box>
       </Paper>
 
       <Paper

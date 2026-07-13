@@ -7,11 +7,13 @@ import { UserBar } from "@components/User/UserBar";
 import { VoiceChannelChatSheet } from "@components/Views/VoiceChannelChatSheet";
 import { VoiceChannelParticipant } from "@components/Views/VoiceChannelParticipant";
 import { VoiceParticipantActionSheet } from "@components/Views/VoiceParticipantActionSheet";
+import { useElapsedClock } from "@hooks/useElapsedClock";
 import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import type { VoiceState } from "@stores/objects/VoiceState";
+import { getChannelOccupiedAt } from "@utils/voiceElapsed";
 import { ArrowLeftIcon, ChatCircleIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -36,6 +38,7 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
   const space = channel.space;
 
   const members = app.voiceStates.getAllByChannel(channel.id);
+  const channelElapsed = useElapsedClock(getChannelOccupiedAt(members));
   const selfId = app.account?.id;
   const isJoined = app.voice.isJoinedToChannel(channel.id);
   const isConnecting = isJoined && app.voice.connectionStatus === "connecting";
@@ -71,9 +74,22 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
             <ArrowLeftIcon color={theme.typography.colors.primary} />
           </Pressable>
           <ChannelIcon type={channel.type} />
-          <Typography level="body-lg" weight="bold" style={{ flex: 1 }}>
-            {channel.name}
-          </Typography>
+          <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
+            <Typography level="body-lg" weight="bold" truncate="single">
+              {channel.name}
+            </Typography>
+            {channelElapsed && (
+              <Typography
+                level="body-xs"
+                textColor="muted"
+                accessibilityLabel={t("voice.channelOccupied", {
+                  time: channelElapsed,
+                })}
+              >
+                {channelElapsed}
+              </Typography>
+            )}
+          </Box>
           <IconButton
             padding={6}
             accessibilityLabel={t("voice.openChat")}
@@ -93,6 +109,18 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
                   ? t("voice.noOneInVoice")
                   : t("voice.peopleInVoice", { count: members.length })}
               </Typography>
+              {channelElapsed && members.length > 0 && (
+                <Typography
+                  level="body-xs"
+                  textColor="muted"
+                  style={{ textAlign: "center" }}
+                  accessibilityLabel={t("voice.channelOccupied", {
+                    time: channelElapsed,
+                  })}
+                >
+                  {t("voice.channelOccupied", { time: channelElapsed })}
+                </Typography>
+              )}
               <Button
                 onPress={() =>
                   app.voice.joinChannel(channel.id, channel.spaceId ?? null)

@@ -12,6 +12,7 @@ export class VoiceState {
   spaceDeaf: boolean;
   sessionId: string;
   updatedAt: number;
+  joinedAt: number;
   client?: MzVoiceState["client"];
   disconnectedAt?: number | null;
 
@@ -28,6 +29,7 @@ export class VoiceState {
     this.spaceDeaf = state.spaceDeaf;
     this.sessionId = state.sessionId;
     this.updatedAt = state.updatedAt;
+    this.joinedAt = state.joinedAt ?? state.updatedAt ?? Date.now();
     this.client = state.client;
     this.disconnectedAt = state.disconnectedAt ?? null;
 

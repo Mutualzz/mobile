@@ -105,6 +105,8 @@ export class VoiceStore {
   voiceInputSensitivity = DEFAULT_VOICE_INPUT_SENSITIVITY;
   voiceInputSensitivityAuto = true;
   voiceInputMode: VoiceInputMode = "voice_activity";
+  noiseSuppression = true;
+  noiseSuppressionPending = false;
   pushToTalkActive = false;
 
   private pendingEndpoint: string | null = null;
@@ -181,6 +183,7 @@ export class VoiceStore {
       getSelfUserId: () => this.app.account?.id,
       getSpeakingThreshold: () => this.getSpeakingThreshold(),
       shouldReportSpeaking: (userId) => this.shouldReportSpeakingForUser(userId),
+      getNoiseSuppression: () => this.noiseSuppression,
     });
 
     makeAutoObservable(this, {}, { autoBind: true });
@@ -191,6 +194,7 @@ export class VoiceStore {
         "voiceInputSensitivity",
         "voiceInputSensitivityAuto",
         "voiceInputMode",
+        "noiseSuppression",
         "currentInputDeviceId",
         "currentCameraDeviceId",
         {
@@ -312,6 +316,32 @@ export class VoiceStore {
       this.setPushToTalkPressed(false);
     }
     this.applyVoiceSettings();
+  }
+
+  async setNoiseSuppression(enabled: boolean) {
+    if (this.noiseSuppression === enabled) return;
+    runInAction(() => {
+      this.noiseSuppression = enabled;
+    });
+    if (
+      this.connectionStatus !== "connected" ||
+      !this.abortController ||
+      this.noiseSuppressionPending
+    ) {
+      return;
+    }
+    runInAction(() => {
+      this.noiseSuppressionPending = true;
+    });
+    try {
+      await this.session.restartMic(this.abortController.signal);
+    } catch (error) {
+      this.logger.warn("restartMic after noise suppression toggle failed", error);
+    } finally {
+      runInAction(() => {
+        this.noiseSuppressionPending = false;
+      });
+    }
   }
 
   setPushToTalkPressed(pressed: boolean) {
