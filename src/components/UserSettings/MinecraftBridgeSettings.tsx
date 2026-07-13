@@ -3,6 +3,8 @@ import { MinecraftAvatar } from "@components/Minecraft/MinecraftAvatar";
 import { Paper } from "@components/Paper";
 import { CreateBridgeSheet } from "@components/UserSettings/CreateBridgeSheet";
 import { DeleteBridgeSheet } from "@components/UserSettings/DeleteBridgeSheet";
+import { KickBridgeMemberSheet } from "@components/UserSettings/KickBridgeMemberSheet";
+import { LeaveBridgeSheet } from "@components/UserSettings/LeaveBridgeSheet";
 import { UnlinkMinecraftSheet } from "@components/UserSettings/UnlinkMinecraftSheet";
 import { useOpenBottomSheet } from "@hooks/useOpenBottomSheet";
 import { useAppStore } from "@hooks/useStores";
@@ -26,10 +28,21 @@ import { CheckCircleIcon, CircleIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Linking, Pressable, ScrollView } from "react-native";
+import { Alert, Linking, Pressable, ScrollView } from "react-native";
 
 type BridgeTab = "bridges" | "discord" | "voice" | "link";
 
+type BridgeMemberRow = {
+  userId: string;
+  role: "owner" | "member";
+  username: string;
+  globalName: string | null;
+  avatar: string | null;
+  joinedAt: string;
+  online: boolean;
+  minecraftUuid: string | null;
+  minecraftName: string | null;
+};
 const tabs: BridgeTab[] = ["bridges", "discord", "voice", "link"];
 
 const ChecklistItem = ({ done, label }: { done: boolean; label: string }) => (
@@ -71,6 +84,9 @@ export const MinecraftBridgeSettings = observer(() => {
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [serverNameDrafts, setServerNameDrafts] = useState<
+    Record<string, string>
+  >({});
 
   const bridgesQuery = useQuery({
     queryKey: ["me", "bridges"],
@@ -83,6 +99,19 @@ export const MinecraftBridgeSettings = observer(() => {
     enabled: !!selectedBridgeId,
     queryFn: () =>
       app.rest.get<BridgeDetail>(`/@me/bridges/${selectedBridgeId}`),
+  });
+
+  const membersQuery = useQuery({
+    queryKey: ["me", "bridges", selectedBridgeId, "members"],
+    enabled:
+      !!selectedBridgeId &&
+      (bridgesQuery.data?.find((b) => b.id === selectedBridgeId)?.role ??
+        "owner") !== "member",
+    queryFn: () =>
+      app.rest.get<{ members: BridgeMemberRow[] }>(
+        `/@me/bridges/${selectedBridgeId}/members`,
+      ),
+    refetchInterval: 15_000,
   });
 
   const linkQuery = useQuery({
@@ -119,7 +148,10 @@ export const MinecraftBridgeSettings = observer(() => {
   };
 
   const openCreate = () => {
-    if ((bridgesQuery.data?.length ?? 0) >= 5) return;
+    if (
+      (bridgesQuery.data?.filter((b) => b.role !== "member").length ?? 0) >= 5
+    )
+      return;
     openBottomSheet(
       "create-bridge",
       <CreateBridgeSheet
@@ -155,6 +187,29 @@ export const MinecraftBridgeSettings = observer(() => {
     onSuccess: () => {
       setError(null);
       void queryClient.invalidateQueries({ queryKey: ["me", "bridges"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["me", "bridges", selectedBridgeId],
+      });
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const renameServerMutation = useMutation({
+    mutationFn: ({
+      serverId,
+      displayName,
+    }: {
+      serverId: string;
+      displayName: string;
+    }) => {
+      if (!selectedBridgeId) throw new Error("No bridge selected");
+      return app.rest.patch(
+        `/@me/bridges/${selectedBridgeId}/servers/${encodeURIComponent(serverId)}`,
+        { displayName },
+      );
+    },
+    onSuccess: () => {
+      setError(null);
       void queryClient.invalidateQueries({
         queryKey: ["me", "bridges", selectedBridgeId],
       });
@@ -262,15 +317,24 @@ export const MinecraftBridgeSettings = observer(() => {
 
   const redeemMutation = useMutation({
     mutationFn: () =>
-      app.rest.post("/@me/bridges/link/redeem", {
-        code: redeemCode.trim(),
-      }),
-    onSuccess: () => {
+      app.rest.post<{ ok: boolean; joinedCount?: number }>(
+        "/@me/bridges/link/redeem",
+        {
+          code: redeemCode.trim(),
+        },
+      ),
+    onSuccess: (data) => {
       setError(null);
       setRedeemCode("");
       void queryClient.invalidateQueries({
         queryKey: ["me", "bridges", "link"],
       });
+      void queryClient.invalidateQueries({ queryKey: ["me", "bridges"] });
+      if ((data.joinedCount ?? 0) > 0) {
+        Alert.alert(
+          t("minecraftBridge.joinedBridges", { count: data.joinedCount }),
+        );
+      }
     },
     onError: (err: Error) => setError(err.message),
   });
@@ -314,6 +378,18 @@ export const MinecraftBridgeSettings = observer(() => {
   }, [detail?.id]);
 
   useEffect(() => {
+    if (!detail?.servers) {
+      setServerNameDrafts({});
+      return;
+    }
+    const next: Record<string, string> = {};
+    for (const s of detail.servers) {
+      next[s.serverId] = s.displayName || s.serverId;
+    }
+    setServerNameDrafts(next);
+  }, [detail?.id, detail?.servers]);
+
+  useEffect(() => {
     if (!detail) return;
     const binding = detail.discordBindings.find(
       (b) => b.serverId === bindServerId,
@@ -337,10 +413,13 @@ export const MinecraftBridgeSettings = observer(() => {
     if (link) setGeneratedCode(null);
   }, [link]);
 
-  const atBridgeLimit = bridges.length >= 5;
-  const hasPluginConfig = !!freshConfig || (detail?.tokens.length ?? 0) > 0;
-  const hasDiscord = (detail?.discordBindings.length ?? 0) > 0;
-  const hasVoice = (detail?.voiceBindings?.length ?? 0) > 0;
+  const atBridgeLimit = bridges.filter((b) => b.role !== "member").length >= 5;
+  const isOwner =
+    (detail?.role ?? selectedBridge?.role ?? "owner") !== "member";
+  const hasPluginConfig =
+    isOwner && (!!freshConfig || (detail?.tokens.length ?? 0) > 0);
+  const hasDiscord = isOwner && (detail?.discordBindings.length ?? 0) > 0;
+  const hasVoice = isOwner && (detail?.voiceBindings?.length ?? 0) > 0;
   const hasLink = !!link;
   const anyHubConnected = bridges.some((b) => b.hubConnected === true);
   const activeDiscordBinding = detail?.discordBindings.find(
@@ -462,9 +541,20 @@ export const MinecraftBridgeSettings = observer(() => {
                       {b.name}
                     </Typography>
                     <Typography level="body-xs" textColor="muted">
-                      {b.hubConnected
-                        ? t("minecraftBridge.hubConnected")
-                        : t("minecraftBridge.hubDisconnected")}
+                      {b.role === "member"
+                        ? t("minecraftBridge.joinedViaMinecraft")
+                        : b.hubConnected
+                          ? t("minecraftBridge.hubConnected")
+                          : t("minecraftBridge.hubDisconnected")}
+                      {b.onlineCount != null && b.hubConnected
+                        ? ` · ${
+                            b.onlineCount === 0
+                              ? t("minecraftBridge.onlineNone")
+                              : t("minecraftBridge.onlineCount", {
+                                  count: b.onlineCount,
+                                })
+                          }`
+                        : ""}
                     </Typography>
                   </Paper>
                 </Pressable>
@@ -472,7 +562,7 @@ export const MinecraftBridgeSettings = observer(() => {
             </Paper>
           )}
 
-          {selectedBridge && (
+          {selectedBridge && isOwner && (
             <Paper
               style={{ padding: 12, borderRadius: 12, gap: 10 }}
               elevation={cardElevation}
@@ -563,6 +653,175 @@ export const MinecraftBridgeSettings = observer(() => {
                   {t("minecraftBridge.rotateWarning")}
                 </Typography>
               )}
+
+              <Typography level="label-sm" weight="bold">
+                {t("minecraftBridge.servers")}
+              </Typography>
+              <Typography level="body-xs" textColor="muted">
+                {t("minecraftBridge.serverDisplayNameHint")}
+              </Typography>
+              {(detail?.servers.length ?? 0) === 0 ? (
+                <Typography level="body-xs" textColor="muted">
+                  {t("minecraftBridge.none")}
+                </Typography>
+              ) : (
+                (detail?.servers ?? []).map((s) => {
+                  const draft =
+                    serverNameDrafts[s.serverId] ??
+                    s.displayName ??
+                    s.serverId;
+                  const dirty =
+                    draft.trim() !== (s.displayName || s.serverId).trim();
+                  return (
+                    <Box key={s.id} style={{ gap: 6 }}>
+                      <Typography level="body-xs" textColor="muted">
+                        {t("minecraftBridge.serverIdLabel", {
+                          id: s.serverId,
+                        })}
+                      </Typography>
+                      <InputDefault
+                        fullWidth
+                        value={draft}
+                        onChangeText={(text) =>
+                          setServerNameDrafts((prev) => ({
+                            ...prev,
+                            [s.serverId]: text,
+                          }))
+                        }
+                        placeholder={t(
+                          "minecraftBridge.serverDisplayNamePlaceholder",
+                        )}
+                        accessibilityLabel={t(
+                          "minecraftBridge.serverDisplayName",
+                        )}
+                      />
+                      <Button
+                        size="sm"
+                        disabled={
+                          !dirty ||
+                          !draft.trim() ||
+                          (renameServerMutation.isPending &&
+                            renameServerMutation.variables?.serverId ===
+                              s.serverId)
+                        }
+                        onPress={() =>
+                          renameServerMutation.mutate({
+                            serverId: s.serverId,
+                            displayName: draft.trim(),
+                          })
+                        }
+                      >
+                        {renameServerMutation.isPending &&
+                        renameServerMutation.variables?.serverId === s.serverId
+                          ? t("minecraftBridge.savingServerName")
+                          : t("minecraftBridge.saveServerName")}
+                      </Button>
+                    </Box>
+                  );
+                })
+              )}
+
+              <Typography level="label-sm" weight="bold">
+                {t("minecraftBridge.membersTitle")}
+              </Typography>
+              {(membersQuery.data?.members ?? []).some(
+                (m) => m.role === "member",
+              ) ? (
+                (membersQuery.data?.members ?? []).map((member) => {
+                  const displayName =
+                    member.globalName?.trim() ||
+                    member.username ||
+                    member.minecraftName ||
+                    member.userId;
+                  return (
+                    <Box
+                      key={member.userId}
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <Box style={{ flex: 1, gap: 2 }}>
+                        <Typography level="body-sm" weight="bold">
+                          {displayName}
+                          {" · "}
+                          {member.role === "owner"
+                            ? t("minecraftBridge.roleOwner")
+                            : t("minecraftBridge.roleMember")}
+                        </Typography>
+                        <Typography level="body-xs" textColor="muted">
+                          {member.online
+                            ? t("minecraftBridge.membersOnline")
+                            : t("minecraftBridge.membersOffline")}
+                          {member.minecraftName
+                            ? ` · ${member.minecraftName}`
+                            : ""}
+                        </Typography>
+                      </Box>
+                      {member.role === "member" && (
+                        <Button
+                          size="sm"
+                          color="danger"
+                          variant="soft"
+                          onPress={() =>
+                            openBottomSheet(
+                              "kick-bridge-member",
+                              <KickBridgeMemberSheet
+                                bridgeId={selectedBridge.id}
+                                userId={member.userId}
+                                displayName={displayName}
+                                onClose={() =>
+                                  closeBottomSheet("kick-bridge-member")
+                                }
+                              />,
+                            )
+                          }
+                        >
+                          {t("minecraftBridge.kickMember")}
+                        </Button>
+                      )}
+                    </Box>
+                  );
+                })
+              ) : (
+                <Typography level="body-xs" textColor="muted">
+                  {t("minecraftBridge.membersEmpty")}
+                </Typography>
+              )}
+            </Paper>
+          )}
+
+          {selectedBridge && !isOwner && (
+            <Paper
+              style={{ padding: 12, borderRadius: 12, gap: 10 }}
+              elevation={cardElevation}
+            >
+              <Typography level="body-sm" textColor="muted">
+                {t("minecraftBridge.ownerOnlySettings")}
+              </Typography>
+              <Button
+                size="sm"
+                color="danger"
+                variant="soft"
+                onPress={() =>
+                  openBottomSheet(
+                    "leave-bridge",
+                    <LeaveBridgeSheet
+                      bridgeId={selectedBridge.id}
+                      bridgeName={selectedBridge.name}
+                      onClose={() => closeBottomSheet("leave-bridge")}
+                      onLeft={() => {
+                        setSelectedBridgeId(null);
+                        setFreshConfig(null);
+                      }}
+                    />,
+                  )
+                }
+              >
+                {t("minecraftBridge.leave")}
+              </Button>
             </Paper>
           )}
         </Box>
@@ -581,6 +840,15 @@ export const MinecraftBridgeSettings = observer(() => {
               <Button size="sm" onPress={() => setCurrentTab("bridges")}>
                 {t("minecraftBridge.goToSetup")}
               </Button>
+            </Paper>
+          ) : !isOwner ? (
+            <Paper
+              style={{ padding: 12, borderRadius: 12, gap: 10 }}
+              elevation={cardElevation}
+            >
+              <Typography level="body-sm" textColor="muted">
+                {t("minecraftBridge.ownerOnlySettings")}
+              </Typography>
             </Paper>
           ) : (
             <>
@@ -792,6 +1060,10 @@ export const MinecraftBridgeSettings = observer(() => {
           {!selectedBridgeId ? (
             <Typography level="body-sm" textColor="muted">
               {t("minecraftBridge.selectBridgeFirst")}
+            </Typography>
+          ) : !isOwner ? (
+            <Typography level="body-sm" textColor="muted">
+              {t("minecraftBridge.ownerOnlySettings")}
             </Typography>
           ) : (
             <>

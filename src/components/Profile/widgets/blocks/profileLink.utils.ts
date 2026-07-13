@@ -6,6 +6,7 @@ export type ProfileLinkKind =
   | "apple"
   | "deezer"
   | "bandcamp"
+  | "itch"
   | "github"
   | "discord"
   | "twitter"
@@ -31,6 +32,7 @@ const PLATFORM_COLORS: Record<ProfileLinkKind, string> = {
   apple: "#FA243C",
   deezer: "#A238FF",
   bandcamp: "#629AA9",
+  itch: "#FA5C5C",
   github: "#24292F",
   discord: "#5865F2",
   twitter: "#1DA1F2",
@@ -204,6 +206,24 @@ const parseBandcamp = (host: string, path: string): ResolvedProfileUrl | null =>
   return build("bandcamp", "Bandcamp", host);
 };
 
+const parseItch = (host: string, path: string): ResolvedProfileUrl | null => {
+  if (!host.includes("itch.io")) return null;
+
+  const isCreatorSubdomain = host.endsWith(".itch.io") && host !== "itch.io";
+
+  if (isCreatorSubdomain) {
+    const creator = host.replace(".itch.io", "");
+    const game = path.match(/^\/([\w-]+)/)?.[1];
+    if (game) return build("itch", "itch.io Game", host, slugToTitle(game));
+    return build("itch", "itch.io Profile", host, slugToTitle(creator));
+  }
+
+  const profile = path.match(/^\/profile\/([\w-]+)/)?.[1];
+  if (profile) return build("itch", "itch.io Profile", host, slugToTitle(profile));
+
+  return build("itch", "itch.io", host, path !== "/" ? path : undefined);
+};
+
 const parseGithub = (host: string, path: string): ResolvedProfileUrl | null => {
   if (host !== "github.com") return null;
   const parts = path.split("/").filter(Boolean);
@@ -285,6 +305,7 @@ export const resolveProfileUrl = (url: string): ResolvedProfileUrl | null => {
     parseApple(host, path) ??
     parseDeezer(host, path) ??
     parseBandcamp(host, path) ??
+    parseItch(host, path) ??
     parseGithub(host, path) ??
     parseDiscord(host, path) ??
     parseTwitter(host, path) ??

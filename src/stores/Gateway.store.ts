@@ -28,6 +28,7 @@ import {
   ChannelType,
   type Snowflake,
   type PresenceActivityEmoji,
+  type PresenceActivity,
   type PresenceStatus,
   type CustomStatusSchedule,
   type PresenceSchedule,
@@ -41,11 +42,12 @@ import {
 } from "@utils/compressor";
 import { makeAutoObservable } from "mobx";
 import type { NativeEventSubscription } from "react-native";
-import { AppState, type AppStateStatus } from "react-native";
+import { AppState, Alert, type AppStateStatus } from "react-native";
 import type { AppStore } from "./App.store";
 import type { Channel } from "./objects/Channel";
 import { fixConnectionUrl } from "@utils/urls";
 import { openWebSocket } from "@utils/openWebSocket";
+import i18n from "../i18n";
 
 export const GatewayStatus = {
   CONNECTING: 0,
@@ -482,7 +484,7 @@ export class GatewayStore {
       {
         status,
         device: "mobile",
-        activities: prev?.activities ?? [],
+        activities: prev?.activities?.filter((a) => a.type === "custom") ?? [],
       },
       { persist: Boolean(opts?.persist) },
     );
@@ -560,17 +562,11 @@ export class GatewayStore {
 
     const customActivity = this.app.customStatus.activity;
     const status = this.getEffectiveStatus();
-    const prev = this.app.presence.get(userId);
 
     const draft: PresenceUpdateDraft = {
       status,
       device: "mobile",
-      activities: customActivity
-        ? [
-            customActivity,
-            ...(prev?.activities?.filter((a) => a.type !== "custom") ?? []),
-          ]
-        : (prev?.activities?.filter((a) => a.type !== "custom") ?? []),
+      activities: customActivity ? [customActivity] : [],
     };
 
     this.lastPresenceHash = null;
@@ -787,6 +783,14 @@ export class GatewayStore {
     this.dispatchHandlers.set(
       GatewayDispatchEvents.BridgePresence,
       this.onBridgePresence,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.BridgeMemberAdd,
+      this.onBridgeMemberAdd,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.BridgeMemberRemove,
+      this.onBridgeMemberRemove,
     );
 
     this.dispatchHandlers.set(
@@ -1210,6 +1214,8 @@ export class GatewayStore {
       expressions,
       readStates,
       mergedPresences,
+      presenceSchedule,
+      customStatusSchedule,
     } = payload;
 
     this.sessionId = sessionId;
@@ -1228,6 +1234,11 @@ export class GatewayStore {
         this.app.presence.upsert(userId, presence);
       }
     }
+
+    this.app.presence.setScheduledStatus(presenceSchedule ?? null);
+    this.app.customStatus.setScheduledCustomStatus(
+      customStatusSchedule ?? null,
+    );
 
     this.reconnectTimeout = 0;
     this.resubscribeUsers();
@@ -1685,6 +1696,34 @@ export class GatewayStore {
     this.app.queryClient.setQueryData(["me", "bridges", "link"], payload);
   };
 
+  private onBridgeMemberAdd = (payload: {
+    bridgeId: string;
+    name?: string;
+    role?: "owner" | "member";
+  }) => {
+    void this.app.queryClient.invalidateQueries({ queryKey: ["me", "bridges"] });
+    if (payload.name) {
+      Alert.alert(
+        i18n.t("minecraftBridge.joinedToast", {
+          ns: "settings",
+          name: payload.name,
+        }),
+      );
+    }
+  };
+
+  private onBridgeMemberRemove = (payload: { bridgeId: string }) => {
+    this.app.queryClient.setQueryData<Array<{ id: string }>>(
+      ["me", "bridges"],
+      (prev) => (prev ?? []).filter((b) => b.id !== payload.bridgeId),
+    );
+    this.app.queryClient.removeQueries({
+      queryKey: ["me", "bridges", payload.bridgeId],
+    });
+    this.app.bridgeChat.clear(payload.bridgeId);
+    void this.app.queryClient.invalidateQueries({ queryKey: ["me", "bridges"] });
+  };
+
   private onBridgeChat = (payload: {
     id: string;
     bridgeId: string;
@@ -1810,9 +1849,46 @@ export class GatewayStore {
     this.app.typing.startedTyping(payload.channelId, payload.userId);
   };
 
+  private trackableActivityFingerprint(
+    presence?: { activities?: PresenceActivity[] } | null,
+  ) {
+    return (presence?.activities ?? [])
+      .filter((a) => a.type === "playing" || a.type === "listening")
+      .map((a) => `${a.type}|${a.applicationId ?? ""}|${a.name}`)
+      .sort()
+      .join("\0");
+  }
+
+  private scheduleRecentActivitiesRefresh(userId: string) {
+    setTimeout(() => {
+      void this.app.queryClient.invalidateQueries({
+        queryKey: ["user-recent-activities", String(userId)],
+      });
+    }, 800);
+  }
+
   private onPresenceUpdate = (payload: any) => {
     if (payload?.userId && payload?.presence) {
+      const prevFingerprint = this.trackableActivityFingerprint(
+        this.app.presence.get(payload.userId),
+      );
       this.app.presence.upsert(payload.userId, payload.presence);
+
+      const selfId = this.app.account?.id;
+      if (selfId && String(payload.userId) === String(selfId)) {
+        const custom =
+          payload.presence.activities?.find(
+            (a: PresenceActivity) => a.type === "custom",
+          ) ?? null;
+        this.app.customStatus.syncFromPresenceActivity(custom);
+      }
+
+      const nextFingerprint = this.trackableActivityFingerprint(
+        payload.presence,
+      );
+      if (prevFingerprint !== nextFingerprint) {
+        this.scheduleRecentActivitiesRefresh(payload.userId);
+      }
       return;
     }
 
@@ -1820,7 +1896,16 @@ export class GatewayStore {
     if (Array.isArray(list)) {
       for (const item of list) {
         if (!item?.userId || !item?.presence) continue;
+        const prevFingerprint = this.trackableActivityFingerprint(
+          this.app.presence.get(item.userId),
+        );
         this.app.presence.upsert(item.userId, item.presence);
+        const nextFingerprint = this.trackableActivityFingerprint(
+          item.presence,
+        );
+        if (prevFingerprint !== nextFingerprint) {
+          this.scheduleRecentActivitiesRefresh(item.userId);
+        }
       }
     }
   };
@@ -1840,6 +1925,7 @@ export class GatewayStore {
     if (!selfId || !userId || String(userId) !== String(selfId)) return;
     this.app.customStatus.setScheduledCustomStatus(schedule);
     this.lastPresenceHash = null;
+    if (!schedule) this.pushCustomStatusPresenceUpdate();
   };
 
   private handleScheduledCustomStatusExpired = (
@@ -1870,10 +1956,14 @@ export class GatewayStore {
     });
 
     this.lastPresenceHash = null;
+    this.clearScheduledStatus();
+
+    if (!this.socket || this.readyState !== GatewayStatus.OPEN) return;
+
     this.sendPresenceUpdate({
       status: revertTo,
       device: "mobile",
-      activities: prev?.activities ?? [],
+      activities: prev?.activities?.filter((a) => a.type === "custom") ?? [],
     });
   };
 

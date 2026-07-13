@@ -4,6 +4,7 @@ import type { ProfileBlockType } from "@mutualzz/types";
 import {
   ImageIcon,
   LinkIcon,
+  LinkSimpleIcon,
   MinusIcon,
   MusicNotesIcon,
   PencilSimpleIcon,
@@ -29,6 +30,7 @@ const ITEMS: {
   { type: "sticker", Icon: StickerIcon },
   { type: "music", Icon: MusicNotesIcon },
   { type: "links", Icon: LinkIcon },
+  { type: "connections", Icon: LinkSimpleIcon },
   { type: "activity", Icon: PulseIcon },
   { type: "roles", Icon: ShieldCheckIcon },
   { type: "mutual", Icon: UsersThreeIcon },

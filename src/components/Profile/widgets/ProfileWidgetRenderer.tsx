@@ -1,4 +1,5 @@
 import { ProfileActivityWidgetView } from "@components/Profile/widgets/blocks/ProfileActivityWidgetView";
+import { ProfileConnectionsWidgetView } from "@components/Profile/widgets/blocks/ProfileConnectionsWidgetView";
 import { ProfileDividerWidgetView } from "@components/Profile/widgets/blocks/ProfileDividerWidgetView";
 import { ProfileDrawWidgetView } from "@components/Profile/widgets/blocks/ProfileDrawWidgetView";
 import { ProfileHeaderWidgetView } from "@components/Profile/widgets/blocks/ProfileHeaderWidgetView";
@@ -54,6 +55,14 @@ export function ProfileWidgetRenderer({ block, profile, user }: Props) {
     case "roles":
       return (
         <ProfileRolesWidgetView block={block} size={size} userId={user.id} />
+      );
+    case "connections":
+      return (
+        <ProfileConnectionsWidgetView
+          block={block}
+          size={size}
+          userId={user.id}
+        />
       );
     case "mutual":
       return (

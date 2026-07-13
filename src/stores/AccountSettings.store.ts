@@ -20,6 +20,8 @@ export class AccountSettingsStore {
   pushEnabled = true;
   pushDirectMessages = true;
   pushMentions = true;
+  shareActivity = true;
+  shareRecentActivity = true;
   spacePositions: ObservableOrderedSet<string>;
   favoriteEmojis = observable.array<string>([]);
   favoriteGifs = observable.array<string>([]);
@@ -47,6 +49,8 @@ export class AccountSettingsStore {
     this.pushEnabled = settings.pushEnabled ?? true;
     this.pushDirectMessages = settings.pushDirectMessages ?? true;
     this.pushMentions = settings.pushMentions ?? true;
+    this.shareActivity = settings.shareActivity ?? true;
+    this.shareRecentActivity = settings.shareRecentActivity ?? true;
     this.favoriteEmojis = observable.array(settings.favoriteEmojis ?? []);
     this.favoriteGifs = observable.array(settings.favoriteGifs ?? []);
     this.updatedAt = new Date(settings.updatedAt);
@@ -67,6 +71,8 @@ export class AccountSettingsStore {
         "pushEnabled",
         "pushDirectMessages",
         "pushMentions",
+        "shareActivity",
+        "shareRecentActivity",
         {
           key: "favoriteEmojis",
           serialize: (v: unknown) => (Array.isArray(v) ? [...v] : []),
@@ -148,6 +154,8 @@ export class AccountSettingsStore {
       pushEnabled: this.pushEnabled,
       pushDirectMessages: this.pushDirectMessages,
       pushMentions: this.pushMentions,
+      shareActivity: this.shareActivity,
+      shareRecentActivity: this.shareRecentActivity,
       favoriteEmojis: [...this.favoriteEmojis],
       favoriteGifs: [...this.favoriteGifs],
       favoriteStickers: [],
@@ -217,6 +225,14 @@ export class AccountSettingsStore {
     this.pushMentions = value;
   }
 
+  setShareActivity(value: boolean) {
+    this.shareActivity = value;
+  }
+
+  setShareRecentActivity(value: boolean) {
+    this.shareRecentActivity = value;
+  }
+
   getPendingOverrides(): SettingsPatch | null {
     return this.isDirty ? this.getSyncPayload() : null;
   }
@@ -232,6 +248,8 @@ export class AccountSettingsStore {
     this.pushEnabled = payload.pushEnabled ?? true;
     this.pushDirectMessages = payload.pushDirectMessages ?? true;
     this.pushMentions = payload.pushMentions ?? true;
+    this.shareActivity = payload.shareActivity ?? true;
+    this.shareRecentActivity = payload.shareRecentActivity ?? true;
     this.favoriteEmojis = observable.array(payload.favoriteEmojis ?? []);
     this.favoriteGifs = observable.array(payload.favoriteGifs ?? []);
   }
@@ -272,6 +290,12 @@ export class AccountSettingsStore {
 
     if (settings.pushMentions != undefined)
       this.pushMentions = settings.pushMentions;
+
+    if (settings.shareActivity != undefined)
+      this.shareActivity = settings.shareActivity;
+
+    if (settings.shareRecentActivity != undefined)
+      this.shareRecentActivity = settings.shareRecentActivity;
 
     if (settings.updatedAt != undefined)
       this.updatedAt = new Date(settings.updatedAt);

@@ -49,6 +49,8 @@ export function createDefaultMobileBlockContent(
       return { type, showCustomStatus: true };
     case "roles":
       return { type, maxRoles: 6 };
+    case "connections":
+      return { type };
     case "mutual":
       return { type, mode: "spaces", maxItems: 6 };
     case "divider":

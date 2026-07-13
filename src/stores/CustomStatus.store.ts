@@ -81,15 +81,52 @@ export class CustomStatusStore {
     }
 
     setScheduledCustomStatus(schedule: CustomStatusSchedule | null) {
-        this.scheduledCustomStatus = schedule;
+        const previous = this.scheduledCustomStatus;
 
         if (schedule && schedule.until > Date.now()) {
+            this.scheduledCustomStatus = schedule;
             this.text = schedule.text;
             this.emoji = schedule.emoji;
             this.enabled = hasCustomStatusContent(schedule.text, schedule.emoji);
+            this.rearmScheduledCustomStatusTimer();
+            return;
         }
 
-        this.rearmScheduledCustomStatusTimer();
+        this.scheduledCustomStatus = null;
+        if (this.scheduledTimer) {
+            clearTimeout(this.scheduledTimer);
+            this.scheduledTimer = null;
+        }
+
+        if (previous) {
+            const revertTo = previous.revertTo;
+            if (revertTo) this.setSnapshot(revertTo);
+            else {
+                this.text = "";
+                this.emoji = null;
+                this.enabled = false;
+            }
+        }
+    }
+
+    syncFromPresenceActivity(activity: PresenceActivity | null) {
+        if (
+            this.scheduledCustomStatus &&
+            this.scheduledCustomStatus.until > Date.now()
+        )
+            return;
+
+        if (!activity || activity.type !== "custom") {
+            this.text = "";
+            this.emoji = null;
+            this.enabled = false;
+            return;
+        }
+
+        this.setSnapshot({
+            text: activity.state?.trim() || activity.name?.trim() || null,
+            emoji: activity.emoji ?? null,
+        });
     }
 
     rearmScheduledCustomStatusTimer() {

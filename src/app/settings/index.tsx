@@ -11,6 +11,7 @@ import {
   BellIcon,
   CubeIcon,
   LifebuoyIcon,
+  LinkSimpleIcon,
   MicrophoneIcon,
   PaletteIcon,
   PaintBrushIcon,
@@ -44,6 +45,7 @@ const settingsPages: SettingsPages = {
     { label: "my-account", Icon: UserGearIcon },
     { label: "profile", Icon: PaintBrushIcon },
     { label: "expressions", Icon: SmileyIcon },
+    { label: "connections", Icon: LinkSimpleIcon },
     { label: "minecraft-bridge", Icon: CubeIcon },
   ],
   "app-settings": [

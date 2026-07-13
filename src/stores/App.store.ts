@@ -35,6 +35,7 @@ import { VoiceStore } from "@stores/Voice.store";
 import type { Message } from "@stores/objects/Message";
 import { VoiceStatesStore } from "@stores/VoiceStates.store";
 import type { User } from "@stores/objects/User";
+import { initRemoteGameCatalog } from "@presence/remoteGameCatalog";
 import { BridgeChatStore } from "@stores/BridgeChat.store";
 
 export class AppStore {
@@ -107,6 +108,8 @@ export class AppStore {
       properties: ["memberListVisible", "dontShowLinkWarning"],
       storage: AsyncStorage,
     });
+
+    void initRemoteGameCatalog();
   }
 
   get isReady() {

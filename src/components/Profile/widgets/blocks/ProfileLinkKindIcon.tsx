@@ -2,6 +2,7 @@ import type { ProfileLinkKind } from "@components/Profile/widgets/blocks/profile
 import {
   AppleLogoIcon,
   DiscordLogoIcon,
+  GameControllerIcon,
   GithubLogoIcon,
   GlobeIcon,
   InstagramLogoIcon,
@@ -38,6 +39,8 @@ export function ProfileLinkKindIcon({ kind, size, color }: Props) {
     case "deezer":
     case "bandcamp":
       return <MusicNotesIcon weight="fill" size={size} color={color} />;
+    case "itch":
+      return <GameControllerIcon weight="fill" size={size} color={color} />;
     case "github":
       return <GithubLogoIcon weight="fill" size={size} color={color} />;
     case "discord":

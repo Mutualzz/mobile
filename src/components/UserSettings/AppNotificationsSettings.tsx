@@ -1,59 +1,55 @@
 import { Paper } from "@components/Paper";
+import { Button } from "@components/Button";
 import { useAppStore } from "@hooks/useStores";
-import { Box, Switch, Typography } from "@mutualzz/ui-native";
+import { Box, Divider, Switch, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
-import { Pressable, ScrollView } from "react-native";
-
-const NotificationToggle = ({
-  label,
-  description,
-  checked,
-  disabled,
-  onChange,
-}: {
-  label: string;
-  description?: string;
-  checked: boolean;
-  disabled?: boolean;
-  onChange: (value: boolean) => void;
-}) => (
-  <Pressable
-    accessibilityRole="switch"
-    accessibilityState={{ checked, disabled }}
-    disabled={disabled}
-    onPress={() => onChange(!checked)}
-    style={{
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 12,
-      opacity: disabled ? 0.5 : 1,
-    }}
-  >
-    <Box style={{ flex: 1, gap: 2 }}>
-      <Typography level="body-sm" weight={600}>
-        {label}
-      </Typography>
-      {description && (
-        <Typography level="body-xs" textColor="muted">
-          {description}
-        </Typography>
-      )}
-    </Box>
-    <Switch checked={checked} disabled={disabled} onChange={onChange} />
-  </Pressable>
-);
+import { Alert, ScrollView } from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 export const AppNotificationsSettings = observer(() => {
   const { t } = useTranslation("settings");
+  const { t: tCommon } = useTranslation("common");
   const app = useAppStore();
   const settings = app.settings;
+  const queryClient = useQueryClient();
+  const [clearing, setClearing] = useState(false);
 
   if (!settings) return null;
 
   const sync = () => {
     void settings.sync();
+  };
+
+  const clearHistory = () => {
+    Alert.alert(
+      t("notifications.clearRecentActivity"),
+      t("notifications.clearRecentActivityDescription"),
+      [
+        {
+          text: t("notifications.clearRecentActivityAction"),
+          style: "destructive",
+          onPress: () => void runClear(),
+        },
+        { text: tCommon("cancel"), style: "cancel" },
+      ],
+    );
+  };
+
+  const runClear = async () => {
+    setClearing(true);
+    try {
+      await app.rest.delete("/@me/activity-history");
+      await queryClient.invalidateQueries({
+        queryKey: ["user-recent-activities"],
+      });
+      Alert.alert(t("notifications.clearRecentActivityDone"));
+    } catch {
+      Alert.alert(t("notifications.clearRecentActivityError"));
+    } finally {
+      setClearing(false);
+    }
   };
 
   return (
@@ -64,82 +60,179 @@ export const AppNotificationsSettings = observer(() => {
         paddingBottom: 32,
         gap: 16,
       }}
+      keyboardShouldPersistTaps="handled"
     >
+      <Typography level="body-md" weight={700}>
+        {t("notifications.pushTitle")}
+      </Typography>
       <Paper
-        style={{
-          padding: 16,
-          borderRadius: 12,
-          gap: 16,
-        }}
-        elevation={settings.preferEmbossed ? 2 : 0}
+        style={{ padding: 16, borderRadius: 12, gap: 12, minWidth: 0 }}
+        elevation={app.settings?.preferEmbossed ? 2 : 0}
       >
-        <Box style={{ gap: 4 }}>
-          <Typography level="body-md" weight={700}>
-            {t("notifications.pushTitle")}
+        <Typography level="body-xs" textColor="muted">
+          {t("notifications.pushDescriptionMobile")}
+        </Typography>
+
+        <Box
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <Typography level="body-sm" weight={700} style={{ flex: 1 }}>
+            {t("notifications.enablePush")}
           </Typography>
-          <Typography level="body-sm" textColor="muted">
-            {t("notifications.pushDescriptionMobile")}
-          </Typography>
+          <Switch
+            checked={settings.pushEnabled}
+            onChange={(checked) => {
+              settings.setPushEnabled(checked);
+              sync();
+            }}
+          />
         </Box>
 
-        <NotificationToggle
-          label={t("notifications.enablePush")}
-          checked={settings.pushEnabled}
-          onChange={(value) => {
-            settings.setPushEnabled(value);
-            sync();
+        <Box
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
           }}
-        />
-        <NotificationToggle
-          label={t("notifications.directMessages")}
-          description={t("notifications.directMessagesDescription")}
-          checked={settings.pushDirectMessages}
-          disabled={!settings.pushEnabled}
-          onChange={(value) => {
-            settings.setPushDirectMessages(value);
-            sync();
+        >
+          <Box style={{ flex: 1, gap: 2 }}>
+            <Typography level="body-sm" weight={700}>
+              {t("notifications.directMessages")}
+            </Typography>
+            <Typography level="body-xs" textColor="muted">
+              {t("notifications.directMessagesDescription")}
+            </Typography>
+          </Box>
+          <Switch
+            checked={settings.pushDirectMessages}
+            disabled={!settings.pushEnabled}
+            onChange={(checked) => {
+              settings.setPushDirectMessages(checked);
+              sync();
+            }}
+          />
+        </Box>
+
+        <Box
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
           }}
-        />
-        <NotificationToggle
-          label={t("notifications.mentions")}
-          description={t("notifications.mentionsDescription")}
-          checked={settings.pushMentions}
-          disabled={!settings.pushEnabled}
-          onChange={(value) => {
-            settings.setPushMentions(value);
-            sync();
-          }}
-        />
+        >
+          <Box style={{ flex: 1, gap: 2 }}>
+            <Typography level="body-sm" weight={700}>
+              {t("notifications.mentions")}
+            </Typography>
+            <Typography level="body-xs" textColor="muted">
+              {t("notifications.mentionsDescription")}
+            </Typography>
+          </Box>
+          <Switch
+            checked={settings.pushMentions}
+            disabled={!settings.pushEnabled}
+            onChange={(checked) => {
+              settings.setPushMentions(checked);
+              sync();
+            }}
+          />
+        </Box>
       </Paper>
 
-      <Paper
-        style={{
-          padding: 16,
-          borderRadius: 12,
-          gap: 12,
-        }}
-        elevation={settings.preferEmbossed ? 2 : 0}
-      >
-        <Typography level="body-md" weight={700}>
-          {t("notifications.dndTitle")}
-        </Typography>
-        <Typography level="body-sm" textColor="muted">
-          {t("notifications.dndDescriptionMobile")}
-        </Typography>
-      </Paper>
+      <Divider lineColor="muted" style={{ opacity: 0.5 }} />
 
+      <Typography level="body-md" weight={700}>
+        {t("notifications.presenceTitle")}
+      </Typography>
       <Paper
-        style={{
-          padding: 16,
-          borderRadius: 12,
-          gap: 12,
-        }}
-        elevation={settings.preferEmbossed ? 2 : 0}
+        style={{ padding: 16, borderRadius: 12, gap: 12, minWidth: 0 }}
+        elevation={app.settings?.preferEmbossed ? 2 : 0}
       >
-        <Typography level="body-md" weight={700}>
-          {t("notifications.presenceTitle")}
-        </Typography>
-        <Typography level="body-sm" textColor="muted">
+        <Box
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <Box style={{ flex: 1, gap: 2 }}>
+            <Typography level="body-sm" weight={700}>
+              {t("notifications.shareActivity")}
+            </Typography>
+            <Typography level="body-xs" textColor="muted">
+              {t("notifications.shareActivityDescription")}
+            </Typography>
+          </Box>
+          <Switch
+            checked={settings.shareActivity}
+            onChange={(checked) => {
+              settings.setShareActivity(checked);
+              sync();
+            }}
+          />
+        </Box>
+        <Box
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <Box style={{ flex: 1, gap: 2 }}>
+            <Typography level="body-sm" weight={700}>
+              {t("notifications.shareRecentActivity")}
+            </Typography>
+            <Typography level="body-xs" textColor="muted">
+              {t("notifications.shareRecentActivityDescription")}
+            </Typography>
+          </Box>
+          <Switch
+            checked={settings.shareRecentActivity}
+            onChange={(checked) => {
+              settings.setShareRecentActivity(checked);
+              sync();
+              void queryClient.invalidateQueries({
+                queryKey: ["user-recent-activities"],
+              });
+            }}
+          />
+        </Box>
+        <Box
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <Box style={{ flex: 1, gap: 2 }}>
+            <Typography level="body-sm" weight={700}>
+              {t("notifications.clearRecentActivity")}
+            </Typography>
+            <Typography level="body-xs" textColor="muted">
+              {t("notifications.clearRecentActivityDescription")}
+            </Typography>
+          </Box>
+          <Button
+            size="sm"
+            color="danger"
+            variant="outlined"
+            loading={clearing}
+            onPress={clearHistory}
+          >
+            {t("notifications.clearRecentActivityAction")}
+          </Button>
+        </Box>
+        <Typography level="body-xs" textColor="muted">
           {t("notifications.presenceDescriptionMobile")}
         </Typography>
       </Paper>

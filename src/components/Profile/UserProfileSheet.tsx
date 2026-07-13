@@ -1,6 +1,7 @@
 import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { ProfileMarkdownContent } from "@components/Profile/shared/ProfileMarkdownContent";
+import { RecentActivitiesSection } from "@components/Profile/shared/RecentActivitiesSection";
 import { ProfileWidgetGrid } from "@components/Profile/widgets/ProfileWidgetGrid";
 import { ProfileWidgetsEmptyViewer } from "@components/Profile/widgets/ProfileWidgetsEmptyViewer";
 import { ReportContentSheet } from "@components/Report/ReportContentSheet";
@@ -27,6 +28,7 @@ import {
   useModalSheetMaxHeight,
 } from "@utils/modalSheet";
 import { useScaledProfileMetrics } from "@utils/accessibilityLayout";
+import { getNonCustomActivities } from "@utils/customStatus";
 import { useQuery } from "@tanstack/react-query";
 import {
   ChatCircleIcon,
@@ -143,6 +145,17 @@ export const UserProfileSheet = observer(
     const headerBlock = profile?.blocks.find(
       (block): block is ProfileHeaderBlock => block.type === "header",
     );
+
+    const hasActivityWidget =
+      profile?.mobileBlocks.some((block) => block.type === "activity") ?? false;
+
+    const isPresenceActive =
+      presence?.status === "online" ||
+      presence?.status === "idle" ||
+      presence?.status === "dnd";
+
+    const liveActivities =
+      isPresenceActive && presence ? getNonCustomActivities(presence) : [];
 
     const bannerHeight = useMemo(() => {
       const bannerHeightPercent =
@@ -353,6 +366,14 @@ export const UserProfileSheet = observer(
 
                   {profile?.bio && (
                     <ProfileMarkdownContent value={profile.bio} />
+                  )}
+
+                  {!hasActivityWidget && (
+                    <RecentActivitiesSection
+                      userId={user.id}
+                      liveActivities={liveActivities}
+                      isCompact
+                    />
                   )}
 
                   <Box

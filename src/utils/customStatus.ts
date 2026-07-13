@@ -16,6 +16,15 @@ export function getCustomActivity(
   );
 }
 
+export function getNonCustomActivities(
+  presence?: PresencePayload | null,
+): PresenceActivity[] {
+  return (
+    presence?.activities?.filter((activity) => activity.type !== "custom") ??
+    []
+  );
+}
+
 export function getCustomStatusSnapshot(
   activities?: PresenceActivity[],
 ): CustomStatusSnapshot | null {

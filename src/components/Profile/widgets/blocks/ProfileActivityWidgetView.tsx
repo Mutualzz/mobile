@@ -1,22 +1,18 @@
 import { CustomStatusDisplay } from "@components/CustomStatus/CustomStatusDisplay";
+import { PresenceActivitiesList } from "@components/Presence/PresenceActivitiesList";
+import { RecentActivitiesSection } from "@components/Profile/shared/RecentActivitiesSection";
 import { useAppStore } from "@hooks/useStores";
-import { presenceStatusKeys } from "@mutualzz/i18n";
 import type {
   MobileProfileActivityBlock,
-  PresenceActivityType,
   ProfileBlockSize,
   Snowflake,
 } from "@mutualzz/types";
-import { Stack, Typography, useTheme } from "@mutualzz/ui-native";
+import { Stack, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
-import {
-  GameControllerIcon,
-  HeadphonesIcon,
-  NotepadIcon,
-  PulseIcon,
-} from "phosphor-react-native";
+import { PulseIcon } from "phosphor-react-native";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
+import { getCustomActivity, getNonCustomActivities } from "@utils/customStatus";
 
 interface Props {
   block: MobileProfileActivityBlock;
@@ -24,46 +20,26 @@ interface Props {
   userId: Snowflake;
 }
 
-function ActivityTypeIcon({
-  type,
-  color,
-  iconSize = 12,
-}: {
-  type: PresenceActivityType;
-  color: string;
-  iconSize?: number;
-}) {
-  switch (type) {
-    case "playing":
-      return <GameControllerIcon size={iconSize} weight="fill" color={color} />;
-    case "listening":
-      return <HeadphonesIcon size={iconSize} weight="fill" color={color} />;
-    default:
-      return <NotepadIcon size={iconSize} weight="fill" color={color} />;
-  }
-}
-
-const ACTIVITY_LIMIT: Record<ProfileBlockSize, number> = { s: 1, m: 2, l: 2 };
-
 export const ProfileActivityWidgetView = observer(
   ({ block, size, userId }: Props) => {
     const { t } = useTranslation("settings");
-    const { t: tChat } = useTranslation("chat");
-    const { t: tCommon } = useTranslation("common");
     const app = useAppStore();
-    const { theme } = useTheme();
     const isCompact = size === "s";
     const presence = app.presence.get(userId);
-    const statusKey = presence?.status
-      ? presenceStatusKeys[presence.status as keyof typeof presenceStatusKeys]
-      : null;
-    const statusLabel = statusKey ? tCommon(statusKey) : null;
-    const customActivity = presence?.activities.find(
-      (a) => a.type === "custom",
-    );
-    const otherActivities =
-      presence?.activities.filter((a) => a.type !== "custom") ?? [];
-    const visibleActivities = otherActivities.slice(0, ACTIVITY_LIMIT[size]);
+
+    const isActive =
+      presence?.status === "online" ||
+      presence?.status === "idle" ||
+      presence?.status === "dnd";
+
+    const customActivity = presence ? getCustomActivity(presence) : null;
+    const otherActivities = presence ? getNonCustomActivities(presence) : [];
+
+    const showCustom =
+      Boolean(customActivity) && block.showCustomStatus !== false;
+    const showActivities = otherActivities.length > 0;
+    const hasLiveContent = isActive && (showCustom || showActivities);
+    const tile = isCompact ? 28 : 36;
 
     return (
       <View
@@ -81,54 +57,40 @@ export const ProfileActivityWidgetView = observer(
           </Typography>
         </Stack>
 
-        {statusLabel ? (
-          <Stack direction="column" style={{ gap: isCompact ? 4 : 6, minWidth: 0, flex: 1 }}>
-            <Typography
-              level="body-xs"
-              textColor="muted"
-            >
-              {statusLabel}
-            </Typography>
+        <Stack
+          direction="column"
+          style={{ gap: isCompact ? 4 : 6, minWidth: 0, flex: 1 }}
+        >
+          {hasLiveContent ? (
+            <>
+              {showCustom && customActivity ? (
+                <CustomStatusDisplay
+                  activity={customActivity}
+                  emojiSize={isCompact ? 14 : 16}
+                />
+              ) : null}
 
-            {customActivity && block.showCustomStatus !== false ? (
-              <CustomStatusDisplay
-                activity={customActivity}
-                emojiSize={isCompact ? 14 : 16}
-              />
-            ) : null}
+              {showActivities ? (
+                <View style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+                  <PresenceActivitiesList
+                    activities={otherActivities}
+                    iconSize={tile}
+                    fetchFallback
+                    isCompact={isCompact}
+                    scrollWhenExpanded={isCompact}
+                  />
+                </View>
+              ) : null}
+            </>
+          ) : null}
 
-            {visibleActivities.length > 0 ? (
-              <Stack direction="column" style={{ gap: isCompact ? 3 : 4 }}>
-                {visibleActivities.map((activity, index) => (
-                  <Stack
-                    key={`${activity.type}-${activity.name}-${index}`}
-                    direction="row"
-                    alignItems="center"
-                    style={{ gap: 6, minWidth: 0 }}
-                  >
-                    <ActivityTypeIcon
-                      type={activity.type}
-                      color={theme.colors.success}
-                      iconSize={isCompact ? 11 : 12}
-                    />
-                    <Typography
-                      level="body-xs"
-                      textColor="accent"
-                      truncate="double"
-                      style={{ flex: 1, minWidth: 0 }}
-                    >
-                      {activity.name}
-                    </Typography>
-                  </Stack>
-                ))}
-              </Stack>
-            ) : null}
-          </Stack>
-        ) : (
-          <Typography level="body-xs" textColor="muted">
-            {tChat("offline")}
-          </Typography>
-        )}
+          <RecentActivitiesSection
+            userId={userId}
+            liveActivities={isActive ? otherActivities : []}
+            isCompact={isCompact}
+            showEmpty={!hasLiveContent}
+          />
+        </Stack>
       </View>
     );
   },
@@ -142,67 +104,49 @@ export const ProfileActivityWidgetExpandedContent = observer(
     block: MobileProfileActivityBlock;
     userId: Snowflake;
   }) => {
-    const { t: tChat } = useTranslation("chat");
-    const { t: tCommon } = useTranslation("common");
     const app = useAppStore();
-    const { theme } = useTheme();
     const presence = app.presence.get(userId);
-    const statusKey = presence?.status
-      ? presenceStatusKeys[presence.status as keyof typeof presenceStatusKeys]
-      : null;
-    const statusLabel = statusKey ? tCommon(statusKey) : null;
-    const customActivity = presence?.activities.find(
-      (a) => a.type === "custom",
-    );
-    const otherActivities =
-      presence?.activities.filter((a) => a.type !== "custom") ?? [];
 
-    if (!statusLabel) {
-      return (
-        <Typography level="body-sm" textColor="muted">
-          {tChat("offline")}
-        </Typography>
-      );
-    }
+    const isActive =
+      presence?.status === "online" ||
+      presence?.status === "idle" ||
+      presence?.status === "dnd";
+
+    const customActivity = presence ? getCustomActivity(presence) : null;
+    const otherActivities = presence ? getNonCustomActivities(presence) : [];
+
+    const showCustom =
+      Boolean(customActivity) && block.showCustomStatus !== false;
+    const showActivities = otherActivities.length > 0;
+    const hasLiveContent = isActive && (showCustom || showActivities);
 
     return (
       <Stack direction="column" style={{ gap: 10 }}>
-        <Typography
-          level="body-sm"
-          textColor="muted"
-        >
-          {statusLabel}
-        </Typography>
+        {hasLiveContent ? (
+          <>
+            {showCustom && customActivity ? (
+              <CustomStatusDisplay
+                activity={customActivity}
+                truncate={false}
+                emojiSize={18}
+              />
+            ) : null}
 
-        {customActivity && block.showCustomStatus !== false ? (
-          <CustomStatusDisplay
-            activity={customActivity}
-            truncate={false}
-            emojiSize={18}
-          />
+            {showActivities ? (
+              <PresenceActivitiesList
+                activities={otherActivities}
+                iconSize={44}
+                fetchFallback
+              />
+            ) : null}
+          </>
         ) : null}
 
-        {otherActivities.length > 0 ? (
-          <Stack direction="column" style={{ gap: 8 }}>
-            {otherActivities.map((activity, index) => (
-              <Stack
-                key={`${activity.type}-${activity.name}-${index}`}
-                direction="row"
-                alignItems="center"
-                style={{ gap: 8 }}
-              >
-                <ActivityTypeIcon
-                  type={activity.type}
-                  color={theme.colors.success}
-                  iconSize={14}
-                />
-                <Typography level="body-sm" textColor="accent">
-                  {activity.name}
-                </Typography>
-              </Stack>
-            ))}
-          </Stack>
-        ) : null}
+        <RecentActivitiesSection
+          userId={userId}
+          liveActivities={isActive ? otherActivities : []}
+          showEmpty={!hasLiveContent}
+        />
       </Stack>
     );
   },

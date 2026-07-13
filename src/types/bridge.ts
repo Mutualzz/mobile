@@ -2,6 +2,7 @@ export type BridgeSummary = {
   id: string;
   name: string;
   status: number;
+  role?: "owner" | "member";
   createdAt?: string;
   hubConnected?: boolean;
   onlineCount?: number;

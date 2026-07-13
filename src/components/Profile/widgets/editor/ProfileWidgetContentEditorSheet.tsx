@@ -505,6 +505,14 @@ function ProfileWidgetContentFields({
           </Box>
         </FieldSection>
       );
+    case "connections":
+      return (
+        <FieldSection title={t("profile.blocks.connections")}>
+          <Typography level="body-xs" textColor="muted">
+            {t("profile.inspector.connectionsHint")}
+          </Typography>
+        </FieldSection>
+      );
     case "roles":
       return (
         <FieldSection title={t("profile.blocks.roles")}>
