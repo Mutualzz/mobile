@@ -101,6 +101,7 @@ export interface MediasoupSessionOptions {
   getSpeakingThreshold: () => number;
   shouldReportSpeaking: (userId: string) => boolean;
   getNoiseSuppression: () => boolean;
+  getUserAudioMix?: (userId: string) => UserMix;
 }
 
 export class MediasoupSession {
@@ -138,6 +139,7 @@ export class MediasoupSession {
   private readonly callbacks: MediasoupSessionCallbacks;
   private readonly getSelfUserId: () => string | undefined;
   private readonly getNoiseSuppression: () => boolean;
+  private readonly getUserAudioMix?: (userId: string) => UserMix;
   private readonly speakingDetector: SpeakingDetector;
   private readonly statsSources = new Map<string, () => Promise<RTCStatsReport>>();
 
@@ -147,12 +149,10 @@ export class MediasoupSession {
     this.callbacks = options.callbacks;
     this.getSelfUserId = options.getSelfUserId;
     this.getNoiseSuppression = options.getNoiseSuppression;
+    this.getUserAudioMix = options.getUserAudioMix;
     this.speakingDetector = new SpeakingDetector(
       (userId, speaking) => {
         this.callbacks.onSpeakingChange(userId, speaking);
-        if (userId === this.getSelfUserId()) {
-          this.applyMicState();
-        }
       },
       options.getSpeakingThreshold,
       options.shouldReportSpeaking,
@@ -203,15 +203,8 @@ export class MediasoupSession {
   }
 
   private applyMicState() {
-    const selfId = this.getSelfUserId();
-    const selfSpeaking = selfId
-      ? this.speakingDetector.isSpeaking(selfId)
-      : false;
-
     const inputOpen =
-      this.inputMode === "voice_activity"
-        ? selfSpeaking
-        : this.pushToTalkPressed;
+      this.inputMode === "voice_activity" ? true : this.pushToTalkPressed;
 
     const shouldTransmit =
       !this.isMuted && !this.spaceMuted && !this.isDeafened && inputOpen;
@@ -246,8 +239,18 @@ export class MediasoupSession {
   private applyRemoteAudioState() {
     for (const [producerId, consumer] of this.consumersByProducerId) {
       if (this.producerKindMap.get(producerId) !== "audio") continue;
+      const userId = this.producerUserMap.get(producerId);
+      if (!userId) continue;
       try {
-        setConsumerAudioMix(consumer, 100, this.isDeafened);
+        const mix = this.getUserAudioMix?.(userId) ?? {
+          muted: false,
+          volume: 100,
+        };
+        setConsumerAudioMix(
+          consumer,
+          mix.volume,
+          mix.muted || this.isDeafened,
+        );
       } catch (error) {
         this.logger.warn("Failed to apply remote audio state", error);
       }
@@ -277,7 +280,6 @@ export class MediasoupSession {
     this.consumeAbortSignal = signal;
 
     const url = new URL(endpoint);
-    url.searchParams.set("token", token);
 
     const socket = await this.openSocket(url.toString(), signal);
     if (signal.aborted) {
@@ -286,6 +288,9 @@ export class MediasoupSession {
     }
 
     this.socket = socket;
+
+    await this.rpc(VoiceOpcodes.VoiceAuthenticate, { token });
+    if (signal.aborted) return;
 
     const rtpCapabilities = parseRtpCapabilitiesResponse(
       await this.rpc(VoiceOpcodes.VoiceGetRTPCapabilities, {}),
@@ -467,6 +472,7 @@ export class MediasoupSession {
 
   async restartMic(signal: AbortSignal) {
     const selfId = this.getSelfUserId();
+    const producerId = this.micProducer?.id ?? null;
     if (selfId && this.micProducer) {
       const source = this.statsSources.get(this.micProducer.id);
       if (source) {
@@ -479,6 +485,12 @@ export class MediasoupSession {
       this.micProducer?.close();
     } catch {}
     this.micProducer = null;
+
+    if (producerId && this.socket) {
+      try {
+        await this.rpc(VoiceOpcodes.VoiceCloseProducer, { producerId });
+      } catch {}
+    }
 
     if (this.micTrack) {
       try {
@@ -675,6 +687,22 @@ export class MediasoupSession {
     }
   }
 
+  private cleanupProducersForUser(userId: string) {
+    const producerIds = Array.from(this.producerUserMap.entries())
+      .filter(([, uid]) => uid === userId)
+      .map(([producerId]) => producerId);
+
+    for (const producerId of producerIds) {
+      this.cleanupProducer(producerId);
+    }
+
+    for (const [producerId, pending] of this.pendingProducerIds) {
+      if (pending.userId === userId) {
+        this.pendingProducerIds.delete(producerId);
+      }
+    }
+  }
+
   private cleanupProducer(producerId: string) {
     const consumer = this.consumersByProducerId.get(producerId);
     if (consumer) {
@@ -786,6 +814,23 @@ export class MediasoupSession {
       const payload = parseProducerClosedEvent(data);
       if (!payload) return;
       this.cleanupProducer(payload.producerId);
+      return;
+    }
+
+    if (op === VoiceDispatchEvents.VoicePeerLeft) {
+      const userId =
+        data &&
+        typeof data === "object" &&
+        "userId" in data &&
+        data.userId != null
+          ? String((data as { userId: unknown }).userId)
+          : null;
+      if (!userId) return;
+      this.cleanupProducersForUser(userId);
+      return;
+    }
+
+    if (op === VoiceDispatchEvents.VoicePeerJoined) {
       return;
     }
 

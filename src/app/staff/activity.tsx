@@ -82,6 +82,14 @@ const describeGlobalAction = (
     return t("auditActions.global.lockedDownSpace", { actor });
   }
 
+  if (entry.action === "changelog.publish") {
+    return t("auditActions.global.publishedChangelog", { actor });
+  }
+
+  if (entry.action === "changelog.delete") {
+    return t("auditActions.global.deletedChangelog", { actor });
+  }
+
   return `${actor} performed ${entry.action} on ${target}`;
 };
 

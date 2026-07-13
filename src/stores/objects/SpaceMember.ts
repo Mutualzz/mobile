@@ -299,6 +299,26 @@ export class SpaceMember {
     return this.canViewChannel(channel) && permissions.has("Connect");
   }
 
+  canSpeakInVoice(channel: Channel) {
+    return (
+      this.canConnectToVoice(channel) &&
+      this.resolveChannelPermissions(channel).has("Speak")
+    );
+  }
+
+  canUseVad(channel?: Channel | null) {
+    if (!channel) return this.basePermissions.has("UseVAD");
+    return this.hasPermission("UseVAD", channel);
+  }
+
+  canAttachFiles(channel?: Channel | null) {
+    if (!channel) return false;
+    return (
+      this.canSendMessages(channel) &&
+      this.resolveChannelPermissions(channel).has("AttachFiles")
+    );
+  }
+
   compareRoleHierarchy(other: SpaceMember): number {
     // returns: 1 if this > other, 0 tie, -1 if this < other
     const a = this.highestRole;

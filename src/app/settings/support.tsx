@@ -8,7 +8,7 @@ import type {
   SupportTicketCategory,
 } from "@mutualzz/types";
 import { Box, InputDefault, Typography } from "@mutualzz/ui-native";
-import Constants from "expo-constants";
+import { MOBILE_APP_VERSION } from "@utils/appVersion";
 import * as Device from "expo-device";
 import { type Href } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,6 +25,8 @@ const categoryKeys = [
   "feature",
   "other",
 ] as const satisfies readonly SupportTicketCategory[];
+
+const PENDING_TICKET_STATUSES = new Set(["open", "awaiting_reply"]);
 
 const SupportSettings = () => {
   const { t } = useTranslation("common");
@@ -43,6 +45,10 @@ const SupportSettings = () => {
     queryFn: () => app.rest.get<APISupportTicket[]>("/support", { limit: 50 }),
   });
 
+  const hasPendingTicket = tickets.some((ticket) =>
+    PENDING_TICKET_STATUSES.has(ticket.status),
+  );
+
   const { mutate: createTicket, isPending: creating } = useMutation({
     mutationFn: () =>
       app.rest.post<APISupportTicketDetail>("/support", {
@@ -50,7 +56,7 @@ const SupportSettings = () => {
         subject: subject.trim(),
         message: message.trim(),
         platform: Device.osName?.toLowerCase() ?? "mobile",
-        appVersion: Constants.expoConfig?.version,
+        appVersion: MOBILE_APP_VERSION,
       }),
     onSuccess: (ticket) => {
       setSubject("");
@@ -84,47 +90,53 @@ const SupportSettings = () => {
           {t("support.openHelpCenter")}
         </Button>
 
-        <Box style={{ gap: 8 }}>
-          <Typography level="body-md" weight="bold">
-            {t("support.newTicket")}
+        {hasPendingTicket ? (
+          <Typography level="body-sm" textColor="muted">
+            {t("support.pendingTicketExists")}
           </Typography>
-          <Box style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {categoryKeys.map((value) => (
-              <Button
-                key={value}
-                size="sm"
-                variant={category === value ? "solid" : "soft"}
-                onPress={() => setCategory(value)}
-              >
-                {t(`support.categories.${value}`)}
-              </Button>
-            ))}
-          </Box>
-          <InputDefault
-            fullWidth
-            placeholder={t("support.subjectPlaceholder")}
-            value={subject}
-            onChangeText={setSubject}
-          />
-          <InputDefault
-            fullWidth
-            multiline
-            placeholder={t("support.describeIssue")}
-            value={message}
-            onChangeText={setMessage}
-          />
-          {error && (
-            <Typography level="body-sm" color="danger">
-              {error}
+        ) : (
+          <Box style={{ gap: 8 }}>
+            <Typography level="body-md" weight="bold">
+              {t("support.newTicket")}
             </Typography>
-          )}
-          <Button
-            disabled={creating || !subject.trim() || !message.trim()}
-            onPress={() => createTicket()}
-          >
-            {creating ? t("report.submitting") : t("support.submitTicket")}
-          </Button>
-        </Box>
+            <Box style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {categoryKeys.map((value) => (
+                <Button
+                  key={value}
+                  size="sm"
+                  variant={category === value ? "solid" : "soft"}
+                  onPress={() => setCategory(value)}
+                >
+                  {t(`support.categories.${value}`)}
+                </Button>
+              ))}
+            </Box>
+            <InputDefault
+              fullWidth
+              placeholder={t("support.subjectPlaceholder")}
+              value={subject}
+              onChangeText={setSubject}
+            />
+            <InputDefault
+              fullWidth
+              multiline
+              placeholder={t("support.describeIssue")}
+              value={message}
+              onChangeText={setMessage}
+            />
+            {error && (
+              <Typography level="body-sm" color="danger">
+                {error}
+              </Typography>
+            )}
+            <Button
+              disabled={creating || !subject.trim() || !message.trim()}
+              onPress={() => createTicket()}
+            >
+              {creating ? t("report.submitting") : t("support.submitTicket")}
+            </Button>
+          </Box>
+        )}
 
         <Box style={{ gap: 8 }}>
           <Typography level="body-md" weight="bold">

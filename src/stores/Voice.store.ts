@@ -128,6 +128,15 @@ export class VoiceStore {
       callbacks: {
         onSocketClosed: (reason) => {
           const reasonLower = String(reason ?? "").toLowerCase();
+          if (reasonLower.includes("moved to another voice channel")) {
+            runInAction(() => {
+              this.connectionStatus = "connecting";
+              this.connectionError = null;
+            });
+            this.abortAndTeardown();
+            this.stopKeepAlive();
+            return;
+          }
           const isSuperseded =
             reasonLower.includes("superseded") ||
             reasonLower.includes("minecraft") ||
@@ -184,6 +193,10 @@ export class VoiceStore {
       getSpeakingThreshold: () => this.getSpeakingThreshold(),
       shouldReportSpeaking: (userId) => this.shouldReportSpeakingForUser(userId),
       getNoiseSuppression: () => this.noiseSuppression,
+      getUserAudioMix: (userId) => ({
+        muted: this.isUserVoiceMuted(userId),
+        volume: this.getUserVoiceVolume(userId),
+      }),
     });
 
     makeAutoObservable(this, {}, { autoBind: true });
@@ -240,6 +253,18 @@ export class VoiceStore {
 
   get hasActiveVoiceTarget() {
     return !!this.currentVoiceTarget;
+  }
+
+  get canUseVadInCurrentChannel() {
+    const channel = this.channel;
+    if (!channel?.spaceId) return true;
+    const space = this.app.spaces.get(channel.spaceId);
+    return space?.members.me?.canUseVad(channel) ?? true;
+  }
+
+  get effectiveVoiceInputMode(): VoiceInputMode {
+    if (!this.canUseVadInCurrentChannel) return "push_to_talk";
+    return this.voiceInputMode;
   }
 
   get effectiveSelfMute() {
@@ -345,7 +370,7 @@ export class VoiceStore {
   }
 
   setPushToTalkPressed(pressed: boolean) {
-    if (this.voiceInputMode !== "push_to_talk") return;
+    if (this.effectiveVoiceInputMode !== "push_to_talk") return;
     if (this.pushToTalkActive === pressed) return;
     this.pushToTalkActive = pressed;
     if (!this.isRtcConnected) return;
@@ -358,7 +383,7 @@ export class VoiceStore {
   }
 
   get isPushToTalkMode() {
-    return this.voiceInputMode === "push_to_talk";
+    return this.effectiveVoiceInputMode === "push_to_talk";
   }
 
   private get isRtcConnected() {
@@ -381,7 +406,7 @@ export class VoiceStore {
     if (!this.isRtcConnected) return;
 
     try {
-      this.session.setInputMode(this.voiceInputMode);
+      this.session.setInputMode(this.effectiveVoiceInputMode);
       this.session.setSpaceMute(this.spaceMute);
     } catch (error) {
       this.logger.warn("Failed to apply voice settings to RTC session", error);
@@ -399,7 +424,7 @@ export class VoiceStore {
     const accountId = this.app.account?.id;
     if (userId !== accountId) return true;
     if (this.effectiveSelfMute) return false;
-    if (this.voiceInputMode === "push_to_talk") {
+    if (this.effectiveVoiceInputMode === "push_to_talk") {
       return this.pushToTalkActive;
     }
     return true;
@@ -540,6 +565,8 @@ export class VoiceStore {
     this.stopKeepAlive();
     this.cameraSuspendedByBackground = false;
 
+    const selfId = this.app.account?.id;
+
     runInAction(() => {
       this.connectionStatus = "idle";
       this.connectionError = null;
@@ -555,6 +582,9 @@ export class VoiceStore {
       this.pushToTalkActive = false;
     });
     this.cameraProducerByUser.clear();
+    if (selfId) {
+      this.app.voiceStates.remove(selfId);
+    }
 
     await this.sendVoiceStateUpdate();
   }
@@ -649,6 +679,7 @@ export class VoiceStore {
             spaceDeaf: state.spaceDeaf,
             sessionId: state.sessionId,
             updatedAt: state.updatedAt,
+            client: state.client,
           }
         : state;
 
@@ -656,10 +687,35 @@ export class VoiceStore {
 
     const channelId =
       raw.channelId === "null" || raw.channelId == null ? null : raw.channelId;
+    const accountId = this.app.account?.id;
+
+    if (
+      accountId &&
+      raw.userId === accountId &&
+      raw.client === "minecraft" &&
+      channelId
+    ) {
+      if (
+        this.currentVoiceTarget ||
+        this.connectionStatus === "connected" ||
+        this.connectionStatus === "connecting"
+      ) {
+        try {
+          this.abortAndTeardown();
+          this.stopKeepAlive();
+        } catch {}
+        runInAction(() => {
+          this.connectionStatus = "idle";
+          this.connectionError = null;
+          this.currentVoiceTarget = null;
+          this.cameraEnabled = false;
+        });
+      }
+    }
 
     if (
       !channelId &&
-      raw.userId === this.app.account?.id &&
+      raw.userId === accountId &&
       this.connectionStatus === "connecting"
     ) {
       this.failJoin(i18n.t("voice.errors.unableToJoin", { ns: "chat" }));
@@ -668,7 +724,7 @@ export class VoiceStore {
 
     if (!channelId) {
       this.app.voiceStates.remove(raw.userId);
-      if (raw.userId !== this.app.account?.id) {
+      if (raw.userId !== accountId) {
         runInAction(() => {
           this.remoteCameraStreams.delete(raw.userId);
           this.speakingUsers.delete(raw.userId);

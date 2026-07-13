@@ -42,6 +42,8 @@ import {
   PROFILE_BLOCK_CORNER_RADIUS_MIN,
   resolveProfileBlockCornerRadius,
   resolveProfileImageBlockUrl,
+  supportsProfileBlockBackgroundColor,
+  type ColorLike,
 } from "@mutualzz/ui-core";
 import * as DocumentPicker from "expo-document-picker";
 import {
@@ -201,6 +203,8 @@ export function ProfileWidgetContentEditorSheet({
             }
           />
 
+          <ProfileBlockBackgroundColorFields block={block} update={update} />
+
           <ProfileBlockCornerRadiusFields block={block} update={update} />
 
           <Button
@@ -356,6 +360,45 @@ function ChipGroup<T extends string>({
         );
       })}
     </Box>
+  );
+}
+
+function ProfileBlockBackgroundColorFields({
+  block,
+  update,
+}: {
+  block: APIMobileProfileBlock;
+  update: (patch: Record<string, unknown>) => void;
+}) {
+  const { t } = useTranslation("settings");
+
+  if (!supportsProfileBlockBackgroundColor(block.type)) {
+    return null;
+  }
+
+  return (
+    <FieldSection title={t("profile.inspector.backgroundColor")}>
+      <Typography level="body-xs" textColor="muted">
+        {t("profile.inspector.blockBackgroundColorDescription")}
+      </Typography>
+      <Input
+        type="color"
+        value={(block.backgroundColor || "#1a1a2e") as ColorLike}
+        onChange={(color: ColorLike) =>
+          update({ backgroundColor: String(color) })
+        }
+        allowGradient
+        fullWidth
+      />
+      {block.backgroundColor ? (
+        <Button
+          color="neutral"
+          onPress={() => update({ backgroundColor: null })}
+        >
+          {t("profile.inspector.resetBackgroundColor")}
+        </Button>
+      ) : null}
+    </FieldSection>
   );
 }
 

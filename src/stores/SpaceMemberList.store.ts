@@ -51,6 +51,7 @@ export class SpaceMemberListStore {
 
   private upsertPresence(userId: Snowflake, presence?: PresencePayload | null) {
     if (!presence) return;
+    if (userId === this.app.account?.id) return;
 
     this.app.presence.upsert(userId, presence);
   }

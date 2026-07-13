@@ -44,7 +44,7 @@ export const UserMention = observer(({ userId, spaceId }: Props) => {
                 paddingVertical: 1,
             }}
         >
-            <UserAvatar user={user} size="sm" style={{ width: 16, height: 16 }} />
+            <UserAvatar user={user} size={16} />
             <Typography
                 level="body-sm"
                 style={{ color: theme.colors.info }}

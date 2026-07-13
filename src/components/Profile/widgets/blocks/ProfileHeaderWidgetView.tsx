@@ -40,6 +40,7 @@ export function ProfileHeaderWidgetView({ block, size, user, profile }: Props) {
           height: bannerHeight,
           overflow: "hidden",
           backgroundColor: bannerUrl ? undefined : user.accentColor,
+          zIndex: 0,
         }}
       >
         {bannerUrl && (
@@ -63,6 +64,7 @@ export function ProfileHeaderWidgetView({ block, size, user, profile }: Props) {
           paddingHorizontal: metrics.padding,
           paddingBottom: metrics.padding,
           marginTop: -avatarOverlap,
+          zIndex: 1,
         }}
       >
         <Stack

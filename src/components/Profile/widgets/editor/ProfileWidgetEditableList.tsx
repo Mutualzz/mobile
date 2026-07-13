@@ -1,4 +1,5 @@
 import { IconButton } from "@components/IconButton";
+import { ProfileBackgroundLayer } from "@components/Profile/shared/ProfileBackgroundLayer";
 import { ProfileWidgetRenderer } from "@components/Profile/widgets/ProfileWidgetRenderer";
 import { ProfileWidgetSizePill } from "@components/Profile/widgets/editor/ProfileWidgetSizePill";
 import {
@@ -126,6 +127,13 @@ function WidgetTileContent({
           overflow: "hidden",
         }}
       >
+        {block.backgroundColor?.trim() ? (
+          <ProfileBackgroundLayer
+            profile={profile}
+            backgroundColor={block.backgroundColor.trim()}
+            backgroundImage={null}
+          />
+        ) : null}
         <ProfileWidgetRenderer block={block} profile={profile} user={user} />
       </Paper>
     </View>

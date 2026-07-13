@@ -346,7 +346,8 @@ const StaffUserScreen = () => {
 
   const isDisabled = user.flags.has("Disabled");
   const isDeleted = user.flags.has("Deleted");
-  const isTargetFounder = user.flags.has("Founder");
+  const isProtectedTarget =
+    user.flags.has("Founder") && !app.account?.isFounder;
   const isRestricted =
     !!privateUser.restrictedUntil &&
     new Date(privateUser.restrictedUntil) > new Date();
@@ -377,7 +378,7 @@ const StaffUserScreen = () => {
           <Typography level="body-md" weight={700}>
             {t("sections.info")}
           </Typography>
-          {isTargetFounder ? (
+          {isProtectedTarget ? (
             <Typography level="body-sm" textColor="muted">
               {t("user.actions.founderProtectedBanner")}
             </Typography>
@@ -493,54 +494,49 @@ const StaffUserScreen = () => {
           </Typography>
         </Box>
 
-        {app.account?.isFounder &&
-          (isTargetFounder ? (
-            <Typography level="body-sm" textColor="muted">
-              {t("user.actions.founderProtectedBanner")}
+        {app.account?.isFounder && (
+          <Box style={{ gap: 8 }}>
+            <Typography level="body-md" weight={700}>
+              {t("user.flags.manage")}
             </Typography>
-          ) : (
-            <Box style={{ gap: 8 }}>
-              <Typography level="body-md" weight={700}>
-                {t("user.flags.manage")}
-              </Typography>
-              {staffToggleableUserFlags.map((flag, index) => (
-                <Box key={flag} style={{ gap: 8 }}>
-                  <Pressable
-                    onPress={() =>
-                      setFlag({
-                        flag,
-                        enabled: !user.flags.has(flag),
-                      })
-                    }
+            {staffToggleableUserFlags.map((flag, index) => (
+              <Box key={flag} style={{ gap: 8 }}>
+                <Pressable
+                  onPress={() =>
+                    setFlag({
+                      flag,
+                      enabled: !user.flags.has(flag),
+                    })
+                  }
+                >
+                  <Box
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 12,
+                    }}
                   >
-                    <Box
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 12,
-                      }}
-                    >
-                      <Typography level="body-sm">{flag}</Typography>
-                      <Switch
-                        checked={user.flags.has(flag)}
-                        disabled={settingFlag}
-                        onChange={() =>
-                          setFlag({
-                            flag,
-                            enabled: !user.flags.has(flag),
-                          })
-                        }
-                      />
-                    </Box>
-                  </Pressable>
-                  {index < staffToggleableUserFlags.length - 1 && (
-                    <Divider lineColor="muted" style={{ opacity: 0.25 }} />
-                  )}
-                </Box>
-              ))}
-            </Box>
-          ))}
+                    <Typography level="body-sm">{flag}</Typography>
+                    <Switch
+                      checked={user.flags.has(flag)}
+                      disabled={settingFlag}
+                      onChange={() =>
+                        setFlag({
+                          flag,
+                          enabled: !user.flags.has(flag),
+                        })
+                      }
+                    />
+                  </Box>
+                </Pressable>
+                {index < staffToggleableUserFlags.length - 1 && (
+                  <Divider lineColor="muted" style={{ opacity: 0.25 }} />
+                )}
+              </Box>
+            ))}
+          </Box>
+        )}
 
         <Divider lineColor="muted" style={{ opacity: 0.35 }} />
 
@@ -548,7 +544,7 @@ const StaffUserScreen = () => {
           <Typography level="body-md" weight={700}>
             {t("sections.actions")}
           </Typography>
-          {isTargetFounder ? (
+          {isProtectedTarget ? (
             <Typography level="body-sm" textColor="muted">
               {t("user.actions.founderProtectedBanner")}
             </Typography>
@@ -689,7 +685,7 @@ const StaffUserScreen = () => {
           <Typography level="body-md" weight={700}>
             {t("sections.sessions")}
           </Typography>
-          {isTargetFounder && (
+          {isProtectedTarget && (
             <Typography level="body-sm" textColor="muted">
               {t("user.actions.founderProtectedBanner")}
             </Typography>
@@ -722,7 +718,7 @@ const StaffUserScreen = () => {
                       })}
                     </Typography>
                   </Box>
-                  {!isTargetFounder && (
+                  {!isProtectedTarget && (
                     <Button
                       size="sm"
                       color="danger"

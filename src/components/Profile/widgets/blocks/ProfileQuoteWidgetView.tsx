@@ -76,6 +76,7 @@ export function ProfileQuoteWidgetView({ block, size }: Props) {
   const variant = block.variant ?? "default";
   const preferEmbossed = app.settings?.preferEmbossed ?? false;
   const styles = variantStyles(preferEmbossed, theme)[variant];
+  const hasCustomBackground = Boolean(block.backgroundColor?.trim());
 
   return (
     <Stack
@@ -88,7 +89,9 @@ export function ProfileQuoteWidgetView({ block, size }: Props) {
         borderRadius: 12,
         borderWidth: 1,
         borderColor: styles.border as string,
-        backgroundColor: styles.background as string,
+        backgroundColor: hasCustomBackground
+          ? "transparent"
+          : (styles.background as string),
         overflow: "hidden",
       }}
     >

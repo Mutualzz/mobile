@@ -13,6 +13,7 @@ import { Button } from "@components/Button";
 import {
     ClockCounterClockwiseIcon,
     GavelIcon,
+    NewspaperIcon,
     WarningIcon,
 } from "phosphor-react-native";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -133,6 +134,19 @@ const StaffIndexScreen = () => {
                         >
                             {t("nav.appeals")}
                         </Button>
+                        {app.account?.isDeveloper ? (
+                            <Button
+                                size="sm"
+                                color="neutral"
+                                variant="soft"
+                                startDecorator={<NewspaperIcon size={16} />}
+                                onPress={() =>
+                                    navigate("/staff/changelogs" as Href)
+                                }
+                            >
+                                {t("nav.changelogs")}
+                            </Button>
+                        ) : null}
                     </Box>
                 </Box>
 

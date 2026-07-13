@@ -1,5 +1,10 @@
+import { ProfileBackgroundLayer } from "@components/Profile/shared/ProfileBackgroundLayer";
+import type { UserProfile } from "@stores/objects/UserProfile";
 import type { ProfileBlockSize, ProfileBlockType } from "@mutualzz/types";
-import { resolveProfileBlockCornerRadius } from "@mutualzz/ui-core";
+import {
+  resolveProfileBackgroundFill,
+  resolveProfileBlockCornerRadius,
+} from "@mutualzz/ui-core";
 import { Paper, useTheme } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import { CaretDownIcon } from "phosphor-react-native";
@@ -12,6 +17,8 @@ interface Props {
   type: ProfileBlockType;
   size: ProfileBlockSize;
   cornerRadius?: number;
+  backgroundColor?: string | null;
+  profile?: UserProfile;
   onMaximize?: () => void;
   children: ReactNode;
 }
@@ -22,6 +29,8 @@ export function ProfileWidgetTile({
   type,
   size,
   cornerRadius,
+  backgroundColor,
+  profile,
   onMaximize,
   children,
 }: Props) {
@@ -31,6 +40,11 @@ export function ProfileWidgetTile({
   const resolvedCornerRadius =
     cornerRadius ??
     resolveProfileBlockCornerRadius({ type, cornerRadius: undefined }, "mobile");
+  const customBackground = backgroundColor?.trim() || null;
+  const solidFill =
+    customBackground && !customBackground.toLowerCase().startsWith("linear-gradient")
+      ? resolveProfileBackgroundFill(customBackground, theme.colors.surface)
+      : null;
 
   return (
     <Paper
@@ -40,8 +54,16 @@ export function ProfileWidgetTile({
         height: getWidgetTileHeight(type, size),
         borderRadius: resolvedCornerRadius,
         overflow: "hidden",
+        ...(solidFill ? { backgroundColor: solidFill } : {}),
       }}
     >
+      {customBackground && profile ? (
+        <ProfileBackgroundLayer
+          profile={profile}
+          backgroundColor={customBackground}
+          backgroundImage={null}
+        />
+      ) : null}
       {children}
 
       {onMaximize && (

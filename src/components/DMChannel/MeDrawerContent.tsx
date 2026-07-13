@@ -1,4 +1,5 @@
 import { BridgeChannelList } from "@components/Bridge/BridgeChannelList";
+import { BrandLoader } from "@components/BrandLoader";
 import { DMChannelCreateSheet } from "@components/DMChannel/DMChannelCreateSheet";
 import { Button } from "@components/Button";
 import { DMChannelList } from "@components/DMChannel/DMChannelList";
@@ -9,7 +10,7 @@ import { Paper } from "@components/Paper";
 import { Screen } from "@components/Screen/Screen";
 import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { useAppStore } from "@hooks/useStores";
-import { Box, Typography } from "@mutualzz/ui-native";
+import { Box } from "@mutualzz/ui-native";
 import { CubeIcon, PlusIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -32,9 +33,16 @@ export const MeDrawerContent = observer(() => {
   if (!app.isReady) {
     return (
       <Screen>
-        <Typography style={{ textAlign: "center", padding: 24 }}>
-          {t("loading")}
-        </Typography>
+        <Box
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+          }}
+        >
+          <BrandLoader size={72} />
+        </Box>
       </Screen>
     );
   }

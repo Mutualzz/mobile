@@ -133,6 +133,8 @@ export const ProfileWidgetItem = observer(function ProfileWidgetItem({
       type={block.type}
       size={size}
       cornerRadius={resolveProfileBlockCornerRadius(block, "mobile")}
+      backgroundColor={block.backgroundColor}
+      profile={profile}
       onMaximize={canExpand ? openMaximize : undefined}
     >
       <ProfileWidgetRenderer block={block} profile={profile} user={user} />

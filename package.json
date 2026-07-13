@@ -97,6 +97,5 @@
     "start": "expo start",
     "typecheck": "tsc --noEmit",
     "web": "expo start --web"
-  },
-  "version": "2.3.0"
+  }
 }

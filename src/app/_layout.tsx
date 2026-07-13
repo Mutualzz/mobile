@@ -5,6 +5,8 @@ import "@setup/backgroundNotificationTask";
 import "../i18n";
 
 import { AppCrashFallback } from "@components/ErrorBoundary/AppCrashFallback";
+import { BrandLoader } from "@components/BrandLoader";
+import { ChangelogPrompt } from "@components/Changelog/ChangelogPrompt";
 import { NativeBaseline } from "@components/NativeBaseline/NativeBaseline";
 import { NavigationWithTheme } from "@components/NavigationWithTheme";
 import { AppTheme } from "@contexts/AppTheme.context";
@@ -25,6 +27,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
+import { View } from "react-native";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
 dayjs.extend(relativeTime);
@@ -57,7 +60,6 @@ const Root = () => {
         await app.loadSettings();
       } finally {
         app.setAppLoading(false);
-        await SplashScreen.hideAsync();
       }
     })();
 
@@ -67,7 +69,7 @@ const Root = () => {
         if (value) {
           app.rest.setToken(value);
           if (app.gateway.readyState === GatewayStatus.CLOSED) {
-            app.setGatewayReady(true);
+            app.setGatewayReady(false);
             app.gateway.connect();
           } else {
             logger.debug("Gateway connect called but socket is not closed");
@@ -88,7 +90,26 @@ const Root = () => {
     return dispose;
   }, []);
 
-  if (app.isAppLoading) return null;
+  useEffect(() => {
+    void SplashScreen.hideAsync();
+  }, []);
+
+  if (!app.isReady) {
+    return (
+      <AppTheme>
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#241927",
+          }}
+        >
+          <BrandLoader size={108} />
+        </View>
+      </AppTheme>
+    );
+  }
 
   return (
     <QueryClientProvider client={app.queryClient}>
@@ -97,6 +118,7 @@ const Root = () => {
           <NavigationWithTheme>
             <NativeBaseline>
               <ModalProvider>
+                <ChangelogPrompt />
                 <Stack screenOptions={{ headerShown: false }}>
                   <Stack.Screen name="(tabs)" />
                   <Stack.Screen

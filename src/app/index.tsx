@@ -1,5 +1,5 @@
 import { Button } from "@components/Button";
-import { AppLogo } from "@components/Logo/AppLogo";
+import { BrandLoader } from "@components/BrandLoader";
 import { useAppStore } from "@hooks/useStores";
 import { Box, ButtonGroup } from "@mutualzz/ui-native";
 import { useRouter } from "expo-router";
@@ -16,10 +16,10 @@ const IndexRoute = () => {
   const router = useRouter();
 
   useEffect(() => {
-    if (!app.settings || app.isAppLoading) return;
+    if (!app.isReady || !app.settings || !app.token) return;
 
     router.replace(app.settings.preferredMode === "feed" ? "/feed" : "/spaces");
-  }, [app.isAppLoading, app.settings, app.token]);
+  }, [app.isReady, app.settings, app.token]);
 
   return (
     <Box
@@ -30,7 +30,7 @@ const IndexRoute = () => {
         flexDirection: "column",
       }}
     >
-      {app.token && <AppLogo size={100} />}
+      {app.token && <BrandLoader size={100} />}
       {!app.token && (
         <Box
           style={{

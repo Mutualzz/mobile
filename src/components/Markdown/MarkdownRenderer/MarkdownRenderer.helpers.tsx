@@ -273,6 +273,42 @@ export const renderBlockNode = (
         </Blockquote>
       );
 
+    case "bullet_list_open":
+    case "ordered_list_open":
+      return (
+        <Box
+          key={key}
+          style={{
+            gap: 4,
+            paddingLeft: 8,
+            alignSelf: "stretch",
+            marginVertical: 4,
+          }}
+        >
+          {children}
+        </Box>
+      );
+
+    case "list_item_open": {
+      const marker = openToken.markup === "." ? "–" : "•";
+      return (
+        <Box
+          key={key}
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-start",
+            gap: 8,
+            alignSelf: "stretch",
+          }}
+        >
+          <Typography level="body-sm" textColor={theme.typography.colors.primary}>
+            {marker}
+          </Typography>
+          <Box style={{ flex: 1, gap: 2 }}>{children}</Box>
+        </Box>
+      );
+    }
+
     default:
       return (
         <Box

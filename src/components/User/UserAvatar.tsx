@@ -51,6 +51,8 @@ export const UserAvatar = observer(
     badge = false,
     showInvisible,
     speaking = false,
+    size: sizeProp,
+    style,
     ...props
   }: UserAvatarProps) => {
     const app = useAppStore();
@@ -74,7 +76,7 @@ export const UserAvatar = observer(
           : "light";
     }, [theme.type, resolvedUser]);
 
-    const size = resolveSize(theme, props.size || "md", baseSizeMap) as Sizes;
+    const size = resolveSize(theme, sizeProp || "md", baseSizeMap) as Sizes;
     const status = resolvedUser
       ? app.presence.get(resolvedUser.id)?.status
       : null;
@@ -87,14 +89,13 @@ export const UserAvatar = observer(
         shape="circle"
         variant="elevation"
         {...props}
+        style={style}
         size={size}
       >
         <UserIcon />
       </MAvatar>
     ) : (
       <Paper
-        // Always elevate default avatars so the paper disc shows everywhere,
-        // independent of the global preferEmbossed setting.
         variant={
           hasAvatar
             ? "plain"
@@ -108,6 +109,9 @@ export const UserAvatar = observer(
           width: size,
           height: size,
           flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
           borderRadius: 9999,
           overflow: "visible",
         }}
@@ -124,6 +128,7 @@ export const UserAvatar = observer(
             size,
           )}
           {...props}
+          style={style}
           size={size}
         />
       </Paper>

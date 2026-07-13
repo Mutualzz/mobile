@@ -153,11 +153,14 @@ export const MentionAutocomplete = observer(
               {candidate.type === "user" && candidate.userId && (
                 <UserAvatar
                   user={app.users.get(candidate.userId)}
-                  size="sm"
-                  style={{ width: avatarSize, height: avatarSize }}
+                  size={avatarSize}
                 />
               )}
-              <Typography level="body-sm" style={{ flex: 1 }} truncate="single">
+              <Typography
+                level="body-sm"
+                style={{ flex: 1, minWidth: 0 }}
+                truncate="single"
+              >
                 {candidate.displayName}
               </Typography>
               {candidate.type === "role" && (

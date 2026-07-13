@@ -2,8 +2,6 @@ import type { APIUserSettings, AppMode, Snowflake } from "@mutualzz/types";
 import { ObservableOrderedSet } from "@utils/ObservableOrderedSet";
 import { comparer, makeAutoObservable, observable, reaction } from "mobx";
 import type { AppStore } from "./App.store";
-import { makePersistable } from "mobx-persist-store";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppState, type AppStateStatus } from "react-native";
 
 type SettingsPatch = Omit<APIUserSettings, "updatedAt">;
@@ -58,55 +56,6 @@ export class AccountSettingsStore {
     this.lastSyncedHash = this.computeHash(this.getSyncPayload());
 
     makeAutoObservable(this);
-
-    makePersistable(this, {
-      name: "AccountSettingsStore",
-      properties: [
-        "currentTheme",
-        "currentIcon",
-        "preferredMode",
-        "preferEmbossed",
-        "preferredSelfMute",
-        "preferredSelfDeaf",
-        "pushEnabled",
-        "pushDirectMessages",
-        "pushMentions",
-        "shareActivity",
-        "shareRecentActivity",
-        {
-          key: "favoriteEmojis",
-          serialize: (v: unknown) => (Array.isArray(v) ? [...v] : []),
-          deserialize: (v: unknown) =>
-            observable.array(Array.isArray(v) ? v : []),
-        },
-        {
-          key: "favoriteGifs",
-          serialize: (v: unknown) => (Array.isArray(v) ? [...v] : []),
-          deserialize: (v: unknown) =>
-            observable.array(Array.isArray(v) ? v : []),
-        },
-        {
-          key: "spacePositions",
-          serialize: (v: unknown) => {
-            if (v instanceof ObservableOrderedSet) return v.toArray();
-            if (Array.isArray(v)) return v.map(String);
-            if (v && typeof v === "object" && "toArray" in (v as any))
-              return (v as any).toArray().map(String);
-            return [];
-          },
-          deserialize: (v: unknown) =>
-            new ObservableOrderedSet<string>(
-              Array.isArray(v) ? v.map(String) : [],
-            ),
-        },
-        {
-          key: "updatedAt",
-          serialize: (d: unknown) => (d instanceof Date ? d.toISOString() : d),
-          deserialize: (v: unknown) => new Date(v as any),
-        },
-      ],
-      storage: AsyncStorage,
-    });
 
     this.disposeReaction = reaction(
       () => this.getSyncPayload(),
@@ -195,6 +144,7 @@ export class AccountSettingsStore {
 
   setCurrentTheme(theme: string | null) {
     this.currentTheme = theme;
+    this.flush();
   }
 
   setPreferredMode(mode: AppMode) {
@@ -203,6 +153,7 @@ export class AccountSettingsStore {
 
   setCurrentIcon(icon?: string | null) {
     this.currentIcon = icon;
+    this.flush();
   }
 
   setPreferredSelfMute(value: boolean) {

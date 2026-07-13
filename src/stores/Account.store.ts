@@ -60,7 +60,10 @@ export class AccountStore {
     return this.flags.has("Founder");
   }
 
-  // Founders are implicitly staff, in addition to anyone with the Staff flag.
+  get isDeveloper() {
+    return this.flags.has("Developer") || this.isFounder;
+  }
+
   get isStaff() {
     return this.flags.has("Staff") || this.isFounder;
   }

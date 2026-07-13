@@ -117,6 +117,10 @@ export const MessageInput = observer(({ channel }: Props) => {
       )
     : !space?.members.me?.canSendMessages(channel);
 
+  const canAttachFiles = isDM
+    ? !denySendingMessages
+    : !!space?.members.me?.canAttachFiles(channel);
+
   const showExpressionPicker = !editingMessage && !denySendingMessages;
 
   useEffect(() => {
@@ -231,7 +235,7 @@ export const MessageInput = observer(({ channel }: Props) => {
   ]);
 
   const pickAttachments = useCallback(async () => {
-    if (denySendingMessages || editingMessage) return;
+    if (denySendingMessages || !canAttachFiles || editingMessage) return;
     if (attachments.length >= MAX_ATTACHMENTS) return;
 
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -255,7 +259,7 @@ export const MessageInput = observer(({ channel }: Props) => {
       }));
 
     setAttachments((prev) => [...prev, ...next].slice(0, MAX_ATTACHMENTS));
-  }, [attachments.length, denySendingMessages, editingMessage]);
+  }, [attachments.length, canAttachFiles, denySendingMessages, editingMessage]);
 
   const removeAttachment = useCallback((index: number) => {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
@@ -423,7 +427,7 @@ export const MessageInput = observer(({ channel }: Props) => {
 
     const text = expandCustomEmoji(rawContent);
     const stickerList = stickers;
-    const fileList = attachments;
+    const fileList = canAttachFiles ? attachments : [];
 
     setContent("");
     setEntities([]);
@@ -433,6 +437,7 @@ export const MessageInput = observer(({ channel }: Props) => {
 
     await sendContent(text, stickerList, fileList);
   }, [
+    canAttachFiles,
     canSubmit,
     editingMessage,
     expandCustomEmoji,
@@ -736,6 +741,7 @@ export const MessageInput = observer(({ channel }: Props) => {
           accessibilityLabel={t("composer.addAttachment")}
           disabled={
             denySendingMessages ||
+            !canAttachFiles ||
             !!editingMessage ||
             attachments.length >= MAX_ATTACHMENTS
           }

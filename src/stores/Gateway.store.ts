@@ -43,6 +43,7 @@ import {
 import { makeAutoObservable } from "mobx";
 import type { NativeEventSubscription } from "react-native";
 import { AppState, Alert, type AppStateStatus } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { AppStore } from "./App.store";
 import type { Channel } from "./objects/Channel";
 import { fixConnectionUrl } from "@utils/urls";
@@ -59,6 +60,8 @@ export const GatewayStatus = {
 export type GatewayStatus = (typeof GatewayStatus)[keyof typeof GatewayStatus];
 
 const RECONNECT_TIMEOUT = 5000;
+const RESUME_STORAGE_KEY = "mutualzz:gateway:resume";
+const RESUME_MAX_AGE_MS = 110_000;
 
 type Timer = ReturnType<typeof setTimeout>;
 
@@ -123,6 +126,54 @@ export class GatewayStore {
       "change",
       this.handleAppStateChange,
     );
+    void this.restoreResumeState();
+  }
+
+  private async restoreResumeState() {
+    try {
+      const raw = await AsyncStorage.getItem(RESUME_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        sessionId?: string;
+        sequence?: number;
+        savedAt?: number;
+      };
+      if (
+        !parsed.sessionId ||
+        typeof parsed.sequence !== "number" ||
+        typeof parsed.savedAt !== "number"
+      ) {
+        await AsyncStorage.removeItem(RESUME_STORAGE_KEY);
+        return;
+      }
+      if (Date.now() - parsed.savedAt > RESUME_MAX_AGE_MS) {
+        await AsyncStorage.removeItem(RESUME_STORAGE_KEY);
+        return;
+      }
+      this.sessionId = parsed.sessionId;
+      this.sequence = parsed.sequence;
+    } catch {
+      await AsyncStorage.removeItem(RESUME_STORAGE_KEY).catch(() => null);
+    }
+  }
+
+  private persistResumeState() {
+    if (!this.sessionId) {
+      void AsyncStorage.removeItem(RESUME_STORAGE_KEY);
+      return;
+    }
+    void AsyncStorage.setItem(
+      RESUME_STORAGE_KEY,
+      JSON.stringify({
+        sessionId: this.sessionId,
+        sequence: this.sequence,
+        savedAt: Date.now(),
+      }),
+    );
+  }
+
+  private clearResumeState() {
+    void AsyncStorage.removeItem(RESUME_STORAGE_KEY);
   }
 
   requestMemberListRange(spaceId: string, channelId: string, pageSize = 50) {
@@ -271,6 +322,7 @@ export class GatewayStore {
   private handleAppStateChange = (nextState: AppStateStatus) => {
     if (nextState === "background" || nextState === "inactive") {
       this.backgroundedAt = Date.now();
+      this.persistResumeState();
 
       const userId = this.app.account?.id;
       if (
@@ -343,6 +395,7 @@ export class GatewayStore {
     if (!this.app.token) return;
 
     this.logger.debug("[Foreground] Forcing gateway reconnect");
+    this.app.setGatewayReady(false);
     this.clearReconnect();
     this.shouldReconnect = true;
     this.teardownSocket();
@@ -580,7 +633,9 @@ export class GatewayStore {
     const scheduled = this.app.presence.scheduledStatus;
     if (scheduled && scheduled.until > Date.now()) return scheduled.status;
 
-    return this.app.presence.get(userId)?.status ?? "online";
+    const status = this.app.presence.get(userId)?.status ?? "online";
+    if (status === "offline") return "online";
+    return status;
   }
 
   private setupListeners() {
@@ -881,10 +936,18 @@ export class GatewayStore {
     this.readyState = GatewayStatus.OPEN;
     this.reconnectTimeout = 0;
 
-    if (this.sessionId) {
+    if (this.sessionId && this.app.account) {
       this.logger.debug("[Gateway] Resuming session");
       this.handleResume();
     } else {
+      if (this.sessionId && !this.app.account) {
+        this.logger.debug(
+          "[Gateway] Resume state without local data; identifying",
+        );
+        this.sessionId = null;
+        this.sequence = 0;
+        this.clearResumeState();
+      }
       this.logger.debug("[Gateway] Identifying");
       this.handleIdentify();
     }
@@ -1006,6 +1069,7 @@ export class GatewayStore {
     this.stopHeartbeater();
     this.socket = null;
     this.readyState = GatewayStatus.CLOSED;
+    this.app.setGatewayReady(false);
 
     this.logger.debug(`Received invalid session; Can Resume: ${resumable}`);
     if (!resumable) {
@@ -1021,6 +1085,7 @@ export class GatewayStore {
     this.stopHeartbeater();
     this.socket = null;
     this.readyState = GatewayStatus.CLOSED;
+    this.app.setGatewayReady(false);
 
     this.logger.debug(`[Gateway] -> Reconnect`);
     this.startReconnect();
@@ -1062,6 +1127,7 @@ export class GatewayStore {
     this.stopHeartbeater();
     this.socket = null;
     this.readyState = GatewayStatus.CLOSED;
+    this.app.setGatewayReady(false);
 
     if (code === GatewayCloseCodes.ForceLogout) {
       this.reset();
@@ -1092,6 +1158,7 @@ export class GatewayStore {
     this.readyState = GatewayStatus.CLOSED;
     this.backgroundPresenceStatus = null;
     this.stopPresenceLoop();
+    this.clearResumeState();
   };
 
   private startHeartbeater = () => {
@@ -1136,6 +1203,7 @@ export class GatewayStore {
       `[Heartbeat ACK Timeout] should reconnect in ${(RECONNECT_TIMEOUT / 1000).toFixed(2)} seconds`,
     );
 
+    this.app.setGatewayReady(false);
     this.socket?.close(4009);
 
     this.stopHeartbeater();
@@ -1180,6 +1248,7 @@ export class GatewayStore {
     const { d, t, s } = data;
     this.logger.debug(`[Gateway] -> ${t}`);
     this.sequence = s;
+    this.persistResumeState();
 
     const handler = this.dispatchHandlers.get(t);
     if (!handler) {
@@ -1192,6 +1261,18 @@ export class GatewayStore {
 
   private onResume = () => {
     this.logger.debug("[Resume] Session");
+
+    if (!this.app.account) {
+      this.logger.warn(
+        "[Resume] No local session data; falling back to Identify",
+      );
+      this.sessionId = null;
+      this.sequence = 0;
+      this.clearResumeState();
+      this.handleIdentify();
+      return;
+    }
+
     this.resubscribeUsers();
     this.app.setGatewayReady(true);
     this.startPresenceLoop();
@@ -1219,6 +1300,7 @@ export class GatewayStore {
     } = payload;
 
     this.sessionId = sessionId;
+    this.persistResumeState();
 
     this.app.setUser(user, settings);
     this.app.users.add(user);

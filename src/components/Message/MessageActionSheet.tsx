@@ -220,50 +220,46 @@ export const MessageActionSheet = observer(
                     gap: 12,
                   }}
                 >
-                  {quickItems.length > 0 && (
-                    <Box
+                  <Box
+                    style={{
+                      flexDirection: "row",
+                      gap: 8,
+                      width: "100%",
+                    }}
+                  >
+                    {quickItems.map((item) => (
+                      <QuickReactionButton
+                        key={item.key}
+                        item={item}
+                        backgroundColor={`${theme.colors.neutral}22`}
+                        accessibilityLabel={t("actions.reactWith", {
+                          emoji: item.title,
+                        })}
+                        onPress={() => handleQuickReaction(item)}
+                      />
+                    ))}
+                    <Pressable
+                      onPress={() => setPickerOpen(true)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("composer.openEmojiPicker")}
                       style={{
-                        flexDirection: "row",
-                        gap: 8,
-                        width: "100%",
+                        flex: 1,
+                        minWidth: 0,
+                        minHeight,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: 8,
+                        backgroundColor: `${theme.colors.neutral}22`,
                       }}
                     >
-                      {quickItems.map((item) => (
-                        <QuickReactionButton
-                          key={item.key}
-                          item={item}
-                          backgroundColor={`${theme.colors.neutral}22`}
-                          accessibilityLabel={t("actions.reactWith", {
-                            emoji: item.title,
-                          })}
-                          onPress={() => handleQuickReaction(item)}
-                        />
-                      ))}
-                      <Pressable
-                        onPress={() => setPickerOpen(true)}
-                        accessibilityRole="button"
-                        accessibilityLabel={t("composer.openEmojiPicker")}
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          minHeight,
-                          alignItems: "center",
-                          justifyContent: "center",
-                          borderRadius: 8,
-                          backgroundColor: `${theme.colors.neutral}22`,
-                        }}
-                      >
-                        <SmileyIcon
-                          size={24}
-                          color={theme.typography.colors.primary}
-                        />
-                      </Pressable>
-                    </Box>
-                  )}
+                      <SmileyIcon
+                        size={24}
+                        color={theme.typography.colors.primary}
+                      />
+                    </Pressable>
+                  </Box>
 
-                  {quickItems.length > 0 && hasActions && (
-                    <Divider lineColor="muted" />
-                  )}
+                  {hasActions && <Divider lineColor="muted" />}
 
                   {hasActions && (
                     <ButtonGroup
