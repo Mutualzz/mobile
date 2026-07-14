@@ -54,20 +54,33 @@ export const ActivityIcon = observer(function ActivityIcon({
   const [broken, setBroken] = useState(false);
   const iconColor = color ?? theme.colors.success;
 
+  const assetUrl = useMemo(() => {
+    if (broken) return null;
+    return activity.assets?.largeImageUrl?.trim() || null;
+  }, [activity.assets?.largeImageUrl, broken]);
+
   const catalogUrl = useMemo(() => {
-    if (activity.type !== "playing" || broken) return null;
+    if (assetUrl || activity.type !== "playing" || broken) return null;
     return resolvePlayingActivityIconUrl(
       activity.name,
       Math.max(size, 32),
-      activity.applicationId
+      activity.applicationId,
     );
-  }, [activity.applicationId, activity.name, activity.type, broken, size]);
+  }, [
+    activity.applicationId,
+    activity.name,
+    activity.type,
+    assetUrl,
+    broken,
+    size,
+  ]);
 
   const { data } = useQuery({
     queryKey: ["activity-icon", activity.applicationId ?? activity.name],
     enabled:
       fetchFallback &&
       activity.type === "playing" &&
+      !assetUrl &&
       !catalogUrl &&
       !broken,
     staleTime: Number.POSITIVE_INFINITY,
@@ -83,10 +96,12 @@ export const ActivityIcon = observer(function ActivityIcon({
     },
   });
 
-  const url =
-    activity.type === "playing" && !broken
-      ? catalogUrl ?? data?.iconUrl ?? null
-      : null;
+  const url = useMemo(() => {
+    if (broken) return null;
+    if (assetUrl) return assetUrl;
+    if (activity.type !== "playing") return null;
+    return catalogUrl ?? data?.iconUrl ?? null;
+  }, [activity.type, assetUrl, broken, catalogUrl, data?.iconUrl]);
 
   if (url) {
     return (

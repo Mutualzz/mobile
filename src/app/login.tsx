@@ -197,6 +197,7 @@ const Login = () => {
                   returnKeyType="next"
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   required
+                  testID="login-username"
                 />
               )}
             />
@@ -215,6 +216,7 @@ const Login = () => {
                     returnKeyType="done"
                     onSubmitEditing={() => Form.handleSubmit()}
                     required
+                    testID="login-password"
                   />
                   <Pressable
                     disabled={forgettingPassword}
@@ -245,6 +247,8 @@ const Login = () => {
                   onPress={Form.handleSubmit}
                   disabled={isSubmitting || isPending}
                   style={{ marginTop: 8 }}
+                  testID="login-submit"
+                  accessibilityLabel="login-submit"
                 >
                   {isSubmitting ? t("actions.submitting") : t("actions.login")}
                 </Button>

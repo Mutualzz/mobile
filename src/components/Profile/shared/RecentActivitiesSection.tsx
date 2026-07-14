@@ -1,14 +1,15 @@
+import { ActivityIcon } from "@components/Presence/ActivityIcon";
 import { useAppStore } from "@hooks/useStores";
 import type { PresenceActivity, PresenceActivityAssets } from "@mutualzz/types";
 import { Stack, Typography, useTheme } from "@mutualzz/ui-native";
+import {
+  activityTypeLabelKey,
+  formatActivityPrimary,
+  formatActivitySecondary,
+} from "@utils/activityDisplay";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import {
-  GameControllerIcon,
-  MusicNotesIcon,
-  SpotifyLogoIcon,
-} from "phosphor-react-native";
 import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Animated, View } from "react-native";
@@ -26,6 +27,18 @@ type RecentActivityDto = {
   startedAt: number | null;
   endedAt: number;
 };
+
+function toPresenceActivity(row: RecentActivityDto): PresenceActivity {
+  return {
+    type: row.type,
+    name: row.name,
+    ...(row.applicationId ? { applicationId: row.applicationId } : {}),
+    ...(row.details ? { details: row.details } : {}),
+    ...(row.state ? { state: row.state } : {}),
+    ...(row.url ? { url: row.url } : {}),
+    ...(row.assets ? { assets: row.assets } : {}),
+  };
+}
 
 function activityIdentity(activity: {
   type: string;
@@ -126,8 +139,10 @@ export const RecentActivitiesSection = ({
   showEmpty = false,
 }: Props) => {
   const { t } = useTranslation("settings");
+  const { t: tCommon } = useTranslation("common");
   const { theme } = useTheme();
   const app = useAppStore();
+  const iconSize = isCompact ? 18 : 22;
 
   const { data, isPending } = useQuery({
     queryKey: ["user-recent-activities", userId],
@@ -192,13 +207,9 @@ export const RecentActivitiesSection = ({
     <View style={{ gap: isCompact ? 4 : 6 }}>
       {header}
       {recent.map((row) => {
-        const Icon =
-          row.type === "listening"
-            ? row.name.toLowerCase().includes("spotify")
-              ? SpotifyLogoIcon
-              : MusicNotesIcon
-            : GameControllerIcon;
-        const secondary = [row.details, row.state].filter(Boolean).join(" · ");
+        const activity = toPresenceActivity(row);
+        const typeKey = activityTypeLabelKey(activity.type);
+        const secondary = formatActivitySecondary(activity);
         const duration = formatDuration(row.startedAt, row.endedAt);
         const durationKey =
           row.type === "listening"
@@ -211,17 +222,33 @@ export const RecentActivitiesSection = ({
             alignItems="center"
             style={{ gap: 8 }}
           >
-            <Icon
-              size={isCompact ? 18 : 22}
-              weight="fill"
+            <ActivityIcon
+              activity={activity}
+              size={iconSize}
               color={theme.colors.primary}
+              fetchFallback
+              borderRadius={6}
             />
             <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+              {typeKey ? (
+                <Typography
+                  level="body-xs"
+                  textColor="muted"
+                  style={{
+                    textTransform: "uppercase",
+                    letterSpacing: 0.4,
+                    fontWeight: "700",
+                    fontSize: 10,
+                  }}
+                >
+                  {tCommon(typeKey)}
+                </Typography>
+              ) : null}
               <Typography
                 level={isCompact ? "body-xs" : "body-sm"}
                 weight="bold"
               >
-                {row.name}
+                {formatActivityPrimary(activity)}
               </Typography>
               {secondary ? (
                 <Typography level="body-xs" textColor="muted" truncate="single">

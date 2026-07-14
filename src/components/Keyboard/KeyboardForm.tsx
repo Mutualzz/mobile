@@ -11,10 +11,6 @@ type Props = PropsWithChildren<{
   contentContainerStyle?: KeyboardAwareScrollViewProps["contentContainerStyle"];
 }>;
 
-/**
- * Full-screen form layout (auth, settings). One keyboard layer: scroll inputs
- * into view without stacking KeyboardAvoidingView on top.
- */
 export function KeyboardForm({
   children,
   style,
@@ -27,8 +23,8 @@ export function KeyboardForm({
 
   return (
     <KeyboardAwareScrollView
-      style={[{ flex: 1 }, style]}
-      contentContainerStyle={[{ flexGrow: 1 }, contentContainerStyle]}
+      style={{ flex: 1 }}
+      contentContainerStyle={[{ flexGrow: 1 }, style, contentContainerStyle]}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >

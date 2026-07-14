@@ -5,7 +5,6 @@ import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import {
   Image,
-  StyleSheet,
   View,
   type StyleProp,
   type ViewStyle,
@@ -77,7 +76,7 @@ export const BrandLoader = observer(
             height: size,
             borderRadius: size / 2,
             backgroundColor: bg,
-            overflow: "visible",
+            overflow: "hidden",
           },
           style,
         ]}
@@ -111,7 +110,13 @@ export const BrandLoader = observer(
         />
         <Image
           source={pentagram}
-          style={StyleSheet.absoluteFillObject}
+          style={{
+            position: "absolute",
+            width: size,
+            height: size,
+            left: 0,
+            top: 0,
+          }}
           resizeMode="contain"
         />
       </View>

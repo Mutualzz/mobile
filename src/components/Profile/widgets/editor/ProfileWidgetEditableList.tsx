@@ -18,13 +18,16 @@ import { CaretDownIcon, CaretUpIcon, XIcon } from "phosphor-react-native";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Pressable,
   StyleSheet,
   View,
   type LayoutChangeEvent,
   type ViewStyle,
 } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import {
+  Gesture,
+  GestureDetector,
+  Pressable,
+} from "react-native-gesture-handler";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -192,6 +195,7 @@ function DraggableWidgetTile({
     () =>
       Gesture.Pan()
         .enabled(editMode)
+        .activateAfterLongPress(LONG_PRESS_MS)
         .onBegin(() => {
           dragging.value = 1;
         })

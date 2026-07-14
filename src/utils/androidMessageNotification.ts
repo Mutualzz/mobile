@@ -74,7 +74,6 @@ export function ensureAndroidMessageChannel() {
     await Notifications.setNotificationChannelAsync(ANDROID_MESSAGE_CHANNEL_ID, {
       name,
       importance: Notifications.AndroidImportance.HIGH,
-      sound: "default",
       enableVibrate: true,
     });
 

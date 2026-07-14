@@ -43,7 +43,10 @@ const IndexRoute = () => {
           }}
         >
           <ButtonGroup spacing={10} size="lg">
-            <Button onPress={() => router.replace("/login")}>
+            <Button
+              testID="landing-login"
+              onPress={() => router.replace("/login")}
+            >
               {t("landing.login")}
             </Button>
             <Button

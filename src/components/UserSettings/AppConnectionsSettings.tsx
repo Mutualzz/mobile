@@ -19,7 +19,7 @@ import type { IconProps } from "phosphor-react-native";
 
 type ConnectionProvider = "github" | "twitch" | "steam";
 
-type ProviderConnectionDto = {
+interface ProviderConnectionDto {
   provider: ConnectionProvider;
   available: boolean;
   connected: boolean;
@@ -27,7 +27,7 @@ type ProviderConnectionDto = {
   externalUrl: string | null;
   shareOnProfile: boolean;
   expired?: boolean;
-};
+}
 
 type SpotifyConnectionDto =
   | { connected: false; available: boolean }
@@ -79,7 +79,10 @@ export const AppConnectionsSettings = observer(() => {
       await Linking.openURL(url);
     },
     onError: () => {
-      Alert.alert(t("connections.connectFailed"), t("connections.connectError"));
+      Alert.alert(
+        t("connections.connectFailed"),
+        t("connections.connectError"),
+      );
     },
   });
 
@@ -180,7 +183,14 @@ export const AppConnectionsSettings = observer(() => {
             gap: 12,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              flex: 1,
+            }}
+          >
             <SpotifyLogoIcon size={24} weight="fill" />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Typography level="body-md" weight="bold">

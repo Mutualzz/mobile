@@ -152,7 +152,15 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
             </Box>
           ) : (
             <Pressable onPress={handlePickIcon} disabled={saving}>
-              <Box style={{ position: "relative", alignItems: "center" }}>
+              <Box
+                style={{
+                  position: "relative",
+                  width: spaceIconSize,
+                  height: spaceIconSize,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
                 <SpaceIcon
                   space={removeIcon ? null : space}
                   size={spaceIconSize}
@@ -160,9 +168,15 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
                 <Box
                   style={{
                     position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 4,
+                    borderRadius: spaceIconSize / 2,
+                    backgroundColor: "rgba(0,0,0,0.45)",
                   }}
                 >
                   <CameraIcon
@@ -170,7 +184,11 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
                     color={theme.typography.colors.primary}
                     weight="fill"
                   />
-                  <Typography level="body-xs" weight={700}>
+                  <Typography
+                    level="body-xs"
+                    weight={700}
+                    style={{ textAlign: "center" }}
+                  >
                     {tSettings("account.change")}
                   </Typography>
                 </Box>
