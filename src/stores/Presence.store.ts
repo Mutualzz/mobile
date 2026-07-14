@@ -26,6 +26,11 @@ export class PresenceStore {
 
     clear() {
         this.presences.clear();
+        this.scheduledStatus = null;
+        if (this.scheduledTimer) {
+            clearTimeout(this.scheduledTimer);
+            this.scheduledTimer = null;
+        }
     }
 
     upsert(userId: Snowflake, presence: PresencePayload) {

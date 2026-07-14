@@ -28,6 +28,7 @@ import type { Message } from "@stores/objects/Message";
 import type { Expression } from "@stores/objects/Expression";
 import type { GifResult } from "@utils/gifs";
 import { resolveGifSendUrl } from "@utils/gifs";
+import { formatRestError } from "@utils/restError";
 import { expandCustomEmojiShortcodes } from "@utils/markdown/composerQueries";
 import {
   findCustomEmojiByLabel,
@@ -348,6 +349,7 @@ export const MessageInput = observer(({ channel }: Props) => {
         expressions: stickerList.map((sticker) => sticker.toJSON()),
         repliedToId,
         repliedTo: repliedToPayload,
+        mentionReply,
       });
 
       app.setReplyingTo(null);
@@ -396,12 +398,7 @@ export const MessageInput = observer(({ channel }: Props) => {
         }
         app.queue.remove(nonce);
       } catch (e) {
-        const error =
-          e instanceof Error
-            ? e.message
-            : typeof e === "string"
-              ? e
-              : t("unknownError");
+        const error = formatRestError(e, t("unknownError"));
 
         msg.fail(error);
 
@@ -739,6 +736,7 @@ export const MessageInput = observer(({ channel }: Props) => {
           color="neutral"
           onPress={() => void pickAttachments()}
           accessibilityLabel={t("composer.addAttachment")}
+          hitSlop={4}
           disabled={
             denySendingMessages ||
             !canAttachFiles ||
@@ -772,6 +770,7 @@ export const MessageInput = observer(({ channel }: Props) => {
                 color="neutral"
                 onPress={() => setPickerOpen(true)}
                 accessibilityLabel={t("composer.openExpressionPicker")}
+                hitSlop={4}
               >
                 <SmileyIcon size={22} weight="fill" />
               </IconButton>
@@ -793,6 +792,7 @@ export const MessageInput = observer(({ channel }: Props) => {
           color="primary"
           onPress={() => void sendMessage()}
           disabled={!canSubmit() || saving || denySendingMessages}
+          hitSlop={4}
         >
           {editingMessage ? (
             <CheckIcon size={20} weight="bold" />

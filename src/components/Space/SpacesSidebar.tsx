@@ -45,6 +45,8 @@ const SidebarSpace = observer(
 
             app.spaces.setActive(space.id);
             app.spaces.setMostRecentSpace(space.id);
+            app.channels.setActive();
+            app.setSpacesDrawerOpen(true);
             router.replace(`/spaces/${space.id}`);
           }}
           accessibilityRole="button"

@@ -51,17 +51,23 @@ export function MessageGifEmbed({
     useEffect(() => {
         if (!sizingUri) return;
 
+        let cancelled = false;
         Image.getSize(
             sizingUri,
             (width, height) => {
+                if (cancelled) return;
                 setDisplaySize(
                     computeContainedSize(width, height, maxWidth, maxHeight),
                 );
             },
             () => {
+                if (cancelled) return;
                 setDisplaySize(computeContainedSize(0, 0, maxWidth, maxHeight));
             },
         );
+        return () => {
+            cancelled = true;
+        };
     }, [sizingUri, maxWidth, maxHeight]);
 
     const handleVideoMessage = useCallback(

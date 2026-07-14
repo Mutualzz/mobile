@@ -12,6 +12,10 @@ import {
 } from "@utils/pushNotificationCategories";
 import { resolveNotificationHref } from "@utils/pushNotificationNavigation";
 import {
+  consumePendingNavigation,
+  setPendingNavigation,
+} from "@utils/pendingNavigation";
+import {
   registerPushToken,
   sendNotificationReply,
   unregisterPushToken,
@@ -25,8 +29,6 @@ Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
     const data = notification.request.content.data;
 
-    // Android message pushes are data-only and rendered via Notifee
-    // (foreground listener / background task). Suppress Expo's default UI.
     if (
       Platform.OS === "android" &&
       data &&
@@ -72,8 +74,12 @@ async function navigateToNotificationTarget(
     try {
       await app.channels.resolve(channelId);
     } catch {
-      // Route sync will retry once gateway data arrives.
     }
+  }
+
+  if (!app.isReady) {
+    setPendingNavigation(href);
+    return;
   }
 
   navigate(href);
@@ -190,8 +196,6 @@ export function usePushNotifications(enabled: boolean) {
         return;
       }
 
-      // Android killed-state taps open the FCM/Expo system notification, not
-      // a Notifee one — same cold-start path as iOS.
       const response = await Notifications.getLastNotificationResponseAsync();
       if (!response) return;
 
@@ -203,10 +207,18 @@ export function usePushNotifications(enabled: boolean) {
         navigateRef.current,
         appRef.current,
       );
+      await Notifications.clearLastNotificationResponseAsync();
     };
 
     void openInitialNotification();
   }, [enabled]);
+
+  useEffect(() => {
+    if (!enabled || !app.isReady) return;
+
+    const href = consumePendingNavigation();
+    if (href) navigateRef.current(href);
+  }, [enabled, app.isReady]);
 
   useEffect(() => {
     if (!enabled || !app.token) return;

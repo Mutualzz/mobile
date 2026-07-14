@@ -41,9 +41,10 @@ import { QueuedMessage } from "@stores/objects/QueuedMessage";
 interface Props {
   message: MessageLike;
   header?: boolean;
+  highlighted?: boolean;
 }
 
-export const Message = observer(({ message, header }: Props) => {
+export const Message = observer(({ message, header, highlighted }: Props) => {
   const app = useAppStore();
   const { t } = useTranslation("chat");
   const { theme } = useTheme();
@@ -80,7 +81,7 @@ export const Message = observer(({ message, header }: Props) => {
   const repliedMessage =
     message.type === MessageType.Reply ? (message.repliedTo ?? null) : null;
 
-  const isHighlighted = isSent && app.highlightedMessageId === message.id;
+  const isHighlighted = Boolean(highlighted);
 
   const handleJumpToReplied = () => {
     if (!repliedMessage?.id || !message.channelId) return;

@@ -107,7 +107,7 @@ export const CodedLinkPreview = observer(({ link }: Props) => {
               {link.space?.name ?? tChat("unknownSpace")}
             </Typography>
             {(memberCount != null && memberCount > 0) ||
-              (onlineCount != null && onlineCount > 0 && (
+            (onlineCount != null && onlineCount > 0) ? (
                 <Typography level="body-xs" textColor="secondary">
                   {onlineCount != null && onlineCount > 0
                     ? `${onlineCount.toLocaleString()} ${tChat("online")}`
@@ -122,7 +122,7 @@ export const CodedLinkPreview = observer(({ link }: Props) => {
                     ? tSpace("roles.memberCount", { count: memberCount })
                     : ""}
                 </Typography>
-              ))}
+              ) : null}
           </View>
         </View>
         <Typography level="body-xs" textColor="secondary">

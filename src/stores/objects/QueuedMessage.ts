@@ -1,5 +1,6 @@
 import type { APIExpression, APIUser, MessageType, Snowflake } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
+import { formatRestError } from "@utils/restError";
 import { action, makeObservable, observable } from "mobx";
 import type { Expression } from "./Expression";
 import { MessageBase, messageBaseMobxAnnotations } from "./MessageBase";
@@ -23,6 +24,7 @@ export interface QueuedMessageData {
     expressions?: APIExpression[];
     repliedToId?: Snowflake | null;
     repliedTo?: import("@mutualzz/types").APIMessage;
+    mentionReply?: boolean;
 }
 
 export class QueuedMessage extends MessageBase {
@@ -30,6 +32,7 @@ export class QueuedMessage extends MessageBase {
     status: QueuedMessageStatus;
     error?: string;
     expressions = observable.array<Expression>();
+    mentionReply = true;
 
     abortCallback?: () => void;
 
@@ -46,16 +49,21 @@ export class QueuedMessage extends MessageBase {
         this.status = QueuedMessageStatus.Sending;
         this.error = undefined;
         this.abortCallback = undefined;
+        this.mentionReply = data.mentionReply ?? true;
         this.expressions = observable.array<Expression>(
             data.expressions ? app.expressions.addAll(data.expressions) : [],
         );
 
-        makeObservable<QueuedMessage, "_author" | "_space" | "_channel" | "_repliedTo">(this, {
+        makeObservable<
+            QueuedMessage,
+            "_author" | "_space" | "_channel" | "_repliedTo"
+        >(this, {
             ...messageBaseMobxAnnotations,
             progress: observable,
             status: observable,
             error: observable,
             expressions: observable,
+            mentionReply: observable,
             abortCallback: observable.ref,
             updateProgress: action.bound,
             setAbortCallback: action.bound,
@@ -96,7 +104,12 @@ export class QueuedMessage extends MessageBase {
             content: this.content ?? "",
             nonce: this.id,
             ...(expressionIds.length ? { expressionIds } : {}),
-            ...(this.repliedToId ? { repliedToId: this.repliedToId } : {}),
+            ...(this.repliedToId
+                ? {
+                      repliedToId: this.repliedToId,
+                      mentionReply: this.mentionReply,
+                  }
+                : {}),
         };
 
         try {
@@ -106,13 +119,12 @@ export class QueuedMessage extends MessageBase {
             }
             this.app.queue.remove(this.id);
         } catch (e) {
-            const error =
-                e instanceof Error
-                    ? e.message
-                    : typeof e === "string"
-                      ? e
-                      : i18n.t("errors.unknown", { ns: "common" });
-            this.fail(error);
+            this.fail(
+                formatRestError(
+                    e,
+                    i18n.t("errors.unknown", { ns: "common" }),
+                ),
+            );
         }
     }
 

@@ -1,24 +1,36 @@
-import * as secureStorage from "expo-secure-store";
+import * as SecureStore from "expo-secure-store";
+
+const TRACKED_KEYS = new Set<string>();
+
+function track(key: string) {
+    TRACKED_KEYS.add(key);
+}
 
 export const secureStorageAdapter: Storage = {
-    getItem: (key: string) => secureStorage.getItem(key),
+    getItem: (key: string) => {
+        track(key);
+        return SecureStore.getItem(key);
+    },
     setItem: (key: string, value: string) => {
-        secureStorage.setItem(key, value);
+        track(key);
+        SecureStore.setItem(key, value);
         return value;
     },
     removeItem: (key: string) => {
-        secureStorage.deleteItemAsync(key);
+        TRACKED_KEYS.delete(key);
+        void SecureStore.deleteItemAsync(key);
     },
     clear: () => {
-        Object.keys(secureStorage).forEach((key) => {
-            secureStorage.deleteItemAsync(key);
-        });
+        for (const key of Array.from(TRACKED_KEYS)) {
+            TRACKED_KEYS.delete(key);
+            void SecureStore.deleteItemAsync(key);
+        }
     },
     key: (index: number) => {
-        const keys = Object.keys(secureStorage);
+        const keys = Array.from(TRACKED_KEYS);
         return keys[index] ?? null;
     },
     get length() {
-        return Object.keys(secureStorage).length;
+        return TRACKED_KEYS.size;
     },
 };

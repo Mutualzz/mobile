@@ -131,9 +131,7 @@ export class Channel {
 
     try {
       const local = Array.from(this.messages.all || []);
-      const queued = Array.from(this.app.queue.messages.values()).filter(
-        (m) => m.channelId === this.id,
-      );
+      const queued = this.app.queue.get(this.id);
 
       const combined: (Message | QueuedMessage)[] = [...local, ...queued];
 

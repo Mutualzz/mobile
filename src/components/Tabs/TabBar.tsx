@@ -17,6 +17,7 @@ const TabBar = ({ children }: Props) => {
     <Paper
       color="neutral"
       elevation={0}
+      pointerEvents="box-none"
       style={{
         position: "absolute",
         bottom: 0,

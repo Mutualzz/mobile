@@ -265,6 +265,7 @@ export class GatewayStore {
       this.url = newUrl.href;
     }
 
+    this.teardownSocket();
     this.shouldReconnect = true;
     this.logger.debug(`[Connect] Gateway URL ${this.url}`);
     this.connectionStartTime = Date.now();
@@ -291,9 +292,12 @@ export class GatewayStore {
     if (this.socket) {
       this.readyState = GatewayStatus.CLOSING;
       this.logger.debug(`[Disconnect] ${this.url}`);
-      this.socket.close(code, reason);
+      try {
+        this.socket.close(code, reason);
+      } catch {}
     }
 
+    this.teardownSocket();
     this.url = undefined;
     this.reset();
   }
@@ -1067,8 +1071,6 @@ export class GatewayStore {
 
   private handleInvalidSession = (resumable: boolean) => {
     this.stopHeartbeater();
-    this.socket = null;
-    this.readyState = GatewayStatus.CLOSED;
     this.app.setGatewayReady(false);
 
     this.logger.debug(`Received invalid session; Can Resume: ${resumable}`);
@@ -1082,12 +1084,9 @@ export class GatewayStore {
   };
 
   private handleReconnect() {
-    this.stopHeartbeater();
-    this.socket = null;
-    this.readyState = GatewayStatus.CLOSED;
     this.app.setGatewayReady(false);
-
     this.logger.debug(`[Gateway] -> Reconnect`);
+    this.teardownSocket();
     this.startReconnect();
   }
 
@@ -1125,6 +1124,12 @@ export class GatewayStore {
 
   private handleClose = (code?: number, reason?: string) => {
     this.stopHeartbeater();
+    if (this.socket) {
+      this.socket.onopen = null;
+      this.socket.onmessage = null;
+      this.socket.onerror = null;
+      this.socket.onclose = null;
+    }
     this.socket = null;
     this.readyState = GatewayStatus.CLOSED;
     this.app.setGatewayReady(false);
@@ -1157,6 +1162,9 @@ export class GatewayStore {
     this.sequence = 0;
     this.readyState = GatewayStatus.CLOSED;
     this.backgroundPresenceStatus = null;
+    this.lazyRequestChannels.clear();
+    this.memberListRanges.clear();
+    this.subscribedUserIds.clear();
     this.stopPresenceLoop();
     this.clearResumeState();
   };
@@ -1204,12 +1212,7 @@ export class GatewayStore {
     );
 
     this.app.setGatewayReady(false);
-    this.socket?.close(4009);
-
-    this.stopHeartbeater();
-    this.socket = null;
-    this.readyState = GatewayStatus.CLOSED;
-
+    this.teardownSocket();
     this.startReconnect();
   };
 
@@ -1560,11 +1563,12 @@ export class GatewayStore {
   }) => {
     const readState = this.app.readStates.get(payload.channelId);
     if (readState) {
-      readState.update({
+      readState.mergeFromServer({
+        channelId: payload.channelId,
         lastMessageId: payload.lastMessageId,
         lastAckedId: payload.lastAckedId ?? payload.lastMessageId,
         mentionCount: payload.mentionCount ?? 0,
-      });
+      } as any);
     } else {
       this.app.readStates.updateLocal(payload.channelId, payload.lastMessageId);
     }
@@ -1581,11 +1585,12 @@ export class GatewayStore {
     for (const state of payload) {
       const readState = this.app.readStates.get(state.channelId);
       if (readState) {
-        readState.update({
+        readState.mergeFromServer({
+          channelId: state.channelId,
           lastMessageId: state.lastMessageId,
           lastAckedId: state.lastAckedId ?? state.lastMessageId,
           mentionCount: state.mentionCount ?? 0,
-        });
+        } as any);
       } else {
         this.app.readStates.updateLocal(state.channelId, state.lastMessageId);
       }

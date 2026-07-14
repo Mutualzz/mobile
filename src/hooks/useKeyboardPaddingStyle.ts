@@ -19,11 +19,9 @@ export function useKeyboardPaddingStyle(extraPadding?: SharedValue<number>) {
   return useAnimatedStyle(() => {
     const keyboard = Math.max(0, -height.value);
     const extra = extraPadding?.value ?? 0;
-    // Only add footer clearance while the keyboard is up — when closed the
-    // footer sits in normal document flow below the list.
     const footerClearance = keyboard > 0 ? extra : 0;
     return {
-      paddingBottom: keyboard + footerClearance,
+      paddingBottom: footerClearance > 0 ? keyboard + footerClearance : 0,
     };
   });
 }

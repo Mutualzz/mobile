@@ -135,6 +135,7 @@ export class VoiceStore {
             });
             this.abortAndTeardown();
             this.stopKeepAlive();
+            this.startJoinTimeout();
             return;
           }
           const isSuperseded =
@@ -521,6 +522,12 @@ export class VoiceStore {
       this.currentVoiceTarget?.spaceId === (target.spaceId ?? null) &&
       this.currentVoiceTarget?.channelId === target.channelId;
     if (isSame && this.connectionStatus !== "failed") return;
+
+    if (this.currentVoiceTarget && !isSame) {
+      this.clearJoinTimeout();
+      this.abortAndTeardown();
+      this.stopKeepAlive();
+    }
 
     await this.setupDevices(true);
 

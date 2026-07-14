@@ -57,7 +57,16 @@ export const MarkdownRenderer = observer(
       return instance;
     }, []);
 
-    const tokens = useMemo(() => md.parse(value ?? "", {}), [md, value]);
+    const tokens = useMemo(() => {
+      const raw = value ?? "";
+      const capped =
+        raw.length > 8_000 ? `${raw.slice(0, 8_000)}\n…` : raw;
+      try {
+        return md.parse(capped, {});
+      } catch {
+        return md.parse(capped.slice(0, 500), {});
+      }
+    }, [md, value]);
 
     return (
       <Paper

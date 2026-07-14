@@ -237,8 +237,19 @@ export class AppStore {
     }
   }
 
-  logout() {
+  async logout() {
+    try {
+      await this.rest.post("auth/logout");
+    } catch {
+    }
+
     void clearRegisteredPushTokens(this.rest).catch(() => undefined);
+
+    try {
+      await this.voice.leave();
+    } catch {
+    }
+
     void this.gateway.disconnect();
 
     this.token = null;
@@ -264,6 +275,16 @@ export class AppStore {
     this.navigation.clear();
     this.profiles.clear();
     this.posts.clear();
+    this.drafts.clear();
+    this.bridgeChat.clearAll();
+    this.replyingTo = null;
+    this.jumpToMessage = null;
+    this.highlightedMessageId = null;
+    this.mode = null;
+    this.spacesDrawerOpen = true;
+    this.dmDrawerOpen = true;
+    void this.queryClient.cancelQueries();
+    this.queryClient.clear();
     secureStorageAdapter.clear();
   }
 

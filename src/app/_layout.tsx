@@ -38,12 +38,23 @@ SplashScreen.preventAutoHideAsync();
 
 const errorLogger = new Logger({ tag: "ErrorBoundary" });
 
-export function ErrorBoundary({ error }: ErrorBoundaryProps) {
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const app = useAppStore();
+
   useEffect(() => {
     errorLogger.error("Uncaught render error", error);
   }, [error]);
 
-  return <AppCrashFallback />;
+  return (
+    <AppCrashFallback
+      onReload={() => {
+        retry();
+      }}
+      onLogout={() => {
+        void app.logout().finally(() => retry());
+      }}
+    />
+  );
 }
 
 const Root = () => {
@@ -53,6 +64,17 @@ const Root = () => {
   });
 
   usePushNotifications(!!app.token);
+
+  useEffect(() => {
+    const onUnauthorized = () => {
+      if (!app.token) return;
+      void app.logout();
+    };
+    app.rest.on("unauthorized", onUnauthorized);
+    return () => {
+      app.rest.off("unauthorized", onUnauthorized);
+    };
+  }, [app]);
 
   useEffect(() => {
     (async () => {

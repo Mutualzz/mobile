@@ -25,17 +25,27 @@ const RelationshipRow = ({
   if (!user) return null;
 
   return (
-    <UserProfileTrigger user={user}>
-      <Paper variant="plain" style={rowStyle}>
-        <UserAvatar user={user} size="md" />
-        <Typography level="body-sm" style={{ flex: 1 }} truncate="single">
-          {user.displayName}
-        </Typography>
-        <Box style={{ flexDirection: "row", gap: 6, flexShrink: 0 }}>
-          {actions}
+    <Paper variant="plain" style={rowStyle}>
+      <UserProfileTrigger user={user}>
+        <Box
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          <UserAvatar user={user} size="md" />
+          <Typography level="body-sm" style={{ flex: 1 }} truncate="single">
+            {user.displayName}
+          </Typography>
         </Box>
-      </Paper>
-    </UserProfileTrigger>
+      </UserProfileTrigger>
+      <Box style={{ flexDirection: "row", gap: 6, flexShrink: 0 }}>
+        {actions}
+      </Box>
+    </Paper>
   );
 };
 

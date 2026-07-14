@@ -80,12 +80,9 @@ export class MessageStore {
     }
 
     get groups(): MessageGroup[] {
-        // Sort messages by timestamp in descending order (most recent first)
         const sortedMessages: MessageLike[] = [
             ...this.messages,
-            ...Array.from(this.app.queue.messages.values()).filter(
-                (x) => x.channelId === this.channelId,
-            ),
+            ...this.app.queue.get(this.channelId),
         ];
 
         return sortedMessages
@@ -104,11 +101,9 @@ export class MessageStore {
                         message.createdAt.getTime() <=
                         10 * 60 * 1000
                 ) {
-                    // add to last group
                     lastGroup.messages.push(message);
                     lastGroup.createdAt = message.createdAt;
                 } else {
-                    // create new group
                     groups.push({
                         author: message.author!,
                         messages: [message],

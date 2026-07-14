@@ -297,38 +297,60 @@ export const MessageList = observer(({ channel }: Props) => {
     [scrollToBottom],
   );
 
+  const highlightClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const scrollToMessage = useCallback(
     async (messageId: string) => {
       if (!channel?.id) return;
 
-      const findGroupIndex = () =>
-        listData.findIndex((group) =>
+      const findGroupIndexIn = (groups: MessageGroupType[]) =>
+        groups.findIndex((group) =>
           group.messages.some((message) => message.id === messageId),
         );
 
-      let index = findGroupIndex();
+      let index = findGroupIndexIn(listData);
       if (index < 0) {
         await channel.getMessages(false, 50, undefined, undefined, messageId);
-        index = findGroupIndex();
+        const refreshed = channel.messages.groups;
+        const nextList = refreshed ? [...refreshed].reverse() : [];
+        index = findGroupIndexIn(nextList);
+        if (index < 0) return;
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => resolve());
+        });
       }
 
       if (index < 0) return;
 
       const scroll = () => {
-        listRef.current?.scrollToIndex({
-          index,
-          animated: true,
-          viewPosition: 0.5,
-        });
+        try {
+          listRef.current?.scrollToIndex({
+            index,
+            animated: true,
+            viewPosition: 0.5,
+          });
+        } catch {
+          listRef.current?.scrollToEnd({ animated: true });
+        }
       };
 
       scroll();
       requestAnimationFrame(scroll);
+      if (highlightClearRef.current) clearTimeout(highlightClearRef.current);
       app.setHighlightedMessageId(messageId);
-      setTimeout(() => app.setHighlightedMessageId(null), 2000);
+      highlightClearRef.current = setTimeout(() => {
+        highlightClearRef.current = null;
+        app.setHighlightedMessageId(null);
+      }, 2000);
     },
     [app, channel, listData],
   );
+
+  useEffect(() => {
+    return () => {
+      if (highlightClearRef.current) clearTimeout(highlightClearRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const request = app.jumpToMessage;
@@ -351,7 +373,10 @@ export const MessageList = observer(({ channel }: Props) => {
 
   const handleKeyboardOpen = useCallback(() => {
     if (!isAtBottomRef.current) return;
-    scheduleScrollToBottom(true);
+    setTimeout(() => {
+      if (!isAtBottomRef.current) return;
+      scheduleScrollToBottom(true);
+    }, 80);
   }, [scheduleScrollToBottom]);
 
   useOnKeyboardOpen(handleKeyboardOpen);
@@ -410,14 +435,15 @@ export const MessageList = observer(({ channel }: Props) => {
       <MessageGroup
         key={`messageGroup-${group.messages[group.messages.length - 1].id}`}
         group={group}
+        highlightedMessageId={app.highlightedMessageId}
       />
     ),
-    [],
+    [app.highlightedMessageId],
   );
 
   const keyExtractor = useCallback(
     (group: MessageGroupType) =>
-      `message-group-${group.messages[group.messages.length - 1].id}`,
+      `message-group-${group.messages[0]?.id ?? group.createdAt.getTime()}`,
     [],
   );
 
@@ -452,6 +478,7 @@ export const MessageList = observer(({ channel }: Props) => {
         data={listData}
         renderItem={renderGroup}
         keyExtractor={keyExtractor}
+        extraData={app.highlightedMessageId}
         maintainVisibleContentPosition={{ startRenderingFromBottom: true }}
         drawDistance={ESTIMATED_GROUP_HEIGHT * 8}
         onContentSizeChange={() => {

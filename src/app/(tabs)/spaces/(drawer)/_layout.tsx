@@ -21,6 +21,8 @@ const SpacesDrawerLayout = () => {
     channelId?: string;
   }>();
   const lastSyncedChannelIdRef = useRef<string | undefined>(undefined);
+  const resolvingChannelIdRef = useRef<string | undefined>(undefined);
+  const channelFromRoute = channelId ? app.channels.get(channelId) : undefined;
 
   useEffect(() => {
     return () => {
@@ -37,6 +39,7 @@ const SpacesDrawerLayout = () => {
       const channel = app.channels.get(channelId);
       if (channel) {
         lastSyncedChannelIdRef.current = channelId;
+        resolvingChannelIdRef.current = undefined;
         const channelSpaceId = channel.spaceId;
 
         if (channelSpaceId && channelSpaceId !== app.spaces.activeId) {
@@ -52,11 +55,22 @@ const SpacesDrawerLayout = () => {
             app.gateway.onChannelOpen(channelSpaceId, channelId),
           );
         }
+        return;
+      }
+
+      if (resolvingChannelIdRef.current !== channelId) {
+        resolvingChannelIdRef.current = channelId;
+        void app.channels.resolve(channelId).catch(() => {
+          if (resolvingChannelIdRef.current === channelId) {
+            resolvingChannelIdRef.current = undefined;
+          }
+        });
       }
       return;
     }
 
     lastSyncedChannelIdRef.current = undefined;
+    resolvingChannelIdRef.current = undefined;
 
     if (spaceId && spaceId !== app.spaces.activeId) {
       app.spaces.setActive(spaceId);
@@ -66,7 +80,7 @@ const SpacesDrawerLayout = () => {
 
   useEffect(() => {
     syncSpaceAndChannel();
-  }, [syncSpaceAndChannel]);
+  }, [syncSpaceAndChannel, channelFromRoute?.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -84,8 +98,10 @@ const SpacesDrawerLayout = () => {
 
         if (!app.spacesDrawerOpen) {
           app.setSpacesDrawerOpen(true);
+          return true;
         }
-        return true;
+
+        return false;
       },
     );
     return () => subscription.remove();
@@ -107,7 +123,11 @@ const SpacesDrawerLayout = () => {
           <Box style={{ flex: 1, position: "relative" }}>
             <ChannelList />
             {activeSpace && (
-              <SpaceLockdownOverlay space={activeSpace} showMessage={false} />
+              <SpaceLockdownOverlay
+                space={activeSpace}
+                showMessage={false}
+                headerClearance={56}
+              />
             )}
           </Box>
         </Box>

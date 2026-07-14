@@ -123,7 +123,13 @@ export const BridgeChatView = observer(({ bridgeId }: Props) => {
   }, [hubConnected, flushQueue]);
 
   const loadOlder = useCallback(async () => {
-    if (loadingOlderRef.current || !app.bridgeChat.hasMore(bridgeId)) return;
+    if (
+      loadingOlderRef.current ||
+      !historyQuery.isSuccess ||
+      !app.bridgeChat.hasMore(bridgeId)
+    ) {
+      return;
+    }
     const oldest = entries[0];
     if (!oldest) return;
     loadingOlderRef.current = true;
@@ -133,11 +139,10 @@ export const BridgeChatView = observer(({ bridgeId }: Props) => {
       );
       app.bridgeChat.prepend(bridgeId, older);
     } catch {
-      // ignore
     } finally {
       loadingOlderRef.current = false;
     }
-  }, [app, bridgeId, entries]);
+  }, [app, bridgeId, entries, historyQuery.isSuccess]);
 
   const send = () => {
     const content = message.trim();

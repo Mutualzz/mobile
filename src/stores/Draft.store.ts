@@ -84,4 +84,9 @@ export class DraftStore {
 
     this.themes.replace(this.themes.filter((t) => t.name !== theme.name));
   }
+
+  clear() {
+    this.themes.clear();
+    this.avatars.clear();
+  }
 }

@@ -2,6 +2,7 @@ import { Button } from "@components/Button";
 import { BrandLoader } from "@components/BrandLoader";
 import { useAppStore } from "@hooks/useStores";
 import { Box, ButtonGroup } from "@mutualzz/ui-native";
+import { peekPendingNavigation } from "@utils/pendingNavigation";
 import { useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
@@ -17,9 +18,10 @@ const IndexRoute = () => {
 
   useEffect(() => {
     if (!app.isReady || !app.settings || !app.token) return;
+    if (peekPendingNavigation()) return;
 
     router.replace(app.settings.preferredMode === "feed" ? "/feed" : "/spaces");
-  }, [app.isReady, app.settings, app.token]);
+  }, [app.isReady, app.settings, app.token, router]);
 
   return (
     <Box

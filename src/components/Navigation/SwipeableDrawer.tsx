@@ -13,8 +13,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 
-const EDGE_HIT_ZONE_WIDTH = 20;
+const EDGE_HIT_ZONE_WIDTH = 24;
 const OPEN_VELOCITY_THRESHOLD = 500;
+const CLOSE_VELOCITY_THRESHOLD = 500;
 
 interface Props extends PropsWithChildren {
   open: boolean;
@@ -36,6 +37,8 @@ export function SwipeableDrawer({
   const closedX = -width;
   const translateX = useSharedValue(open ? 0 : closedX);
   const startX = useSharedValue(open ? 0 : closedX);
+  const touchStartX = useSharedValue(0);
+  const touchStartY = useSharedValue(0);
 
   const lastCommittedOpenRef = useRef(open);
 
@@ -52,8 +55,32 @@ export function SwipeableDrawer({
 
   const edgeOpen = Gesture.Pan()
     .enabled(!open)
-    .activeOffsetX(10)
-    .failOffsetY([-15, 15])
+    .manualActivation(true)
+    .onTouchesDown((e, state) => {
+      const touch = e.allTouches[0];
+      if (!touch || touch.x > EDGE_HIT_ZONE_WIDTH) {
+        state.fail();
+        return;
+      }
+      touchStartX.value = touch.x;
+      touchStartY.value = touch.y;
+    })
+    .onTouchesMove((e, state) => {
+      const touch = e.allTouches[0];
+      if (!touch) {
+        state.fail();
+        return;
+      }
+      const dx = touch.x - touchStartX.value;
+      const dy = touch.y - touchStartY.value;
+      if (Math.abs(dy) > 16) {
+        state.fail();
+        return;
+      }
+      if (dx > 10) {
+        state.activate();
+      }
+    })
     .onStart(() => {
       startX.value = translateX.value;
     })
@@ -73,8 +100,8 @@ export function SwipeableDrawer({
 
   const dragClose = Gesture.Pan()
     .enabled(open)
-    .activeOffsetX(-10)
-    .failOffsetY([-15, 15])
+    .activeOffsetX(-12)
+    .failOffsetY([-16, 16])
     .onStart(() => {
       startX.value = translateX.value;
     })
@@ -87,7 +114,7 @@ export function SwipeableDrawer({
     .onEnd((e) => {
       const shouldOpen =
         translateX.value > closedX + width * 0.6 &&
-        e.velocityX > -OPEN_VELOCITY_THRESHOLD;
+        e.velocityX > -CLOSE_VELOCITY_THRESHOLD;
       translateX.value = withTiming(shouldOpen ? 0 : closedX);
       scheduleOnRN(commit, shouldOpen);
     });
@@ -100,53 +127,43 @@ export function SwipeableDrawer({
     transform: [{ translateX: translateX.value + width }],
   }));
 
+  const peekWidth = Math.max(0, windowWidth - width);
+
   return (
     <View style={{ flex: 1 }}>
-      <Animated.View
-        style={[
-          {
-            position: "absolute",
-            top: 0,
-            bottom: 0,
-            left: 0,
-            width,
-          },
-          drawerStyle,
-        ]}
-      >
-        {drawerContent}
-      </Animated.View>
-
       <GestureDetector gesture={dragClose}>
+        <Animated.View
+          style={[
+            {
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width,
+            },
+            drawerStyle,
+          ]}
+        >
+          {drawerContent}
+        </Animated.View>
+      </GestureDetector>
+
+      <GestureDetector gesture={edgeOpen}>
         <Animated.View style={[{ flex: 1 }, contentStyle]}>
           {children}
           <Pressable
-            pointerEvents={open ? "auto" : "none"}
+            pointerEvents={open && peekWidth > 0 ? "auto" : "none"}
             style={{
               position: "absolute",
               top: 0,
               bottom: 0,
               right: 0,
-              width: Math.max(0, windowWidth - width),
+              width: peekWidth,
             }}
             onPress={() => commit(false)}
           />
         </Animated.View>
       </GestureDetector>
-
-      {!open && (
-        <GestureDetector gesture={edgeOpen}>
-          <View
-            style={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: EDGE_HIT_ZONE_WIDTH,
-            }}
-          />
-        </GestureDetector>
-      )}
     </View>
   );
 }

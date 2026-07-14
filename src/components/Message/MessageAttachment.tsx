@@ -1,9 +1,10 @@
 import { Paper } from "@components/Paper";
 import type { APIAttachment } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
+import { Image } from "expo-image";
 import { FileIcon } from "phosphor-react-native";
 import { useTranslation } from "react-i18next";
-import { Image, Linking, Pressable, useWindowDimensions } from "react-native";
+import { Linking, Pressable, useWindowDimensions } from "react-native";
 import WebView from "react-native-webview";
 
 interface Props {
@@ -36,7 +37,8 @@ export function MessageAttachment({ attachment }: Props) {
           height: Math.min(mediaHeight, 420),
           borderRadius: 10,
         }}
-        resizeMode="cover"
+        contentFit="cover"
+        recyclingKey={attachment.id}
         accessibilityLabel={attachment.filename}
       />
     );

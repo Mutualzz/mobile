@@ -130,7 +130,10 @@ export const MessageActionSheet = observer(
 
     const handleCopy = async () => {
       if (!message.content) return;
-      await Clipboard.setStringAsync(message.content);
+      try {
+        await Clipboard.setStringAsync(message.content);
+      } catch {
+      }
       onClose();
     };
 

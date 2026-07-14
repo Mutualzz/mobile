@@ -1,5 +1,6 @@
 import type { Expression } from "@stores/objects/Expression";
-import { Image, Pressable } from "react-native";
+import { Image } from "expo-image";
+import { Pressable } from "react-native";
 
 interface Props {
     sticker: Expression;
@@ -19,7 +20,8 @@ export const MessageSticker = ({ sticker, size = 160 }: Props) => (
         <Image
             source={{ uri: sticker.url }}
             style={{ width: size, height: size }}
-            resizeMode="contain"
+            contentFit="contain"
+            recyclingKey={sticker.id}
         />
     </Pressable>
 );
