@@ -1,6 +1,7 @@
 import { Paper } from "@components/Paper";
 import type { APISpacePartial } from "@mutualzz/types";
-import { Avatar, type AvatarProps, Typography } from "@mutualzz/ui-native";
+import { resolveSize, type Size } from "@mutualzz/ui-core";
+import { Avatar, type AvatarProps, Typography, useTheme } from "@mutualzz/ui-native";
 import { Space } from "@stores/objects/Space";
 import { asAcronym } from "@utils/index";
 import { observer } from "mobx-react-lite";
@@ -11,8 +12,16 @@ interface Props extends AvatarProps {
   selected?: boolean;
 }
 
+const baseSizeMap: Record<Size, number> = {
+  sm: 32,
+  md: 40,
+  lg: 56,
+};
+
 export const SpaceIcon = observer(({ space, selected, size = 36, ...props }: Props) => {
   const { t } = useTranslation("chat");
+  const { theme } = useTheme();
+  const resolvedSize = resolveSize(theme, size, baseSizeMap);
   const iconUrl = space
     ? Space.constructIconUrl(space.id, space.icon?.startsWith("a_"), space.icon)
     : null;
@@ -21,7 +30,7 @@ export const SpaceIcon = observer(({ space, selected, size = 36, ...props }: Pro
   if (iconUrl)
     return (
       <Avatar
-        size={size}
+        size={resolvedSize}
         src={iconUrl}
         variant="plain"
         color="primary"
@@ -37,13 +46,13 @@ export const SpaceIcon = observer(({ space, selected, size = 36, ...props }: Pro
     <Paper
       style={{
         borderRadius: selected ? 15 : 10,
-        width: size,
-        height: size,
+        width: resolvedSize,
+        height: resolvedSize,
       }}
       transparency={25}
     >
       <Avatar
-        size={size}
+        size={resolvedSize}
         variant="plain"
         color="primary"
         shape={selected ? 15 : 10}
