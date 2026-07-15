@@ -83,6 +83,7 @@
       "@react-native-community/datetimepicker",
       "./plugins/withAnimatedWebp.js",
       "./plugins/withNotifeeMavenRepo.js",
+      "./plugins/withAndroidXWorkForce.js",
       [
         "expo-audio",
         {
