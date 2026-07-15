@@ -32,6 +32,7 @@ struct VoiceDeafenControlWidget: ControlWidget {
   }
 }
 
+@available(iOS 16.4, *)
 struct VoiceMuteControlIntent: AppIntent {
   static var title: LocalizedStringResource = "Toggle Mute"
   static var description = IntentDescription("Toggle mute in Mutualzz voice")
@@ -54,6 +55,7 @@ struct VoiceMuteControlIntent: AppIntent {
   }
 }
 
+@available(iOS 16.4, *)
 struct VoiceDeafenControlIntent: AppIntent {
   static var title: LocalizedStringResource = "Toggle Deafen"
   static var description = IntentDescription("Toggle deafen in Mutualzz voice")

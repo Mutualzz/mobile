@@ -1,6 +1,7 @@
 import AppIntents
 import Foundation
 
+@available(iOS 17.0, *)
 struct SpaceEntity: AppEntity {
   static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Space")
   static var defaultQuery = SpaceEntityQuery()
@@ -16,6 +17,7 @@ struct SpaceEntity: AppEntity {
   }
 }
 
+@available(iOS 17.0, *)
 struct SpaceEntityQuery: EntityQuery {
   func entities(for identifiers: [SpaceEntity.ID]) async throws -> [SpaceEntity] {
     let spaces = WidgetSnapshotStore.load()?.spaces ?? []
@@ -45,6 +47,7 @@ struct SpaceEntityQuery: EntityQuery {
   }
 }
 
+@available(iOS 17.0, *)
 struct DmEntity: AppEntity {
   static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Direct Message")
   static var defaultQuery = DmEntityQuery()
@@ -60,6 +63,7 @@ struct DmEntity: AppEntity {
   }
 }
 
+@available(iOS 17.0, *)
 struct DmEntityQuery: EntityQuery {
   func entities(for identifiers: [DmEntity.ID]) async throws -> [DmEntity] {
     let dms = WidgetSnapshotStore.load()?.dms ?? []
@@ -89,6 +93,7 @@ struct DmEntityQuery: EntityQuery {
   }
 }
 
+@available(iOS 17.0, *)
 struct PinnedSpaceIntent: WidgetConfigurationIntent {
   static var title: LocalizedStringResource = "Pinned Space"
   static var description = IntentDescription("Choose a Mutualzz space to pin")
@@ -97,6 +102,7 @@ struct PinnedSpaceIntent: WidgetConfigurationIntent {
   var space: SpaceEntity?
 }
 
+@available(iOS 17.0, *)
 struct PinnedDmIntent: WidgetConfigurationIntent {
   static var title: LocalizedStringResource = "Pinned DM"
   static var description = IntentDescription("Choose a DM to pin")
@@ -105,6 +111,7 @@ struct PinnedDmIntent: WidgetConfigurationIntent {
   var dm: DmEntity?
 }
 
+@available(iOS 17.0, *)
 struct MarkTopUnreadIntent: AppIntent {
   static var title: LocalizedStringResource = "Mark Top Unread as Read"
   static var description = IntentDescription("Mark the top unread Mutualzz channel as read")
@@ -119,6 +126,7 @@ struct MarkTopUnreadIntent: AppIntent {
   }
 }
 
+@available(iOS 17.0, *)
 struct OpenTopUnreadIntent: AppIntent {
   static var title: LocalizedStringResource = "Open Top Unread"
   static var description = IntentDescription("Open the top unread Mutualzz channel")
