@@ -1,9 +1,11 @@
 import { Logger } from "@mutualzz/logger";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { makeAutoObservable, observable, runInAction } from "mobx";
+import { makeAutoObservable, observable, reaction, runInAction } from "mobx";
 import { makePersistable } from "mobx-persist-store";
 import type { Snowflake, VoiceState as ApiVoiceState } from "@mutualzz/types";
+import { ImageFormat } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
+import { Space } from "@stores/objects/Space";
 import { VoiceState } from "@stores/objects/VoiceState";
 import { MediasoupSession } from "@stores/voice/MediasoupSession";
 import {
@@ -34,6 +36,8 @@ import {
   startOrUpdateVoiceLiveActivity,
   updateVoiceLiveActivity,
 } from "@utils/voiceLiveActivity";
+import { resolveVoiceLiveActivitySpaceIcon } from "@utils/voiceLiveActivityIcon";
+import { getVoiceLiveActivityThemeColors } from "@utils/voiceLiveActivityTheme";
 import { ensureVoiceMicPermission } from "@utils/voicePermissions";
 import { AppState, type AppStateStatus } from "react-native";
 import type { MediaStream } from "react-native-webrtc";
@@ -144,7 +148,21 @@ export class VoiceStore {
     bindVoiceLiveActivityHandlers({
       toggleMute: () => this.setMute(!this.selfMute),
       toggleDeaf: () => this.setDeaf(!this.selfDeaf),
+      disconnect: () => {
+        void this.leave();
+      },
     });
+    reaction(
+      () => ({
+        themeId:
+          this.app.settings?.currentTheme ?? this.app.themes.currentTheme,
+        connected: this.connectionStatus === "connected",
+      }),
+      ({ connected }) => {
+        if (!connected) return;
+        void this.syncVoicePresenceUi();
+      },
+    );
 
     this.session = new MediasoupSession({
       callbacks: {
@@ -972,7 +990,12 @@ export class VoiceStore {
       this.session.setSpaceMute(this.spaceMute);
       this.session.setSelfMute(this.selfMute);
       this.session.setSelfDeaf(this.selfDeaf);
-      this.applyVoiceSettings();
+
+      try {
+        await activateVoiceAudioSession();
+      } catch (error) {
+        this.logger.warn("activateVoiceAudioSession failed", error);
+      }
 
       await this.session.connect(fixConnectionUrl(endpoint), token, signal);
       if (signal.aborted) return;
@@ -1009,6 +1032,7 @@ export class VoiceStore {
         this.connectionStatus = "connected";
       });
       this.applySessionVoiceFlags();
+      this.applyVoiceSettings();
       this.clearJoinTimeout();
       this.startKeepAlive();
       await this.activateVoicePresenceUi();
@@ -1093,18 +1117,35 @@ export class VoiceStore {
     }
   }
 
-  private getVoicePresenceProps() {
+  private async getVoicePresenceProps() {
     const channel = this.channel;
     const channelName =
       channel?.name?.trim() ||
       i18n.t("voice.title", { ns: "chat" });
-    const spaceName = channel?.space?.name?.trim() || "";
+    const space = channel?.space ?? null;
+    const spaceName = space?.name?.trim() || "";
+    const iconUrl =
+      space?.icon != null
+        ? Space.constructIconUrl(
+            space.id,
+            space.icon.startsWith("a_"),
+            space.icon,
+            128,
+            ImageFormat.PNG,
+          )
+        : null;
+    const spaceIconPath = await resolveVoiceLiveActivitySpaceIcon({
+      spaceId: space?.id ?? null,
+      iconUrl,
+    });
 
     return {
       channelName,
       spaceName,
       muted: this.effectiveSelfMute,
       deafened: this.effectiveSelfDeaf,
+      spaceIconPath,
+      ...getVoiceLiveActivityThemeColors(this.app),
     };
   }
 
@@ -1115,13 +1156,7 @@ export class VoiceStore {
   }
 
   private async activateVoicePresenceUi() {
-    const props = this.getVoicePresenceProps();
-
-    try {
-      await activateVoiceAudioSession();
-    } catch (error) {
-      this.logger.warn("activateVoiceAudioSession failed", error);
-    }
+    const props = await this.getVoicePresenceProps();
 
     await startOrUpdateVoiceLiveActivity(props, this.getVoiceDeepLinkUrl());
 
@@ -1135,7 +1170,7 @@ export class VoiceStore {
   private async syncVoicePresenceUi() {
     if (this.connectionStatus !== "connected") return;
 
-    const props = this.getVoicePresenceProps();
+    const props = await this.getVoicePresenceProps();
     await updateVoiceLiveActivity(props);
 
     try {

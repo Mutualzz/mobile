@@ -12,6 +12,7 @@ import VoiceChannelActivity, {
 type VoiceLiveActivityHandlers = {
   toggleMute: () => void;
   toggleDeaf: () => void;
+  disconnect: () => void;
 };
 
 const logger = new Logger({ tag: "VoiceLiveActivity" });
@@ -36,6 +37,11 @@ function ensureInteractionListener() {
 
     if (event.target === "deafen") {
       handlers.toggleDeaf();
+      return;
+    }
+
+    if (event.target === "disconnect") {
+      handlers.disconnect();
     }
   });
 }

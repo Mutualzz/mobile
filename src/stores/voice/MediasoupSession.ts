@@ -513,6 +513,8 @@ export class MediasoupSession {
     this.isMuted = false;
     this.isDeafened = false;
     this.spaceMuted = false;
+    this.inputMode = "voice_activity";
+    this.pushToTalkPressed = false;
     this.speakingDetector.stopAll();
     this.statsSources.clear();
 

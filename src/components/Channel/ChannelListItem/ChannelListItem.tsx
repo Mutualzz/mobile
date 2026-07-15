@@ -91,17 +91,17 @@ export const ChannelListItem = observer(
       >
         <Paper
           style={{
-            marginLeft: isCategory ? 4 : channel.parent ? 16 : 10,
-            marginTop: isCategory ? 10 : 2,
-            marginBottom: isCategory ? 2 : 2,
-            paddingHorizontal: 10,
-            paddingVertical: isCategory ? 8 : 8,
-            marginRight: isCategory ? 12 : 14,
-            borderRadius: 8,
+            marginLeft: isCategory ? 2 : channel.parent ? 14 : 8,
+            marginTop: isCategory ? 6 : 1,
+            marginBottom: 1,
+            paddingHorizontal: 8,
+            paddingVertical: 6,
+            marginRight: isCategory ? 12 : 16,
+            borderRadius: 6,
             alignItems: "center",
             justifyContent: "space-between",
             flexDirection: "row",
-            minHeight: isCategory ? 36 : 40,
+            minHeight: isCategory ? 32 : 34,
           }}
           key={channel.id}
           color={props.color}
@@ -114,7 +114,7 @@ export const ChannelListItem = observer(
             style={{
               flexDirection: "row",
               alignItems: "center",
-              gap: 8,
+              gap: 6,
               flexShrink: 1,
               minWidth: 0,
             }}
@@ -122,7 +122,7 @@ export const ChannelListItem = observer(
             {!isCategory && <ChannelIcon type={channel.type} />}
             {isCategory && (
               <CaretRightIcon
-                size={14}
+                size={12}
                 color={theme.typography.colors.secondary}
                 weight="bold"
                 style={{
@@ -138,7 +138,7 @@ export const ChannelListItem = observer(
               textColor={isCategory ? "primary" : "secondary"}
               truncate="single"
               style={{
-                fontSize: isCategory ? 12 : 15,
+                fontSize: isCategory ? 12 : 14,
                 fontWeight: isCategory
                   ? "600"
                   : isUnread || active
@@ -156,7 +156,7 @@ export const ChannelListItem = observer(
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 6,
+                gap: 4,
                 minWidth: 20,
                 justifyContent: "flex-end",
               }}

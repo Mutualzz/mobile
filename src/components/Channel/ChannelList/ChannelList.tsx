@@ -21,8 +21,8 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 
-const ESTIMATED_CHANNEL_ROW_HEIGHT = 44;
-const ESTIMATED_CATEGORY_ROW_HEIGHT = 52;
+const ESTIMATED_CHANNEL_ROW_HEIGHT = 40;
+const ESTIMATED_CATEGORY_ROW_HEIGHT = 42;
 
 export const ChannelList = observer(() => {
   const app = useAppStore();
@@ -172,7 +172,7 @@ export const ChannelList = observer(() => {
       <Box
         style={{
           flex: 1,
-          paddingTop: 10,
+          paddingTop: 6,
         }}
       >
         <FlashList
@@ -189,7 +189,7 @@ export const ChannelList = observer(() => {
                 ? ESTIMATED_CATEGORY_ROW_HEIGHT
                 : ESTIMATED_CHANNEL_ROW_HEIGHT;
           }}
-          contentContainerStyle={{ paddingBottom: 16 + tabBarInset, paddingTop: 4 }}
+          contentContainerStyle={{ paddingBottom: 12 + tabBarInset }}
         />
       </Box>
 

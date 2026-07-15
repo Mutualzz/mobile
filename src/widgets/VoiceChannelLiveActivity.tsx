@@ -1,28 +1,123 @@
+import { Button, HStack, Image, Spacer, Text, VStack } from "@expo/ui/swift-ui";
 import {
-  Button,
-  HStack,
-  Image,
-  Text,
-  VStack,
-} from "@expo/ui/swift-ui";
-import {
+  buttonStyle,
+  clipShape,
+  controlSize,
   font,
   foregroundStyle,
+  frame,
   padding,
+  tint,
 } from "@expo/ui/swift-ui/modifiers";
-import {
-  createLiveActivity,
-  type LiveActivityEnvironment,
-} from "expo-widgets";
+import { createLiveActivity, type LiveActivityEnvironment } from "expo-widgets";
 
 export const VOICE_CHANNEL_LIVE_ACTIVITY_NAME = "VoiceChannelActivity";
 
-export type VoiceChannelLiveActivityProps = {
+export interface VoiceChannelLiveActivityProps {
   channelName: string;
   spaceName: string;
   muted: boolean;
   deafened: boolean;
-};
+  spaceIconPath: string;
+  accentColor: string;
+  textColor: string;
+  mutedTextColor: string;
+  dangerColor: string;
+  successColor: string;
+}
+
+function SpaceIdentity(props: {
+  spaceIconPath: string;
+  spaceName: string;
+  channelName: string;
+  accentColor: string;
+  textColor: string;
+  mutedTextColor: string;
+}) {
+  "widget";
+
+  const hasIcon = props.spaceIconPath.length > 0;
+
+  return (
+    <HStack spacing={10} alignment="center">
+      {hasIcon ? (
+        <Image
+          uiImage={props.spaceIconPath}
+          modifiers={[
+            frame({ width: 36, height: 36 }),
+            clipShape("circle"),
+          ]}
+        />
+      ) : (
+        <Image
+          systemName="building.2.fill"
+          color={props.accentColor}
+          size={28}
+        />
+      )}
+      <VStack spacing={2} alignment="leading">
+        <Text
+          modifiers={[
+            font({ weight: "bold", size: 15 }),
+            foregroundStyle(props.textColor),
+          ]}
+        >
+          {props.spaceName.length > 0 ? props.spaceName : "Voice"}
+        </Text>
+        <Text
+          modifiers={[font({ size: 12 }), foregroundStyle(props.mutedTextColor)]}
+        >
+          {props.channelName}
+        </Text>
+      </VStack>
+    </HStack>
+  );
+}
+
+function MuteDeafenIcons(props: {
+  muted: boolean;
+  deafened: boolean;
+  dangerColor: string;
+  accentColor: string;
+  interactive: boolean;
+}) {
+  "widget";
+
+  const muteColor =
+    props.muted || props.deafened ? props.dangerColor : props.accentColor;
+  const deafColor = props.deafened ? props.dangerColor : props.accentColor;
+  const micIcon =
+    props.muted || props.deafened ? "mic.slash.fill" : "mic.fill";
+  const speakerIcon = props.deafened
+    ? "speaker.slash.fill"
+    : "speaker.wave.2.fill";
+
+  if (!props.interactive) {
+    return (
+      <HStack spacing={8} alignment="center">
+        <Image systemName={micIcon} color={muteColor} size={18} />
+        <Image systemName={speakerIcon} color={deafColor} size={18} />
+      </HStack>
+    );
+  }
+
+  return (
+    <HStack spacing={4} alignment="center">
+      <Button
+        target="mute"
+        modifiers={[buttonStyle("plain"), tint(muteColor)]}
+      >
+        <Image systemName={micIcon} color={muteColor} size={20} />
+      </Button>
+      <Button
+        target="deafen"
+        modifiers={[buttonStyle("plain"), tint(deafColor)]}
+      >
+        <Image systemName={speakerIcon} color={deafColor} size={20} />
+      </Button>
+    </HStack>
+  );
+}
 
 const VoiceChannelActivityLayout = (
   props: VoiceChannelLiveActivityProps,
@@ -30,81 +125,89 @@ const VoiceChannelActivityLayout = (
 ) => {
   "widget";
 
-  const accentColor = environment.isLuminanceReduced ? "#FFFFFF" : "#B57EDC";
-  const statusLabel = props.deafened
-    ? "Deafened"
-    : props.muted
-      ? "Muted"
-      : "Connected";
-  const micIcon = props.muted || props.deafened ? "mic.slash.fill" : "mic.fill";
-  const headphoneIcon = props.deafened
-    ? "headphones"
-    : "speaker.wave.2.fill";
-  const muteLabel = props.muted || props.deafened ? "Unmute" : "Mute";
-  const deafenLabel = props.deafened ? "Undeafen" : "Deafen";
-  const title =
-    props.spaceName.length > 0
-      ? `${props.channelName} / ${props.spaceName}`
-      : props.channelName;
+  const accentColor = environment.isLuminanceReduced
+    ? "#FFFFFF"
+    : props.accentColor;
+  const textColor = environment.isLuminanceReduced
+    ? "#FFFFFF"
+    : props.textColor;
+  const mutedTextColor = environment.isLuminanceReduced
+    ? "#DDDDDD"
+    : props.mutedTextColor;
+  const micIcon =
+    props.muted || props.deafened ? "mic.slash.fill" : "mic.fill";
+
+  const identity = (
+    <SpaceIdentity
+      spaceIconPath={props.spaceIconPath}
+      spaceName={props.spaceName}
+      channelName={props.channelName}
+      accentColor={accentColor}
+      textColor={textColor}
+      mutedTextColor={mutedTextColor}
+    />
+  );
 
   const controls = (
-    <HStack modifiers={[padding({ top: 8 })]}>
-      <Button label={muteLabel} target="mute" systemImage={micIcon} />
-      <Button
-        label={deafenLabel}
-        target="deafen"
-        systemImage={headphoneIcon}
-      />
-    </HStack>
+    <MuteDeafenIcons
+      muted={props.muted}
+      deafened={props.deafened}
+      dangerColor={props.dangerColor}
+      accentColor={accentColor}
+      interactive
+    />
+  );
+
+  const statusIcons = (
+    <MuteDeafenIcons
+      muted={props.muted}
+      deafened={props.deafened}
+      dangerColor={props.dangerColor}
+      accentColor={accentColor}
+      interactive={false}
+    />
   );
 
   return {
     banner: (
-      <VStack modifiers={[padding({ all: 12 })]}>
-        <Text
-          modifiers={[font({ weight: "bold" }), foregroundStyle(accentColor)]}
-        >
-          {title}
-        </Text>
-        <Text modifiers={[font({ size: 13 }), foregroundStyle("#E8E0F0")]}>
-          {statusLabel}
-        </Text>
+      <HStack
+        spacing={12}
+        alignment="center"
+        modifiers={[padding({ all: 12 })]}
+      >
+        {identity}
+        <Spacer />
         {controls}
-      </VStack>
+      </HStack>
     ),
     compactLeading: <Image systemName={micIcon} color={accentColor} />,
-    compactTrailing: (
-      <Text modifiers={[font({ size: 12 }), foregroundStyle(accentColor)]}>
-        {statusLabel}
-      </Text>
-    ),
+    compactTrailing: statusIcons,
     minimal: <Image systemName={micIcon} color={accentColor} />,
     expandedLeading: (
-      <VStack modifiers={[padding({ all: 10 })]}>
-        <Image systemName={micIcon} color={accentColor} />
-        <Text modifiers={[font({ size: 11 })]}>{statusLabel}</Text>
-      </VStack>
+      <VStack modifiers={[padding({ all: 10 })]}>{identity}</VStack>
     ),
     expandedTrailing: (
-      <VStack modifiers={[padding({ all: 10 })]}>
-        <Image systemName={headphoneIcon} color={accentColor} />
-        <Text modifiers={[font({ size: 11 })]}>
-          {props.deafened ? "Deaf" : "Voice"}
-        </Text>
-      </VStack>
+      <VStack modifiers={[padding({ all: 10 })]}>{controls}</VStack>
     ),
     expandedCenter: (
       <VStack>
-        <Text modifiers={[font({ weight: "bold", size: 15 })]}>
-          {props.channelName}
-        </Text>
-        <Text modifiers={[font({ size: 12 })]}>
-          {props.spaceName.length > 0 ? props.spaceName : "Voice"}
-        </Text>
+        <Spacer />
       </VStack>
     ),
     expandedBottom: (
-      <VStack modifiers={[padding({ all: 10 })]}>{controls}</VStack>
+      <VStack modifiers={[padding({ all: 12 })]}>
+        <Button
+          label="Disconnect"
+          target="disconnect"
+          role="destructive"
+          systemImage="phone.down.fill"
+          modifiers={[
+            buttonStyle("borderedProminent"),
+            controlSize("large"),
+            tint(props.dangerColor),
+          ]}
+        />
+      </VStack>
     ),
   };
 };
