@@ -1,10 +1,7 @@
 import { ChannelType } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
 import { getVoiceLiveActivityThemeColors } from "@utils/voiceLiveActivityTheme";
-import {
-  reloadNativeWidgets,
-  writeNativeWidgetSnapshot,
-} from "voice-live-activity";
+import * as VoiceLiveActivity from "voice-live-activity";
 
 export type WidgetSnapshotPayload = {
   updatedAt: number;
@@ -253,10 +250,19 @@ let lastWrittenJson = "";
 export function publishWidgetSnapshot(app: AppStore) {
   if (!app.isGatewayReady) return;
 
-  const snapshot = buildWidgetSnapshot(app);
-  const json = JSON.stringify(snapshot);
-  if (json === lastWrittenJson) return;
-  lastWrittenJson = json;
-  writeNativeWidgetSnapshot(json);
-  reloadNativeWidgets();
+  try {
+    const snapshot = buildWidgetSnapshot(app);
+    const json = JSON.stringify(snapshot);
+    if (json === lastWrittenJson) return;
+    lastWrittenJson = json;
+
+    if (typeof VoiceLiveActivity.writeNativeWidgetSnapshot === "function") {
+      VoiceLiveActivity.writeNativeWidgetSnapshot(json);
+    }
+    if (typeof VoiceLiveActivity.reloadNativeWidgets === "function") {
+      VoiceLiveActivity.reloadNativeWidgets();
+    }
+  } catch {
+    return;
+  }
 }

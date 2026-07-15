@@ -25,12 +25,14 @@ type NativeModule = {
   start(props: VoiceLiveActivityProps, deepLinkUrl: string): Promise<string>;
   update(props: VoiceLiveActivityProps): Promise<void>;
   end(): Promise<void>;
-  addListener(
+  addListener?(
     eventName: "onVoiceLiveActivityAction" | "onWidgetAction",
     listener: (event: { action: string }) => void,
   ): EventSubscription;
   appGroupPath?: string;
 };
+
+const noopSubscription: EventSubscription = { remove() {} };
 
 function loadNativeModule(): NativeModule | null {
   if (Platform.OS !== "ios") return null;
@@ -96,34 +98,40 @@ export async function endNativeVoiceLiveActivity() {
 export function addVoiceLiveActivityActionListener(
   listener: (action: "mute" | "deafen" | "disconnect") => void,
 ) {
-  if (!native) {
-    return { remove() {} };
+  if (!native || typeof native.addListener !== "function") {
+    return noopSubscription;
   }
 
-  return native.addListener("onVoiceLiveActivityAction", (event) => {
-    if (
-      event.action === "mute" ||
-      event.action === "deafen" ||
-      event.action === "disconnect"
-    ) {
-      listener(event.action);
-    }
-  });
+  try {
+    return native.addListener("onVoiceLiveActivityAction", (event) => {
+      if (
+        event.action === "mute" ||
+        event.action === "deafen" ||
+        event.action === "disconnect"
+      ) {
+        listener(event.action);
+      }
+    });
+  } catch {
+    return noopSubscription;
+  }
 }
 
 export function writeNativeWidgetSnapshot(json: string) {
-  if (!native?.writeWidgetSnapshot) return;
   try {
-    native.writeWidgetSnapshot(json);
+    const write = native?.writeWidgetSnapshot;
+    if (typeof write !== "function") return;
+    write.call(native, json);
   } catch {
     return;
   }
 }
 
 export function reloadNativeWidgets() {
-  if (!native?.reloadWidgets) return;
   try {
-    native.reloadWidgets();
+    const reload = native?.reloadWidgets;
+    if (typeof reload !== "function") return;
+    reload.call(native);
   } catch {
     return;
   }
@@ -132,13 +140,17 @@ export function reloadNativeWidgets() {
 export function addWidgetActionListener(
   listener: (action: string) => void,
 ) {
-  if (!native) {
-    return { remove() {} };
+  if (!native || typeof native.addListener !== "function") {
+    return noopSubscription;
   }
 
-  return native.addListener("onWidgetAction", (event) => {
-    if (typeof event.action === "string" && event.action.length > 0) {
-      listener(event.action);
-    }
-  });
+  try {
+    return native.addListener("onWidgetAction", (event) => {
+      if (typeof event?.action === "string" && event.action.length > 0) {
+        listener(event.action);
+      }
+    });
+  } catch {
+    return noopSubscription;
+  }
 }
