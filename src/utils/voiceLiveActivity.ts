@@ -61,12 +61,15 @@ export async function startOrUpdateVoiceLiveActivity(
   ensureInteractionListener();
   lastProps = props;
 
-  if (!isVoiceLiveActivityModuleAvailable()) {
+  if (
+    typeof isVoiceLiveActivityModuleAvailable !== "function" ||
+    !isVoiceLiveActivityModuleAvailable()
+  ) {
     console.warn(
-      "[VoiceLiveActivity] Native module not linked — rebuild iOS (npx expo prebuild --clean && npx expo run:ios)",
+      "[VoiceLiveActivity] Native module not linked — need a new native iOS build that includes voice-live-activity (not Metro reload / EAS Update)",
     );
     logger.warn(
-      "Native module not linked — rebuild the iOS app (prebuild --clean && run:ios)",
+      "Native module not linked — rebuild native iOS with modules/voice-live-activity",
     );
     return;
   }

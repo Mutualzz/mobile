@@ -13,6 +13,8 @@ import { observer } from "mobx-react-lite";
 import { useEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView } from "react-native";
+import { IconButton } from "@components/IconButton";
+import { ChatCircleIcon } from "phosphor-react-native";
 
 export type FriendsTab = "online" | "all" | "pending";
 
@@ -64,12 +66,11 @@ const RelationshipRow = ({
 
 const MessageActions = ({ relationship }: { relationship: Relationship }) => {
   const app = useAppStore();
-  const { t } = useTranslation("chat");
   const { navigate } = useAppNavigation();
 
   return (
     <>
-      <Button
+      <IconButton
         size="sm"
         variant="soft"
         onPress={async () => {
@@ -80,20 +81,8 @@ const MessageActions = ({ relationship }: { relationship: Relationship }) => {
           app.setDMDrawerOpen(false);
         }}
       >
-        {t("friends.message")}
-      </Button>
-      <Button
-        size="sm"
-        color="danger"
-        variant="soft"
-        onPress={() => {
-          const user = relationship.otherUser;
-          if (!user) return;
-          void app.relationships.removeFriend(user.id);
-        }}
-      >
-        {t("friends.remove")}
-      </Button>
+        <ChatCircleIcon weight="fill" />
+      </IconButton>
     </>
   );
 };

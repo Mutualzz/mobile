@@ -12,6 +12,8 @@ import { observer } from "mobx-react-lite";
 import { useEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView } from "react-native";
+import { IconButton } from "@components/IconButton";
+import { ChatCircleIcon } from "phosphor-react-native";
 
 const RelationshipRow = ({
   relationship,
@@ -162,7 +164,7 @@ export const FriendsList = observer(() => {
             relationship={relationship}
             actions={
               <>
-                <Button
+                <IconButton
                   size="sm"
                   variant="soft"
                   onPress={async () => {
@@ -173,8 +175,8 @@ export const FriendsList = observer(() => {
                     app.setDMDrawerOpen(false);
                   }}
                 >
-                  {tChat("friends.message")}
-                </Button>
+                  <ChatCircleIcon />
+                </IconButton>
                 <Button
                   size="sm"
                   color="danger"

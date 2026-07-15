@@ -61,7 +61,7 @@ export const DMContentPane = observer(() => {
   const dmRecipient = channel.dmRecipient;
 
   return (
-    <Screen style={{ flex: 1, flexDirection: "column" }}>
+    <Screen style={{ flex: 1, flexDirection: "column", borderWidth: 0 }}>
       <DMChannelHeader
         channel={channel}
         onBack={() => app.setDMDrawerOpen(true)}

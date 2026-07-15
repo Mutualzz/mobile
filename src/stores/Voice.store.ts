@@ -1038,15 +1038,19 @@ export class VoiceStore {
       this.applyVoiceSettings();
       this.clearJoinTimeout();
       this.startKeepAlive();
-      await this.activateVoicePresenceUi();
+      try {
+        await this.activateVoicePresenceUi();
+      } catch (error) {
+        this.logger.warn(
+          "activateVoicePresenceUi failed",
+          error instanceof Error ? error.message : String(error),
+        );
+      }
     } catch (error) {
       if (signal.aborted) return;
 
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.warn("Voice connection failed", {
-        message,
-        stack: error instanceof Error ? error.stack : undefined,
-      });
+      this.logger.warn("Voice connection failed", message);
 
       runInAction(() => {
         this.connectionStatus = "failed";

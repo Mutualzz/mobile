@@ -29,15 +29,21 @@ type NativeModule = {
   appGroupPath?: string;
 };
 
-const native =
-  Platform.OS === "ios"
-    ? requireOptionalNativeModule<NativeModule>("VoiceLiveActivity")
-    : null;
+function loadNativeModule(): NativeModule | null {
+  if (Platform.OS !== "ios") return null;
+  try {
+    return requireOptionalNativeModule<NativeModule>("VoiceLiveActivity");
+  } catch {
+    return null;
+  }
+}
+
+const native = loadNativeModule();
 
 if (Platform.OS === "ios") {
   if (native == null) {
     console.warn(
-      "[VoiceLiveActivity] Native module missing — rebuild iOS after native changes",
+      "[VoiceLiveActivity] Native module missing — this JS bundle needs a native binary built with modules/voice-live-activity (eas build / expo prebuild --clean && expo run:ios). OTA/Metro reload is not enough.",
     );
   } else {
     console.log("[VoiceLiveActivity] Native module linked");

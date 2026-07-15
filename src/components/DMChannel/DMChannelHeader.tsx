@@ -51,7 +51,15 @@ export function DMChannelHeader({
   const isFull = (channel.recipientIds?.length ?? 0) >= 10;
 
   return (
-    <ScreenHeader safeHorizontal={false} style={{ paddingHorizontal: 12 }}>
+    <ScreenHeader
+      safeHorizontal={false}
+      style={{
+        paddingHorizontal: 12,
+        borderTopWidth: 0,
+        borderLeftWidth: 0,
+        borderRightWidth: 0,
+      }}
+    >
       <Pressable hitSlop={8} onPress={onBack}>
         <ArrowLeftIcon
           size={22}
