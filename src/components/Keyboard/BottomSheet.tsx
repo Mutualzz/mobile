@@ -91,9 +91,7 @@ export function BottomSheetPanel({
             flexDirection: "column",
             width: "100%",
             alignSelf: "stretch",
-            ...(height != null
-              ? { height, maxHeight: height }
-              : null),
+            ...(height != null ? { height, maxHeight: height } : null),
           },
           sheetStyle,
         ]}
