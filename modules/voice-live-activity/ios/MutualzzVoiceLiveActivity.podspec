@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
   s.license        = 'MIT'
   s.author         = 'Mutualzz'
   s.homepage       = 'https://mutualzz.com'
-  s.platforms      = { :ios => '17.0' }
+  s.platforms      = { :ios => '16.4' }
   s.swift_version  = '5.9'
   s.source         = { git: 'https://github.com/expo/expo.git' }
   s.static_framework = true
