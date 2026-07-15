@@ -1,7 +1,7 @@
 /** @type {import('@bacons/apple-targets/app.plugin').ConfigFunction} */
 module.exports = () => ({
   type: "widget",
-  name: "VoiceLiveActivity",
+  name: "VoiceLiveActivityWidget",
   displayName: "Mutualzz Voice",
   bundleIdentifier: ".ExpoWidgetsTarget",
   deploymentTarget: "17.0",

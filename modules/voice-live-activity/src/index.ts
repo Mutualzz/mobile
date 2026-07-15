@@ -1,4 +1,7 @@
-import { requireNativeModule, type EventSubscription } from "expo-modules-core";
+import {
+  requireOptionalNativeModule,
+  type EventSubscription,
+} from "expo-modules-core";
 import { Platform } from "react-native";
 
 export type VoiceLiveActivityProps = {
@@ -27,7 +30,7 @@ type NativeModule = {
 
 const native =
   Platform.OS === "ios"
-    ? (requireNativeModule("VoiceLiveActivity") as NativeModule)
+    ? requireOptionalNativeModule<NativeModule>("VoiceLiveActivity")
     : null;
 
 export function areVoiceLiveActivitiesEnabled() {
