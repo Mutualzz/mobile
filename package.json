@@ -51,7 +51,6 @@
     "expo-system-ui": "~56.0.5",
     "expo-task-manager": "^56.0.21",
     "expo-video": "~56.1.4",
-    "expo-widgets": "~56.0.22",
     "html-entities": "2.5.3",
     "i18next": "^26.3.6",
     "imurmurhash": "^0.1.4",
@@ -75,7 +74,8 @@
     "react-native-svg": "catalog:",
     "react-native-webrtc": "^124.0.6",
     "react-native-webview": "13.16.1",
-    "react-native-worklets": "catalog:"
+    "react-native-worklets": "catalog:",
+    "voice-live-activity": "file:./modules/voice-live-activity"
   },
   "devDependencies": {
     "@bacons/apple-targets": "^4.0.7",

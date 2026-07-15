@@ -172,14 +172,7 @@
         ]
       ],
       "expo-localization",
-      [
-        "expo-widgets",
-        {
-          "groupIdentifier": "group.com.mutualzz.app",
-          "frequentUpdates": true,
-          "widgets": []
-        }
-      ]
+      "./plugins/withFrequentLiveActivityUpdates.js"
     ],
     "extra": {
       "router": {},

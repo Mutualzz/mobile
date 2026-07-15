@@ -1,7 +1,7 @@
 import { formatColor, baseDarkTheme } from "@mutualzz/ui-core";
 import type { AppStore } from "@stores/App.store";
 import { Theme } from "@stores/objects/Theme";
-import type { VoiceChannelLiveActivityProps } from "../widgets/VoiceChannelLiveActivity";
+import type { VoiceLiveActivityProps } from "voice-live-activity";
 
 function toWidgetHex(value: unknown, fallback: string): string {
   try {
@@ -16,29 +16,26 @@ function toWidgetHex(value: unknown, fallback: string): string {
 }
 
 const FALLBACK_COLORS: Pick<
-  VoiceChannelLiveActivityProps,
+  VoiceLiveActivityProps,
   | "accentColor"
   | "textColor"
   | "mutedTextColor"
   | "dangerColor"
-  | "successColor"
 > = {
   accentColor: "#B57EDC",
   textColor: "#FFFFFF",
   mutedTextColor: "#B0A8B8",
   dangerColor: "#E1556B",
-  successColor: "#2AA8A3",
 };
 
 export function getVoiceLiveActivityThemeColors(
   app: AppStore,
 ): Pick<
-  VoiceChannelLiveActivityProps,
+  VoiceLiveActivityProps,
   | "accentColor"
   | "textColor"
   | "mutedTextColor"
   | "dangerColor"
-  | "successColor"
 > {
   try {
     const themeId =
@@ -65,10 +62,6 @@ export function getVoiceLiveActivityThemeColors(
       dangerColor: toWidgetHex(
         theme?.colors?.danger,
         FALLBACK_COLORS.dangerColor,
-      ),
-      successColor: toWidgetHex(
-        theme?.colors?.success,
-        FALLBACK_COLORS.successColor,
       ),
     };
   } catch {

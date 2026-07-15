@@ -1,14 +1,8 @@
 import { downloadAsync } from "expo-file-system/legacy";
 import { Platform } from "react-native";
-import { widgetsDirectory } from "expo-widgets";
+import { getVoiceLiveActivityAppGroupPath } from "voice-live-activity";
 
-const iconPathBySpaceId = new Map<string, string>();
-
-function toFileUri(path: string) {
-  if (!path) return "";
-  if (path.startsWith("file://")) return path;
-  return `file://${path}`;
-}
+const iconFileBySpaceId = new Map<string, string>();
 
 export async function resolveVoiceLiveActivitySpaceIcon(options: {
   spaceId: string | null;
@@ -17,15 +11,21 @@ export async function resolveVoiceLiveActivitySpaceIcon(options: {
   if (Platform.OS !== "ios") return "";
   if (!options.spaceId || !options.iconUrl) return "";
 
-  const cached = iconPathBySpaceId.get(options.spaceId);
+  const cached = iconFileBySpaceId.get(options.spaceId);
   if (cached) return cached;
 
+  const appGroupPath = getVoiceLiveActivityAppGroupPath();
+  if (!appGroupPath) return "";
+
+  const fileName = `voice-space-${options.spaceId}.png`;
+  const destination = `${appGroupPath}/${fileName}`;
+
   try {
-    const destination = `${widgetsDirectory}/voice-space-${options.spaceId}.png`;
-    const download = await downloadAsync(options.iconUrl, destination);
-    const uri = toFileUri(download.uri);
-    iconPathBySpaceId.set(options.spaceId, uri);
-    return uri;
+    await downloadAsync(options.iconUrl, destination.startsWith("file://")
+      ? destination
+      : `file://${destination}`);
+    iconFileBySpaceId.set(options.spaceId, fileName);
+    return fileName;
   } catch {
     return "";
   }

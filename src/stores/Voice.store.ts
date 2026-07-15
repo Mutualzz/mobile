@@ -36,7 +36,6 @@ import {
   startOrUpdateVoiceLiveActivity,
   updateVoiceLiveActivity,
 } from "@utils/voiceLiveActivity";
-import { bindVoiceLiveActivityLinkHandlers } from "@utils/voiceLiveActivityLinks";
 import { resolveVoiceLiveActivitySpaceIcon } from "@utils/voiceLiveActivityIcon";
 import { getVoiceLiveActivityThemeColors } from "@utils/voiceLiveActivityTheme";
 import { ensureVoiceMicPermission } from "@utils/voicePermissions";
@@ -154,7 +153,6 @@ export class VoiceStore {
       },
     };
     bindVoiceLiveActivityHandlers(voiceLiveActivityHandlers);
-    bindVoiceLiveActivityLinkHandlers(voiceLiveActivityHandlers);
     reaction(
       () => ({
         themeId:
@@ -1139,7 +1137,7 @@ export class VoiceStore {
             ImageFormat.PNG,
           )
         : null;
-    const spaceIconPath = await resolveVoiceLiveActivitySpaceIcon({
+    const spaceIconFileName = await resolveVoiceLiveActivitySpaceIcon({
       spaceId: space?.id ?? null,
       iconUrl,
     });
@@ -1149,7 +1147,7 @@ export class VoiceStore {
       spaceName,
       muted: this.effectiveSelfMute === true,
       deafened: this.effectiveSelfDeaf === true,
-      spaceIconPath: spaceIconPath || "",
+      spaceIconFileName: spaceIconFileName || "",
       ...getVoiceLiveActivityThemeColors(this.app),
     };
   }
