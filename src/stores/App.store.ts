@@ -37,6 +37,7 @@ import { VoiceStatesStore } from "@stores/VoiceStates.store";
 import type { User } from "@stores/objects/User";
 import { initRemoteGameCatalog } from "@presence/remoteGameCatalog";
 import { BridgeChatStore } from "@stores/BridgeChat.store";
+import { startWidgetSnapshotSync } from "@stores/WidgetSnapshot.sync";
 
 export class AppStore {
   isGatewayReady = false;
@@ -110,6 +111,7 @@ export class AppStore {
     });
 
     void initRemoteGameCatalog();
+    startWidgetSnapshotSync(this);
   }
 
   get isReady() {

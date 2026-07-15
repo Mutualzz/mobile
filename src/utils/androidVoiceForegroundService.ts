@@ -2,6 +2,7 @@ import notifee, {
   AndroidCategory,
   AndroidForegroundServiceType,
   AndroidImportance,
+  EventType,
 } from "@notifee/react-native";
 import { Platform } from "react-native";
 
@@ -10,6 +11,17 @@ export const ANDROID_VOICE_NOTIFICATION_ID = "mutualzz-voice-channel";
 
 let channelReady: Promise<void> | null = null;
 let foregroundServiceRegistered = false;
+let eventListenerBound = false;
+
+type VoiceActionHandler = (action: "mute" | "deafen" | "disconnect") => void;
+
+let voiceActionHandler: VoiceActionHandler | null = null;
+
+export function setAndroidVoiceNotificationActionHandler(
+  handler: VoiceActionHandler | null,
+) {
+  voiceActionHandler = handler;
+}
 
 export function registerAndroidVoiceForegroundService() {
   if (Platform.OS !== "android" || foregroundServiceRegistered) return;
@@ -18,6 +30,28 @@ export function registerAndroidVoiceForegroundService() {
     return new Promise(() => {});
   });
   foregroundServiceRegistered = true;
+  bindAndroidNotificationEvents();
+}
+
+function bindAndroidNotificationEvents() {
+  if (eventListenerBound || Platform.OS !== "android") return;
+  eventListenerBound = true;
+
+  notifee.onForegroundEvent(({ type, detail }) => {
+    if (type !== EventType.ACTION_PRESS) return;
+    const id = detail.pressAction?.id;
+    if (id === "mute" || id === "deafen" || id === "disconnect") {
+      voiceActionHandler?.(id);
+    }
+  });
+
+  notifee.onBackgroundEvent(async ({ type, detail }) => {
+    if (type !== EventType.ACTION_PRESS) return;
+    const id = detail.pressAction?.id;
+    if (id === "mute" || id === "deafen" || id === "disconnect") {
+      voiceActionHandler?.(id);
+    }
+  });
 }
 
 function ensureVoiceChannel() {
@@ -67,6 +101,20 @@ export async function startAndroidVoiceForegroundService(options: {
       pressAction: {
         id: "default",
       },
+      actions: [
+        {
+          title: options.muted ? "Unmute" : "Mute",
+          pressAction: { id: "mute" },
+        },
+        {
+          title: options.deafened ? "Undeafen" : "Deafen",
+          pressAction: { id: "deafen" },
+        },
+        {
+          title: "Disconnect",
+          pressAction: { id: "disconnect" },
+        },
+      ],
       foregroundServiceTypes: [
         AndroidForegroundServiceType.FOREGROUND_SERVICE_TYPE_MICROPHONE,
       ],

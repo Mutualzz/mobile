@@ -14,16 +14,19 @@ export type VoiceLiveActivityProps = {
   textColor: string;
   mutedTextColor: string;
   dangerColor: string;
+  backgroundColor: string;
 };
 
 type NativeModule = {
   areActivitiesEnabled(): boolean;
   isModuleAvailable(): boolean;
+  writeWidgetSnapshot?(json: string): void;
+  reloadWidgets?(): void;
   start(props: VoiceLiveActivityProps, deepLinkUrl: string): Promise<string>;
   update(props: VoiceLiveActivityProps): Promise<void>;
   end(): Promise<void>;
   addListener(
-    eventName: "onVoiceLiveActivityAction",
+    eventName: "onVoiceLiveActivityAction" | "onWidgetAction",
     listener: (event: { action: string }) => void,
   ): EventSubscription;
   appGroupPath?: string;
@@ -103,6 +106,38 @@ export function addVoiceLiveActivityActionListener(
       event.action === "deafen" ||
       event.action === "disconnect"
     ) {
+      listener(event.action);
+    }
+  });
+}
+
+export function writeNativeWidgetSnapshot(json: string) {
+  if (!native?.writeWidgetSnapshot) return;
+  try {
+    native.writeWidgetSnapshot(json);
+  } catch {
+    return;
+  }
+}
+
+export function reloadNativeWidgets() {
+  if (!native?.reloadWidgets) return;
+  try {
+    native.reloadWidgets();
+  } catch {
+    return;
+  }
+}
+
+export function addWidgetActionListener(
+  listener: (action: string) => void,
+) {
+  if (!native) {
+    return { remove() {} };
+  }
+
+  return native.addListener("onWidgetAction", (event) => {
+    if (typeof event.action === "string" && event.action.length > 0) {
       listener(event.action);
     }
   });

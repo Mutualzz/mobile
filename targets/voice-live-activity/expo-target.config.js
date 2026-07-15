@@ -2,7 +2,7 @@
 module.exports = () => ({
   type: "widget",
   name: "VoiceLiveActivityWidget",
-  displayName: "Mutualzz Voice",
+  displayName: "Mutualzz",
   bundleIdentifier: ".ExpoWidgetsTarget",
   deploymentTarget: "17.0",
   frameworks: ["SwiftUI", "WidgetKit", "ActivityKit", "AppIntents"],

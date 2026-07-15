@@ -2,8 +2,19 @@ import ExpoModulesCore
 import ActivityKit
 import Foundation
 import OSLog
+import WidgetKit
 
 private let log = Logger(subsystem: "com.mutualzz.app", category: "VoiceLiveActivity")
+private let widgetSnapshotKey = "mutualzz.widget.snapshot"
+private let pendingWidgetActionKey = "mutualzz.widget.pendingAction"
+private let widgetActionDarwinName = "com.mutualzz.app.widgetAction" as CFString
+private let widgetKinds = [
+  "MutualzzUnread",
+  "MutualzzFriends",
+  "MutualzzPinnedSpace",
+  "MutualzzPinnedDm",
+  "MutualzzVoiceRoster",
+]
 
 struct VoiceLiveActivityPropsRecord: Record {
   @Field var channelName: String = "Voice"
@@ -11,10 +22,11 @@ struct VoiceLiveActivityPropsRecord: Record {
   @Field var muted: Bool = false
   @Field var deafened: Bool = false
   @Field var spaceIconFileName: String = ""
-  @Field var accentColor: String = "#B57EDC"
+  @Field var accentColor: String = "#00D1C1"
   @Field var textColor: String = "#FFFFFF"
   @Field var mutedTextColor: String = "#B0A8B8"
   @Field var dangerColor: String = "#E1556B"
+  @Field var backgroundColor: String = "#241927"
 }
 
 public class VoiceLiveActivityModule: Module {
@@ -23,7 +35,7 @@ public class VoiceLiveActivityModule: Module {
   public func definition() -> ModuleDefinition {
     Name("VoiceLiveActivity")
 
-    Events("onVoiceLiveActivityAction")
+    Events("onVoiceLiveActivityAction", "onWidgetAction")
 
     Constant("appGroupPath") {
       VoiceLiveActivityAppBridge.containerPath ?? ""
@@ -38,6 +50,17 @@ public class VoiceLiveActivityModule: Module {
 
     Function("isModuleAvailable") { () -> Bool in
       true
+    }
+
+    Function("writeWidgetSnapshot") { (json: String) in
+      VoiceLiveActivityAppBridge.defaults?.set(json, forKey: widgetSnapshotKey)
+      VoiceLiveActivityAppBridge.defaults?.synchronize()
+    }
+
+    Function("reloadWidgets") { () in
+      for kind in widgetKinds {
+        WidgetCenter.shared.reloadTimelines(ofKind: kind)
+      }
     }
 
     AsyncFunction("start") { (props: VoiceLiveActivityPropsRecord, deepLinkUrl: String) -> String in
@@ -59,7 +82,17 @@ public class VoiceLiveActivityModule: Module {
     OnStopObserving("onVoiceLiveActivityAction") {
       self.stopObservingActions()
     }
+
+    OnStartObserving("onWidgetAction") {
+      self.startObservingWidgetActions()
+    }
+
+    OnStopObserving("onWidgetAction") {
+      self.stopObservingWidgetActions()
+    }
   }
+
+  private var observingWidgetActions = false
 
   private func startObservingActions() {
     if observing { return }
@@ -93,9 +126,50 @@ public class VoiceLiveActivityModule: Module {
     )
   }
 
+  private func startObservingWidgetActions() {
+    if observingWidgetActions { return }
+    observingWidgetActions = true
+    let observer = UnsafeRawPointer(Unmanaged.passUnretained(self).toOpaque())
+    CFNotificationCenterAddObserver(
+      CFNotificationCenterGetDarwinNotifyCenter(),
+      observer,
+      { _, observer, _, _, _ in
+        guard let observer else { return }
+        let module = Unmanaged<VoiceLiveActivityModule>.fromOpaque(observer).takeUnretainedValue()
+        DispatchQueue.main.async {
+          module.emitPendingWidgetAction()
+        }
+      },
+      widgetActionDarwinName,
+      nil,
+      .deliverImmediately
+    )
+  }
+
+  private func stopObservingWidgetActions() {
+    if !observingWidgetActions { return }
+    observingWidgetActions = false
+    let observer = UnsafeRawPointer(Unmanaged.passUnretained(self).toOpaque())
+    CFNotificationCenterRemoveObserver(
+      CFNotificationCenterGetDarwinNotifyCenter(),
+      observer,
+      CFNotificationName(widgetActionDarwinName),
+      nil
+    )
+  }
+
   private func emitPendingAction() {
     guard let action = VoiceLiveActivityAppBridge.consumePendingAction() else { return }
     sendEvent("onVoiceLiveActivityAction", ["action": action])
+  }
+
+  private func emitPendingWidgetAction() {
+    guard let action = VoiceLiveActivityAppBridge.defaults?.string(forKey: pendingWidgetActionKey) else {
+      return
+    }
+    VoiceLiveActivityAppBridge.defaults?.removeObject(forKey: pendingWidgetActionKey)
+    VoiceLiveActivityAppBridge.defaults?.synchronize()
+    sendEvent("onWidgetAction", ["action": action])
   }
 }
 
@@ -111,7 +185,8 @@ private func contentState(
     accentColor: props.accentColor,
     textColor: props.textColor,
     mutedTextColor: props.mutedTextColor,
-    dangerColor: props.dangerColor
+    dangerColor: props.dangerColor,
+    backgroundColor: props.backgroundColor
   )
 }
 

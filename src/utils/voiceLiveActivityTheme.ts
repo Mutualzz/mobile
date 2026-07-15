@@ -21,11 +21,13 @@ const FALLBACK_COLORS: Pick<
   | "textColor"
   | "mutedTextColor"
   | "dangerColor"
+  | "backgroundColor"
 > = {
-  accentColor: "#B57EDC",
+  accentColor: "#00D1C1",
   textColor: "#FFFFFF",
   mutedTextColor: "#B0A8B8",
   dangerColor: "#E1556B",
+  backgroundColor: "#241927",
 };
 
 export function getVoiceLiveActivityThemeColors(
@@ -36,6 +38,7 @@ export function getVoiceLiveActivityThemeColors(
   | "textColor"
   | "mutedTextColor"
   | "dangerColor"
+  | "backgroundColor"
 > {
   try {
     const themeId =
@@ -48,7 +51,7 @@ export function getVoiceLiveActivityThemeColors(
 
     return {
       accentColor: toWidgetHex(
-        theme?.colors?.primary,
+        theme?.typography?.colors?.accent ?? theme?.colors?.info,
         FALLBACK_COLORS.accentColor,
       ),
       textColor: toWidgetHex(
@@ -62,6 +65,10 @@ export function getVoiceLiveActivityThemeColors(
       dangerColor: toWidgetHex(
         theme?.colors?.danger,
         FALLBACK_COLORS.dangerColor,
+      ),
+      backgroundColor: toWidgetHex(
+        theme?.colors?.surface ?? theme?.colors?.background,
+        FALLBACK_COLORS.backgroundColor,
       ),
     };
   } catch {

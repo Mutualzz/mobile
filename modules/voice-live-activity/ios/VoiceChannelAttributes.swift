@@ -12,6 +12,7 @@ public struct VoiceChannelAttributes: ActivityAttributes {
     public var textColor: String
     public var mutedTextColor: String
     public var dangerColor: String
+    public var backgroundColor: String
 
     public init(
       channelName: String,
@@ -22,7 +23,8 @@ public struct VoiceChannelAttributes: ActivityAttributes {
       accentColor: String,
       textColor: String,
       mutedTextColor: String,
-      dangerColor: String
+      dangerColor: String,
+      backgroundColor: String
     ) {
       self.channelName = channelName
       self.spaceName = spaceName
@@ -33,6 +35,7 @@ public struct VoiceChannelAttributes: ActivityAttributes {
       self.textColor = textColor
       self.mutedTextColor = mutedTextColor
       self.dangerColor = dangerColor
+      self.backgroundColor = backgroundColor
     }
   }
 

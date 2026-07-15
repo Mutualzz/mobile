@@ -23,6 +23,7 @@ import {
 import { fixConnectionUrl } from "@utils/urls";
 import {
   registerAndroidVoiceForegroundService,
+  setAndroidVoiceNotificationActionHandler,
   startAndroidVoiceForegroundService,
   stopAndroidVoiceForegroundService,
 } from "@utils/androidVoiceForegroundService";
@@ -153,6 +154,19 @@ export class VoiceStore {
       },
     };
     bindVoiceLiveActivityHandlers(voiceLiveActivityHandlers);
+    setAndroidVoiceNotificationActionHandler((action) => {
+      if (action === "mute") {
+        this.setMute(!this.selfMute);
+        return;
+      }
+      if (action === "deafen") {
+        this.setDeaf(!this.selfDeaf);
+        return;
+      }
+      if (action === "disconnect") {
+        void this.leave();
+      }
+    });
     reaction(
       () => ({
         themeId:
