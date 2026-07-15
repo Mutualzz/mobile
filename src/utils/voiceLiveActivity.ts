@@ -22,20 +22,52 @@ let handlers: VoiceLiveActivityHandlers | null = null;
 let interactionBound = false;
 let lastProps: VoiceChannelLiveActivityProps | null = null;
 
+function resolveActiveActivity() {
+  if (activity) return activity;
+
+  const instances = VoiceChannelActivity.getInstances();
+  if (instances.length === 0) return null;
+
+  activity = instances[instances.length - 1] ?? null;
+  return activity;
+}
+
+function isVoiceLiveActivityInteraction(source: string | undefined) {
+  if (!source) return false;
+  if (source === VOICE_CHANNEL_LIVE_ACTIVITY_NAME) return true;
+  if (lastProps != null) return true;
+  return VoiceChannelActivity.getInstances().length > 0;
+}
+
 function ensureInteractionListener() {
   if (interactionBound || Platform.OS !== "ios") return;
   interactionBound = true;
 
   addUserInteractionListener((event) => {
-    if (event.source !== VOICE_CHANNEL_LIVE_ACTIVITY_NAME) return;
     if (!handlers) return;
+    if (!isVoiceLiveActivityInteraction(event.source)) return;
 
     if (event.target === "mute") {
+      const nextMuted = !(lastProps?.muted ?? false);
+      if (lastProps) {
+        void updateVoiceLiveActivity({
+          ...lastProps,
+          muted: nextMuted || (lastProps.deafened ?? false),
+        });
+      }
       handlers.toggleMute();
       return;
     }
 
     if (event.target === "deafen") {
+      const nextDeafened = !(lastProps?.deafened ?? false);
+      if (lastProps) {
+        void updateVoiceLiveActivity({
+          ...lastProps,
+          deafened: nextDeafened,
+          muted: nextDeafened ? true : lastProps.muted,
+        });
+      }
       handlers.toggleDeaf();
       return;
     }
@@ -63,8 +95,9 @@ export async function startOrUpdateVoiceLiveActivity(
   lastProps = props;
 
   try {
-    if (activity) {
-      await activity.update(props);
+    const current = resolveActiveActivity();
+    if (current) {
+      await current.update(props);
       return;
     }
 
@@ -78,7 +111,7 @@ export async function startOrUpdateVoiceLiveActivity(
 export async function updateVoiceLiveActivity(
   props: VoiceChannelLiveActivityProps,
 ) {
-  if (Platform.OS !== "ios" || !activity) {
+  if (Platform.OS !== "ios") {
     lastProps = props;
     return;
   }
@@ -86,7 +119,9 @@ export async function updateVoiceLiveActivity(
   lastProps = props;
 
   try {
-    await activity.update(props);
+    const current = resolveActiveActivity();
+    if (!current) return;
+    await current.update(props);
   } catch (error) {
     logger.warn("Failed to update voice Live Activity", error);
   }
@@ -99,16 +134,16 @@ export async function endVoiceLiveActivity() {
     return;
   }
 
-  const current = activity;
+  const current = resolveActiveActivity();
   activity = null;
   lastProps = null;
 
-  if (!current) return;
-
-  try {
-    await current.end("immediate");
-  } catch (error) {
-    logger.warn("Failed to end voice Live Activity", error);
+  if (current) {
+    try {
+      await current.end("immediate");
+    } catch (error) {
+      logger.warn("Failed to end voice Live Activity", error);
+    }
   }
 
   for (const instance of VoiceChannelActivity.getInstances()) {

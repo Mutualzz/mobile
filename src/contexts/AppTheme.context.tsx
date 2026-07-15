@@ -44,7 +44,7 @@ export const AppTheme = observer(({ children }: PropsWithChildren) => {
                     return;
                 }
 
-                if (selectedTheme.id === themeProviderRef.current?.theme.id)
+                if (selectedTheme.id === themeProviderRef.current?.theme?.id)
                     return;
 
                 isUpdatingFromServer.current = true;

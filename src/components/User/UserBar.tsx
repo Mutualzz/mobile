@@ -99,17 +99,10 @@ export const UserBar = observer(() => {
   const voiceTitle = getVoiceTitle(voiceStatus, t);
   const voiceTitleColor = getVoiceTitleColor(voiceStatus, theme.colors);
 
-  const selfVoiceState = account
-    ? app.voiceStates.get(account.id)
-    : undefined;
+  const selfVoiceState = account ? app.voiceStates.get(account.id) : undefined;
   const selfElapsed = useElapsedClock(
     selfVoiceState?.channelId && !selfVoiceState.disconnectedAt
       ? selfVoiceState.joinedAt
-      : null,
-  );
-  const channelElapsed = useElapsedClock(
-    voiceChannel
-      ? getChannelOccupiedAt(app.voiceStates.getAllByChannel(voiceChannel.id))
       : null,
   );
 
@@ -170,27 +163,31 @@ export const UserBar = observer(() => {
                     {voiceSubtitle}
                   </Typography>
                 )}
-                {channelElapsed && (
+                {selfElapsed && (
                   <Typography
                     level="body-xs"
                     textColor="muted"
-                    accessibilityLabel={t("voice.channelOccupied", {
-                      time: channelElapsed,
+                    accessibilityLabel={t("voice.elapsedInChannel", {
+                      time: selfElapsed,
                     })}
                     style={{ fontVariant: ["tabular-nums"] }}
                   >
-                    {channelElapsed}
+                    {selfElapsed}
                   </Typography>
                 )}
               </Box>
 
-              <Box style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+              <Box
+                style={{ flexDirection: "row", alignItems: "center", gap: 2 }}
+              >
                 {voiceStatus === "connected" && (
                   <IconButton
                     variant="plain"
                     padding={4}
                     onPress={openNoiseSuppression}
-                    accessibilityLabel={t("voice.controls.noiseSuppressionA11y")}
+                    accessibilityLabel={t(
+                      "voice.controls.noiseSuppressionA11y",
+                    )}
                     accessibilityState={{
                       selected: app.voice.noiseSuppression,
                     }}
@@ -341,21 +338,13 @@ export const UserBar = observer(() => {
                   minWidth: 0,
                 }}
               >
-                <Typography level="body-sm" truncate="single" style={{ flexShrink: 1 }}>
+                <Typography
+                  level="body-sm"
+                  truncate="single"
+                  style={{ flexShrink: 1 }}
+                >
                   {account.displayName}
                 </Typography>
-                {selfElapsed && (
-                  <Typography
-                    level="body-xs"
-                    textColor="muted"
-                    accessibilityLabel={t("voice.elapsedInChannel", {
-                      time: selfElapsed,
-                    })}
-                    style={{ fontVariant: ["tabular-nums"] }}
-                  >
-                    {selfElapsed}
-                  </Typography>
-                )}
               </Box>
               <Typography level="body-xs" textColor="muted" truncate="single">
                 {customStatus || `@${account.username}`}

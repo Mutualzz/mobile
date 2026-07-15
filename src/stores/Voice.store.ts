@@ -36,6 +36,7 @@ import {
   startOrUpdateVoiceLiveActivity,
   updateVoiceLiveActivity,
 } from "@utils/voiceLiveActivity";
+import { bindVoiceLiveActivityLinkHandlers } from "@utils/voiceLiveActivityLinks";
 import { resolveVoiceLiveActivitySpaceIcon } from "@utils/voiceLiveActivityIcon";
 import { getVoiceLiveActivityThemeColors } from "@utils/voiceLiveActivityTheme";
 import { ensureVoiceMicPermission } from "@utils/voicePermissions";
@@ -145,17 +146,21 @@ export class VoiceStore {
 
   constructor(private readonly app: AppStore) {
     registerAndroidVoiceForegroundService();
-    bindVoiceLiveActivityHandlers({
+    const voiceLiveActivityHandlers = {
       toggleMute: () => this.setMute(!this.selfMute),
       toggleDeaf: () => this.setDeaf(!this.selfDeaf),
       disconnect: () => {
         void this.leave();
       },
-    });
+    };
+    bindVoiceLiveActivityHandlers(voiceLiveActivityHandlers);
+    bindVoiceLiveActivityLinkHandlers(voiceLiveActivityHandlers);
     reaction(
       () => ({
         themeId:
-          this.app.settings?.currentTheme ?? this.app.themes.currentTheme,
+          this.app.settings?.currentTheme ??
+          this.app.themes?.currentTheme ??
+          null,
         connected: this.connectionStatus === "connected",
       }),
       ({ connected }) => {
@@ -1142,9 +1147,9 @@ export class VoiceStore {
     return {
       channelName,
       spaceName,
-      muted: this.effectiveSelfMute,
-      deafened: this.effectiveSelfDeaf,
-      spaceIconPath,
+      muted: this.effectiveSelfMute === true,
+      deafened: this.effectiveSelfDeaf === true,
+      spaceIconPath: spaceIconPath || "",
       ...getVoiceLiveActivityThemeColors(this.app),
     };
   }
@@ -1167,10 +1172,15 @@ export class VoiceStore {
     }
   }
 
+  private syncGeneration = 0;
+
   private async syncVoicePresenceUi() {
     if (this.connectionStatus !== "connected") return;
 
+    const generation = ++this.syncGeneration;
     const props = await this.getVoicePresenceProps();
+    if (generation !== this.syncGeneration) return;
+
     await updateVoiceLiveActivity(props);
 
     try {

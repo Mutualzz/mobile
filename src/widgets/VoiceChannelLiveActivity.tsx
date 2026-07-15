@@ -1,17 +1,23 @@
-import { Button, HStack, Image, Spacer, Text, VStack } from "@expo/ui/swift-ui";
+import { HStack, Image, Link, Spacer, Text, VStack } from "@expo/ui/swift-ui";
 import {
-  buttonStyle,
+  aspectRatio,
   clipShape,
-  controlSize,
   font,
   foregroundStyle,
   frame,
   padding,
-  tint,
+  resizable,
 } from "@expo/ui/swift-ui/modifiers";
 import { createLiveActivity, type LiveActivityEnvironment } from "expo-widgets";
 
 export const VOICE_CHANNEL_LIVE_ACTIVITY_NAME = "VoiceChannelActivity";
+
+export const VOICE_LIVE_ACTIVITY_MUTE_URL =
+  "com.mutualzz.app://voice-live-activity/mute";
+export const VOICE_LIVE_ACTIVITY_DEAFEN_URL =
+  "com.mutualzz.app://voice-live-activity/deafen";
+export const VOICE_LIVE_ACTIVITY_DISCONNECT_URL =
+  "com.mutualzz.app://voice-live-activity/disconnect";
 
 export interface VoiceChannelLiveActivityProps {
   channelName: string;
@@ -24,99 +30,6 @@ export interface VoiceChannelLiveActivityProps {
   mutedTextColor: string;
   dangerColor: string;
   successColor: string;
-}
-
-function SpaceIdentity(props: {
-  spaceIconPath: string;
-  spaceName: string;
-  channelName: string;
-  accentColor: string;
-  textColor: string;
-  mutedTextColor: string;
-}) {
-  "widget";
-
-  const hasIcon = props.spaceIconPath.length > 0;
-
-  return (
-    <HStack spacing={10} alignment="center">
-      {hasIcon ? (
-        <Image
-          uiImage={props.spaceIconPath}
-          modifiers={[
-            frame({ width: 36, height: 36 }),
-            clipShape("circle"),
-          ]}
-        />
-      ) : (
-        <Image
-          systemName="building.2.fill"
-          color={props.accentColor}
-          size={28}
-        />
-      )}
-      <VStack spacing={2} alignment="leading">
-        <Text
-          modifiers={[
-            font({ weight: "bold", size: 15 }),
-            foregroundStyle(props.textColor),
-          ]}
-        >
-          {props.spaceName.length > 0 ? props.spaceName : "Voice"}
-        </Text>
-        <Text
-          modifiers={[font({ size: 12 }), foregroundStyle(props.mutedTextColor)]}
-        >
-          {props.channelName}
-        </Text>
-      </VStack>
-    </HStack>
-  );
-}
-
-function MuteDeafenIcons(props: {
-  muted: boolean;
-  deafened: boolean;
-  dangerColor: string;
-  accentColor: string;
-  interactive: boolean;
-}) {
-  "widget";
-
-  const muteColor =
-    props.muted || props.deafened ? props.dangerColor : props.accentColor;
-  const deafColor = props.deafened ? props.dangerColor : props.accentColor;
-  const micIcon =
-    props.muted || props.deafened ? "mic.slash.fill" : "mic.fill";
-  const speakerIcon = props.deafened
-    ? "speaker.slash.fill"
-    : "speaker.wave.2.fill";
-
-  if (!props.interactive) {
-    return (
-      <HStack spacing={8} alignment="center">
-        <Image systemName={micIcon} color={muteColor} size={18} />
-        <Image systemName={speakerIcon} color={deafColor} size={18} />
-      </HStack>
-    );
-  }
-
-  return (
-    <HStack spacing={4} alignment="center">
-      <Button
-        target="mute"
-        modifiers={[buttonStyle("plain"), tint(muteColor)]}
-      >
-        <Image systemName={micIcon} color={muteColor} size={20} />
-      </Button>
-      <Button
-        target="deafen"
-        modifiers={[buttonStyle("plain"), tint(deafColor)]}
-      >
-        <Image systemName={speakerIcon} color={deafColor} size={20} />
-      </Button>
-    </HStack>
-  );
 }
 
 const VoiceChannelActivityLayout = (
@@ -134,39 +47,19 @@ const VoiceChannelActivityLayout = (
   const mutedTextColor = environment.isLuminanceReduced
     ? "#DDDDDD"
     : props.mutedTextColor;
+  const muteColor =
+    props.muted || props.deafened ? props.dangerColor : accentColor;
+  const deafColor = props.deafened ? props.dangerColor : accentColor;
   const micIcon =
     props.muted || props.deafened ? "mic.slash.fill" : "mic.fill";
-
-  const identity = (
-    <SpaceIdentity
-      spaceIconPath={props.spaceIconPath}
-      spaceName={props.spaceName}
-      channelName={props.channelName}
-      accentColor={accentColor}
-      textColor={textColor}
-      mutedTextColor={mutedTextColor}
-    />
-  );
-
-  const controls = (
-    <MuteDeafenIcons
-      muted={props.muted}
-      deafened={props.deafened}
-      dangerColor={props.dangerColor}
-      accentColor={accentColor}
-      interactive
-    />
-  );
-
-  const statusIcons = (
-    <MuteDeafenIcons
-      muted={props.muted}
-      deafened={props.deafened}
-      dangerColor={props.dangerColor}
-      accentColor={accentColor}
-      interactive={false}
-    />
-  );
+  const speakerIcon = props.deafened
+    ? "speaker.slash.fill"
+    : "speaker.wave.2.fill";
+  const spaceTitle = props.spaceName.length > 0 ? props.spaceName : "Voice";
+  const hasSpaceIcon = props.spaceIconPath.length > 0;
+  const muteUrl = "com.mutualzz.app://voice-live-activity/mute";
+  const deafenUrl = "com.mutualzz.app://voice-live-activity/deafen";
+  const disconnectUrl = "com.mutualzz.app://voice-live-activity/disconnect";
 
   return {
     banner: (
@@ -175,19 +68,139 @@ const VoiceChannelActivityLayout = (
         alignment="center"
         modifiers={[padding({ all: 12 })]}
       >
-        {identity}
+        <HStack spacing={10} alignment="center">
+          {hasSpaceIcon ? (
+            <Image
+              uiImage={props.spaceIconPath}
+              modifiers={[
+                resizable(),
+                aspectRatio({ contentMode: "fill" }),
+                frame({ width: 36, height: 36 }),
+                clipShape("circle"),
+              ]}
+            />
+          ) : (
+            <Image
+              systemName="building.2.fill"
+              color={accentColor}
+              size={28}
+            />
+          )}
+          <VStack spacing={2} alignment="leading">
+            <Text
+              modifiers={[
+                font({ weight: "bold", size: 15 }),
+                foregroundStyle(textColor),
+              ]}
+            >
+              {spaceTitle}
+            </Text>
+            <Text
+              modifiers={[
+                font({ size: 12 }),
+                foregroundStyle(mutedTextColor),
+              ]}
+            >
+              {props.channelName}
+            </Text>
+          </VStack>
+        </HStack>
         <Spacer />
-        {controls}
+        <HStack spacing={10} alignment="center">
+          <Link destination={muteUrl}>
+            <Image systemName={micIcon} color={muteColor} size={22} />
+          </Link>
+          <Link destination={deafenUrl}>
+            <Image systemName={speakerIcon} color={deafColor} size={22} />
+          </Link>
+        </HStack>
       </HStack>
     ),
-    compactLeading: <Image systemName={micIcon} color={accentColor} />,
-    compactTrailing: statusIcons,
-    minimal: <Image systemName={micIcon} color={accentColor} />,
+    compactLeading: hasSpaceIcon ? (
+      <Image
+        uiImage={props.spaceIconPath}
+        modifiers={[
+          resizable(),
+          aspectRatio({ contentMode: "fill" }),
+          frame({ width: 20, height: 20 }),
+          clipShape("circle"),
+        ]}
+      />
+    ) : (
+      <Image systemName="building.2.fill" color={accentColor} />
+    ),
+    compactTrailing: (
+      <HStack spacing={8} alignment="center">
+        <Image systemName={micIcon} color={muteColor} size={18} />
+        <Image systemName={speakerIcon} color={deafColor} size={18} />
+      </HStack>
+    ),
+    minimal: hasSpaceIcon ? (
+      <Image
+        uiImage={props.spaceIconPath}
+        modifiers={[
+          resizable(),
+          aspectRatio({ contentMode: "fill" }),
+          frame({ width: 16, height: 16 }),
+          clipShape("circle"),
+        ]}
+      />
+    ) : (
+      <Image systemName="building.2.fill" color={accentColor} />
+    ),
     expandedLeading: (
-      <VStack modifiers={[padding({ all: 10 })]}>{identity}</VStack>
+      <HStack
+        spacing={10}
+        alignment="center"
+        modifiers={[padding({ all: 10 })]}
+      >
+        {hasSpaceIcon ? (
+          <Image
+            uiImage={props.spaceIconPath}
+            modifiers={[
+              resizable(),
+              aspectRatio({ contentMode: "fill" }),
+              frame({ width: 36, height: 36 }),
+              clipShape("circle"),
+            ]}
+          />
+        ) : (
+          <Image
+            systemName="building.2.fill"
+            color={accentColor}
+            size={28}
+          />
+        )}
+        <VStack spacing={2} alignment="leading">
+          <Text
+            modifiers={[
+              font({ weight: "bold", size: 15 }),
+              foregroundStyle(textColor),
+            ]}
+          >
+            {spaceTitle}
+          </Text>
+          <Text
+            modifiers={[font({ size: 12 }), foregroundStyle(mutedTextColor)]}
+          >
+            {props.channelName}
+          </Text>
+        </VStack>
+      </HStack>
     ),
     expandedTrailing: (
-      <VStack modifiers={[padding({ all: 10 })]}>{controls}</VStack>
+      <HStack
+        spacing={10}
+        alignment="center"
+        modifiers={[padding({ all: 10 })]}
+      >
+        <Link destination={muteUrl}>
+          <Image systemName={micIcon} color={muteColor} size={22} />
+        </Link>
+        <Link destination={deafenUrl}>
+          <Image systemName={speakerIcon} color={deafColor} size={22} />
+        </Link>
+      </HStack>
     ),
     expandedCenter: (
       <VStack>
@@ -195,24 +208,34 @@ const VoiceChannelActivityLayout = (
       </VStack>
     ),
     expandedBottom: (
-      <VStack modifiers={[padding({ all: 12 })]}>
-        <Button
-          label="Disconnect"
-          target="disconnect"
-          role="destructive"
-          systemImage="phone.down.fill"
-          modifiers={[
-            buttonStyle("borderedProminent"),
-            controlSize("large"),
-            tint(props.dangerColor),
-          ]}
-        />
+      <VStack
+        spacing={8}
+        alignment="center"
+        modifiers={[padding({ all: 12 })]}
+      >
+        <Link destination={disconnectUrl}>
+          <HStack spacing={8} alignment="center">
+            <Image
+              systemName="phone.down.fill"
+              color={props.dangerColor}
+              size={18}
+            />
+            <Text
+              modifiers={[
+                font({ weight: "bold", size: 16 }),
+                foregroundStyle(props.dangerColor),
+              ]}
+            >
+              Disconnect
+            </Text>
+          </HStack>
+        </Link>
       </VStack>
     ),
   };
 };
 
 export default createLiveActivity(
-  VOICE_CHANNEL_LIVE_ACTIVITY_NAME,
+  "VoiceChannelActivity",
   VoiceChannelActivityLayout,
 );
