@@ -4,6 +4,7 @@ import {
   addVoiceLiveActivityActionListener,
   areVoiceLiveActivitiesEnabled,
   endNativeVoiceLiveActivity,
+  isVoiceLiveActivityModuleAvailable,
   startNativeVoiceLiveActivity,
   updateNativeVoiceLiveActivity,
   type VoiceLiveActivityProps,
@@ -21,6 +22,7 @@ let handlers: VoiceLiveActivityHandlers | null = null;
 let interactionBound = false;
 let lastProps: VoiceLiveActivityProps | null = null;
 let started = false;
+let activityId: string | null = null;
 
 function ensureInteractionListener() {
   if (interactionBound || Platform.OS !== "ios") return;
@@ -54,21 +56,51 @@ export async function startOrUpdateVoiceLiveActivity(
   props: VoiceLiveActivityProps,
   deepLinkUrl: string,
 ) {
-  if (Platform.OS !== "ios" || !areVoiceLiveActivitiesEnabled()) return;
+  if (Platform.OS !== "ios") return;
 
   ensureInteractionListener();
   lastProps = props;
 
+  if (!isVoiceLiveActivityModuleAvailable()) {
+    console.warn(
+      "[VoiceLiveActivity] Native module not linked — rebuild iOS (npx expo prebuild --clean && npx expo run:ios)",
+    );
+    logger.warn(
+      "Native module not linked — rebuild the iOS app (prebuild --clean && run:ios)",
+    );
+    return;
+  }
+
+  if (!areVoiceLiveActivitiesEnabled()) {
+    console.warn(
+      "[VoiceLiveActivity] Live Activities disabled — Settings → Mutualzz → Live Activities",
+    );
+    logger.warn(
+      "Live Activities are disabled for this device/app (Settings → Mutualzz / Live Activities)",
+    );
+  }
+
   try {
-    if (started) {
+    if (started && activityId) {
       await updateNativeVoiceLiveActivity(props);
       return;
     }
-    await startNativeVoiceLiveActivity(props, deepLinkUrl);
-    started = true;
+
+    activityId = await startNativeVoiceLiveActivity(props, deepLinkUrl);
+    started = !!activityId;
+    if (!activityId) {
+      console.warn("[VoiceLiveActivity] start() returned empty activity id");
+      logger.warn("start() returned empty activity id");
+      started = false;
+    } else {
+      console.log(`[VoiceLiveActivity] Started activity ${activityId}`);
+      logger.info(`Started activity ${activityId}`);
+    }
   } catch (error) {
+    console.warn("[VoiceLiveActivity] Failed to start/update", error);
     logger.warn("Failed to start/update voice Live Activity", error);
     started = false;
+    activityId = null;
   }
 }
 
@@ -79,26 +111,31 @@ export async function updateVoiceLiveActivity(props: VoiceLiveActivityProps) {
   }
 
   lastProps = props;
-  if (!started || !areVoiceLiveActivitiesEnabled()) return;
+  if (!started || !isVoiceLiveActivityModuleAvailable()) return;
 
   try {
     await updateNativeVoiceLiveActivity(props);
   } catch (error) {
+    console.warn("[VoiceLiveActivity] Failed to update", error);
     logger.warn("Failed to update voice Live Activity", error);
   }
 }
 
 export async function endVoiceLiveActivity() {
   lastProps = null;
+  activityId = null;
   if (Platform.OS !== "ios") {
     started = false;
     return;
   }
 
   started = false;
+  if (!isVoiceLiveActivityModuleAvailable()) return;
+
   try {
     await endNativeVoiceLiveActivity();
   } catch (error) {
+    console.warn("[VoiceLiveActivity] Failed to end", error);
     logger.warn("Failed to end voice Live Activity", error);
   }
 }

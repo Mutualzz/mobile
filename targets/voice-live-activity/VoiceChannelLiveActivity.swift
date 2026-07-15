@@ -3,7 +3,6 @@ import WidgetKit
 import SwiftUI
 import AppIntents
 
-@available(iOS 16.2, *)
 struct VoiceChannelLiveActivityWidget: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: VoiceChannelAttributes.self) { context in

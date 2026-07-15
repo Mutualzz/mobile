@@ -18,6 +18,7 @@ export type VoiceLiveActivityProps = {
 
 type NativeModule = {
   areActivitiesEnabled(): boolean;
+  isModuleAvailable(): boolean;
   start(props: VoiceLiveActivityProps, deepLinkUrl: string): Promise<string>;
   update(props: VoiceLiveActivityProps): Promise<void>;
   end(): Promise<void>;
@@ -25,13 +26,27 @@ type NativeModule = {
     eventName: "onVoiceLiveActivityAction",
     listener: (event: { action: string }) => void,
   ): EventSubscription;
-  appGroupPath?: string | null;
+  appGroupPath?: string;
 };
 
 const native =
   Platform.OS === "ios"
     ? requireOptionalNativeModule<NativeModule>("VoiceLiveActivity")
     : null;
+
+if (Platform.OS === "ios") {
+  if (native == null) {
+    console.warn(
+      "[VoiceLiveActivity] Native module missing — rebuild iOS after native changes",
+    );
+  } else {
+    console.log("[VoiceLiveActivity] Native module linked");
+  }
+}
+
+export function isVoiceLiveActivityModuleAvailable() {
+  return native != null;
+}
 
 export function areVoiceLiveActivitiesEnabled() {
   if (!native) return false;
@@ -43,14 +58,17 @@ export function areVoiceLiveActivitiesEnabled() {
 }
 
 export function getVoiceLiveActivityAppGroupPath() {
-  return native?.appGroupPath ?? null;
+  const path = native?.appGroupPath;
+  return path && path.length > 0 ? path : null;
 }
 
 export async function startNativeVoiceLiveActivity(
   props: VoiceLiveActivityProps,
   deepLinkUrl: string,
 ) {
-  if (!native) return null;
+  if (!native) {
+    throw new Error("VoiceLiveActivity native module is not linked");
+  }
   return native.start(props, deepLinkUrl);
 }
 

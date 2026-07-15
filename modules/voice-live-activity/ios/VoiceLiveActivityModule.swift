@@ -1,6 +1,21 @@
 import ExpoModulesCore
 import ActivityKit
 import Foundation
+import OSLog
+
+private let log = Logger(subsystem: "com.mutualzz.app", category: "VoiceLiveActivity")
+
+struct VoiceLiveActivityPropsRecord: Record {
+  @Field var channelName: String = "Voice"
+  @Field var spaceName: String = ""
+  @Field var muted: Bool = false
+  @Field var deafened: Bool = false
+  @Field var spaceIconFileName: String = ""
+  @Field var accentColor: String = "#B57EDC"
+  @Field var textColor: String = "#FFFFFF"
+  @Field var mutedTextColor: String = "#B0A8B8"
+  @Field var dangerColor: String = "#E1556B"
+}
 
 public class VoiceLiveActivityModule: Module {
   private var observing = false
@@ -11,7 +26,7 @@ public class VoiceLiveActivityModule: Module {
     Events("onVoiceLiveActivityAction")
 
     Constant("appGroupPath") {
-      VoiceLiveActivityAppBridge.containerPath
+      VoiceLiveActivityAppBridge.containerPath ?? ""
     }
 
     Function("areActivitiesEnabled") { () -> Bool in
@@ -21,16 +36,20 @@ public class VoiceLiveActivityModule: Module {
       return false
     }
 
-    AsyncFunction("start") { (props: [String: Any], deepLinkUrl: String) -> String in
-      try await self.startActivity(props: props, deepLinkUrl: deepLinkUrl)
+    Function("isModuleAvailable") { () -> Bool in
+      true
     }
 
-    AsyncFunction("update") { (props: [String: Any]) in
-      try await self.updateActivity(props: props)
+    AsyncFunction("start") { (props: VoiceLiveActivityPropsRecord, deepLinkUrl: String) -> String in
+      try await startVoiceLiveActivity(props: props, deepLinkUrl: deepLinkUrl)
+    }
+
+    AsyncFunction("update") { (props: VoiceLiveActivityPropsRecord) in
+      try await updateVoiceLiveActivity(props: props)
     }
 
     AsyncFunction("end") { () in
-      await self.endActivities()
+      await endVoiceLiveActivities()
     }
 
     OnStartObserving("onVoiceLiveActivityAction") {
@@ -39,60 +58,6 @@ public class VoiceLiveActivityModule: Module {
 
     OnStopObserving("onVoiceLiveActivityAction") {
       self.stopObservingActions()
-    }
-  }
-
-  @available(iOS 16.2, *)
-  private func contentState(from props: [String: Any]) -> VoiceChannelAttributes.ContentState {
-    VoiceChannelAttributes.ContentState(
-      channelName: props["channelName"] as? String ?? "Voice",
-      spaceName: props["spaceName"] as? String ?? "",
-      muted: props["muted"] as? Bool ?? false,
-      deafened: props["deafened"] as? Bool ?? false,
-      spaceIconFileName: props["spaceIconFileName"] as? String ?? "",
-      accentColor: props["accentColor"] as? String ?? "#B57EDC",
-      textColor: props["textColor"] as? String ?? "#FFFFFF",
-      mutedTextColor: props["mutedTextColor"] as? String ?? "#B0A8B8",
-      dangerColor: props["dangerColor"] as? String ?? "#E1556B"
-    )
-  }
-
-  private func startActivity(props: [String: Any], deepLinkUrl: String) async throws -> String {
-    guard #available(iOS 16.2, *) else {
-      throw Exception(name: "Unsupported", description: "Live Activities require iOS 16.2+")
-    }
-    guard ActivityAuthorizationInfo().areActivitiesEnabled else {
-      throw Exception(name: "Disabled", description: "Live Activities are disabled")
-    }
-
-    for activity in Activity<VoiceChannelAttributes>.activities {
-      await activity.end(nil, dismissalPolicy: .immediate)
-    }
-
-    let attributes = VoiceChannelAttributes(deepLinkUrl: deepLinkUrl)
-    let state = contentState(from: props)
-    let content = ActivityContent(state: state, staleDate: nil)
-    let activity = try Activity.request(
-      attributes: attributes,
-      content: content,
-      pushType: nil
-    )
-    return activity.id
-  }
-
-  private func updateActivity(props: [String: Any]) async throws {
-    guard #available(iOS 16.2, *) else { return }
-    let state = contentState(from: props)
-    let content = ActivityContent(state: state, staleDate: nil)
-    for activity in Activity<VoiceChannelAttributes>.activities {
-      await activity.update(content)
-    }
-  }
-
-  private func endActivities() async {
-    guard #available(iOS 16.2, *) else { return }
-    for activity in Activity<VoiceChannelAttributes>.activities {
-      await activity.end(nil, dismissalPolicy: .immediate)
     }
   }
 
@@ -132,4 +97,85 @@ public class VoiceLiveActivityModule: Module {
     guard let action = VoiceLiveActivityAppBridge.consumePendingAction() else { return }
     sendEvent("onVoiceLiveActivityAction", ["action": action])
   }
+}
+
+private func contentState(
+  from props: VoiceLiveActivityPropsRecord
+) -> VoiceChannelAttributes.ContentState {
+  VoiceChannelAttributes.ContentState(
+    channelName: props.channelName,
+    spaceName: props.spaceName,
+    muted: props.muted,
+    deafened: props.deafened,
+    spaceIconFileName: props.spaceIconFileName,
+    accentColor: props.accentColor,
+    textColor: props.textColor,
+    mutedTextColor: props.mutedTextColor,
+    dangerColor: props.dangerColor
+  )
+}
+
+private func startVoiceLiveActivity(
+  props: VoiceLiveActivityPropsRecord,
+  deepLinkUrl: String
+) async throws -> String {
+  guard #available(iOS 16.2, *) else {
+    throw Exception(name: "Unsupported", description: "Live Activities require iOS 16.2+")
+  }
+
+  for activity in Activity<VoiceChannelAttributes>.activities {
+    await activity.end(nil, dismissalPolicy: .immediate)
+  }
+
+  return try await MainActor.run {
+    let auth = ActivityAuthorizationInfo()
+    log.info(
+      "areActivitiesEnabled=\(auth.areActivitiesEnabled, privacy: .public) frequentUpdates=\(auth.frequentPushesEnabled, privacy: .public)"
+    )
+
+    guard auth.areActivitiesEnabled else {
+      throw Exception(
+        name: "Disabled",
+        description: "Live Activities are disabled in system settings for this device/app"
+      )
+    }
+
+    let attributes = VoiceChannelAttributes(deepLinkUrl: deepLinkUrl)
+    let state = contentState(from: props)
+    let content = ActivityContent(state: state, staleDate: nil)
+
+    do {
+      let activity = try Activity.request(
+        attributes: attributes,
+        content: content,
+        pushType: nil
+      )
+      log.info(
+        "Started Live Activity id=\(activity.id, privacy: .public) channel=\(props.channelName, privacy: .public)"
+      )
+      return activity.id
+    } catch {
+      log.error("Activity.request failed: \(error.localizedDescription, privacy: .public)")
+      throw Exception(name: "StartFailed", description: error.localizedDescription)
+    }
+  }
+}
+
+private func updateVoiceLiveActivity(props: VoiceLiveActivityPropsRecord) async throws {
+  guard #available(iOS 16.2, *) else { return }
+  let state = contentState(from: props)
+  let content = ActivityContent(state: state, staleDate: nil)
+  let activities = Activity<VoiceChannelAttributes>.activities
+  log.info("Updating \(activities.count, privacy: .public) Live Activities")
+  for activity in activities {
+    await activity.update(content)
+  }
+}
+
+private func endVoiceLiveActivities() async {
+  guard #available(iOS 16.2, *) else { return }
+  for activity in Activity<VoiceChannelAttributes>.activities {
+    await activity.end(nil, dismissalPolicy: .immediate)
+  }
+  log.info("Ended Live Activities")
 }
