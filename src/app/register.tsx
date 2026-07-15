@@ -4,15 +4,7 @@ import { DOBInput } from "@components/DOBInput";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import { type HttpException } from "@mutualzz/types";
-import {
-  Box,
-  IconButton,
-  InputDefault,
-  InputPassword,
-  type InputPasswordProps,
-  type InputRootProps,
-  Typography,
-} from "@mutualzz/ui-native";
+import { Box, IconButton, InputDefault, InputPassword, type InputPasswordProps, type InputRootProps, Typography } from "@mutualzz/ui-native";
 import { validateRegister } from "@mutualzz/validators";
 import { type AnyFieldApi, revalidateLogic } from "@tanstack/form-core";
 import { useForm } from "@tanstack/react-form";

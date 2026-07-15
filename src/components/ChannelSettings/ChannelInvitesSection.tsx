@@ -1,7 +1,7 @@
 import { Button } from "@components/Button";
 import { InviteRow } from "@components/SpaceSettings/SpaceInvitesSettings";
 import { SpaceCreateInviteSheet } from "@components/SpaceSettings/SpaceCreateInviteSheet";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { Box, Divider, Typography } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import type { Space } from "@stores/objects/Space";
@@ -17,7 +17,7 @@ interface Props {
 
 export const ChannelInvitesSection = observer(({ space, channel }: Props) => {
   const { t } = useTranslation("space");
-  const { openModal } = useModal();
+  const { openSheet } = useSheet();
   const [now, setNow] = useState(new Date());
 
   useQuery({
@@ -56,7 +56,7 @@ export const ChannelInvitesSection = observer(({ space, channel }: Props) => {
         <Button
           size="sm"
           onPress={() =>
-            openModal(
+            openSheet(
               `channel-create-invite-${channel.id}`,
               <SpaceCreateInviteSheet space={space} channel={channel} />,
             )

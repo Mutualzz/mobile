@@ -1,10 +1,4 @@
-import { IconButton } from "@components/IconButton";
-import { Paper } from "@components/Paper";
-import { UserAvatar } from "@components/User/UserAvatar";
-import { HashIcon, ArrowDownIcon } from "phosphor-react-native";
-import { Logger } from "@mutualzz/logger";
 import { useAppStore } from "@hooks/useStores";
-import { useOnKeyboardOpen } from "@hooks/useKeyboardOffset";
 import { ChannelType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
@@ -18,13 +12,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
-  Keyboard,
-  Platform,
+  Dimensions,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from "react-native";
 import { MessageGroup } from "./MessageGroup";
+import { Logger } from "@mutualzz/logger";
+import { ChatListScrollView } from "@components/Keyboard/ChatListScrollView";
+import { Paper } from "@components/Paper";
+import { UserAvatar } from "@components/User/UserAvatar";
+import { IconButton } from "@components/IconButton";
+import { HashIcon, ArrowDownIcon } from "phosphor-react-native";
 
+const CHAT_DRAW_DISTANCE = Math.ceil(Dimensions.get("window").height);
 interface Props {
   space?: Space | null;
   channel?: Channel | null;
@@ -32,7 +32,6 @@ interface Props {
 
 const LIMIT = 50;
 const SCROLL_BOTTOM_THRESHOLD = 48;
-const ESTIMATED_GROUP_HEIGHT = 88;
 
 const getDMConversationName = (channel: Channel) =>
   channel.name ||
@@ -371,16 +370,6 @@ export const MessageList = observer(({ channel }: Props) => {
     scheduleScrollToBottom(true);
   }, [latestMessageId, scheduleScrollToBottom]);
 
-  const handleKeyboardOpen = useCallback(() => {
-    if (!isAtBottomRef.current) return;
-    setTimeout(() => {
-      if (!isAtBottomRef.current) return;
-      scheduleScrollToBottom(true);
-    }, 80);
-  }, [scheduleScrollToBottom]);
-
-  useOnKeyboardOpen(handleKeyboardOpen);
-
   const fetchMore = useCallback(() => {
     if (!channel?.messages.count) {
       logger.warn("channel has no messages, aborting fetchMore!");
@@ -480,7 +469,7 @@ export const MessageList = observer(({ channel }: Props) => {
         keyExtractor={keyExtractor}
         extraData={app.highlightedMessageId}
         maintainVisibleContentPosition={{ startRenderingFromBottom: true }}
-        drawDistance={ESTIMATED_GROUP_HEIGHT * 8}
+        drawDistance={CHAT_DRAW_DISTANCE}
         onContentSizeChange={() => {
           if (!isAtBottomRef.current) return;
           scheduleScrollToBottom(false);
@@ -489,9 +478,7 @@ export const MessageList = observer(({ channel }: Props) => {
         onStartReachedThreshold={0.2}
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        onTouchStart={() => Keyboard.dismiss()}
-        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-        keyboardShouldPersistTaps="handled"
+        renderScrollComponent={ChatListScrollView}
         ListHeaderComponent={listHeader}
         contentContainerStyle={{
           paddingHorizontal: 8,

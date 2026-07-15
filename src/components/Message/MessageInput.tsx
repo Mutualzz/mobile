@@ -2,23 +2,20 @@ import { ExpressionPickerSheet } from "@components/Expression/ExpressionPickerSh
 import { IconButton } from "@components/IconButton";
 import { MarkdownInput } from "@components/Markdown/MarkdownInput/MarkdownInput";
 import { Paper } from "@components/Paper";
+import { CHAT_COMPOSER_NATIVE_ID } from "@contexts/ChatKeyboard.context";
 import {
   CheckIcon,
+  FileIcon,
   PaperclipIcon,
   PaperPlaneTiltIcon,
   PencilSimpleIcon,
+  PlayIcon,
   SmileyIcon,
   XIcon,
 } from "phosphor-react-native";
 import { useAppStore } from "@hooks/useStores";
 import { useComposerSafePadding } from "@hooks/useKeyboardOffset";
-import {
-  Box,
-  scaledLayoutSize,
-  Typography,
-  useFontScale,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { Box, scaledLayoutSize, Typography, useFontScale, useTheme } from "@mutualzz/ui-native";
 import {
   useScaledComposerPanelMaxHeight,
   useScaledFeedPreviewSizes,
@@ -69,6 +66,28 @@ interface PickedAttachment {
   type: string;
   name: string;
   size?: number;
+}
+
+function extensionForAttachmentMime(mime: string, isVideo: boolean) {
+  if (isVideo) {
+    if (mime.includes("quicktime")) return "mov";
+    return "mp4";
+  }
+  if (mime.includes("png")) return "png";
+  if (mime.includes("gif")) return "gif";
+  if (mime.includes("webp")) return "webp";
+  if (mime.includes("heic") || mime.includes("heif")) return "heic";
+  return "jpg";
+}
+
+function resolvePickedAttachmentName(
+  fileName: string | null | undefined,
+  mime: string,
+  isVideo: boolean,
+) {
+  const trimmed = fileName?.trim();
+  if (trimmed) return trimmed;
+  return `attachment.${extensionForAttachmentMime(mime, isVideo)}`;
 }
 
 interface Props {
@@ -246,18 +265,26 @@ export const MessageInput = observer(({ channel }: Props) => {
       mediaTypes: ["images", "videos"],
       allowsMultipleSelection: true,
       quality: 1,
+      preferredAssetRepresentationMode:
+        ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
     });
 
     if (result.canceled) return;
 
     const next = result.assets
       .filter((a) => (a.fileSize ?? 0) <= MAX_ATTACHMENT_SIZE)
-      .map((a) => ({
-        uri: a.uri,
-        type: a.mimeType ?? (a.type === "video" ? "video/mp4" : "image/jpeg"),
-        name: a.fileName ?? `attachment.${a.type === "video" ? "mp4" : "jpg"}`,
-        size: a.fileSize ?? undefined,
-      }));
+      .map((a) => {
+        const isVideo = a.type === "video";
+        const type =
+          a.mimeType ?? (isVideo ? "video/mp4" : "image/jpeg");
+        const name = resolvePickedAttachmentName(a.fileName, type, isVideo);
+        return {
+          uri: a.uri,
+          type,
+          name,
+          size: a.fileSize ?? undefined,
+        };
+      });
 
     setAttachments((prev) => [...prev, ...next].slice(0, MAX_ATTACHMENTS));
   }, [attachments.length, canAttachFiles, denySendingMessages, editingMessage]);
@@ -686,42 +713,106 @@ export const MessageInput = observer(({ channel }: Props) => {
             borderBottomColor: `${theme.colors.neutral}33`,
           }}
         >
-          {attachments.map((file, index) => (
-            <Box
-              key={`${file.uri}-${index}`}
-              style={{
-                position: "relative",
-                maxWidth: scaledLayoutSize(160, fontScale, 1.75),
-                paddingVertical: scaledLayoutSize(6, fontScale, 1.35),
-                paddingHorizontal: scaledLayoutSize(10, fontScale, 1.35),
-                borderRadius: 999,
-                backgroundColor: theme.colors.surface,
-              }}
-            >
-              <Typography
-                level="body-xs"
-                truncate="single"
-                style={{ maxWidth: scaledLayoutSize(120, fontScale, 1.75) }}
-              >
-                {file.name}
-              </Typography>
-              <IconButton
-                padding={4}
-                color="neutral"
-                onPress={() => removeAttachment(index)}
-                accessibilityLabel={t("composer.removeAttachment")}
+          {attachments.map((file, index) => {
+            const isImage = file.type.startsWith("image/");
+            const isVideo = file.type.startsWith("video/");
+            const previewSize = feedSizes.sticker;
+
+            return (
+              <Box
+                key={`${file.uri}-${index}`}
                 style={{
-                  position: "absolute",
-                  top: -6,
-                  right: -6,
-                  backgroundColor: `${theme.colors.neutral}88`,
-                  borderRadius: 999,
+                  position: "relative",
+                  width: isImage || isVideo ? previewSize : undefined,
+                  height: isImage || isVideo ? previewSize : undefined,
+                  maxWidth:
+                    isImage || isVideo
+                      ? undefined
+                      : scaledLayoutSize(160, fontScale, 1.75),
+                  paddingVertical:
+                    isImage || isVideo
+                      ? 0
+                      : scaledLayoutSize(6, fontScale, 1.35),
+                  paddingHorizontal:
+                    isImage || isVideo
+                      ? 0
+                      : scaledLayoutSize(10, fontScale, 1.35),
+                  borderRadius: isImage || isVideo ? 10 : 999,
+                  overflow: "hidden",
+                  backgroundColor: theme.colors.surface,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexDirection: "row",
+                  gap: 6,
                 }}
               >
-                <XIcon size={12} />
-              </IconButton>
-            </Box>
-          ))}
+                {isImage || isVideo ? (
+                  <>
+                    <Image
+                      source={{ uri: file.uri }}
+                      style={{ width: previewSize, height: previewSize }}
+                      resizeMode="cover"
+                      accessibilityLabel={file.name}
+                    />
+                    {isVideo && (
+                      <Box
+                        style={{
+                          position: "absolute",
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          bottom: 0,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: "rgba(0,0,0,0.35)",
+                        }}
+                        pointerEvents="none"
+                      >
+                        <PlayIcon
+                          size={22}
+                          weight="fill"
+                          color="#fff"
+                        />
+                      </Box>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <FileIcon
+                      size={14}
+                      weight="fill"
+                      color={theme.colors.info}
+                    />
+                    <Typography
+                      level="body-xs"
+                      truncate="single"
+                      style={{
+                        maxWidth: scaledLayoutSize(120, fontScale, 1.75),
+                      }}
+                    >
+                      {file.name}
+                    </Typography>
+                  </>
+                )}
+                <IconButton
+                  padding={4}
+                  color="neutral"
+                  onPress={() => removeAttachment(index)}
+                  accessibilityLabel={t("composer.removeAttachment")}
+                  style={{
+                    position: "absolute",
+                    top: -4,
+                    right: -4,
+                    backgroundColor: `${theme.colors.neutral}88`,
+                    borderRadius: 999,
+                    zIndex: 1,
+                  }}
+                >
+                  <XIcon size={12} />
+                </IconButton>
+              </Box>
+            );
+          })}
         </Box>
       )}
 
@@ -758,6 +849,7 @@ export const MessageInput = observer(({ channel }: Props) => {
           enableEmoticons
           placeholder={placeholder}
           editable={!denySendingMessages}
+          nativeID={CHAT_COMPOSER_NATIVE_ID}
           elevation={app.settings?.preferEmbossed ? 4 : 0}
           paddingLeft={14}
           paddingRight={showExpressionPicker ? 40 : 14}

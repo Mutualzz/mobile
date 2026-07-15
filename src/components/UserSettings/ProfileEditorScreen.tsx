@@ -2,20 +2,19 @@ import { Button } from "@components/Button";
 import { SettingsScreen } from "@components/UserSettings/SettingsScreen";
 import { Paper } from "@components/Paper";
 import { MarkdownInput } from "@components/Markdown/MarkdownInput/MarkdownInput";
-import { ProfileWidgetEditorModal } from "@components/Profile/widgets/editor/ProfileWidgetEditorModal";
 import {
   prepareMobileBlocksForSave,
   validateMobileBlocksForSave,
 } from "@components/Profile/widgets/editor/profileWidgetEditor.utils";
 import { useAppNavigation } from "@hooks/useAppNavigation";
-import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
 import { ProfileBackgroundLayer } from "@components/Profile/shared/ProfileBackgroundLayer";
 import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
-import { Box, Input, Typography, hasOpenModals } from "@mutualzz/ui-native";
+import { Box, Input, Typography, hasOpenSheets } from "@mutualzz/ui-native";
 import type { ColorLike } from "@mutualzz/ui-core";
 import { useScaledProfilePreviewHeight } from "@utils/accessibilityLayout";
 import { pickProfileImageAsset } from "@utils/profileImagePicker";
+import { useFocusEffect } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -37,8 +36,7 @@ export const ProfileEditorScreen = observer(() => {
   const { t } = useTranslation("settings");
   const app = useAppStore();
   const account = app.account;
-  const { back } = useAppNavigation();
-  const { openModal, closeModal } = useModal();
+  const { back, navigate } = useAppNavigation();
 
   const [bio, setBio] = useState("");
   const [bioSelection, setBioSelection] = useState<Selection>({
@@ -126,7 +124,7 @@ export const ProfileEditorScreen = observer(() => {
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
-        if (hasOpenModals()) return false;
+        if (hasOpenSheets()) return false;
         handleBackRef.current();
         return true;
       },
@@ -145,6 +143,15 @@ export const ProfileEditorScreen = observer(() => {
     setBannerPreview(profile.constructBannerUrl());
     setMobileBlocks(JSON.parse(JSON.stringify(profile.mobileBlocks)));
   }, [profile?.updatedAt, profile?.userId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!account?.id) return;
+      const current = app.profiles.get(account.id);
+      if (!current) return;
+      setMobileBlocks(JSON.parse(JSON.stringify(current.mobileBlocks)));
+    }, [account?.id, app.profiles]),
+  );
 
   if (!account) return null;
 
@@ -416,31 +423,7 @@ export const ProfileEditorScreen = observer(() => {
             <Button
               color="neutral"
               disabled={!profile}
-              onPress={() => {
-                if (!profile || !account) return;
-                openModal(
-                  "profile-widget-editor",
-                  <ProfileWidgetEditorModal
-                    embedded
-                    onClose={() => closeModal("profile-widget-editor")}
-                    profile={profile}
-                    user={account}
-                    mobileBlocks={mobileBlocks}
-                    onMobileBlocksChange={setMobileBlocks}
-                    desktopBlocks={profile.blocks}
-                    onSave={() => void saveProfile()}
-                    saving={saving}
-                    error={error}
-                  />,
-                  {
-                    layout: "fullscreen",
-                    hideBackdrop: true,
-                    showCloseButton: false,
-                    disableBackdropClick: true,
-                    style: { paddingVertical: 0 },
-                  },
-                );
-              }}
+              onPress={() => navigate("/settings/profile-widgets")}
             >
               {t("profile.editor.editWidgets")}
             </Button>

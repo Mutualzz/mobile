@@ -12,22 +12,32 @@ let navigationTimer: ReturnType<typeof setTimeout> | null = null;
 
 const NAVIGATION_DEDUP_MS = 200;
 
+function hrefKey(href: Href): string {
+    if (typeof href === "string") return href;
+    if (href && typeof href === "object" && "pathname" in href) {
+        const path = String(href.pathname ?? "");
+        const params = "params" in href && href.params ? JSON.stringify(href.params) : "";
+        return `${path}?${params}`;
+    }
+    return String(href);
+}
+
 export function navigateOnce(
     router: typeof expoRouter,
     href: Href,
     options?: { replace?: boolean; currentPath?: string },
 ) {
-    const hrefString = typeof href === "string" ? href : String(href);
-    const target = normalizeRoutePath(hrefString);
+    const hrefString = hrefKey(href);
+    const targetPath = normalizeRoutePath(hrefString.split("?")[0] ?? hrefString);
     const current = options?.currentPath
         ? normalizeRoutePath(options.currentPath)
         : null;
 
-    if (current === target) return;
+    if (current === targetPath && !hrefString.includes("?")) return;
 
-    if (lastNavTarget === target) return;
+    if (lastNavTarget === hrefString) return;
 
-    lastNavTarget = target;
+    lastNavTarget = hrefString;
     if (navigationTimer) clearTimeout(navigationTimer);
     navigationTimer = setTimeout(() => {
         lastNavTarget = null;
@@ -42,7 +52,7 @@ export function navigateOnce(
     router.navigate(href);
 }
 
-export function exitStaffPanel(
+export function dismissPresentedStack(
     back: () => void,
     getParent?: () => { canGoBack: () => boolean; goBack: () => void } | undefined,
 ) {
@@ -54,3 +64,5 @@ export function exitStaffPanel(
 
     back();
 }
+
+export const exitStaffPanel = dismissPresentedStack;

@@ -1,11 +1,11 @@
-import { ChangeOnlineStatusModal } from "@components/User/ChangeOnlineStatusModal";
+import { ChangeOnlineStatusSheet } from "@components/User/ChangeOnlineStatusSheet";
 import { IconButton } from "@components/IconButton";
-import { SpaceModeratedSheet } from "@components/Modals/SpaceModeratedSheet";
+import { SpaceModeratedSheet } from "@components/Sheets/SpaceModeratedSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useElapsedClock } from "@hooks/useElapsedClock";
 import { useOpenUserProfile } from "@hooks/useOpenUserProfile";
 import { useAppNavigation } from "@hooks/useAppNavigation";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useOpenBottomSheet } from "@hooks/useOpenBottomSheet";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
@@ -65,7 +65,7 @@ export const UserBar = observer(() => {
   const app = useAppStore();
   const { theme } = useTheme();
   const { navigate } = useAppNavigation();
-  const { openModal } = useModal();
+  const { openSheet } = useSheet();
   const { openBottomSheet, closeBottomSheet } = useOpenBottomSheet();
   const account = app.account;
   const openProfile = useOpenUserProfile();
@@ -75,7 +75,7 @@ export const UserBar = observer(() => {
   const openStatusSheet = () => {
     openBottomSheet(
       "change-online-status",
-      <ChangeOnlineStatusModal
+      <ChangeOnlineStatusSheet
         embedded
         onClose={() => closeBottomSheet("change-online-status")}
       />,
@@ -83,8 +83,8 @@ export const UserBar = observer(() => {
   };
 
   const openSpaceModerated = (type: "muted" | "deafened") => {
-    const modalId = type === "muted" ? "space-muted" : "space-deafened";
-    openModal(modalId, <SpaceModeratedSheet type={type} modalId={modalId} />);
+    const sheetId = type === "muted" ? "space-muted" : "space-deafened";
+    openSheet(sheetId, <SpaceModeratedSheet type={type} sheetId={sheetId} />);
   };
 
   if (!account) return null;

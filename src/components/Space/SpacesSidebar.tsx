@@ -4,9 +4,10 @@ import { ReorderableVerticalList } from "@components/Reorder/ReorderableVertical
 import { Screen } from "@components/Screen/Screen";
 import { type PillType, SidebarPill } from "@components/SidebarPill";
 import { SpaceIcon } from "@components/Space/SpaceIcon";
-import { SpaceInviteModal } from "@components/Space/SpaceInviteModal";
+import { SpaceInviteSheet } from "@components/Space/SpaceInviteSheet";
 import { PlusIcon } from "phosphor-react-native";
-import { useModal } from "@hooks/useModal";
+import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
+import { useSheet } from "@hooks/useSheet";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { Box } from "@mutualzz/ui-native";
@@ -55,7 +56,7 @@ const SidebarSpace = observer(
           }`}
           accessibilityState={{ selected: active }}
         >
-          <SpaceIcon selected={active} space={space} />
+          <SpaceIcon selected={active} space={space} size={44} />
         </Pressable>
       </Box>
     );
@@ -65,7 +66,8 @@ const SidebarSpace = observer(
 export const SpacesSidebar = observer(() => {
   const app = useAppStore();
   const { navigate } = useAppNavigation();
-  const { openModal } = useModal();
+  const { openSheet } = useSheet();
+  const tabBarInset = useKeyboardChromeInset();
 
   const dmPillType: PillType = app.channels.dms.some(
     (ch) => app.readStates.get(ch.id)?.isUnread,
@@ -88,15 +90,17 @@ export const SpacesSidebar = observer(() => {
       fill={false}
       style={{
         flexDirection: "column",
-        paddingHorizontal: 6,
+        paddingHorizontal: 8,
+        paddingBottom: tabBarInset,
         gap: 12,
         alignItems: "center",
         borderTopWidth: 0,
         borderBottomWidth: 0,
         borderLeftWidth: 0,
         borderRightWidth: 0,
-        width: 64,
+        width: 76,
         flexShrink: 0,
+        flex: 1,
         overflow: "visible",
       }}
       elevation={app.settings?.preferEmbossed ? 2 : 0}
@@ -111,7 +115,7 @@ export const SpacesSidebar = observer(() => {
       >
         <SidebarPill type={dmPillType} />
         <AppLogo
-          size={48}
+          size={52}
           onPress={() => {
             app.setMode("@me");
             navigate("/@me");
@@ -125,7 +129,7 @@ export const SpacesSidebar = observer(() => {
         enabled={canReorderSpaces}
         dragTarget="row"
         rowGap={12}
-        estimatedRowHeight={48}
+        estimatedRowHeight={52}
         style={{ width: "100%" }}
         renderItem={(space) => (
           <SidebarSpace
@@ -138,18 +142,12 @@ export const SpacesSidebar = observer(() => {
         shape="circle"
         color="success"
         variant="outlined"
-        padding={8}
+        padding={10}
         style={{
           alignSelf: "center",
         }}
-        size="sm"
-        onPress={() =>
-          openModal("space-invite", <SpaceInviteModal />, {
-            style: {
-              padding: 26,
-            },
-          })
-        }
+        size="md"
+        onPress={() => openSheet("space-invite", <SpaceInviteSheet />)}
       >
         <PlusIcon weight="bold" />
       </IconButton>

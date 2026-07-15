@@ -11,7 +11,7 @@ interface Props extends AvatarProps {
   selected?: boolean;
 }
 
-export const SpaceIcon = observer(({ space, selected, ...props }: Props) => {
+export const SpaceIcon = observer(({ space, selected, size = 36, ...props }: Props) => {
   const { t } = useTranslation("chat");
   const iconUrl = space
     ? Space.constructIconUrl(space.id, space.icon?.startsWith("a_"), space.icon)
@@ -21,7 +21,7 @@ export const SpaceIcon = observer(({ space, selected, ...props }: Props) => {
   if (iconUrl)
     return (
       <Avatar
-        size={36}
+        size={size}
         src={iconUrl}
         variant="plain"
         color="primary"
@@ -37,13 +37,13 @@ export const SpaceIcon = observer(({ space, selected, ...props }: Props) => {
     <Paper
       style={{
         borderRadius: selected ? 15 : 10,
-        width: 36,
-        height: 36,
+        width: size,
+        height: size,
       }}
       transparency={25}
     >
       <Avatar
-        size={36}
+        size={size}
         variant="plain"
         color="primary"
         shape={selected ? 15 : 10}

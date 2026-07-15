@@ -4,7 +4,7 @@ import { BottomSheet } from "@components/Keyboard/BottomSheet";
 import { resolveGifImageBlockSrc } from "@mutualzz/ui-core";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { GifResult } from "@utils/gifs";
-import { useModalSheetMaxHeight } from "@utils/modalSheet";
+import { useSheetMaxHeight } from "@utils/sheet";
 import { XIcon } from "phosphor-react-native";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
@@ -27,7 +27,7 @@ export function ProfileWidgetGifPicker({
   const { t: tCommon } = useTranslation("common");
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const sheetHeight = useModalSheetMaxHeight(0.8);
+  const sheetHeight = useSheetMaxHeight(0.8);
   const title = t("profile.inspector.chooseGif");
 
   const handleSelect = (gif: GifResult) => {

@@ -1,5 +1,5 @@
 import { Paper } from "@components/Paper";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import type {
   ThemeCreatorFilter,
@@ -32,7 +32,7 @@ export const ThemeCreatorManagePage = observer(
     const { t } = useTranslation("settings");
     const app = useAppStore();
     const { theme: uiTheme } = useTheme();
-    const { openModal, closeModal } = useModal();
+    const { openSheet, closeSheet } = useSheet();
     const themeCreator = app.themeCreator;
     const {
       loadedType,
@@ -110,7 +110,7 @@ export const ThemeCreatorManagePage = observer(
 
           <Pressable
             onPress={() => {
-              openModal(
+              openSheet(
                 "theme-creator-picker",
                 <Paper
                   elevation={app.settings?.preferEmbossed ? 4 : 2}
@@ -131,7 +131,7 @@ export const ThemeCreatorManagePage = observer(
                           key={theme.id}
                           onPress={() => {
                             loadValues(Theme.serialize(theme));
-                            closeModal("theme-creator-picker");
+                            closeSheet("theme-creator-picker");
                           }}
                           style={{
                             flexDirection: "row",

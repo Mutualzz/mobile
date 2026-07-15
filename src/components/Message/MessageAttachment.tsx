@@ -29,6 +29,7 @@ export function MessageAttachment({ attachment }: Props) {
   const mediaHeight = Math.round(mediaWidth / aspect);
 
   if (isImage) {
+    const label = attachment.filename?.trim() || t("a11y.imageAttachment");
     return (
       <Image
         source={{ uri: attachment.url }}
@@ -39,7 +40,7 @@ export function MessageAttachment({ attachment }: Props) {
         }}
         contentFit="cover"
         recyclingKey={attachment.id}
-        accessibilityLabel={attachment.filename}
+        accessibilityLabel={label}
       />
     );
   }
@@ -81,7 +82,7 @@ export function MessageAttachment({ attachment }: Props) {
         <FileIcon size={18} color={theme.colors.info} weight="fill" />
         <Box style={{ flex: 1, minWidth: 0 }}>
           <Typography level="body-sm" truncate="single">
-            {attachment.filename}
+            {attachment.filename?.trim() || t("a11y.fileAttachment")}
           </Typography>
           <Typography level="body-xs" textColor="muted">
             {t("a11y.tapToOpen")}

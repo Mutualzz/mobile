@@ -1,14 +1,14 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import { HttpException } from "@mutualzz/types";
-import { Box, InputDefault, Modal, Typography } from "@mutualzz/ui-native";
+import { Box, InputDefault, Sheet, Typography } from "@mutualzz/ui-native";
 import type { SpaceMember } from "@stores/objects/SpaceMember";
 import type { Space } from "@stores/objects/Space";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { View } from "react-native";
 
 interface Props {
   visible: boolean;
@@ -28,61 +28,55 @@ export const MemberKickSheet = observer(
     const { mutate, isPending } = useMutation({
       mutationFn: () =>
         app.rest.post(`/spaces/${space.id}/members/${member.userId}/kick`, {
-          reason: reason.trim() || t("bans.noReason"),
-        }),
+          reason: reason.trim() || t("bans.noReason")}),
       onSuccess: onClose,
-      onError: (err: HttpException) => setError(err.message),
-    });
+      onError: (err: HttpException) => setError(err.message)});
 
     return (
-      <Modal
+      <Sheet
         open={visible}
         onClose={onClose}
-        layout="center"
         showCloseButton={false}
+        enableDynamicSizing
       >
-        <Box
-          pointerEvents="box-none"
+        <View
           style={{
-            flex: 1,
-            justifyContent: "center",
-            padding: 24,
-          }}
+            width: "100%",
+            padding: 16,
+            gap: 12}}
         >
-            <Paper
-              elevation={app.settings?.preferEmbossed ? 4 : 2}
-              style={{ padding: 20, borderRadius: 12, gap: 12 }}
+          <Typography weight="bold">
+            {t("moderation.kickTitle", {
+              name: member.user?.displayName})}
+          </Typography>
+          <InputDefault
+            fullWidth
+            placeholder={t("moderation.reasonOptional")}
+            accessibilityLabel={t("moderation.reasonOptional")}
+            value={reason}
+            onChangeText={setReason}
+          />
+          {error && (
+            <Typography
+              color="danger"
+              level="body-sm"
+              accessibilityLiveRegion="polite"
             >
-              <Typography weight="bold">
-                {t("moderation.kickTitle", {
-                  name: member.user?.displayName,
-                })}
-              </Typography>
-              <InputDefault
-                fullWidth
-                placeholder={t("moderation.reasonOptional")}
-                accessibilityLabel={t("moderation.reasonOptional")}
-                value={reason}
-                onChangeText={setReason}
-              />
-              {error && (
-                <Typography color="danger" level="body-sm" accessibilityLiveRegion="polite">
-                  {error}
-                </Typography>
-              )}
-              <Button
-                color="danger"
-                disabled={isPending}
-                onPress={() => mutate()}
-              >
-                {t("actions.kick")}
-              </Button>
-              <Button variant="plain" onPress={onClose}>
-                {tCommon("cancel")}
-              </Button>
-            </Paper>
-          </Box>
-      </Modal>
+              {error}
+            </Typography>
+          )}
+          <Button
+            color="danger"
+            disabled={isPending}
+            onPress={() => mutate()}
+          >
+            {t("actions.kick")}
+          </Button>
+          <Button variant="plain" onPress={onClose}>
+            {tCommon("cancel")}
+          </Button>
+        </View>
+      </Sheet>
     );
   },
 );

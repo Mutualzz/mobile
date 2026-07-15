@@ -1,16 +1,14 @@
 import { Button } from "@components/Button";
 import { MarkdownRenderer } from "@components/Markdown/MarkdownRenderer/MarkdownRenderer";
-import { Paper } from "@components/Paper";
-import { useModal } from "@hooks/useModal";
-import { useAppStore } from "@hooks/useStores";
+import { useSheet } from "@hooks/useSheet";
 import type { APIChangelog } from "@mutualzz/types";
-import { Box, Typography } from "@mutualzz/ui-native";
+import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import dayjs from "dayjs";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
-import { Image, ScrollView } from "react-native";
+import { Image, ScrollView, View } from "react-native";
 
-export const WHATS_NEW_MODAL_ID = "whats-new";
+export const WHATS_NEW_SHEET_ID = "whats-new";
 
 interface WhatsNewSheetProps {
   changelog: APIChangelog;
@@ -20,24 +18,20 @@ interface WhatsNewSheetProps {
 export const WhatsNewSheet = observer(
   ({ changelog, onAck }: WhatsNewSheetProps) => {
     const { t } = useTranslation("common");
-    const app = useAppStore();
-    const { closeModal } = useModal();
+    const { theme } = useTheme();
+    const { closeSheet } = useSheet();
 
     const handleAck = async () => {
       await onAck();
-      closeModal(WHATS_NEW_MODAL_ID);
+      closeSheet(WHATS_NEW_SHEET_ID);
     };
 
     return (
-      <Paper
+      <View
         style={{
-          width: 360,
-          maxWidth: "100%",
-          borderRadius: 16,
-          overflow: "hidden",
-          padding: 0,
+          width: "100%",
+          backgroundColor: theme.colors.background,
         }}
-        elevation={app.settings?.preferEmbossed ? 4 : 2}
       >
         {changelog.imageUrl ? (
           <Image
@@ -58,7 +52,11 @@ export const WhatsNewSheet = observer(
             </Typography>
           </Box>
 
-          <ScrollView style={{ maxHeight: 280 }}>
+          <ScrollView
+            style={{ maxHeight: 320 }}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator={false}
+          >
             <MarkdownRenderer value={changelog.body} />
           </ScrollView>
 
@@ -66,7 +64,7 @@ export const WhatsNewSheet = observer(
             {t("gotIt")}
           </Button>
         </Box>
-      </Paper>
+      </View>
     );
   },
 );

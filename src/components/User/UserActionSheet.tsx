@@ -1,18 +1,11 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
 import { ReportContentSheet } from "@components/Report/ReportContentSheet";
 import { useUserRelationshipActions } from "@hooks/useUserRelationshipActions";
 import { useAppNavigation } from "@hooks/useAppNavigation";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import type { User } from "@stores/objects/User";
-import {
-  Box,
-  ButtonGroup,
-  Divider,
-  Modal,
-  Typography,
-} from "@mutualzz/ui-native";
+import { Box, ButtonGroup, Divider, Sheet, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import {
   ChatCircleIcon,
@@ -22,12 +15,10 @@ import {
   UserIcon,
   UserMinusIcon,
   UserPlusIcon,
-  XCircleIcon,
-} from "phosphor-react-native";
+  XCircleIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface Props {
   user: User;
@@ -40,9 +31,8 @@ export const UserActionSheet = observer(
   ({ user, visible, onClose, insideDMs = false }: Props) => {
     const app = useAppStore();
     const { t } = useTranslation("chat");
-    const insets = useSafeAreaInsets();
     const { navigate } = useAppNavigation();
-    const { openModal } = useModal();
+    const { openSheet } = useSheet();
 
     const {
       isFriend,
@@ -55,8 +45,7 @@ export const UserActionSheet = observer(
       declineFriend,
       removeFriend,
       blockUser,
-      unblockUser,
-    } = useUserRelationshipActions(user.id, { onComplete: onClose });
+      unblockUser} = useUserRelationshipActions(user.id, { onComplete: onClose });
 
     const dmChannel =
       insideDMs && app.account
@@ -70,8 +59,7 @@ export const UserActionSheet = observer(
       onSuccess: (channel) => {
         onClose();
         navigate(`/@me/${channel.id}`);
-      },
-    });
+      }});
 
     const { mutate: closeDm, isPending: closingDm } = useMutation({
       mutationKey: ["close-dm", user.id],
@@ -84,18 +72,17 @@ export const UserActionSheet = observer(
           navigate("/@me", { replace: true });
         }
       },
-      onSuccess: onClose,
-    });
+      onSuccess: onClose});
 
     const openReport = () => {
       onClose();
-      openModal(
+      openSheet(
         `report-user-${user.id}`,
         <ReportContentSheet
           targetType="user"
           targetId={user.id}
           contentLabel={t("contextMenu.reportAccount")}
-          modalId={`report-user-${user.id}`}
+          sheetId={`report-user-${user.id}`}
         />,
       );
     };
@@ -106,41 +93,21 @@ export const UserActionSheet = observer(
     };
 
     return (
-      <Modal
+      <Sheet
         open={visible}
         onClose={onClose}
-        layout="fullscreen"
         showCloseButton={false}
-        style={{
-          justifyContent: "flex-end",
-          alignItems: "stretch",
-          backgroundColor: "transparent",
-          paddingVertical: 0,
-        }}
+      enableDynamicSizing
       >
-        <View
-          pointerEvents="box-none"
-          style={{
-            flex: 1,
-            justifyContent: "flex-end",
-            width: "100%",
-          }}
-        >
+        <View style={{ width: "100%" }}>
           <View onStartShouldSetResponder={() => true}>
             <Box
               style={{
-                marginHorizontal: 12,
-                marginBottom: insets.bottom + 12,
-              }}
+                width: "100%",
+                padding: 16,
+                gap: 8}}
             >
-              <Paper
-                elevation={app.settings?.preferEmbossed ? 4 : 2}
-                style={{
-                  borderRadius: 16,
-                  padding: 12,
-                  gap: 8,
-                }}
-              >
+              <Box style={{ gap: 8 }}>
                 <Box
                   style={{ alignItems: "center", paddingVertical: 8, gap: 4 }}
                 >
@@ -306,11 +273,11 @@ export const UserActionSheet = observer(
                     {t("contextMenu.reportUser")}
                   </Button>
                 </ButtonGroup>
-              </Paper>
+              </Box>
             </Box>
           </View>
         </View>
-      </Modal>
+      </Sheet>
     );
   },
 );

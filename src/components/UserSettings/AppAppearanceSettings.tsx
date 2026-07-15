@@ -1,7 +1,7 @@
-import { ThemeCreatorModal } from "@components/UserSettings/ThemeCreatorModal";
+import { ThemeCreatorSheet } from "@components/UserSettings/ThemeCreatorSheet";
 import { Paper } from "@components/Paper";
 import { IconButton } from "@components/IconButton";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import {
   type AppLocale,
@@ -9,19 +9,14 @@ import {
   supportedLocales,
 } from "@mutualzz/i18n";
 import {
+  CaretRightIcon,
   CheckIcon,
   PaletteIcon,
   RepeatIcon,
   TrashIcon,
 } from "phosphor-react-native";
 import { baseDarkTheme, baseLightTheme } from "@mutualzz/ui-core";
-import {
-  Box,
-  Divider,
-  Switch,
-  Typography,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { Box, Divider, Switch, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Theme as StoreTheme } from "@stores/objects/Theme";
 import { Theme } from "@stores/objects/Theme";
 import { getPreferredLocale, setPreferredLocale } from "../../i18n";
@@ -30,6 +25,7 @@ import {
   useScaledSquareSize,
   useScaledThemeSwatchSize,
 } from "@utils/accessibilityLayout";
+import { FULL_SHEET_PROPS } from "@utils/sheet";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -42,8 +38,99 @@ import {
 } from "react-native";
 
 const SWATCH_SIZE = 64;
+const LANGUAGE_PICKER_SHEET_ID = "language-picker";
 
 const adaptiveIconMark = require("../../../assets/adaptive-icon.png");
+
+function LocalePickerContent({
+  preferredLocale,
+  onSelect,
+}: {
+  preferredLocale: AppLocale | "system";
+  onSelect: (locale: AppLocale | "system") => void;
+}) {
+  const { t: tCommon } = useTranslation("common");
+  const { theme } = useTheme();
+  const app = useAppStore();
+  const { closeSheet } = useSheet();
+
+  const options: { value: AppLocale | "system"; label: string }[] = [
+    { value: "system", label: tCommon("language.systemDefault") },
+    ...supportedLocales.map((locale) => ({
+      value: locale,
+      label: localeNativeNames[locale],
+    })),
+  ];
+
+  return (
+    <Paper
+      elevation={app.settings?.preferEmbossed ? 4 : 2}
+      style={{
+        width: "100%",
+        alignSelf: "stretch",
+        borderRadius: 16,
+        padding: 8,
+        gap: 2,
+      }}
+    >
+      <Typography
+        level="body-md"
+        weight={700}
+        style={{ paddingHorizontal: 12, paddingVertical: 8 }}
+      >
+        {tCommon("language.title")}
+      </Typography>
+
+      <ScrollView
+        style={{ maxHeight: 420 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {options.map((option) => {
+          const active = preferredLocale === option.value;
+
+          return (
+            <Pressable
+              key={option.value}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              onPress={() => {
+                onSelect(option.value);
+                closeSheet(LANGUAGE_PICKER_SHEET_ID);
+              }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingVertical: 10,
+                paddingHorizontal: 12,
+                borderRadius: 8,
+                backgroundColor: active
+                  ? `${theme.colors.primary}18`
+                  : undefined,
+              }}
+            >
+              <Typography
+                level="body-sm"
+                weight={active ? 600 : undefined}
+                style={{ flex: 1 }}
+                truncate="single"
+              >
+                {option.label}
+              </Typography>
+              {active ? (
+                <CheckIcon
+                  size={16}
+                  weight="bold"
+                  color={theme.colors.success}
+                />
+              ) : null}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </Paper>
+  );
+}
 
 const SelectionBadge = ({
   badgeIcon = "check",
@@ -301,7 +388,7 @@ export const AppAppearanceSettings = observer(() => {
   const settings = app.settings;
   const { theme: currentTheme, changeTheme, type: currentType } = useTheme();
   const prefersDark = useColorScheme() === "dark";
-  const { openModal, closeModal } = useModal();
+  const { openSheet, closeSheet } = useSheet();
   const [deletingThemeId, setDeletingThemeId] = useState<string | null>(null);
   const [preferredLocale, setPreferredLocaleState] = useState<
     AppLocale | "system"
@@ -318,20 +405,30 @@ export const AppAppearanceSettings = observer(() => {
     void setPreferredLocale(locale);
   };
 
-  const openThemeCreator = () => {
-    openModal(
-      "theme-creator",
-      <ThemeCreatorModal
-        embedded
-        onClose={() => closeModal("theme-creator")}
+  const selectedLocaleLabel =
+    preferredLocale === "system"
+      ? tCommon("language.systemDefault")
+      : localeNativeNames[preferredLocale];
+
+  const openLanguagePicker = () => {
+    openSheet(
+      LANGUAGE_PICKER_SHEET_ID,
+      <LocalePickerContent
+        preferredLocale={preferredLocale}
+        onSelect={selectLocale}
       />,
-      {
-        layout: "fullscreen",
-        hideBackdrop: true,
-        showCloseButton: false,
-        disableBackdropClick: true,
-        style: { paddingVertical: 0 },
-      },
+      { layout: "center", showCloseButton: false },
+    );
+  };
+
+  const openThemeCreator = () => {
+    openSheet(
+      "theme-creator",
+      <ThemeCreatorSheet
+        embedded
+        onClose={() => closeSheet("theme-creator")}
+      />,
+      FULL_SHEET_PROPS,
     );
   };
 
@@ -440,65 +537,29 @@ export const AppAppearanceSettings = observer(() => {
           <Typography level="body-xs" textColor="muted">
             {tCommon("language.description")}
           </Typography>
-          <Box style={{ gap: 8 }}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ selected: preferredLocale === "system" }}
-              onPress={() => selectLocale("system")}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                paddingVertical: 10,
-                paddingHorizontal: 12,
-                borderRadius: 10,
-                backgroundColor:
-                  preferredLocale === "system"
-                    ? "rgba(127,127,127,0.18)"
-                    : "transparent",
-              }}
-            >
-              <Typography level="body-sm">
-                {tCommon("language.systemDefault")}
-              </Typography>
-              {preferredLocale === "system" ? (
-                <CheckIcon size={18} weight="bold" color={currentTheme.colors.primary} />
-              ) : null}
-            </Pressable>
-            {supportedLocales.map((locale) => {
-              const selected = preferredLocale === locale;
-              return (
-                <Pressable
-                  key={locale}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  onPress={() => selectLocale(locale)}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    paddingVertical: 10,
-                    paddingHorizontal: 12,
-                    borderRadius: 10,
-                    backgroundColor: selected
-                      ? "rgba(127,127,127,0.18)"
-                      : "transparent",
-                  }}
-                >
-                  <Typography level="body-sm">
-                    {localeNativeNames[locale]}
-                  </Typography>
-                  {selected ? (
-                    <CheckIcon
-                      size={18}
-                      weight="bold"
-                      color={currentTheme.colors.primary}
-                    />
-                  ) : null}
-                </Pressable>
-              );
-            })}
-          </Box>
+          <Pressable
+            accessibilityRole="button"
+            onPress={openLanguagePicker}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              paddingVertical: 10,
+              paddingHorizontal: 12,
+              borderRadius: 10,
+              backgroundColor: "rgba(127,127,127,0.12)",
+            }}
+          >
+            <Typography level="body-sm" style={{ flex: 1 }} truncate="single">
+              {selectedLocaleLabel}
+            </Typography>
+            <CaretRightIcon
+              size={16}
+              color={currentTheme.typography.colors.muted}
+              weight="bold"
+            />
+          </Pressable>
         </Paper>
 
         <Paper
@@ -547,8 +608,7 @@ export const AppAppearanceSettings = observer(() => {
             accessibilityRole="switch"
             accessibilityState={{ checked: settings.preferEmbossed }}
             onPress={() => {
-              settings.setPreferEmbossed(!settings.preferEmbossed);
-              void settings.sync();
+              settings.togglePreferEmbossed();
             }}
             style={{
               flexDirection: "row",
@@ -563,10 +623,7 @@ export const AppAppearanceSettings = observer(() => {
             </Typography>
             <Switch
               checked={settings.preferEmbossed}
-              onChange={(value) => {
-                settings.setPreferEmbossed(value);
-                void settings.sync();
-              }}
+              pointerEvents="none"
             />
           </Pressable>
 

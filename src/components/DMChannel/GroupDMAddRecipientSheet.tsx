@@ -3,7 +3,7 @@ import { Button } from "@components/Button";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppStore } from "@hooks/useStores";
 import { Box, InputDefault, Typography } from "@mutualzz/ui-native";
-import { useScaledModalListMaxHeight } from "@utils/accessibilityLayout";
+import { useScaledSheetListMaxHeight } from "@utils/accessibilityLayout";
 import type { Snowflake } from "@mutualzz/types";
 import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
@@ -19,7 +19,6 @@ interface Props {
 
 export const GroupDMAddRecipientSheet = observer(
   ({ visible, onClose, channel }: Props) => {
-    const { t } = useTranslation("common");
     const { t: tChat } = useTranslation("chat");
     const { t: tSpace } = useTranslation("space");
     const app = useAppStore();
@@ -33,7 +32,7 @@ export const GroupDMAddRecipientSheet = observer(
     const maxCount = 10;
     const isFull = currentCount >= maxCount;
     const spotsRemaining = maxCount - currentCount;
-    const listMaxHeight = useScaledModalListMaxHeight();
+    const listMaxHeight = useScaledSheetListMaxHeight();
 
     const suggestions = useMemo(() => {
       const query = search.trim().toLowerCase();
@@ -73,7 +72,6 @@ export const GroupDMAddRecipientSheet = observer(
         onClose={onClose}
         title={tChat("header.dm.addToGroup")}
         maxHeight="85%"
-        keyboard="lift"
         elevation={app.settings?.preferEmbossed ? 4 : 2}
       >
         <Typography
@@ -159,17 +157,12 @@ export const GroupDMAddRecipientSheet = observer(
           </Typography>
         )}
 
-        <Box style={{ flexDirection: "row", gap: 8 }}>
-          <Button variant="plain" color="neutral" onPress={onClose}>
-            {t("cancel")}
-          </Button>
-          <Button
-            disabled={!selected || saving || isFull}
-            onPress={() => void addRecipient()}
-          >
-            {tChat("header.dm.addToGroup")}
-          </Button>
-        </Box>
+        <Button
+          disabled={!selected || saving || isFull}
+          onPress={() => void addRecipient()}
+        >
+          {tChat("header.dm.addToGroup")}
+        </Button>
       </BottomSheet>
     );
   },

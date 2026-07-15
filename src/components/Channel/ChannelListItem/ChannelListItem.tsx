@@ -5,12 +5,7 @@ import { CaretRightIcon, PlusIcon } from "phosphor-react-native";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
-import {
-  Box,
-  type PaperProps,
-  Typography,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { Box, type PaperProps, Typography, useTheme } from "@mutualzz/ui-native";
 import { type Channel } from "@stores/objects/Channel";
 import { type Space } from "@stores/objects/Space";
 import { useScaledMentionBadgeStyle, useScaledSquareSize } from "@utils/accessibilityLayout";
@@ -96,26 +91,30 @@ export const ChannelListItem = observer(
       >
         <Paper
           style={{
-            marginLeft: isCategory ? 0 : channel.parent ? 12 : 8,
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            marginRight: isCategory ? 12 : 20,
-            borderRadius: 6,
+            marginLeft: isCategory ? 4 : channel.parent ? 16 : 10,
+            marginTop: isCategory ? 10 : 2,
+            marginBottom: isCategory ? 2 : 2,
+            paddingHorizontal: 10,
+            paddingVertical: isCategory ? 8 : 8,
+            marginRight: isCategory ? 12 : 14,
+            borderRadius: 8,
             alignItems: "center",
             justifyContent: "space-between",
             flexDirection: "row",
-            minHeight: isCategory ? 32 : 28,
+            minHeight: isCategory ? 36 : 40,
           }}
           key={channel.id}
           color={props.color}
           variant={active ? "soft" : "plain"}
           {...props}
+          elevation={0}
+          transparency={0}
         >
           <Box
             style={{
               flexDirection: "row",
               alignItems: "center",
-              gap: 4,
+              gap: 8,
               flexShrink: 1,
               minWidth: 0,
             }}
@@ -123,7 +122,7 @@ export const ChannelListItem = observer(
             {!isCategory && <ChannelIcon type={channel.type} />}
             {isCategory && (
               <CaretRightIcon
-                size={12}
+                size={14}
                 color={theme.typography.colors.secondary}
                 weight="bold"
                 style={{
@@ -139,13 +138,13 @@ export const ChannelListItem = observer(
               textColor={isCategory ? "primary" : "secondary"}
               truncate="single"
               style={{
-                fontSize: isCategory ? 12 : 14,
+                fontSize: isCategory ? 12 : 15,
                 fontWeight: isCategory
-                  ? "400"
+                  ? "600"
                   : isUnread || active
                     ? "700"
-                    : "600",
-                letterSpacing: isCategory ? 0.5 : 0,
+                    : "500",
+                letterSpacing: isCategory ? 0.4 : 0,
                 flexShrink: 1,
               }}
             >
@@ -157,7 +156,7 @@ export const ChannelListItem = observer(
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 4,
+                gap: 6,
                 minWidth: 20,
                 justifyContent: "flex-end",
               }}

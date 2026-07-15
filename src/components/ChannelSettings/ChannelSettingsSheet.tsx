@@ -13,17 +13,12 @@ import {
   type PermissionChannelKind,
 } from "@mutualzz/i18n";
 import { ChannelType, type APIChannel } from "@mutualzz/types";
-import {
-  Box,
-  InputDefault,
-  Modal,
-  Typography,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { Box, InputDefault, Sheet, Typography, useTheme } from "@mutualzz/ui-native";
 import {
   useScaledFeedPreviewSizes,
   useScaledSquareSize,
 } from "@utils/accessibilityLayout";
+import { useSheetMaxHeight } from "@utils/sheet";
 import type { ChannelPermissionOverwrite } from "@stores/objects/ChannelPermissionOverwrite";
 import type { Channel } from "@stores/objects/Channel";
 import { useMutation } from "@tanstack/react-query";
@@ -136,6 +131,7 @@ export const ChannelSettingsSheet = observer(
     const { t } = useTranslation("space");
     const { t: tCommon } = useTranslation("common");
     const { theme } = useTheme();
+    const sheetMaxHeight = useSheetMaxHeight(0.85);
     const feedSizes = useScaledFeedPreviewSizes();
     const dirtyIndicatorSize = useScaledSquareSize(6);
     const permissionToggleSize = useScaledSquareSize(28);
@@ -363,32 +359,20 @@ export const ChannelSettingsSheet = observer(
 
     return (
       <>
-        <Modal
+        <Sheet
           open={visible && !overwritePickerOpen}
           onClose={onClose}
-          layout="fullscreen"
           showCloseButton={false}
-          style={{
-            justifyContent: "flex-end",
-            alignItems: "stretch",
-            backgroundColor: "transparent",
-            paddingVertical: 0,
-          }}
+          enableDynamicSizing
         >
           <View
-            pointerEvents="box-none"
-            style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
+            style={{
+              width: "100%",
+              padding: 16,
+              gap: 12,
+              maxHeight: sheetMaxHeight,
+            }}
           >
-            <Paper
-              style={{
-                borderTopLeftRadius: 16,
-                borderTopRightRadius: 16,
-                padding: 20,
-                gap: 12,
-                maxHeight: "85%",
-              }}
-              elevation={app.settings?.preferEmbossed ? 4 : 2}
-            >
               <Typography level="body-lg" weight="bold">
                 {t("channels.settingsTitle")}
               </Typography>
@@ -736,42 +720,26 @@ export const ChannelSettingsSheet = observer(
               >
                 {t("channels.deleteChannelAction")}
               </Button>
-              <Button variant="plain" onPress={onClose}>
-                {tCommon("close")}
-              </Button>
-            </Paper>
           </View>
-        </Modal>
+        </Sheet>
 
-        <Modal
+        <Sheet
           open={overwritePickerOpen}
           onClose={() => setOverwritePickerOpen(false)}
-          layout="fullscreen"
           showCloseButton={false}
-          style={{
-            justifyContent: "flex-end",
-            alignItems: "stretch",
-            backgroundColor: "transparent",
-            paddingVertical: 0,
-          }}
+          enableDynamicSizing
         >
           <View
-            pointerEvents="box-none"
-            style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
+            style={{
+              width: "100%",
+              padding: 16,
+              gap: 12,
+              maxHeight: sheetMaxHeight,
+            }}
           >
-            <Paper
-              style={{
-                borderTopLeftRadius: 16,
-                borderTopRightRadius: 16,
-                padding: 20,
-                gap: 12,
-                maxHeight: "80%",
-              }}
-              elevation={app.settings?.preferEmbossed ? 4 : 2}
-            >
-              <Typography level="body-lg" weight="bold">
-                {t("channels.permissions.addOverwrite")}
-              </Typography>
+            <Typography level="body-lg" weight="bold">
+              {t("channels.permissions.addOverwrite")}
+            </Typography>
               <InputDefault
                 fullWidth
                 value={overwriteSearch}
@@ -854,17 +822,8 @@ export const ChannelSettingsSheet = observer(
                     )}
                 </Box>
               </ScrollView>
-
-              <Button
-                variant="plain"
-                color="neutral"
-                onPress={() => setOverwritePickerOpen(false)}
-              >
-                {tCommon("cancel")}
-              </Button>
-            </Paper>
           </View>
-        </Modal>
+        </Sheet>
       </>
     );
   },

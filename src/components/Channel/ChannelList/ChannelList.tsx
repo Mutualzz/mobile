@@ -9,9 +9,10 @@ import { ChannelListItem } from "@components/Channel/ChannelListItem/ChannelList
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
 import { SpaceInviteToSpaceSheet } from "@components/Space/SpaceInviteToSpaceSheet";
 import { CaretDownIcon, PlusIcon, UserPlusIcon } from "phosphor-react-native";
+import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
-import { Box, ButtonGroup, Modal, Typography } from "@mutualzz/ui-native";
+import { Box, ButtonGroup, Sheet, Typography } from "@mutualzz/ui-native";
 import { type Channel } from "@stores/objects/Channel";
 import { flattenChannels } from "@utils/channelReorder";
 import { FlashList } from "@shopify/flash-list";
@@ -20,11 +21,13 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, View } from "react-native";
 
-const ESTIMATED_CHANNEL_ROW_HEIGHT = 48;
+const ESTIMATED_CHANNEL_ROW_HEIGHT = 44;
+const ESTIMATED_CATEGORY_ROW_HEIGHT = 52;
 
 export const ChannelList = observer(() => {
   const app = useAppStore();
   const { t } = useTranslation("space");
+  const tabBarInset = useKeyboardChromeInset();
 
   const [createChannelOpen, setCreateChannelOpen] = useState(false);
   const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
@@ -109,8 +112,9 @@ export const ChannelList = observer(() => {
       style={{
         flexDirection: "column",
         width: "100%",
-        borderTopLeftRadius: app.settings?.preferEmbossed ? 0 : 8,
-        borderBottomLeftRadius: app.settings?.preferEmbossed ? 0 : 8,
+        borderTopLeftRadius: 8,
+        borderBottomLeftRadius: 0,
+        borderBottomWidth: 0,
         borderRightWidth: 0,
         flex: 1,
       }}
@@ -168,7 +172,7 @@ export const ChannelList = observer(() => {
       <Box
         style={{
           flex: 1,
-          paddingTop: 4,
+          paddingTop: 10,
         }}
       >
         <FlashList
@@ -176,10 +180,16 @@ export const ChannelList = observer(() => {
           keyExtractor={(channel) => channel.id}
           renderItem={renderChannel}
           drawDistance={250}
-          overrideItemLayout={(layout: { span?: number; size?: number }) => {
-            layout.size = ESTIMATED_CHANNEL_ROW_HEIGHT;
+          overrideItemLayout={(
+            layout: { span?: number; size?: number },
+            item: Channel,
+          ) => {
+            layout.size =
+              item.type === ChannelType.Category
+                ? ESTIMATED_CATEGORY_ROW_HEIGHT
+                : ESTIMATED_CHANNEL_ROW_HEIGHT;
           }}
-          contentContainerStyle={{ paddingBottom: 8 }}
+          contentContainerStyle={{ paddingBottom: 16 + tabBarInset, paddingTop: 4 }}
         />
       </Box>
 
@@ -242,32 +252,20 @@ export const ChannelList = observer(() => {
         onClose={() => setSpaceMenuOpen(false)}
       />
 
-      <Modal
+      <Sheet
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
-        layout="fullscreen"
         showCloseButton={false}
-        style={{
-          justifyContent: "flex-end",
-          alignItems: "stretch",
-          backgroundColor: "transparent",
-          paddingVertical: 0,
-        }}
+        enableDynamicSizing
       >
-        <View pointerEvents="box-none" style={{ width: "100%" }}>
-          <Screen
-            variant="elevation"
-            fill={false}
-            style={{ flexDirection: "column", padding: 16 }}
-          >
-            <SpaceInviteToSpaceSheet
-              space={space}
-              channel={activeChannel}
-              onClose={() => setInviteOpen(false)}
-            />
-          </Screen>
+        <View style={{ width: "100%", padding: 16 }}>
+          <SpaceInviteToSpaceSheet
+            space={space}
+            channel={activeChannel}
+            onClose={() => setInviteOpen(false)}
+          />
         </View>
-      </Modal>
+      </Sheet>
     </Screen>
   );
 });

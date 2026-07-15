@@ -4,7 +4,7 @@ import { useAppStore } from "@hooks/useStores";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 
-export const SpaceInviteModal = observer(() => {
+export const SpaceInviteSheet = observer(() => {
     const app = useAppStore();
     const [creating, setCreating] = useState(true);
 

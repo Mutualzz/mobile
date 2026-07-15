@@ -19,6 +19,21 @@ import {
   type VoiceInputMode,
 } from "@utils/voiceSettings.utils";
 import { fixConnectionUrl } from "@utils/urls";
+import {
+  registerAndroidVoiceForegroundService,
+  startAndroidVoiceForegroundService,
+  stopAndroidVoiceForegroundService,
+} from "@utils/androidVoiceForegroundService";
+import {
+  activateVoiceAudioSession,
+  deactivateVoiceAudioSession,
+} from "@utils/voiceAudioSession";
+import {
+  bindVoiceLiveActivityHandlers,
+  endVoiceLiveActivity,
+  startOrUpdateVoiceLiveActivity,
+  updateVoiceLiveActivity,
+} from "@utils/voiceLiveActivity";
 import { ensureVoiceMicPermission } from "@utils/voicePermissions";
 import { AppState, type AppStateStatus } from "react-native";
 import type { MediaStream } from "react-native-webrtc";
@@ -57,6 +72,7 @@ interface VoiceStateSyncPayload {
     spaceDeaf: boolean;
     sessionId: string;
     updatedAt: number;
+    joinedAt: number;
   }[];
 }
 
@@ -124,6 +140,12 @@ export class VoiceStore {
   );
 
   constructor(private readonly app: AppStore) {
+    registerAndroidVoiceForegroundService();
+    bindVoiceLiveActivityHandlers({
+      toggleMute: () => this.setMute(!this.selfMute),
+      toggleDeaf: () => this.setDeaf(!this.selfDeaf),
+    });
+
     this.session = new MediasoupSession({
       callbacks: {
         onSocketClosed: (reason) => {
@@ -159,6 +181,9 @@ export class VoiceStore {
           });
           this.abortAndTeardown();
           this.stopKeepAlive();
+          if (!canAutoRejoin) {
+            void this.teardownVoicePresenceUi();
+          }
           if (canAutoRejoin) {
             void this.reconnectVoice();
           }
@@ -192,7 +217,8 @@ export class VoiceStore {
       },
       getSelfUserId: () => this.app.account?.id,
       getSpeakingThreshold: () => this.getSpeakingThreshold(),
-      shouldReportSpeaking: (userId) => this.shouldReportSpeakingForUser(userId),
+      shouldReportSpeaking: (userId) =>
+        this.shouldReportSpeakingForUser(userId),
       getNoiseSuppression: () => this.noiseSuppression,
       getUserAudioMix: (userId) => ({
         muted: this.isUserVoiceMuted(userId),
@@ -362,7 +388,10 @@ export class VoiceStore {
     try {
       await this.session.restartMic(this.abortController.signal);
     } catch (error) {
-      this.logger.warn("restartMic after noise suppression toggle failed", error);
+      this.logger.warn(
+        "restartMic after noise suppression toggle failed",
+        error,
+      );
     } finally {
       runInAction(() => {
         this.noiseSuppressionPending = false;
@@ -458,7 +487,9 @@ export class VoiceStore {
         const initialDevices = parseMediaDeviceList(
           await mediaDevices.enumerateDevices(),
         );
-        const hasLabels = initialDevices.some((device) => device.label.length > 0);
+        const hasLabels = initialDevices.some(
+          (device) => device.label.length > 0,
+        );
 
         if (!hasLabels) {
           try {
@@ -490,20 +521,28 @@ export class VoiceStore {
       const devices = parseMediaDeviceList(
         await mediaDevices.enumerateDevices(),
       );
-      const audioInputs = devices.filter((device) => device.kind === "audioinput");
-      const videoInputs = devices.filter((device) => device.kind === "videoinput");
+      const audioInputs = devices.filter(
+        (device) => device.kind === "audioinput",
+      );
+      const videoInputs = devices.filter(
+        (device) => device.kind === "videoinput",
+      );
 
       runInAction(() => {
         this.inputs.replace(audioInputs);
         this.cameras.replace(videoInputs);
         this.currentInputDeviceId =
           this.currentInputDeviceId &&
-          audioInputs.some((device) => device.deviceId === this.currentInputDeviceId)
+          audioInputs.some(
+            (device) => device.deviceId === this.currentInputDeviceId,
+          )
             ? this.currentInputDeviceId
             : (audioInputs[0]?.deviceId ?? null);
         this.currentCameraDeviceId =
           this.currentCameraDeviceId &&
-          videoInputs.some((device) => device.deviceId === this.currentCameraDeviceId)
+          videoInputs.some(
+            (device) => device.deviceId === this.currentCameraDeviceId,
+          )
             ? this.currentCameraDeviceId
             : (videoInputs[0]?.deviceId ?? null);
       });
@@ -571,6 +610,7 @@ export class VoiceStore {
     this.abortAndTeardown();
     this.stopKeepAlive();
     this.cameraSuspendedByBackground = false;
+    await this.teardownVoicePresenceUi();
 
     const selfId = this.app.account?.id;
 
@@ -593,7 +633,7 @@ export class VoiceStore {
       this.app.voiceStates.remove(selfId);
     }
 
-    await this.sendVoiceStateUpdate();
+    this.sendVoiceStateUpdate();
   }
 
   async leaveChannel() {
@@ -604,6 +644,7 @@ export class VoiceStore {
     this.clearJoinTimeout();
     this.abortAndTeardown();
     this.stopKeepAlive();
+    void this.teardownVoicePresenceUi();
     this.connectionStatus = "idle";
     this.connectionError = null;
     this.currentVoiceTarget = null;
@@ -625,6 +666,7 @@ export class VoiceStore {
         this.currentVoiceTarget = null;
       });
       this.stopKeepAlive();
+      void this.teardownVoicePresenceUi();
       return;
     }
 
@@ -687,6 +729,7 @@ export class VoiceStore {
             sessionId: state.sessionId,
             updatedAt: state.updatedAt,
             client: state.client,
+            joinedAt: state.joinedAt,
           }
         : state;
 
@@ -717,6 +760,7 @@ export class VoiceStore {
           this.currentVoiceTarget = null;
           this.cameraEnabled = false;
         });
+        void this.teardownVoicePresenceUi();
       }
     }
 
@@ -759,6 +803,7 @@ export class VoiceStore {
       this.app.settings?.setPreferredSelfMute(false);
       this.applySessionVoiceFlags();
       void this.sendVoiceStateUpdate();
+      void this.syncVoicePresenceUi();
       return;
     }
 
@@ -768,6 +813,7 @@ export class VoiceStore {
     this.app.settings?.setPreferredSelfMute(value);
     this.applySessionVoiceFlags();
     void this.sendVoiceStateUpdate();
+    void this.syncVoicePresenceUi();
   }
 
   setDeaf(value: boolean) {
@@ -799,6 +845,7 @@ export class VoiceStore {
       }
     }
     void this.sendVoiceStateUpdate();
+    void this.syncVoicePresenceUi();
   }
 
   setInputDeviceId(deviceId: string) {
@@ -964,6 +1011,7 @@ export class VoiceStore {
       this.applySessionVoiceFlags();
       this.clearJoinTimeout();
       this.startKeepAlive();
+      await this.activateVoicePresenceUi();
     } catch (error) {
       if (signal.aborted) return;
 
@@ -978,6 +1026,7 @@ export class VoiceStore {
         this.connectionError = message;
       });
       this.clearJoinTimeout();
+      void this.teardownVoicePresenceUi();
     }
   }
 
@@ -1002,6 +1051,7 @@ export class VoiceStore {
     this.abortAndTeardown();
     this.stopKeepAlive();
     this.cameraSuspendedByBackground = false;
+    void this.teardownVoicePresenceUi();
 
     runInAction(() => {
       this.connectionStatus = "failed";
@@ -1038,6 +1088,77 @@ export class VoiceStore {
     this.selfDeaf = this.spaceDeaf ? true : raw.selfDeaf;
 
     this.applySessionVoiceFlags();
+    if (this.connectionStatus === "connected") {
+      void this.syncVoicePresenceUi();
+    }
+  }
+
+  private getVoicePresenceProps() {
+    const channel = this.channel;
+    const channelName =
+      channel?.name?.trim() ||
+      i18n.t("voice.title", { ns: "chat" });
+    const spaceName = channel?.space?.name?.trim() || "";
+
+    return {
+      channelName,
+      spaceName,
+      muted: this.effectiveSelfMute,
+      deafened: this.effectiveSelfDeaf,
+    };
+  }
+
+  private getVoiceDeepLinkUrl() {
+    const channelId = this.currentChannelId;
+    if (!channelId) return "com.mutualzz.app://";
+    return `com.mutualzz.app://spaces/channel/${channelId}`;
+  }
+
+  private async activateVoicePresenceUi() {
+    const props = this.getVoicePresenceProps();
+
+    try {
+      await activateVoiceAudioSession();
+    } catch (error) {
+      this.logger.warn("activateVoiceAudioSession failed", error);
+    }
+
+    await startOrUpdateVoiceLiveActivity(props, this.getVoiceDeepLinkUrl());
+
+    try {
+      await startAndroidVoiceForegroundService(props);
+    } catch (error) {
+      this.logger.warn("startAndroidVoiceForegroundService failed", error);
+    }
+  }
+
+  private async syncVoicePresenceUi() {
+    if (this.connectionStatus !== "connected") return;
+
+    const props = this.getVoicePresenceProps();
+    await updateVoiceLiveActivity(props);
+
+    try {
+      await startAndroidVoiceForegroundService(props);
+    } catch (error) {
+      this.logger.warn("updateAndroidVoiceForegroundService failed", error);
+    }
+  }
+
+  private async teardownVoicePresenceUi() {
+    await endVoiceLiveActivity();
+
+    try {
+      await stopAndroidVoiceForegroundService();
+    } catch (error) {
+      this.logger.warn("stopAndroidVoiceForegroundService failed", error);
+    }
+
+    try {
+      await deactivateVoiceAudioSession();
+    } catch (error) {
+      this.logger.warn("deactivateVoiceAudioSession failed", error);
+    }
   }
 
   private sendVoiceStateUpdate(options?: { refreshRtc?: boolean }) {

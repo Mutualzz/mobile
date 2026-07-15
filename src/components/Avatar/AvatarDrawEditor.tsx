@@ -11,7 +11,8 @@ import {
 import { AVATAR_DRAW_CANVAS_SIZE } from "@components/Profile/widgets/editor/drawCanvas.constants";
 import { useAppStore } from "@hooks/useStores";
 import type { APIPrivateUser } from "@mutualzz/types";
-import { Box, Modal, Typography, useTheme } from "@mutualzz/ui-native";
+import { Box, Sheet, Typography, useTheme } from "@mutualzz/ui-native";
+import { FULL_SHEET_PROPS } from "@utils/sheet";
 import { ArrowLeftIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
@@ -100,20 +101,14 @@ export const AvatarDrawEditor = observer(
     };
 
     return (
-      <Modal
-        open={visible}
-        onClose={handleClose}
-        layout="fullscreen"
-        hideBackdrop
-        showCloseButton={false}
-        disableBackdropClick
-        style={{ paddingVertical: 0 }}
-      >
+      <Sheet open={visible} onClose={handleClose} {...FULL_SHEET_PROPS}>
         <Box
           style={{
             flex: 1,
+            minHeight: 0,
+            width: "100%",
             backgroundColor: theme.colors.background,
-            paddingTop: insets.top,
+            paddingBottom: Math.max(12, insets.bottom),
           }}
         >
           <Box
@@ -173,7 +168,7 @@ export const AvatarDrawEditor = observer(
             )}
           </Box>
         </Box>
-      </Modal>
+      </Sheet>
     );
   },
 );

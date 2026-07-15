@@ -2,15 +2,14 @@ import { EmojiPickerContent } from "@components/Expression/EmojiPickerContent";
 import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
-import { Box, Modal, Typography } from "@mutualzz/ui-native";
+import { Box, Sheet, Typography } from "@mutualzz/ui-native";
 import type { Expression } from "@stores/objects/Expression";
 import type { PickerEmoji, SkinTone } from "@utils/emojis/emojiPickerData";
-import { MODAL_SHEET_WRAPPER_STYLE } from "@utils/modalSheet";
+import { SHEET_WRAPPER_STYLE } from "@utils/sheet";
 import { XIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useWindowDimensions, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface Props {
   visible?: boolean;
@@ -18,7 +17,6 @@ interface Props {
   title?: string;
   onSelectEmoji: (emoji: PickerEmoji, skinTone: SkinTone) => void;
   onSelectCustomEmoji: (expression: Expression) => void;
-  /** Panel only — use with ModalRoot to avoid nested RN Modals. */
   embedded?: boolean;
 }
 
@@ -29,11 +27,9 @@ export const ReactionEmojiPicker = observer(
     title,
     onSelectEmoji,
     onSelectCustomEmoji,
-    embedded = false,
-  }: Props) => {
+    embedded = false}: Props) => {
     const { t } = useTranslation("chat");
     const app = useAppStore();
-    const insets = useSafeAreaInsets();
     const { height } = useWindowDimensions();
     const resolvedTitle = title ?? t("actions.addReaction");
 
@@ -48,7 +44,7 @@ export const ReactionEmojiPicker = observer(
     };
 
     const panel = (
-      <View pointerEvents="box-none" style={MODAL_SHEET_WRAPPER_STYLE}>
+      <View pointerEvents="box-none" style={SHEET_WRAPPER_STYLE}>
         <View onStartShouldSetResponder={() => true}>
           <Paper
             elevation={app.settings?.preferEmbossed ? 4 : 2}
@@ -56,8 +52,7 @@ export const ReactionEmojiPicker = observer(
               height: height * 0.7,
               borderTopLeftRadius: 16,
               borderTopRightRadius: 16,
-              paddingTop: 12,
-              paddingBottom: insets.bottom + 12,
+              paddingTop: 12
             }}
           >
             <Box
@@ -66,8 +61,7 @@ export const ReactionEmojiPicker = observer(
                 alignItems: "center",
                 paddingHorizontal: 12,
                 paddingBottom: 8,
-                gap: 8,
-              }}
+                gap: 8}}
             >
               <Typography
                 level="body-md"
@@ -94,20 +88,14 @@ export const ReactionEmojiPicker = observer(
     if (embedded) return panel;
 
     return (
-      <Modal
+      <Sheet
         open={visible}
         onClose={onClose}
-        layout="fullscreen"
         showCloseButton={false}
-        style={{
-          justifyContent: "flex-end",
-          alignItems: "stretch",
-          backgroundColor: "transparent",
-          paddingVertical: 0,
-        }}
+      enableDynamicSizing
       >
         {panel}
-      </Modal>
+      </Sheet>
     );
   },
 );

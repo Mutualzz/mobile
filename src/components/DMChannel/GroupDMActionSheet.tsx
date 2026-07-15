@@ -1,26 +1,17 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
-import {
-  Box,
-  ButtonGroup,
-  Divider,
-  Modal,
-  Typography,
-} from "@mutualzz/ui-native";
+import { Box, ButtonGroup, Divider, Sheet, Typography } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import { useMutation } from "@tanstack/react-query";
 import {
   CheckCircleIcon,
   GearIcon,
   SignOutIcon,
-  TrashIcon,
-} from "phosphor-react-native";
+  TrashIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface Props {
   channel: Channel;
@@ -33,7 +24,6 @@ export const GroupDMActionSheet = observer(
   ({ channel, visible, onClose, onOpenManage }: Props) => {
     const app = useAppStore();
     const { t } = useTranslation("chat");
-    const insets = useSafeAreaInsets();
     const { navigate } = useAppNavigation();
 
     const readState = app.readStates.get(channel.id);
@@ -47,14 +37,12 @@ export const GroupDMActionSheet = observer(
     const { mutate: leaveGroup, isPending: isLeaving } = useMutation({
       mutationKey: ["leave-group-dm", channel.id],
       mutationFn: () => app.channels.leaveGroupDM(channel.id),
-      onSuccess: onLeft,
-    });
+      onSuccess: onLeft});
 
     const { mutate: deleteGroup, isPending: isDeleting } = useMutation({
       mutationKey: ["delete-group-dm", channel.id],
       mutationFn: () => app.channels.deleteGroupDM(channel.id),
-      onSuccess: onLeft,
-    });
+      onSuccess: onLeft});
 
     const isPending = isLeaving || isDeleting;
     const title =
@@ -66,41 +54,21 @@ export const GroupDMActionSheet = observer(
         t("groupDm.title"));
 
     return (
-      <Modal
+      <Sheet
         open={visible}
         onClose={onClose}
-        layout="fullscreen"
         showCloseButton={false}
-        style={{
-          justifyContent: "flex-end",
-          alignItems: "stretch",
-          backgroundColor: "transparent",
-          paddingVertical: 0,
-        }}
+      enableDynamicSizing
       >
-        <View
-          pointerEvents="box-none"
-          style={{
-            flex: 1,
-            justifyContent: "flex-end",
-            width: "100%",
-          }}
-        >
+        <View style={{ width: "100%" }}>
           <View onStartShouldSetResponder={() => true}>
             <Box
               style={{
-                marginHorizontal: 12,
-                marginBottom: insets.bottom + 12,
-              }}
+                width: "100%",
+                padding: 16,
+                gap: 8}}
             >
-              <Paper
-                elevation={app.settings?.preferEmbossed ? 4 : 2}
-                style={{
-                  borderRadius: 16,
-                  padding: 12,
-                  gap: 8,
-                }}
-              >
+              <Box style={{ gap: 8 }}>
                 <Box
                   style={{ alignItems: "center", paddingVertical: 4, gap: 2 }}
                 >
@@ -171,11 +139,11 @@ export const GroupDMActionSheet = observer(
                     </Button>
                   )}
                 </ButtonGroup>
-              </Paper>
+              </Box>
             </Box>
           </View>
         </View>
-      </Modal>
+      </Sheet>
     );
   },
 );

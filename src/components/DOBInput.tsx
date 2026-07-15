@@ -1,11 +1,4 @@
-import {
-    Box,
-    InputDefault,
-    Modal,
-    Typography,
-    useTheme,
-    type InputRootProps,
-} from "@mutualzz/ui-native";
+import { Box, InputDefault, Sheet, Typography, useTheme, type InputRootProps } from "@mutualzz/ui-native";
 import type { AnyFieldApi } from "@tanstack/form-core";
 import dayjs from "dayjs";
 import { useState } from "react";
@@ -13,9 +6,7 @@ import {
     Pressable,
     ScrollView,
     useWindowDimensions,
-    View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+    View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 interface ApiErrors {
@@ -49,15 +40,13 @@ const parseDobParts = (value: unknown) => {
         return {
             month: fallback.format("MM"),
             day: fallback.format("D"),
-            year: fallback.format("YYYY"),
-        };
+            year: fallback.format("YYYY")};
     }
 
     return {
         month: parsed.format("MM"),
         day: parsed.format("D"),
-        year: parsed.format("YYYY"),
-    };
+        year: parsed.format("YYYY")};
 };
 
 export const DOBInput = ({
@@ -73,7 +62,6 @@ export const DOBInput = ({
 }) => {
     const { t } = useTranslation("auth");
     const { theme } = useTheme();
-    const insets = useSafeAreaInsets();
     const { height: windowHeight } = useWindowDimensions();
     const [month, setMonth] = useState(
         () => parseDobParts(field.state.value).month,
@@ -116,8 +104,7 @@ export const DOBInput = ({
             style={{
                 flexDirection: "column",
                 gap: 8,
-                width: "100%",
-            }}
+                width: "100%"}}
         >
             <Typography weight={500} level="body-sm">
                 {label}{" "}
@@ -133,8 +120,7 @@ export const DOBInput = ({
                     flexDirection: "row",
                     alignItems: "center",
                     gap: 8,
-                    width: "100%",
-                }}
+                    width: "100%"}}
             >
                 <Pressable
                     onPress={() => setMonthOpen(true)}
@@ -150,8 +136,7 @@ export const DOBInput = ({
                             borderRadius: 6,
                             paddingHorizontal: 12,
                             paddingVertical: 10,
-                            backgroundColor: theme.colors.surface,
-                        }}
+                            backgroundColor: theme.colors.surface}}
                     >
                         <Typography
                             level="body-sm"
@@ -194,37 +179,24 @@ export const DOBInput = ({
                 </Box>
             </Box>
 
-            <Modal
+            <Sheet
                 open={monthOpen}
                 onClose={() => setMonthOpen(false)}
-                layout="fullscreen"
                 showCloseButton={false}
-                style={{
-                    justifyContent: "flex-end",
-                    alignItems: "stretch",
-                    backgroundColor: "transparent",
-                    paddingVertical: 0,
-                }}
+                enableDynamicSizing
             >
-                <View
-                    pointerEvents="box-none"
-                    style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
-                >
+                <View style={{ width: "100%" }}>
                     <Box
                         style={{
                             maxHeight: Math.min(windowHeight * 0.55, 420),
                             backgroundColor: theme.colors.background,
-                            borderTopLeftRadius: 16,
-                            borderTopRightRadius: 16,
-                            paddingBottom: insets.bottom + 12,
                         }}
                     >
                         <Box
                             style={{
                                 paddingHorizontal: 16,
                                 paddingTop: 14,
-                                paddingBottom: 8,
-                            }}
+                                paddingBottom: 8}}
                         >
                             <Typography level="title-sm" weight="bold">
                                 {t("dob.selectMonth")}
@@ -247,8 +219,7 @@ export const DOBInput = ({
                                             paddingVertical: 14,
                                             backgroundColor: active
                                                 ? `${theme.colors.primary}18`
-                                                : "transparent",
-                                        }}
+                                                : "transparent"}}
                                     >
                                         <Typography
                                             level="body-md"
@@ -257,8 +228,7 @@ export const DOBInput = ({
                                                 color: active
                                                     ? theme.colors.primary
                                                     : theme.typography.colors
-                                                          .primary,
-                                            }}
+                                                          .primary}}
                                         >
                                             {t(`dob.months.${value}`)}
                                         </Typography>
@@ -268,7 +238,7 @@ export const DOBInput = ({
                         </ScrollView>
                     </Box>
                 </View>
-            </Modal>
+            </Sheet>
 
             {!field.state.meta.isValid && field.state.meta.isTouched && (
                 <Typography variant="plain" color="danger" level="body-sm">

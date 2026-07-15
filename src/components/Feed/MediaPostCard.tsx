@@ -7,7 +7,7 @@ import { MessageSticker } from "@components/Message/MessageSticker";
 import { Paper } from "@components/Paper";
 import { ReportContentSheet } from "@components/Report/ReportContentSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import { ExpressionType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
@@ -46,7 +46,7 @@ export const MediaPostCard = observer(
     const app = useAppStore();
     const { t } = useTranslation("chat");
     const feedSizes = useScaledFeedPreviewSizes();
-    const { openModal } = useModal();
+    const { openSheet } = useSheet();
     const { width } = useWindowDimensions();
     const isSnap = layout === "snap";
     const cardWidth = isSnap ? width : Math.min(width - 24, 420);
@@ -95,13 +95,13 @@ export const MediaPostCard = observer(
           ) : (
             <Pressable
               onPress={() =>
-                openModal(
+                openSheet(
                   `report-post-${post.id}`,
                   <ReportContentSheet
                     targetType="post"
                     targetId={post.id}
                     contentLabel={t("feed.report.thisPost")}
-                    modalId={`report-post-${post.id}`}
+                    sheetId={`report-post-${post.id}`}
                   />,
                 )
               }

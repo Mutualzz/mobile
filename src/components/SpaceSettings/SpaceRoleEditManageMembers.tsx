@@ -6,11 +6,11 @@ import {
   getHierarchyContext,
 } from "@components/SpaceSettings/roleHierarchy.utils";
 import { UserAvatar } from "@components/User/UserAvatar";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import type { Role } from "@stores/objects/Role";
 import { Box, Input, Typography, useTheme } from "@mutualzz/ui-native";
 import {
-  useScaledModalListMaxHeight,
+  useScaledSheetListMaxHeight,
   useScaledSquareSize,
 } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
@@ -28,7 +28,7 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
   const { t: tCommon } = useTranslation("common");
   const { theme } = useTheme();
   const removeButtonSize = useScaledSquareSize(26);
-  const { openModal } = useModal();
+  const { openSheet } = useSheet();
   const [search, setSearch] = useState("");
   const space = role.space;
   const hierarchyContext = space
@@ -65,7 +65,7 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
     const space = role.space;
     if (!space || !canManageRole) return;
 
-    const modalId = `add-role-members-${role.id}`;
+    const sheetId = `add-role-members-${role.id}`;
 
     const eligible = space.members.all.filter((member) => {
       if (member.roles.has(role.id)) return false;
@@ -73,10 +73,10 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
       return me?.canManageMember?.(member, "ManageRoles") ?? false;
     });
 
-    openModal(
-      modalId,
+    openSheet(
+      sheetId,
       <AddMembersSheet
-        modalId={modalId}
+        sheetId={sheetId}
         role={role}
         eligibleMemberIds={eligible.map((m) => m.userId)}
       />,
@@ -222,18 +222,18 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
 });
 
 interface AddMembersSheetProps {
-  modalId: string;
+  sheetId: string;
   role: Role;
   eligibleMemberIds: string[];
 }
 
 const AddMembersSheet = observer(
-  ({ modalId, role, eligibleMemberIds }: AddMembersSheetProps) => {
+  ({ sheetId, role, eligibleMemberIds }: AddMembersSheetProps) => {
     const { t } = useTranslation("space");
     const { t: tCommon } = useTranslation("common");
     const { t: tChat } = useTranslation("chat");
-    const { closeModal } = useModal();
-    const listMaxHeight = useScaledModalListMaxHeight();
+    const { closeSheet } = useSheet();
+    const listMaxHeight = useScaledSheetListMaxHeight();
     const [search, setSearch] = useState("");
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
@@ -267,7 +267,7 @@ const AddMembersSheet = observer(
       setError(null);
       try {
         await role.addMembers(selectedIds);
-        closeModal(modalId);
+        closeSheet(sheetId);
       } catch (e) {
         setError(
           e instanceof Error ? e.message : t("roles.members.addFailed"),
@@ -373,14 +373,6 @@ const AddMembersSheet = observer(
             marginTop: 8,
           }}
         >
-          <Button
-            variant="plain"
-            color="neutral"
-            expand
-            onPress={() => closeModal(modalId)}
-          >
-            {tCommon("cancel")}
-          </Button>
           <Button
             expand
             disabled={!selectedIds.length || saving}

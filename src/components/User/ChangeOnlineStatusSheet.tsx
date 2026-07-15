@@ -15,11 +15,10 @@ interface Props {
   visible?: boolean;
   onClose: () => void;
   onDone?: () => void;
-  /** Panel only — use with ModalRoot to avoid nested RN Modals. */
   embedded?: boolean;
 }
 
-export const ChangeOnlineStatusModal = observer(
+export const ChangeOnlineStatusSheet = observer(
   ({ visible = true, onClose, onDone, embedded = false }: Props) => {
     const { t } = useTranslation("common");
     const app = useAppStore();

@@ -1,44 +1,44 @@
 import { CustomEmojiPreviewSheet } from "@components/Preview/CustomEmojiPreviewSheet";
 import { DefaultEmojiPreviewSheet } from "@components/Preview/DefaultEmojiPreviewSheet";
-import { EXPRESSION_PREVIEW_MODAL_PROPS } from "@components/Preview/ExpressionPreviewSheetLayout";
-import { useModal } from "@hooks/useModal";
+import { EXPRESSION_PREVIEW_SHEET_PROPS } from "@components/Preview/ExpressionPreviewSheetLayout";
+import { useSheet } from "@hooks/useSheet";
 import type { Expression } from "@stores/objects/Expression";
 import { useCallback } from "react";
 
 export function useEmojiPreview() {
-  const { openModal, closeModal } = useModal();
+  const { openSheet, closeSheet } = useSheet();
 
   const openDefaultEmojiPreview = useCallback(
     (name: string, unicode: string) => {
-      const modalId = `emoji-preview-${name}-${unicode.codePointAt(0) ?? 0}`;
+      const sheetId = `emoji-preview-${name}-${unicode.codePointAt(0) ?? 0}`;
 
-      openModal(
-        modalId,
+      openSheet(
+        sheetId,
         <DefaultEmojiPreviewSheet
           name={name}
           unicode={unicode}
-          onClose={() => closeModal(modalId)}
+          onClose={() => closeSheet(sheetId)}
         />,
-        EXPRESSION_PREVIEW_MODAL_PROPS,
+        EXPRESSION_PREVIEW_SHEET_PROPS,
       );
     },
-    [closeModal, openModal],
+    [closeSheet, openSheet],
   );
 
   const openCustomEmojiPreview = useCallback(
     (expression: Expression) => {
-      const modalId = `custom-emoji-preview-${expression.id}`;
+      const sheetId = `custom-emoji-preview-${expression.id}`;
 
-      openModal(
-        modalId,
+      openSheet(
+        sheetId,
         <CustomEmojiPreviewSheet
           expression={expression}
-          onClose={() => closeModal(modalId)}
+          onClose={() => closeSheet(sheetId)}
         />,
-        EXPRESSION_PREVIEW_MODAL_PROPS,
+        EXPRESSION_PREVIEW_SHEET_PROPS,
       );
     },
-    [closeModal, openModal],
+    [closeSheet, openSheet],
   );
 
   return {

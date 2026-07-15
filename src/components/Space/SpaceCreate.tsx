@@ -1,16 +1,9 @@
 import { Button } from "@components/Button";
 import { CameraIcon } from "phosphor-react-native";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import type { APISpace, HttpException } from "@mutualzz/types";
-import {
-  Box,
-  ButtonGroup,
-  InputDefault,
-  Paper,
-  Typography,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { Box, InputDefault, Typography, useTheme } from "@mutualzz/ui-native";
 import {
   useScaledFeedPreviewSizes,
   useScaledSpaceCreateCardHeight,
@@ -20,15 +13,18 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Image, Pressable } from "react-native";
 import { useTranslation } from "react-i18next";
-import ImagePicker, { CropRect } from "react-native-image-crop-picker";
-
-interface CreateSpace {
-  icon?: File | null;
-  crop?: unknown;
-}
+import ImagePicker from "react-native-image-crop-picker";
+import { Paper } from "@components/Paper";
 
 interface Props {
   setCreating: (creating: boolean) => void;
+}
+
+function extensionForMime(mime: string) {
+  if (mime.includes("png")) return "png";
+  if (mime.includes("gif")) return "gif";
+  if (mime.includes("webp")) return "webp";
+  return "jpg";
 }
 
 export const SpaceCreate = observer(({ setCreating }: Props) => {
@@ -39,53 +35,43 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
   const cardHeight = useScaledSpaceCreateCardHeight();
   const feedSizes = useScaledFeedPreviewSizes();
 
-  const { closeAllModals } = useModal();
+  const { closeAllSheets } = useSheet();
 
   const [name, setName] = useState("");
-
-  const [imageFile, setImageFile] = useState<string | null>(null);
-  const [originalFile, setOriginalFile] = useState<File | null>(null);
-  const [croppedAreaPixels, setCroppedAreaPixels] =
-    useState<Partial<CropRect> | null>(null);
-
+  const [iconUri, setIconUri] = useState<string | null>(null);
+  const [iconMime, setIconMime] = useState("image/jpeg");
   const [error, setError] = useState<string | null>(null);
 
   const { mutate: createSpace, isPending: creating } = useMutation({
-    mutationFn: ({ icon, crop }: CreateSpace) => {
+    mutationFn: () => {
       const formData = new FormData();
-      formData.append("name", name);
-      if (icon) formData.append("icon", icon);
-      if (crop) formData.append("crop", JSON.stringify(croppedAreaPixels));
+      formData.append("name", name.trim());
+
+      if (iconUri) {
+        const ext = extensionForMime(iconMime);
+        formData.append("icon", {
+          uri: iconUri,
+          type: iconMime,
+          name: `space-icon.${ext}`,
+        } as unknown as Blob);
+      }
 
       return app.rest.postFormData<APISpace>("spaces", formData);
     },
     onSuccess: () => {
-      setImageFile(null);
+      setIconUri(null);
+      setIconMime("image/jpeg");
       setError(null);
-      setOriginalFile(null);
-      closeAllModals();
+      closeAllSheets();
     },
     onError: (err: HttpException) => {
       setError(
-        err.errors?.[0].message ?? err.message ?? tSpace("profile.genericError"),
+        err.errors?.[0]?.message ??
+          err.message ??
+          tSpace("profile.genericError"),
       );
     },
   });
-
-  const onUpload = async (file: File | File[]) => {
-    let fileToUse: File;
-    if (Array.isArray(file)) fileToUse = file[0];
-    else fileToUse = file;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImageFile(reader.result as string);
-      setOriginalFile(fileToUse);
-    };
-    reader.readAsDataURL(fileToUse);
-
-    setError(null);
-  };
 
   const handlePicker = () => {
     ImagePicker.openPicker({
@@ -93,63 +79,45 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
       cropping: true,
       cropperCircleOverlay: true,
     })
-      .then(async (image) => {
-        setCroppedAreaPixels(image.cropRect || null);
-        const reader = new FileReader();
-
-        const res = await fetch(image.path);
-
-        reader.onload = async () => {
-          setImageFile(reader.result as string);
-          setOriginalFile(new File([reader.result!], "space-icon"));
-        };
-        reader.readAsDataURL(await res.blob());
+      .then((image) => {
+        setIconUri(image.path);
+        setIconMime(image.mime ?? "image/jpeg");
+        setError(null);
       })
-      .catch((err) => {
-        console.log("Image picker error: ", err);
-      })
-      .finally(() => {
-        ImagePicker.clean();
-      });
+      .catch(() => undefined);
   };
 
   const onClear = () => {
-    setImageFile(null);
-    setOriginalFile(null);
+    setIconUri(null);
+    setIconMime("image/jpeg");
     setError(null);
-    setCroppedAreaPixels(null);
   };
 
-  const handleName = (name: string) => {
+  const handleName = (nextName: string) => {
     setError(null);
-    setName(name);
+    setName(nextName);
   };
 
-  const handleCreate = async () => {
+  const handleCreate = () => {
     if (name.trim() === "") {
       setError(t("onboarding.createSpace.nameRequired"));
       return;
     }
 
-    const shouldCrop = !!croppedAreaPixels;
-
-    createSpace({
-      icon: originalFile,
-      crop: shouldCrop ? croppedAreaPixels : undefined,
-    });
+    createSpace();
   };
 
   return (
     <Paper
-      elevation={2}
-      transparency={10}
+      elevation={app.settings?.preferEmbossed ? 2 : 0}
       style={{
-        borderRadius: 12,
         flexDirection: "column",
         justifyContent: "space-between",
         alignItems: "center",
-        padding: 16,
         height: cardHeight,
+        borderWidth: 0,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
       }}
     >
       <Typography level="h5" weight="bold">
@@ -167,14 +135,12 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
         }}
       >
         <Pressable onPress={() => handlePicker()}>
-          {imageFile ? (
+          {iconUri ? (
             <Image
-              source={{
-                uri: imageFile,
-              }}
-              width={feedSizes.sticker}
-              height={feedSizes.sticker}
+              source={{ uri: iconUri }}
               style={{
+                width: feedSizes.sticker,
+                height: feedSizes.sticker,
                 borderRadius: 9999,
               }}
             />
@@ -190,7 +156,6 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
                 borderStyle: "dashed",
                 borderWidth: 1,
                 borderColor: theme.colors.neutral,
-                cursor: "pointer",
                 gap: 4,
               }}
             >
@@ -241,8 +206,14 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
           alignItems: "center",
         }}
       >
-        <ButtonGroup orientation="horizontal" fullWidth spacing={10}>
+        <Box style={{ flexDirection: "row", gap: 10 }}>
+          {iconUri && (
+            <Button expand disabled={creating} onPress={onClear}>
+              {t("onboarding.createSpace.reset")}
+            </Button>
+          )}
           <Button
+            expand
             disabled={creating || name.trim() === "" || !!error}
             onPress={() => handleCreate()}
             variant="solid"
@@ -250,12 +221,7 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
           >
             {t("onboarding.createSpace.createSpace")}
           </Button>
-          {imageFile && (
-            <Button disabled={creating} onPress={onClear}>
-              {t("onboarding.createSpace.reset")}
-            </Button>
-          )}
-        </ButtonGroup>
+        </Box>
       </Box>
       <Box
         style={{

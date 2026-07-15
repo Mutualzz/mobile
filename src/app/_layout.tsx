@@ -2,15 +2,16 @@ import "react-native-get-random-values";
 import "@setup/webrtc";
 import "@setup/notifeeBackgroundHandler";
 import "@setup/backgroundNotificationTask";
+import "@setup/voiceForegroundService";
 import "../i18n";
 
 import { AppCrashFallback } from "@components/ErrorBoundary/AppCrashFallback";
-import { BrandLoader } from "@components/BrandLoader";
+import { BootSplash } from "@components/BootSplash";
 import { ChangelogPrompt } from "@components/Changelog/ChangelogPrompt";
 import { NativeBaseline } from "@components/NativeBaseline/NativeBaseline";
 import { NavigationWithTheme } from "@components/NavigationWithTheme";
 import { AppTheme } from "@contexts/AppTheme.context";
-import { ModalProvider } from "@contexts/Modal.context";
+import { SheetProvider } from "@contexts/Sheet.context";
 import { usePushNotifications } from "@hooks/usePushNotifications";
 import { useAppStore } from "@hooks/useStores";
 import { Logger } from "@mutualzz/logger";
@@ -18,6 +19,7 @@ import { GatewayCloseCodes } from "@mutualzz/types";
 import { GatewayStatus } from "@stores/Gateway.store";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { calendarStrings } from "@utils/i18n";
+import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
 import dayjs from "dayjs";
 import calendar from "dayjs/plugin/calendar";
 import duration from "dayjs/plugin/duration";
@@ -26,7 +28,7 @@ import { Stack, type ErrorBoundaryProps } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
@@ -34,7 +36,7 @@ dayjs.extend(relativeTime);
 dayjs.extend(calendar, calendarStrings);
 dayjs.extend(duration);
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 const errorLogger = new Logger({ tag: "ErrorBoundary" });
 
@@ -62,6 +64,7 @@ const Root = () => {
   const logger = new Logger({
     tag: "App",
   });
+  const [showBootSplash, setShowBootSplash] = useState(true);
 
   usePushNotifications(!!app.token);
 
@@ -113,57 +116,55 @@ const Root = () => {
   }, []);
 
   useEffect(() => {
-    void SplashScreen.hideAsync();
-  }, []);
+    if (!app.isReady) return;
 
-  if (!app.isReady) {
-    return (
-      <AppTheme>
-        <View
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "#241927",
-          }}
-        >
-          <BrandLoader size={108} />
-        </View>
-      </AppTheme>
-    );
-  }
+    const timer = setTimeout(() => {
+      setShowBootSplash(false);
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [app.isReady]);
 
   return (
-    <QueryClientProvider client={app.queryClient}>
-      <KeyboardProvider statusBarTranslucent navigationBarTranslucent>
-        <AppTheme>
-          <NavigationWithTheme>
-            <NativeBaseline>
-              <ModalProvider>
-                <ChangelogPrompt />
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="(tabs)" />
-                  <Stack.Screen
-                    name="settings"
-                    options={{
-                      presentation: "modal",
-                      animation: "slide_from_bottom",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="staff"
-                    options={{
-                      presentation: "modal",
-                      animation: "slide_from_bottom",
-                    }}
-                  />
-                </Stack>
-              </ModalProvider>
-            </NativeBaseline>
-          </NavigationWithTheme>
-        </AppTheme>
-      </KeyboardProvider>
-    </QueryClientProvider>
+    <AppTheme>
+      <View style={{ flex: 1 }}>
+        <View style={{ flex: 1 }}>
+          {app.isReady ? (
+            <QueryClientProvider client={app.queryClient}>
+              <KeyboardProvider statusBarTranslucent navigationBarTranslucent>
+                <NavigationWithTheme>
+                  <NativeBaseline>
+                    <SheetProvider>
+                      <BottomSheetModalProvider>
+                        <ChangelogPrompt />
+                        <Stack screenOptions={{ headerShown: false }}>
+                          <Stack.Screen name="(tabs)" />
+                          <Stack.Screen
+                            name="settings"
+                            options={{
+                              presentation: "modal",
+                              animation: "slide_from_bottom",
+                            }}
+                          />
+                          <Stack.Screen
+                            name="staff"
+                            options={{
+                              presentation: "modal",
+                              animation: "slide_from_bottom",
+                            }}
+                          />
+                        </Stack>
+                      </BottomSheetModalProvider>
+                    </SheetProvider>
+                  </NativeBaseline>
+                </NavigationWithTheme>
+              </KeyboardProvider>
+            </QueryClientProvider>
+          ) : null}
+        </View>
+        {showBootSplash ? <BootSplash key="boot-splash" /> : null}
+      </View>
+    </AppTheme>
   );
 };
 

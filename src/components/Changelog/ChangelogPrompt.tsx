@@ -1,8 +1,8 @@
 import {
   WhatsNewSheet,
-  WHATS_NEW_MODAL_ID,
-} from "@components/Modals/WhatsNewSheet";
-import { useModal } from "@hooks/useModal";
+  WHATS_NEW_SHEET_ID,
+} from "@components/Sheets/WhatsNewSheet";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import type { APIChangelog } from "@mutualzz/types";
 import { MOBILE_APP_VERSION } from "@utils/appVersion";
@@ -11,7 +11,7 @@ import { useEffect, useRef } from "react";
 
 export const ChangelogPrompt = observer(() => {
   const app = useAppStore();
-  const { openModal, isModalOpen } = useModal();
+  const { openSheet, isSheetOpen } = useSheet();
   const shownIdsRef = useRef(new Set<string>());
   const inFlightRef = useRef(false);
 
@@ -33,12 +33,12 @@ export const ChangelogPrompt = observer(() => {
 
         if (!changelog) return;
         if (shownIdsRef.current.has(changelog.id)) return;
-        if (isModalOpen(WHATS_NEW_MODAL_ID)) return;
+        if (isSheetOpen(WHATS_NEW_SHEET_ID)) return;
 
         shownIdsRef.current.add(changelog.id);
 
-        openModal(
-          WHATS_NEW_MODAL_ID,
+        openSheet(
+          WHATS_NEW_SHEET_ID,
           <WhatsNewSheet
             changelog={changelog}
             onAck={async () => {

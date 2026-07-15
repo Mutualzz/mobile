@@ -1,24 +1,15 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import type { Space } from "@stores/objects/Space";
 import type { VoiceState } from "@stores/objects/VoiceState";
-import {
-  Box,
-  ButtonGroup,
-  Divider,
-  Modal,
-  Typography,
-} from "@mutualzz/ui-native";
+import { Box, ButtonGroup, Divider, Sheet, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import {
   HeadphonesIcon,
   MicrophoneSlashIcon,
-  PhoneXIcon,
-} from "phosphor-react-native";
+  PhoneXIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 interface Props {
@@ -32,7 +23,6 @@ interface Props {
 export const VoiceParticipantActionSheet = observer(
   ({ state, space, visible, onRequestClose, onClose }: Props) => {
     const app = useAppStore();
-    const insets = useSafeAreaInsets();
     const { t } = useTranslation("chat");
     const user = state.user;
     const member = state.member;
@@ -60,8 +50,7 @@ export const VoiceParticipantActionSheet = observer(
       },
       onSuccess: () => {
         onRequestClose();
-      },
-    });
+      }});
 
     if (isSelf || !member || !user) return null;
 
@@ -70,41 +59,21 @@ export const VoiceParticipantActionSheet = observer(
     if (!hasActions) return null;
 
     return (
-      <Modal
+      <Sheet
         open={visible}
         onClose={onClose}
-        layout="fullscreen"
         showCloseButton={false}
-        style={{
-          justifyContent: "flex-end",
-          alignItems: "stretch",
-          backgroundColor: "transparent",
-          paddingVertical: 0,
-        }}
+      enableDynamicSizing
       >
-        <View
-          pointerEvents="box-none"
-          style={{
-            flex: 1,
-            justifyContent: "flex-end",
-            width: "100%",
-          }}
-        >
+        <View style={{ width: "100%" }}>
           <View onStartShouldSetResponder={() => true}>
             <Box
               style={{
-                marginHorizontal: 12,
-                marginBottom: insets.bottom + 12,
-              }}
+                width: "100%",
+                padding: 16,
+                gap: 8}}
             >
-              <Paper
-                elevation={app.settings?.preferEmbossed ? 4 : 2}
-                style={{
-                  borderRadius: 16,
-                  padding: 12,
-                  gap: 8,
-                }}
-              >
+              <Box style={{ gap: 8 }}>
                 <Box
                   style={{ alignItems: "center", paddingVertical: 4, gap: 2 }}
                 >
@@ -174,11 +143,11 @@ export const VoiceParticipantActionSheet = observer(
                     </Button>
                   )}
                 </ButtonGroup>
-              </Paper>
+              </Box>
             </Box>
           </View>
         </View>
-      </Modal>
+      </Sheet>
     );
   },
 );

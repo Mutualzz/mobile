@@ -1,7 +1,7 @@
 import { PostComments } from "@components/Feed/PostComments";
-import { BottomSheet } from "@components/Keyboard/BottomSheet";
-import { useModalSheetMaxHeight } from "@utils/modalSheet";
+import { Box, Sheet, Typography } from "@mutualzz/ui-native";
 import { useTranslation } from "react-i18next";
+import { View } from "react-native";
 
 interface Props {
   open: boolean;
@@ -9,21 +9,33 @@ interface Props {
   post: Parameters<typeof PostComments>[0]["post"];
 }
 
-const COMMENTS_SHEET_HEIGHT_RATIO = 0.9;
-
 export function PostCommentsSheet({ open, onClose, post }: Props) {
   const { t } = useTranslation("chat");
-  const sheetHeight = useModalSheetMaxHeight(COMMENTS_SHEET_HEIGHT_RATIO);
 
   return (
-    <BottomSheet
+    <Sheet
       open={open}
       onClose={onClose}
-      title={t("feed.comments.title")}
-      height={sheetHeight}
-      keyboard="none"
+      showCloseButton={false}
+      snapPoints={["90%"]}
+      enableDynamicSizing={false}
     >
-      <PostComments post={post} />
-    </BottomSheet>
+      <View
+        style={{
+          flex: 1,
+          width: "100%",
+          minHeight: 0,
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          gap: 12}}
+      >
+        <Typography level="body-lg" weight={700}>
+          {t("feed.comments.title")}
+        </Typography>
+        <Box style={{ flex: 1, minHeight: 0 }}>
+          <PostComments post={post} />
+        </Box>
+      </View>
+    </Sheet>
   );
 }

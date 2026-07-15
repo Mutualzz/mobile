@@ -12,6 +12,8 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Pressable } from "react-native";
 import { useTranslation } from "react-i18next";
+import { useAppStore } from "@hooks/useStores";
+import { useScaledSpaceJoinCardHeight } from "@utils/accessibilityLayout";
 
 interface Props {
   setCreating: (creating: boolean) => void;
@@ -25,9 +27,11 @@ const regex =
     : /^(?:(?:https?:\/\/)?(?:www\.)?mutualzz\.com\/invite\/)?([A-Za-z0-9_-]{8,})$/;
 
 export const SpaceJoin = observer(({ setCreating }: Props) => {
+  const app = useAppStore();
   const { t } = useTranslation("auth");
   const { navigate } = useAppNavigation();
   const [inviteLink, setInviteLink] = useState("");
+  const cardHeight = useScaledSpaceJoinCardHeight();
   const [error, setError] = useState<string | null>(null);
 
   const { mutate: openInvite, isPending } = useMutation({
@@ -63,11 +67,14 @@ export const SpaceJoin = observer(({ setCreating }: Props) => {
 
   return (
     <Paper
-      elevation={2}
+      elevation={app.settings?.preferEmbossed ? 2 : 0}
       style={{
-        borderRadius: 12,
         flexDirection: "column",
-        padding: 16,
+        justifyContent: "space-between",
+        height: cardHeight,
+        borderWidth: 0,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
       }}
     >
       <Box
@@ -75,7 +82,6 @@ export const SpaceJoin = observer(({ setCreating }: Props) => {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          marginBottom: 40,
         }}
       >
         <Typography level="h5" weight="bold">
@@ -116,7 +122,6 @@ export const SpaceJoin = observer(({ setCreating }: Props) => {
       <Box
         style={{
           flexDirection: "column",
-          marginTop: 5,
         }}
       >
         <Typography>{t("onboarding.joinSpace.examplesIntro")}</Typography>
@@ -147,8 +152,8 @@ export const SpaceJoin = observer(({ setCreating }: Props) => {
       <Box
         style={{
           alignItems: "center",
-          marginTop: 20,
-          flexDirection: "row",
+
+          flexDirection: "column",
           gap: 8,
         }}
       >

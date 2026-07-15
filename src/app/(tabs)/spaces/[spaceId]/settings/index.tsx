@@ -4,7 +4,7 @@ import { Paper } from "@components/Paper";
 import { SpaceActionConfirmSheet } from "@components/SpaceSettings/SpaceActionConfirmSheet";
 import { SpaceSettingsHeader } from "@components/SpaceSettings/SpaceSettingsHeader";
 import { useSettingsIconColor } from "@components/UserSettings/settingsTheme";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import {
@@ -27,7 +27,7 @@ const SpaceSettingsIndex = () => {
   const { t } = useTranslation("space");
   const app = useAppStore();
   const { navigate } = useAppNavigation();
-  const { openModal } = useModal();
+  const { openSheet } = useSheet();
   const { space, spaceId } = useRequireSpaceSettingsAccess();
   const { categories } = useSpaceSettingsAccess(space);
   const navIconColor = useSettingsIconColor("info");
@@ -139,12 +139,12 @@ const SpaceSettingsIndex = () => {
               <TrashIcon weight="fill" size={20} color={dangerIconColor} />
             }
             onPress={() =>
-              openModal(
+              openSheet(
                 "delete-space-confirm",
                 <SpaceActionConfirmSheet
                   space={space}
                   action="delete"
-                  modalId="delete-space-confirm"
+                  sheetId="delete-space-confirm"
                 />,
               )
             }
@@ -163,12 +163,12 @@ const SpaceSettingsIndex = () => {
               <SignOutIcon weight="fill" size={20} color={dangerIconColor} />
             }
             onPress={() =>
-              openModal(
+              openSheet(
                 "leave-space-confirm",
                 <SpaceActionConfirmSheet
                   space={space}
                   action="leave"
-                  modalId="leave-space-confirm"
+                  sheetId="leave-space-confirm"
                 />,
               )
             }

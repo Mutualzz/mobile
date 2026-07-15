@@ -4,14 +4,7 @@ import { Paper } from "@components/Paper";
 import { SpaceIcon } from "@components/Space/SpaceIcon";
 import { useAppStore } from "@hooks/useStores";
 import type { HttpException } from "@mutualzz/types";
-import {
-  Box,
-  InputDefault,
-  InputPassword,
-  type InputPasswordProps,
-  type InputRootProps,
-  Typography,
-} from "@mutualzz/ui-native";
+import { Box, InputDefault, InputPassword, type InputPasswordProps, type InputRootProps, Typography } from "@mutualzz/ui-native";
 import { emailRegex } from "@mutualzz/validators";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";

@@ -141,7 +141,10 @@ export class MediasoupSession {
   private readonly getNoiseSuppression: () => boolean;
   private readonly getUserAudioMix?: (userId: string) => UserMix;
   private readonly speakingDetector: SpeakingDetector;
-  private readonly statsSources = new Map<string, () => Promise<RTCStatsReport>>();
+  private readonly statsSources = new Map<
+    string,
+    () => Promise<RTCStatsReport>
+  >();
 
   private readonly logger = new Logger({ tag: "VoiceSession" });
 
@@ -211,7 +214,8 @@ export class MediasoupSession {
 
     if (this.micProducer) {
       try {
-        shouldTransmit ? this.micProducer.resume() : this.micProducer.pause();
+        if (shouldTransmit) this.micProducer.resume();
+        else this.micProducer.pause();
       } catch {}
     }
   }
@@ -225,11 +229,7 @@ export class MediasoupSession {
       if (!consumer) continue;
 
       try {
-        setConsumerAudioMix(
-          consumer,
-          mix.volume,
-          mix.muted || this.isDeafened,
-        );
+        setConsumerAudioMix(consumer, mix.volume, mix.muted || this.isDeafened);
       } catch (error) {
         this.logger.warn("Failed to apply audio mix", error);
       }
@@ -246,11 +246,7 @@ export class MediasoupSession {
           muted: false,
           volume: 100,
         };
-        setConsumerAudioMix(
-          consumer,
-          mix.volume,
-          mix.muted || this.isDeafened,
-        );
+        setConsumerAudioMix(consumer, mix.volume, mix.muted || this.isDeafened);
       } catch (error) {
         this.logger.warn("Failed to apply remote audio state", error);
       }
@@ -280,6 +276,7 @@ export class MediasoupSession {
     this.consumeAbortSignal = signal;
 
     const url = new URL(endpoint);
+    url.searchParams.set("token", token);
 
     const socket = await this.openSocket(url.toString(), signal);
     if (signal.aborted) {
@@ -587,7 +584,7 @@ export class MediasoupSession {
 
   private async acquireMicMedia(signal: AbortSignal) {
     const noiseSuppression = this.getNoiseSuppression();
-    const attempts: Array<Record<string, unknown>> = [];
+    const attempts: Record<string, unknown>[] = [];
     const audioBase = {
       echoCancellation: true,
       noiseSuppression,
@@ -605,7 +602,7 @@ export class MediasoupSession {
       if (signal.aborted) throw new Error("Voice disconnected");
       try {
         return await mediaDevices.getUserMedia({
-          audio: audio as never,
+          audio,
           video: false,
         });
       } catch (error) {
@@ -803,9 +800,7 @@ export class MediasoupSession {
 
     if (envelope.ok) pending.resolve(envelope.data ?? {});
     else {
-      pending.reject(
-        new Error(envelope.error?.message ?? "Voice RPC error"),
-      );
+      pending.reject(new Error(envelope.error?.message ?? "Voice RPC error"));
     }
   }
 
@@ -823,7 +818,7 @@ export class MediasoupSession {
         typeof data === "object" &&
         "userId" in data &&
         data.userId != null
-          ? String((data as { userId: unknown }).userId)
+          ? String(data.userId)
           : null;
       if (!userId) return;
       this.cleanupProducersForUser(userId);

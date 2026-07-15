@@ -1,18 +1,12 @@
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
+import type { SheetProps } from "@mutualzz/ui-native";
 import type { PropsWithChildren } from "react";
-import { Pressable, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { View } from "react-native";
 
-export const EXPRESSION_PREVIEW_MODAL_PROPS = {
-  layout: "fullscreen" as const,
+export const EXPRESSION_PREVIEW_SHEET_PROPS: Partial<SheetProps> = {
   showCloseButton: false,
-  style: {
-    justifyContent: "flex-end" as const,
-    alignItems: "stretch" as const,
-    backgroundColor: "transparent",
-    paddingVertical: 0,
-  },
+  enableDynamicSizing: true,
 };
 
 interface Props extends PropsWithChildren {
@@ -21,31 +15,19 @@ interface Props extends PropsWithChildren {
 
 export const ExpressionPreviewSheetLayout = ({ children, onClose }: Props) => {
   const app = useAppStore();
-  const insets = useSafeAreaInsets();
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "flex-end",
-        width: "100%",
-      }}
-    >
-      <Pressable
-        style={{ flex: 1 }}
-        onPress={onClose}
-        accessibilityRole="button"
-      />
+    <View style={{ width: "100%" }}>
       <View onStartShouldSetResponder={() => true}>
         <Paper
+          elevation={app.settings?.preferEmbossed ? 4 : 2}
           style={{
             marginHorizontal: 12,
-            marginBottom: insets.bottom + 8,
-            padding: 16,
-            gap: 12,
+            marginBottom: 0,
             borderRadius: 16,
+            padding: 12,
+            gap: 12,
           }}
-          elevation={app.settings?.preferEmbossed ? 3 : 1}
         >
           {children}
         </Paper>

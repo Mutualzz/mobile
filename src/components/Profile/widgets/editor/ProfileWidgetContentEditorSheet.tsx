@@ -16,18 +16,11 @@ import { ProfileStickerWidgetView } from "@components/Profile/widgets/blocks/Pro
 import { useAppStore } from "@hooks/useStores";
 import type { UserProfile } from "@stores/objects/UserProfile";
 import type { APIMobileProfileBlock, ProfileImageCrop, ProfileLinkItem, MobileProfileStickerBlock } from "@mutualzz/types";
-import {
-  Box,
-  Input,
-  Modal,
-  Switch,
-  Slider,
-  Typography,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { Box, Input, Sheet, Switch, Slider, Typography, useTheme } from "@mutualzz/ui-native";
 import { ProfileBlockCroppedImage } from "@components/Profile/shared/ProfileBlockImage";
 import { ProfileBlockLoopingVideo } from "@components/Profile/shared/ProfileBlockLoopingVideo";
 import { useScaledProfilePreviewHeight } from "@utils/accessibilityLayout";
+import { FULL_SHEET_PROPS } from "@utils/sheet";
 import {
   canAdjustProfileImageCrop,
   pickProfileImageForUpload,
@@ -58,8 +51,7 @@ import {
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, StyleSheet, View } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SvgXml } from "react-native-svg";
 
@@ -70,7 +62,6 @@ interface Props {
   profile: UserProfile;
   onUpdate: (blockId: string, patch: Record<string, unknown>) => void;
   onDelete: (blockId: string) => void;
-  /** Render as a fullscreen overlay instead of a nested RN Modal. */
   presentation?: "modal" | "overlay";
 }
 
@@ -129,8 +120,10 @@ export function ProfileWidgetContentEditorSheet({
     <View
       style={{
         flex: 1,
+        minHeight: 0,
+        width: "100%",
         backgroundColor: theme.colors.background,
-        paddingTop: insets.top,
+        paddingTop: presentation === "overlay" ? insets.top : 0,
       }}
     >
       <Box
@@ -159,7 +152,6 @@ export function ProfileWidgetContentEditorSheet({
           style={{
             flex: 1,
             paddingHorizontal: 16,
-            paddingBottom: insets.bottom + 16,
           }}
         >
           <ProfileDrawCanvas
@@ -173,12 +165,11 @@ export function ProfileWidgetContentEditorSheet({
           />
         </Box>
       ) : (
-        <KeyboardAwareScrollView
+        <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{
             padding: 16,
             gap: 16,
-            paddingBottom: insets.bottom + 16,
           }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -217,7 +208,7 @@ export function ProfileWidgetContentEditorSheet({
           >
             {t("profile.editor.deleteWidget")}
           </Button>
-        </KeyboardAwareScrollView>
+        </ScrollView>
       )}
 
       {block.type === "music" && (
@@ -282,17 +273,9 @@ export function ProfileWidgetContentEditorSheet({
   }
 
   return (
-    <Modal
-      open={visible}
-      onClose={onClose}
-      layout="fullscreen"
-      hideBackdrop
-      showCloseButton={false}
-      disableBackdropClick
-      style={{ paddingVertical: 0 }}
-    >
+    <Sheet open={visible} onClose={onClose} {...FULL_SHEET_PROPS}>
       {sheetBody}
-    </Modal>
+    </Sheet>
   );
 }
 

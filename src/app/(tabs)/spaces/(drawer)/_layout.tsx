@@ -3,9 +3,8 @@ import { ChannelList } from "@components/Channel/ChannelList/ChannelList";
 import { SwipeableDrawer } from "@components/Navigation/SwipeableDrawer";
 import { SpaceLockdownOverlay } from "@components/Space/SpaceLockdownOverlay";
 import { SpacesSidebar } from "@components/Space/SpacesSidebar";
-import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { useAppStore } from "@hooks/useStores";
-import { Box, hasOpenModals } from "@mutualzz/ui-native";
+import { Box, hasOpenSheets } from "@mutualzz/ui-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
@@ -14,7 +13,6 @@ import { BackHandler } from "react-native";
 
 const SpacesDrawerLayout = () => {
   const app = useAppStore();
-  const tabBarInset = useKeyboardChromeInset();
   const activeSpace = app.spaces.active;
   const { spaceId, channelId } = useLocalSearchParams<{
     spaceId?: string;
@@ -92,7 +90,7 @@ const SpacesDrawerLayout = () => {
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
-        if (hasOpenModals()) return false;
+        if (hasOpenSheets()) return false;
         if (app.mode !== "spaces") return false;
         if (!app.channels.activeId) return false;
 
@@ -116,7 +114,6 @@ const SpacesDrawerLayout = () => {
           style={{
             flex: 1,
             flexDirection: "row",
-            paddingBottom: tabBarInset,
           }}
         >
           <SpacesSidebar />

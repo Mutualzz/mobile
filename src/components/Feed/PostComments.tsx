@@ -1,3 +1,5 @@
+import { CHAT_COMPOSER_NATIVE_ID } from "@contexts/ChatKeyboard.context";
+import { ChatListScrollView } from "@components/Keyboard";
 import { KeyboardComposer } from "@components/Keyboard/KeyboardComposer";
 import { ExpressionPickerSheet } from "@components/Expression/ExpressionPickerSheet";
 import { IconButton } from "@components/IconButton";
@@ -7,10 +9,9 @@ import { MessageEmbed } from "@components/Message/MessageEmbed";
 import { MessageSticker } from "@components/Message/MessageSticker";
 import { ReportContentSheet } from "@components/Report/ReportContentSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useOpenBottomSheet } from "@hooks/useOpenBottomSheet";
 import { useAppStore } from "@hooks/useStores";
-import { useOnKeyboardOpen } from "@hooks/useKeyboardOffset";
 import { ExpressionType } from "@mutualzz/types";
 import { Box, Typography } from "@mutualzz/ui-native";
 import type { Post } from "@stores/objects/Post";
@@ -29,9 +30,9 @@ import {
   XIcon,
 } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Image, Keyboard, Pressable, ScrollView } from "react-native";
+import { Image, Pressable } from "react-native";
 
 interface Props {
   post: Post;
@@ -85,7 +86,7 @@ function CommentRow({
   canReport: boolean;
   onReply: (comment: PostComment) => void;
 }) {
-  const { openModal } = useModal();
+  const { openSheet } = useSheet();
   const { t } = useTranslation("chat");
 
   return (
@@ -125,13 +126,13 @@ function CommentRow({
                 color="danger"
                 padding={4}
                 onPress={() =>
-                  openModal(
+                  openSheet(
                     `report-comment-${comment.id}`,
                     <ReportContentSheet
                       targetType="comment"
                       targetId={comment.id}
                       contentLabel={t("feed.report.thisComment")}
-                      modalId={`report-comment-${comment.id}`}
+                      sheetId={`report-comment-${comment.id}`}
                     />,
                   )
                 }
@@ -159,7 +160,6 @@ export const PostComments = observer(({ post }: Props) => {
   const { t } = useTranslation("chat");
   const { openBottomSheet, closeBottomSheet } = useOpenBottomSheet();
   const feedSizes = useScaledFeedPreviewSizes();
-  const scrollRef = useRef<ScrollView>(null);
   const [content, setContent] = useState("");
   const [stickers, setStickers] = useState<Expression[]>([]);
   const [replyingTo, setReplyingTo] = useState<PostComment | null>(null);
@@ -189,12 +189,6 @@ export const PostComments = observer(({ post }: Props) => {
     setStickers([]);
     setReplyingTo(null);
   }, [post.id]);
-
-  const handleKeyboardOpen = useCallback(() => {
-    scrollRef.current?.scrollToEnd({ animated: true });
-  }, []);
-
-  useOnKeyboardOpen(handleKeyboardOpen);
 
   const handleSelectSticker = (sticker: Expression) => {
     setStickers((prev) => {
@@ -326,6 +320,7 @@ export const PostComments = observer(({ post }: Props) => {
                 onChange={setContent}
                 selection={selection}
                 onChangeSelection={setSelection}
+                nativeID={CHAT_COMPOSER_NATIVE_ID}
                 placeholder={
                   replyingTo
                     ? t("feed.comments.replyPlaceholder", {
@@ -357,12 +352,9 @@ export const PostComments = observer(({ post }: Props) => {
         </Box>
       }
     >
-      <ScrollView
-        ref={scrollRef}
+      <ChatListScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ gap: 12, paddingBottom: 8 }}
-        onTouchStart={() => Keyboard.dismiss()}
-        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {isLoading && (
@@ -401,7 +393,7 @@ export const PostComments = observer(({ post }: Props) => {
             )}
           </Box>
         ))}
-      </ScrollView>
+      </ChatListScrollView>
     </KeyboardComposer>
   );
 });

@@ -1,6 +1,5 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import { Typography } from "@mutualzz/ui-native";
 import type { SpaceBan } from "@stores/objects/SpaceBan";
@@ -8,21 +7,22 @@ import type { Space } from "@stores/objects/Space";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { View } from "react-native";
 
 interface Props {
   ban: SpaceBan;
   space: Space;
-  modalId?: string;
+  sheetId?: string;
 }
 
 export const SpaceMemberUnbanSheet = observer(
-  ({ ban, space, modalId }: Props) => {
+  ({ ban, space, sheetId }: Props) => {
     const { t } = useTranslation("common");
     const { t: tSpace } = useTranslation("space");
     const app = useAppStore();
-    const { closeModal } = useModal();
+    const { closeSheet } = useSheet();
     const [pending, setPending] = useState(false);
-    const id = modalId ?? `space-ban-${ban.userId}`;
+    const id = sheetId ?? `space-ban-${ban.userId}`;
 
     const unban = async () => {
       setPending(true);
@@ -31,23 +31,20 @@ export const SpaceMemberUnbanSheet = observer(
           `/spaces/${space.id}/members/${ban.userId}/unban`,
         );
         space.removeBan(ban.userId);
-        closeModal(id);
+        closeSheet(id);
       } finally {
         setPending(false);
       }
     };
 
     return (
-      <Paper
-        style={{
-          width: 320,
-          maxWidth: "100%",
-          padding: 16,
-          borderRadius: 12,
-          gap: 12,
-        }}
-        elevation={app.settings?.preferEmbossed ? 4 : 2}
-      >
+      <View
+                style={{
+                    width: "100%",
+                    padding: 16,
+                    gap: 12,
+                }}
+            >
         <Typography level="body-md" weight={700}>
           {tSpace("bans.unbanTitle", {
             name: ban.user?.displayName ?? ban.userId,
@@ -67,11 +64,11 @@ export const SpaceMemberUnbanSheet = observer(
           variant="soft"
           color="neutral"
           disabled={pending}
-          onPress={() => closeModal(id)}
+          onPress={() => closeSheet(id)}
         >
           {t("cancel")}
         </Button>
-      </Paper>
+      </View>
     );
   },
 );

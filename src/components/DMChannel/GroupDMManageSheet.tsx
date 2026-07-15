@@ -4,7 +4,7 @@ import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import type { HttpException } from "@mutualzz/types";
-import { useScaledModalListMaxHeight } from "@utils/accessibilityLayout";
+import { useScaledSheetListMaxHeight } from "@utils/accessibilityLayout";
 import { Box, InputDefault, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import type { User } from "@stores/objects/User";
@@ -45,7 +45,7 @@ export const GroupDMManageSheet = observer(
     const [removingUserId, setRemovingUserId] = useState<string | null>(null);
 
     const isOwner = !!channel.ownerId && channel.ownerId === app.account?.id;
-    const membersListMaxHeight = useScaledModalListMaxHeight(240);
+    const membersListMaxHeight = useScaledSheetListMaxHeight(240);
     const hasChanges =
       name.trim() !== (channel.name ?? "") ||
       removeIcon ||
@@ -156,7 +156,6 @@ export const GroupDMManageSheet = observer(
         onClose={onClose}
         title={t("groupDm.manage.title")}
         maxHeight="90%"
-        keyboard="lift"
         elevation={app.settings?.preferEmbossed ? 4 : 2}
         sheetStyle={{ gap: 16 }}
       >

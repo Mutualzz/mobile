@@ -39,13 +39,13 @@ const ChannelRow = observer(
         style={{
           paddingVertical: 12,
           paddingHorizontal: 12,
-          borderRadius: 10,
+          borderRadius: 4,
           flexDirection: "row",
           alignItems: "center",
           gap: 10,
           minWidth: 0,
           marginLeft: isChild ? 16 : 0,
-          borderLeftWidth: isChild ? 2 : 0,
+          borderLeftWidth: isChild ? 0.5 : 0,
           borderLeftColor: isChild
             ? theme.typography.colors.muted
             : "transparent",

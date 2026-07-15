@@ -69,10 +69,6 @@ export function isNativeMediaStreamTrack(
   );
 }
 
-/**
- * mediasoup-client is typed against DOM WebRTC APIs. On React Native the same
- * runtime objects come from react-native-webrtc after registerGlobals().
- */
 export function toProduceTrack(
   track: MediaStreamTrack,
   expectedKind: "audio" | "video",
@@ -112,9 +108,7 @@ export function iterateRtcStatsEntries(report: RTCStatsReport): unknown[] {
   return [];
 }
 
-export function readAudioLevelFromStats(
-  report: RTCStatsReport,
-): number | null {
+export function readAudioLevelFromStats(report: RTCStatsReport): number | null {
   let best: number | null = null;
 
   for (const entry of iterateRtcStatsEntries(report)) {
@@ -133,7 +127,7 @@ export function readAudioLevelFromStats(
   return best;
 }
 
-export function parseVolumeMap(value: unknown): Array<[string, number]> {
+export function parseVolumeMap(value: unknown): [string, number][] {
   if (!isRecord(value)) return [];
 
   return Object.entries(value).flatMap(([userId, volume]) => {
@@ -185,7 +179,7 @@ export function parseRtpCapabilitiesResponse(
   if (!isRecord(data.rtpCapabilities)) {
     throw new Error("Voice: missing rtpCapabilities");
   }
-  return data.rtpCapabilities as mediasoupClient.types.RtpCapabilities;
+  return data.rtpCapabilities;
 }
 
 export function parseTransportOptionsResponse(

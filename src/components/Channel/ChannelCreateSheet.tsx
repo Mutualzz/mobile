@@ -1,6 +1,5 @@
 import { Button } from "@components/Button";
 import { ChannelIcon } from "@components/Channel/ChannelIcon";
-import { Paper } from "@components/Paper";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import {
@@ -8,14 +7,7 @@ import {
   ChannelType,
   type HttpException,
 } from "@mutualzz/types";
-import {
-  Box,
-  ButtonGroup,
-  InputDefault,
-  Modal,
-  Typography,
-} from "@mutualzz/ui-native";
-import { MODAL_SHEET_WRAPPER_STYLE, useModalSheetMaxHeight } from "@utils/modalSheet";
+import { Box, ButtonGroup, InputDefault, Sheet, Typography } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import type { Space } from "@stores/objects/Space";
 import { useMutation } from "@tanstack/react-query";
@@ -40,7 +32,6 @@ export const ChannelCreateSheet = observer(
     const [name, setName] = useState("");
     const [type, setType] = useState<ChannelType>(ChannelType.Text);
     const [error, setError] = useState<string | null>(null);
-    const maxSheetHeight = useModalSheetMaxHeight(0.85);
 
     const { mutate: createChannel, isPending } = useMutation({
       mutationKey: ["create-channel", space.id, name, type],
@@ -66,29 +57,13 @@ export const ChannelCreateSheet = observer(
     });
 
     return (
-      <Modal
+      <Sheet
         open={visible}
         onClose={onClose}
-        layout="fullscreen"
         showCloseButton={false}
-        style={{
-          justifyContent: "flex-end",
-          alignItems: "stretch",
-          backgroundColor: "transparent",
-          paddingVertical: 0,
-        }}
+      enableDynamicSizing
       >
-        <View pointerEvents="box-none" style={MODAL_SHEET_WRAPPER_STYLE}>
-          <Paper
-            elevation={app.settings?.preferEmbossed ? 4 : 2}
-            style={{
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
-              padding: 20,
-              gap: 16,
-              maxHeight: maxSheetHeight,
-            }}
-          >
+        <View style={{ width: "100%", padding: 16, gap: 12 }}>
             <Typography level="body-lg" weight="bold">
               {t("channels.create.title")}
             </Typography>
@@ -122,21 +97,7 @@ export const ChannelCreateSheet = observer(
                 )}
               </Box>
             </ScrollView>
-            <Box
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-              }}
-            >
-              <Button
-                variant="soft"
-                color="danger"
-                onPress={onClose}
-                disabled={isPending}
-                expand
-              >
-                {tCommon("cancel")}
-              </Button>
+            <Box>
               <Button
                 expand
                 color="success"
@@ -146,9 +107,8 @@ export const ChannelCreateSheet = observer(
                 {tCommon("create")}
               </Button>
             </Box>
-          </Paper>
         </View>
-      </Modal>
+      </Sheet>
     );
   },
 );

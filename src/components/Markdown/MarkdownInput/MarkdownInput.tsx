@@ -8,12 +8,7 @@ import type {
 } from "@expensify/react-native-live-markdown";
 import { normalizeTypography } from "@mutualzz/ui-core";
 import type { MentionType, Snowflake } from "@mutualzz/types";
-import {
-  type PaperProps,
-  MAX_FONT_SCALE_MULTIPLIER,
-  useFontScale,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { type PaperProps, MAX_FONT_SCALE_MULTIPLIER, useFontScale, useTheme } from "@mutualzz/ui-native";
 import type { Expression } from "@stores/objects/Expression";
 import {
   detectColonQuery,
@@ -73,6 +68,7 @@ interface Props extends Omit<PaperProps, "onChange"> {
   placeholder?: string;
   editable?: boolean;
   endAdornment?: ReactNode;
+  nativeID?: string;
 }
 
 export const MarkdownInput = observer(
@@ -90,6 +86,7 @@ export const MarkdownInput = observer(
     placeholder,
     editable = true,
     endAdornment,
+    nativeID,
 
     paddingLeft,
     paddingRight,
@@ -302,6 +299,7 @@ export const MarkdownInput = observer(
 
         <MarkdownTextInput
           ref={inputRef}
+          nativeID={nativeID}
           multiline
           blurOnSubmit={false}
           allowFontScaling

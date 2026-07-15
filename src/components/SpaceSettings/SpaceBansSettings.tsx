@@ -2,7 +2,7 @@ import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
 import { SpaceMemberUnbanSheet } from "@components/SpaceSettings/SpaceMemberUnbanSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { Box, Input, Typography } from "@mutualzz/ui-native";
 import type { SpaceBan } from "@stores/objects/SpaceBan";
 import type { Space } from "@stores/objects/Space";
@@ -17,12 +17,12 @@ interface Props {
 }
 
 const BanRow = observer(({ ban, space }: { ban: SpaceBan; space: Space }) => {
-    const { openModal } = useModal();
+    const { openSheet } = useSheet();
 
     return (
         <Pressable
             onPress={() =>
-                openModal(
+                openSheet(
                     `space-ban-${ban.userId}`,
                     <SpaceMemberUnbanSheet ban={ban} space={space} />,
                 )

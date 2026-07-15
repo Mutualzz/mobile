@@ -1,8 +1,4 @@
-import {
-    IconButton as MzIconButton,
-    type IconButtonProps,
-    useTheme,
-} from "@mutualzz/ui-native";
+import { IconButton as MzIconButton, type IconButtonProps, useTheme } from "@mutualzz/ui-native";
 import { forwardRef } from "react";
 import { View } from "react-native";
 

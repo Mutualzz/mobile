@@ -4,7 +4,8 @@ import { SpaceSettingsHeader } from "@components/SpaceSettings/SpaceSettingsHead
 import { useAppStore } from "@hooks/useStores";
 import type { APITheme, HttpException } from "@mutualzz/types";
 import { baseDarkTheme, baseLightTheme } from "@mutualzz/ui-core";
-import { Box, Modal, Typography, useTheme } from "@mutualzz/ui-native";
+import { Box, Sheet, Typography, useTheme } from "@mutualzz/ui-native";
+import { FULL_SHEET_PROPS } from "@utils/sheet";
 import { Theme } from "@stores/objects/Theme";
 import { applyAdaptiveThemeValues } from "@utils/adaptation";
 import Snowflake from "@utils/Snowflake";
@@ -13,7 +14,6 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, useColorScheme } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemeCreatorColorsPage } from "./ThemeCreatorPages/ThemeCreatorColorsPage";
 import { ThemeCreatorDetailsPage } from "./ThemeCreatorPages/ThemeCreatorDetailsPage";
 import { ThemeCreatorManagePage } from "./ThemeCreatorPages/ThemeCreatorManagePage";
@@ -21,7 +21,6 @@ import { ThemeCreatorManagePage } from "./ThemeCreatorPages/ThemeCreatorManagePa
 interface Props {
   visible?: boolean;
   onClose: () => void;
-  /** Content only — open via ModalRoot from settings to avoid nested RN Modals. */
   embedded?: boolean;
 }
 
@@ -33,13 +32,12 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-export const ThemeCreatorModal = observer(
+export const ThemeCreatorSheet = observer(
   ({ visible = true, onClose, embedded = false }: Props) => {
   const { t } = useTranslation("settings");
   const app = useAppStore();
   const { theme: activeTheme, changeTheme } = useTheme();
   const prefersDark = useColorScheme() === "dark";
-  const insets = useSafeAreaInsets();
   const themeCreator = app.themeCreator;
 
   const [error, setError] = useState<string | null>(null);
@@ -89,8 +87,7 @@ export const ThemeCreatorModal = observer(
       if (values.adaptive) {
         payload = {
           ...applyAdaptiveThemeValues(values),
-          id: Snowflake.generate(),
-        };
+          id: Snowflake.generate()};
       }
       return app.rest.post<APITheme, APITheme>("@me/themes", payload);
     },
@@ -109,8 +106,7 @@ export const ThemeCreatorModal = observer(
       themeCreator.stopPreview(changeTheme);
       setError(null);
     },
-    onError: (e) => handleApiError(e, t("themeCreator.errors.publishFailed")),
-  });
+    onError: (e) => handleApiError(e, t("themeCreator.errors.publishFailed"))});
 
   const { mutate: updateTheme, isPending: updating } = useMutation({
     mutationKey: ["theme-creator-update", values.id],
@@ -131,8 +127,7 @@ export const ThemeCreatorModal = observer(
       themeCreator.setErrors({});
       setError(null);
     },
-    onError: (e) => handleApiError(e, t("themeCreator.errors.updateFailed")),
-  });
+    onError: (e) => handleApiError(e, t("themeCreator.errors.updateFailed"))});
 
   const { mutate: deleteTheme, isPending: deleting } = useMutation({
     mutationKey: ["theme-creator-delete", values.id],
@@ -159,8 +154,7 @@ export const ThemeCreatorModal = observer(
         changeTheme(Theme.toEmotion(fallback));
       }
     },
-    onError: (e) => handleApiError(e, t("themeCreator.errors.deleteFailed")),
-  });
+    onError: (e) => handleApiError(e, t("themeCreator.errors.deleteFailed"))});
 
   const handleSaveDraft = () => {
     if (existingDraft) app.drafts.updateThemeDraft(values);
@@ -173,7 +167,7 @@ export const ThemeCreatorModal = observer(
       <Screen
         fill
         keyboard="form"
-        safeTop
+        safeTop={false}
         style={{ backgroundColor: activeTheme.colors.background }}
       >
         <SpaceSettingsHeader title={t("themeCreator.title")} onClose={onClose} />
@@ -185,8 +179,7 @@ export const ThemeCreatorModal = observer(
             gap: 20,
             paddingHorizontal: 16,
             paddingTop: 12,
-            paddingBottom: 4,
-          }}
+            paddingBottom: 4}}
         >
           {TABS.map(({ id }) => (
             <ThemeCreatorTab
@@ -203,8 +196,7 @@ export const ThemeCreatorModal = observer(
           contentContainerStyle={{
             paddingHorizontal: 16,
             paddingTop: 12,
-            paddingBottom: 16,
-          }}
+            paddingBottom: 16}}
           keyboardShouldPersistTaps="handled"
         >
           {currentPage === "details" && <ThemeCreatorDetailsPage />}
@@ -222,10 +214,8 @@ export const ThemeCreatorModal = observer(
             gap: 8,
             paddingHorizontal: 16,
             paddingTop: 12,
-            paddingBottom: Math.max(insets.bottom, 12),
             borderTopWidth: 1,
-            borderTopColor: `${activeTheme.typography.colors.muted}24`,
-          }}
+            borderTopColor: `${activeTheme.typography.colors.muted}24`}}
         >
           {error && (
             <Typography level="body-sm" color="danger" variant="plain">
@@ -264,8 +254,7 @@ export const ThemeCreatorModal = observer(
             style={{
               flexDirection: "row",
               justifyContent: "center",
-              gap: 16,
-            }}
+              gap: 16}}
           >
             <Button
               variant="plain"
@@ -292,17 +281,9 @@ export const ThemeCreatorModal = observer(
   if (embedded) return body;
 
   return (
-    <Modal
-      open={visible}
-      onClose={onClose}
-      layout="fullscreen"
-      hideBackdrop
-      showCloseButton={false}
-      disableBackdropClick
-      style={{ paddingVertical: 0 }}
-    >
+    <Sheet open={visible} onClose={onClose} {...FULL_SHEET_PROPS}>
       {body}
-    </Modal>
+    </Sheet>
   );
 });
 
@@ -315,8 +296,7 @@ interface ThemeCreatorTabProps {
 const ThemeCreatorTab = ({
   label,
   active,
-  onPress,
-}: ThemeCreatorTabProps) => {
+  onPress}: ThemeCreatorTabProps) => {
   const { theme } = useTheme();
 
   return (
@@ -327,8 +307,7 @@ const ThemeCreatorTab = ({
         style={{
           color: active
             ? theme.colors.primary
-            : theme.typography.colors.muted,
-        }}
+            : theme.typography.colors.muted}}
       >
         {label}
       </Typography>
@@ -336,8 +315,7 @@ const ThemeCreatorTab = ({
         style={{
           height: 2,
           borderRadius: 1,
-          backgroundColor: active ? theme.colors.primary : "transparent",
-        }}
+          backgroundColor: active ? theme.colors.primary : "transparent"}}
       />
     </Pressable>
   );

@@ -1,6 +1,5 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import { HttpException } from "@mutualzz/types";
 import type { APIPrivateUser } from "@mutualzz/types";
@@ -9,7 +8,7 @@ import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable } from "react-native";
+import { Pressable, View } from "react-native";
 
 type DeleteMode = "soft" | "hard";
 
@@ -20,7 +19,7 @@ interface Props {
     allowHardDeleteOnly?: boolean;
     onSoftDeleted: (user: APIPrivateUser) => void;
     onHardDeleted: () => void;
-    modalId: string;
+    sheetId: string;
 }
 
 export const StaffUserDeleteConfirmSheet = observer(
@@ -31,12 +30,12 @@ export const StaffUserDeleteConfirmSheet = observer(
         allowHardDeleteOnly = false,
         onSoftDeleted,
         onHardDeleted,
-        modalId,
+        sheetId,
     }: Props) => {
         const { t } = useTranslation("staff");
         const { t: tCommon } = useTranslation("common");
         const app = useAppStore();
-        const { closeModal } = useModal();
+        const { closeSheet } = useSheet();
         const [mode, setMode] = useState<DeleteMode>(
             allowHardDeleteOnly ? "hard" : "soft",
         );
@@ -61,21 +60,18 @@ export const StaffUserDeleteConfirmSheet = observer(
             onSuccess: (result) => {
                 if ("hard" in result && result.hard) onHardDeleted();
                 else onSoftDeleted(result as APIPrivateUser);
-                closeModal(modalId);
+                closeSheet(sheetId);
             },
             onError: (err: HttpException) => setError(err.message),
         });
 
         return (
-            <Paper
+            <View
                 style={{
-                    width: 320,
-                    maxWidth: "100%",
+                    width: "100%",
                     padding: 16,
-                    borderRadius: 12,
                     gap: 12,
                 }}
-                elevation={app.settings?.preferEmbossed ? 4 : 2}
             >
                 <Typography level="body-md" weight={700}>
                     {isHardDelete
@@ -155,11 +151,11 @@ export const StaffUserDeleteConfirmSheet = observer(
                     variant="soft"
                     color="neutral"
                     disabled={isPending}
-                    onPress={() => closeModal(modalId)}
+                    onPress={() => closeSheet(sheetId)}
                 >
                     {tCommon("cancel")}
                 </Button>
-            </Paper>
+            </View>
         );
     },
 );

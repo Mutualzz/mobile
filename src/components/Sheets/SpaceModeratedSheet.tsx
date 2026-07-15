@@ -1,30 +1,24 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
-import { useModal } from "@hooks/useModal";
-import { useAppStore } from "@hooks/useStores";
+import { useSheet } from "@hooks/useSheet";
 import { Typography } from "@mutualzz/ui-native";
 import { useTranslation } from "react-i18next";
+import { View } from "react-native";
 
 interface Props {
   type: "muted" | "deafened";
-  modalId: string;
+  sheetId: string;
 }
 
-export const SpaceModeratedSheet = ({ type, modalId }: Props) => {
+export const SpaceModeratedSheet = ({ type, sheetId }: Props) => {
   const { t } = useTranslation("chat");
-  const app = useAppStore();
-  const { closeModal } = useModal();
+  const { closeSheet } = useSheet();
 
   return (
-    <Paper
-      elevation={app.settings?.preferEmbossed ? 4 : 2}
+    <View
       style={{
-        width: 320,
-        maxWidth: "100%",
+        width: "100%",
         padding: 20,
-        borderRadius: 12,
-        gap: 16,
-      }}
+        gap: 16}}
     >
       <Typography level="body-lg" weight={700}>
         {type === "muted"
@@ -36,9 +30,9 @@ export const SpaceModeratedSheet = ({ type, modalId }: Props) => {
           ? t("voice.spaceModerated.mutedBody")
           : t("voice.spaceModerated.deafenedBody")}
       </Typography>
-      <Button onPress={() => closeModal(modalId)}>
+      <Button onPress={() => closeSheet(sheetId)}>
         {t("voice.spaceModerated.dismissMobile")}
       </Button>
-    </Paper>
+    </View>
   );
 };

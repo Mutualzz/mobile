@@ -1,4 +1,5 @@
 import { ModeSwitcher } from "@components/ModeSwitcher";
+import { SheetHostBootstrap } from "@components/SheetHost/SheetHostBootstrap";
 import TabBar from "@components/Tabs/TabBar";
 import { UserBar } from "@components/User/UserBar";
 import { useKeyboardOpen } from "@hooks/useKeyboardOffset";
@@ -18,47 +19,47 @@ const AppLayout = () => {
   if (!app.token) return <Redirect href="/login" />;
 
   return (
-    <Tabs>
-      <Box style={{ flex: 1 }}>
-        <TabSlot style={{ flex: 1 }} />
-      </Box>
+    <SheetHostBootstrap id="tabs" priority={0}>
+      <Tabs>
+        <Box style={{ flex: 1 }}>
+          <TabSlot style={{ flex: 1 }} />
+        </Box>
 
-      <TabList
-        style={{
-          position: "absolute",
-          width: 0,
-          height: 0,
-          opacity: 0,
-        }}
-      >
-        <TabTrigger name="spaces" href="/spaces" />
-        <TabTrigger name="feed" href="/feed" />
-        <TabTrigger name="@me" href="/@me" />
-      </TabList>
+        <TabList
+          style={{
+            position: "absolute",
+            width: 0,
+            height: 0,
+            opacity: 0,
+          }}
+        >
+          <TabTrigger name="spaces" href="/spaces" />
+          <TabTrigger name="feed" href="/feed" />
+          <TabTrigger name="@me" href="/@me" />
+        </TabList>
 
-      <Box
-        pointerEvents={hideChrome ? "none" : "box-none"}
-        style={
-          hideChrome
-            ? {
-                // Keep chrome mounted but out of the way until the keyboard
-                // height has fully settled — avoids the cramped flash on dismiss.
-                position: "absolute",
-                left: 0,
-                right: 0,
-                bottom: 0,
-                opacity: 0,
-                transform: [{ translateY: 24 }],
-              }
-            : undefined
-        }
-      >
-        <TabBar>
-          <UserBar />
-        </TabBar>
-        {!app.hideSwitcher && <ModeSwitcher />}
-      </Box>
-    </Tabs>
+        <Box
+          pointerEvents={hideChrome ? "none" : "box-none"}
+          style={
+            hideChrome
+              ? {
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  opacity: 0,
+                  transform: [{ translateY: 24 }],
+                }
+              : undefined
+          }
+        >
+          <TabBar>
+            <UserBar />
+          </TabBar>
+          {!app.hideSwitcher && <ModeSwitcher />}
+        </Box>
+      </Tabs>
+    </SheetHostBootstrap>
   );
 };
 

@@ -1,9 +1,8 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
-import { Box, Modal, Typography } from "@mutualzz/ui-native";
+import { Box, Sheet, Typography } from "@mutualzz/ui-native";
 import type { Post } from "@stores/objects/Post";
 import type { Channel } from "@stores/objects/Channel";
 import type { User } from "@stores/objects/User";
@@ -126,32 +125,13 @@ export const SharePostSheet = observer(({ visible, post, onClose }: Props) => {
     app.channels.dms.length === 0 && friendsWithoutDM.length === 0;
 
   return (
-    <Modal
+    <Sheet
       open={visible}
       onClose={onClose}
-      layout="fullscreen"
       showCloseButton={false}
-      style={{
-        justifyContent: "flex-end",
-        alignItems: "stretch",
-        backgroundColor: "transparent",
-        paddingVertical: 0,
-      }}
+      enableDynamicSizing
     >
-      <View
-        pointerEvents="box-none"
-        style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
-      >
-        <Paper
-          style={{
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            padding: 16,
-            gap: 12,
-            maxHeight: "70%",
-          }}
-          elevation={4}
-        >
+      <View style={{ width: "100%", padding: 16, gap: 12 }}>
           <Typography level="body-lg" weight={700}>
             {t("feed.share.title")}
           </Typography>
@@ -214,8 +194,7 @@ export const SharePostSheet = observer(({ visible, post, onClose }: Props) => {
           <Button variant="soft" onPress={onClose}>
             {t("feed.share.done")}
           </Button>
-        </Paper>
       </View>
-    </Modal>
+    </Sheet>
   );
 });

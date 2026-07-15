@@ -9,7 +9,7 @@ import { MessageSticker } from "@components/Message/MessageSticker";
 import { Paper } from "@components/Paper";
 import { ReportContentSheet } from "@components/Report/ReportContentSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import { ExpressionType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
@@ -34,7 +34,7 @@ export const PostCard = observer(
     const { t } = useTranslation("chat");
     const app = useAppStore();
     const { theme } = useTheme();
-    const { openModal } = useModal();
+    const { openSheet } = useSheet();
     const { width } = useWindowDimensions();
     const isSnap = layout === "snap";
     const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen ?? false);
@@ -104,13 +104,13 @@ export const PostCard = observer(
               color="danger"
               padding={6}
               onPress={() =>
-                openModal(
+                openSheet(
                   `report-post-${post.id}`,
                   <ReportContentSheet
                     targetType="post"
                     targetId={post.id}
                     contentLabel={t("feed.report.thisPost")}
-                    modalId={`report-post-${post.id}`}
+                    sheetId={`report-post-${post.id}`}
                   />,
                 )
               }

@@ -2,13 +2,7 @@ import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppStore } from "@hooks/useStores";
 import type { VoiceState } from "@stores/objects/VoiceState";
 import type { Space } from "@stores/objects/Space";
-import {
-  Box,
-  IconButton,
-  Slider,
-  Typography,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { Box, IconButton, Slider, Typography, useTheme } from "@mutualzz/ui-native";
 import {
   MicrophoneSlashIcon,
   SpeakerHighIcon,

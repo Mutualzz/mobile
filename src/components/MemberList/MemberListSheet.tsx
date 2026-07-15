@@ -1,9 +1,9 @@
 import { ListSection } from "@components/ListSection";
 import { MemberListItem } from "@components/MemberList/MemberListItem";
-import { Screen, ScreenHeader } from "@components/Screen/Screen";
+import { ScreenHeader } from "@components/Screen/Screen";
 import { IconButton } from "@components/IconButton";
 import { useAppStore } from "@hooks/useStores";
-import { Modal, Typography } from "@mutualzz/ui-native";
+import { Sheet, Typography } from "@mutualzz/ui-native";
 import { XIcon } from "phosphor-react-native";
 import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
@@ -13,6 +13,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   ScrollView,
+  View,
 } from "react-native";
 
 const PAGE_SIZE = 50;
@@ -23,7 +24,7 @@ interface Props {
   onClose: () => void;
 }
 
-export const MemberListModal = observer(
+export const MemberListSheet = observer(
   ({ channel, visible, onClose }: Props) => {
     const { t } = useTranslation("chat");
     const app = useAppStore();
@@ -88,20 +89,15 @@ export const MemberListModal = observer(
     );
 
     return (
-      <Modal
+      <Sheet
         open={visible}
         onClose={onClose}
-        layout="fullscreen"
-        hideBackdrop
         showCloseButton={false}
-        disableBackdropClick
-        style={{ paddingVertical: 0 }}
+        snapPoints={["95%"]}
+        enableDynamicSizing={false}
       >
-        <Screen
-          elevation={app.settings?.preferEmbossed ? 4 : 1}
-          style={{ flexDirection: "column" }}
-        >
-          <ScreenHeader safeTop>
+        <View style={{ flex: 1, width: "100%", minHeight: 0 }}>
+          <ScreenHeader>
             <Typography level="body-md" weight="bold" style={{ flex: 1 }}>
               {t("groupDm.membersCount", {
                 value: memberCount || loadedCount,
@@ -184,8 +180,8 @@ export const MemberListModal = observer(
               )}
             </ScrollView>
           )}
-        </Screen>
-      </Modal>
+        </View>
+      </Sheet>
     );
   },
 );

@@ -1,6 +1,4 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
-import { useModal } from "@hooks/useModal";
 import { useAppStore } from "@hooks/useStores";
 import type { APIExpression } from "@mutualzz/types";
 import { ExpressionType } from "@mutualzz/types";
@@ -8,7 +6,7 @@ import { Box, Input, Typography } from "@mutualzz/ui-native";
 import { useScaledFeedPreviewSizes } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Image } from "react-native";
+import { Image, View } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
 import { useTranslation } from "react-i18next";
 
@@ -17,23 +15,14 @@ interface Props {
   uri: string;
   mimeType: string;
   fileName: string;
-  modalId?: string;
   spaceId?: string;
+  onClose: () => void;
 }
 
 export const ExpressionUploadSheet = observer(
-  ({
-    type,
-    uri,
-    mimeType,
-    fileName,
-    modalId = "expression-upload",
-    spaceId,
-  }: Props) => {
+  ({ type, uri, mimeType, fileName, spaceId, onClose }: Props) => {
     const { t } = useTranslation("settings");
-    const { t: tCommon } = useTranslation("common");
     const app = useAppStore();
-    const { closeModal } = useModal();
     const feedSizes = useScaledFeedPreviewSizes();
     const [name, setName] = useState(
       fileName.replace(/\.[^.]+$/, "").slice(0, 32),
@@ -75,7 +64,7 @@ export const ExpressionUploadSheet = observer(
           }
         }
 
-        closeModal(modalId);
+        onClose();
         void ImagePicker.clean();
       } catch (e) {
         const message =
@@ -96,15 +85,12 @@ export const ExpressionUploadSheet = observer(
     };
 
     return (
-      <Paper
+      <View
         style={{
-          width: 320,
-          maxWidth: "100%",
+          width: "100%",
           padding: 16,
-          borderRadius: 12,
           gap: 12,
         }}
-        elevation={app.settings?.preferEmbossed ? 4 : 2}
       >
         <Typography level="body-md" weight={700}>
           {isEmoji
@@ -152,26 +138,14 @@ export const ExpressionUploadSheet = observer(
           </Typography>
         )}
 
-        <Box style={{ flexDirection: "row", gap: 8 }}>
-          <Button
-            variant="soft"
-            color="neutral"
-            style={{ flex: 1 }}
-            disabled={uploading}
-            onPress={() => closeModal(modalId)}
-          >
-            {tCommon("cancel")}
-          </Button>
-          <Button
-            color="success"
-            style={{ flex: 1 }}
-            disabled={!name.trim() || uploading}
-            onPress={() => void handleUpload()}
-          >
-            {uploading ? t("expressions.uploading") : t("expressions.upload")}
-          </Button>
-        </Box>
-      </Paper>
+        <Button
+          color="success"
+          disabled={!name.trim() || uploading}
+          onPress={() => void handleUpload()}
+        >
+          {uploading ? t("expressions.uploading") : t("expressions.upload")}
+        </Button>
+      </View>
     );
   },
 );

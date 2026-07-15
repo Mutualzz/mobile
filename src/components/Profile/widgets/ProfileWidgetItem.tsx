@@ -12,7 +12,7 @@ import { ProfileQuoteWidgetExpandedContent } from "@components/Profile/widgets/b
 import { ProfileRolesWidgetExpandedContent } from "@components/Profile/widgets/blocks/ProfileRolesWidgetView";
 import { ProfileStickerWidgetExpandedContent } from "@components/Profile/widgets/blocks/ProfileStickerWidgetView";
 import { ProfileTextWidgetExpandedContent } from "@components/Profile/widgets/blocks/ProfileTextWidgetView";
-import { ProfileWidgetMaximizeModal } from "@components/Profile/widgets/ProfileWidgetMaximizeModal";
+import { ProfileWidgetMaximizeSheet } from "@components/Profile/widgets/ProfileWidgetMaximizeSheet";
 import { ProfileWidgetRenderer } from "@components/Profile/widgets/ProfileWidgetRenderer";
 import { ProfileWidgetTile } from "@components/Profile/widgets/ProfileWidgetTile";
 import { useOpenBottomSheet } from "@hooks/useOpenBottomSheet";
@@ -77,7 +77,7 @@ export const ProfileWidgetItem = observer(function ProfileWidgetItem({
   const size = clampWidgetSize(block.type, block.size);
   const overflowCount = getWidgetOverflowCount(block, size, app, user.id);
   const canExpand = shouldShowWidgetExpand(block, size, overflowCount);
-  const modalId = `profile-widget-maximize-${block.id}`;
+  const sheetId = `profile-widget-maximize-${block.id}`;
 
   const expandedContent = (() => {
     switch (block.type) {
@@ -117,14 +117,14 @@ export const ProfileWidgetItem = observer(function ProfileWidgetItem({
 
   const openMaximize = () => {
     openBottomSheet(
-      modalId,
-      <ProfileWidgetMaximizeModal
+      sheetId,
+      <ProfileWidgetMaximizeSheet
         embedded
         title={t(`profile.blocks.${block.type}`)}
-        onClose={() => closeBottomSheet(modalId)}
+        onClose={() => closeBottomSheet(sheetId)}
       >
         {expandedContent}
-      </ProfileWidgetMaximizeModal>,
+      </ProfileWidgetMaximizeSheet>,
     );
   };
 

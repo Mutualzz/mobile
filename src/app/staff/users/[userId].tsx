@@ -7,7 +7,7 @@ import { StaffUserWarnConfirmSheet } from "@components/Staff/StaffUserWarnConfir
 import { Screen } from "@components/Screen/Screen";
 import { StaffHeader } from "@components/Staff/StaffHeader";
 import { UserAvatar } from "@components/User/UserAvatar";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useRequireStaffAccess } from "@hooks/useRequireStaffAccess";
 import { useAppStore } from "@hooks/useStores";
 import {
@@ -21,13 +21,7 @@ import type {
   APIStaffSession,
   HttpException,
 } from "@mutualzz/types";
-import {
-  Box,
-  Divider,
-  InputDefault,
-  Switch,
-  Typography,
-} from "@mutualzz/ui-native";
+import { Box, Divider, InputDefault, Switch, Typography } from "@mutualzz/ui-native";
 import {
   useInfiniteQuery,
   useMutation,
@@ -101,7 +95,7 @@ const StaffUserScreen = () => {
   const { t: tSettings } = useTranslation("settings");
   const { isStaff } = useRequireStaffAccess();
   const app = useAppStore();
-  const { openModal } = useModal();
+  const { openSheet } = useSheet();
   const queryClient = useQueryClient();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const router = useRouter();
@@ -560,14 +554,14 @@ const StaffUserScreen = () => {
                   <Button
                     color="danger"
                     onPress={() =>
-                      openModal(
+                      openSheet(
                         `staff-disable-user-${user.id}`,
                         <StaffUserDisableConfirmSheet
                           userId={user.id}
                           username={user.username}
                           disable={!isDisabled}
                           onSuccess={handleUpdated}
-                          modalId={`staff-disable-user-${user.id}`}
+                          sheetId={`staff-disable-user-${user.id}`}
                         />,
                       )
                     }
@@ -579,13 +573,13 @@ const StaffUserScreen = () => {
                   <Button
                     color="danger"
                     onPress={() =>
-                      openModal(
+                      openSheet(
                         `staff-force-logout-user-${user.id}`,
                         <StaffUserForceLogoutConfirmSheet
                           userId={user.id}
                           username={user.username}
                           onSuccess={handleForcedLogout}
-                          modalId={`staff-force-logout-user-${user.id}`}
+                          sheetId={`staff-force-logout-user-${user.id}`}
                         />,
                       )
                     }
@@ -595,13 +589,13 @@ const StaffUserScreen = () => {
                   <Button
                     color="warning"
                     onPress={() =>
-                      openModal(
+                      openSheet(
                         `staff-warn-user-${user.id}`,
                         <StaffUserWarnConfirmSheet
                           userId={user.id}
                           username={user.username}
                           onSuccess={handleWarned}
-                          modalId={`staff-warn-user-${user.id}`}
+                          sheetId={`staff-warn-user-${user.id}`}
                         />,
                       )
                     }
@@ -620,13 +614,13 @@ const StaffUserScreen = () => {
                     <Button
                       color="warning"
                       onPress={() =>
-                        openModal(
+                        openSheet(
                           `staff-restrict-user-${user.id}`,
                           <StaffUserRestrictConfirmSheet
                             userId={user.id}
                             username={user.username}
                             onSuccess={handleUpdated}
-                            modalId={`staff-restrict-user-${user.id}`}
+                            sheetId={`staff-restrict-user-${user.id}`}
                           />,
                         )
                       }
@@ -637,7 +631,7 @@ const StaffUserScreen = () => {
                   <Button
                     color="danger"
                     onPress={() =>
-                      openModal(
+                      openSheet(
                         `staff-delete-user-${user.id}`,
                         <StaffUserDeleteConfirmSheet
                           userId={user.id}
@@ -645,7 +639,7 @@ const StaffUserScreen = () => {
                           isFounder={!!app.account?.isFounder}
                           onSoftDeleted={handleUpdated}
                           onHardDeleted={handleHardDeleted}
-                          modalId={`staff-delete-user-${user.id}`}
+                          sheetId={`staff-delete-user-${user.id}`}
                         />,
                       )
                     }
@@ -658,7 +652,7 @@ const StaffUserScreen = () => {
                 <Button
                   color="danger"
                   onPress={() =>
-                    openModal(
+                    openSheet(
                       `staff-hard-delete-user-${user.id}`,
                       <StaffUserDeleteConfirmSheet
                         userId={user.id}
@@ -667,7 +661,7 @@ const StaffUserScreen = () => {
                         allowHardDeleteOnly
                         onSoftDeleted={handleUpdated}
                         onHardDeleted={handleHardDeleted}
-                        modalId={`staff-hard-delete-user-${user.id}`}
+                        sheetId={`staff-hard-delete-user-${user.id}`}
                       />,
                     )
                   }

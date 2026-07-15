@@ -13,8 +13,7 @@ import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
-  View,
-} from "react-native";
+  View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -31,8 +30,7 @@ function MusicSearchResults({
   error,
   query,
   results,
-  onSelect,
-}: {
+  onSelect}: {
   loading: boolean;
   error: string | null;
   query: string;
@@ -75,8 +73,7 @@ function MusicSearchResults({
             gap: 10,
             padding: 8,
             borderRadius: 10,
-            backgroundColor: theme.colors.surface,
-          }}
+            backgroundColor: theme.colors.surface}}
         >
           <View
             style={{
@@ -86,8 +83,7 @@ function MusicSearchResults({
               overflow: "hidden",
               backgroundColor: theme.colors.background,
               alignItems: "center",
-              justifyContent: "center",
-            }}
+              justifyContent: "center"}}
           >
             {track.image ? (
               <Image
@@ -122,8 +118,7 @@ export function ProfileWidgetMusicPicker({
   visible,
   onClose,
   onSelect,
-  presentation = "modal",
-}: Props) {
+  presentation = "modal"}: Props) {
   const { t } = useTranslation("settings");
   const { t: tCommon } = useTranslation("common");
   const app = useAppStore();
@@ -192,8 +187,7 @@ export function ProfileWidgetMusicPicker({
           {
             zIndex: 200,
             backgroundColor: theme.colors.background,
-            paddingTop: insets.top,
-          },
+            paddingTop: insets.top},
         ]}
       >
         <Box
@@ -203,8 +197,7 @@ export function ProfileWidgetMusicPicker({
             justifyContent: "space-between",
             gap: 8,
             paddingHorizontal: 16,
-            paddingVertical: 10,
-          }}
+            paddingVertical: 10}}
         >
           <Typography level="title-md" weight="bold">
             {title}
@@ -234,9 +227,7 @@ export function ProfileWidgetMusicPicker({
           style={{ flex: 1 }}
           contentContainerStyle={{
             paddingHorizontal: 16,
-            paddingBottom: insets.bottom + 16,
-            gap: 8,
-          }}
+            gap: 8}}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >

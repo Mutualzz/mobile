@@ -1,6 +1,6 @@
 import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import { reportReasonKeys } from "@mutualzz/i18n";
 import type {
@@ -14,19 +14,19 @@ import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable } from "react-native";
+import { Pressable, View } from "react-native";
 
 interface Props {
   targetType: ReportTargetType;
   targetId: string;
   contentLabel: string;
-  modalId: string;
+  sheetId: string;
 }
 
 export const ReportContentSheet = observer(
-  ({ targetType, targetId, contentLabel, modalId }: Props) => {
+  ({ targetType, targetId, contentLabel, sheetId }: Props) => {
     const app = useAppStore();
-    const { closeModal } = useModal();
+    const { closeSheet } = useSheet();
     const { t } = useTranslation("common");
     const [reason, setReason] = useState<ReportReason>("spam");
     const [description, setDescription] = useState("");
@@ -41,20 +41,17 @@ export const ReportContentSheet = observer(
           reason,
           description: description.trim() || undefined,
         }),
-      onSuccess: () => closeModal(modalId),
+      onSuccess: () => closeSheet(sheetId),
       onError: (err: HttpException) => setError(err.message),
     });
 
     return (
-      <Paper
+      <View
         style={{
-          width: 320,
-          maxWidth: "100%",
+          width: "100%",
           padding: 16,
-          borderRadius: 12,
           gap: 12,
         }}
-        elevation={app.settings?.preferEmbossed ? 4 : 2}
       >
         <Typography level="body-md" weight={700}>
           {t("report.title", { label: contentLabel })}
@@ -102,11 +99,11 @@ export const ReportContentSheet = observer(
           variant="soft"
           color="neutral"
           disabled={isPending}
-          onPress={() => closeModal(modalId)}
+          onPress={() => closeSheet(sheetId)}
         >
           {t("cancel")}
         </Button>
-      </Paper>
+      </View>
     );
   },
 );

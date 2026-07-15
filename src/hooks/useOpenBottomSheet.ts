@@ -1,22 +1,22 @@
-import { useModal } from "@hooks/useModal";
-import { BOTTOM_SHEET_MODAL_PROPS } from "@utils/modalSheet";
+import { useSheet } from "@hooks/useSheet";
+import { BOTTOM_SHEET_PROPS } from "@utils/sheet";
 import { useCallback, type ReactNode } from "react";
 
 export function useOpenBottomSheet() {
-    const { openModal, closeModal } = useModal();
+    const { openSheet, closeSheet } = useSheet();
 
     const openBottomSheet = useCallback(
         (id: string, content: ReactNode) => {
-            openModal(id, content, BOTTOM_SHEET_MODAL_PROPS);
+            openSheet(id, content, BOTTOM_SHEET_PROPS);
         },
-        [openModal],
+        [openSheet],
     );
 
     const closeBottomSheet = useCallback(
         (id: string) => {
-            closeModal(id);
+            closeSheet(id);
         },
-        [closeModal],
+        [closeSheet],
     );
 
     return { openBottomSheet, closeBottomSheet };

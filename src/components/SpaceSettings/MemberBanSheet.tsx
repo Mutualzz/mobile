@@ -1,20 +1,14 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import { HttpException } from "@mutualzz/types";
-import {
-  Box,
-  ButtonGroup,
-  InputDefault,
-  Modal,
-  Typography,
-} from "@mutualzz/ui-native";
+import { ButtonGroup, InputDefault, Sheet, Typography } from "@mutualzz/ui-native";
 import type { SpaceMember } from "@stores/objects/SpaceMember";
 import type { Space } from "@stores/objects/Space";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { View } from "react-native";
 
 interface Props {
   visible: boolean;
@@ -48,72 +42,66 @@ export const MemberBanSheet = observer(
       mutationFn: () =>
         app.rest.put(`/spaces/${space.id}/members/${member.userId}/ban`, {
           reason: reason.trim() || t("bans.noReason"),
-          deleteMessageTimeframe: timeframe,
-        }),
+          deleteMessageTimeframe: timeframe}),
       onSuccess: onClose,
-      onError: (err: HttpException) => setError(err.message),
-    });
+      onError: (err: HttpException) => setError(err.message)});
 
     return (
-      <Modal
+      <Sheet
         open={visible}
         onClose={onClose}
-        layout="center"
         showCloseButton={false}
+        enableDynamicSizing
       >
-        <Box
-          pointerEvents="box-none"
+        <View
           style={{
-            flex: 1,
-            justifyContent: "center",
-            padding: 24,
-          }}
+            width: "100%",
+            padding: 16,
+            gap: 12}}
         >
-            <Paper
-              elevation={app.settings?.preferEmbossed ? 4 : 2}
-              style={{ padding: 20, borderRadius: 12, gap: 12 }}
-            >
-              <Typography weight="bold">
-                {t("moderation.banTitle", {
-                  name: member.user?.displayName,
-                })}
-              </Typography>
-              <InputDefault
-                fullWidth
-                placeholder={t("moderation.reason")}
-                accessibilityLabel={t("moderation.reason")}
-                value={reason}
-                onChangeText={setReason}
-              />
-              <ButtonGroup orientation="vertical" spacing={6}>
-                {timeframes.map((entry) => (
-                  <Button
-                    key={entry.value}
-                    variant={timeframe === entry.value ? "soft" : "plain"}
-                    onPress={() => setTimeframe(entry.value)}
-                  >
-                    {entry.label}
-                  </Button>
-                ))}
-              </ButtonGroup>
-              {error && (
-                <Typography color="danger" level="body-sm" accessibilityLiveRegion="polite">
-                  {error}
-                </Typography>
-              )}
+          <Typography weight="bold">
+            {t("moderation.banTitle", {
+              name: member.user?.displayName})}
+          </Typography>
+          <InputDefault
+            fullWidth
+            placeholder={t("moderation.reason")}
+            accessibilityLabel={t("moderation.reason")}
+            value={reason}
+            onChangeText={setReason}
+          />
+          <ButtonGroup orientation="vertical" spacing={6}>
+            {timeframes.map((entry) => (
               <Button
-                color="danger"
-                disabled={isPending || !reason.trim()}
-                onPress={() => mutate()}
+                key={entry.value}
+                variant={timeframe === entry.value ? "soft" : "plain"}
+                onPress={() => setTimeframe(entry.value)}
               >
-                {t("actions.ban")}
+                {entry.label}
               </Button>
-              <Button variant="plain" onPress={onClose}>
-                {tCommon("cancel")}
-              </Button>
-            </Paper>
-          </Box>
-      </Modal>
+            ))}
+          </ButtonGroup>
+          {error && (
+            <Typography
+              color="danger"
+              level="body-sm"
+              accessibilityLiveRegion="polite"
+            >
+              {error}
+            </Typography>
+          )}
+          <Button
+            color="danger"
+            disabled={isPending || !reason.trim()}
+            onPress={() => mutate()}
+          >
+            {t("actions.ban")}
+          </Button>
+          <Button variant="plain" onPress={onClose}>
+            {tCommon("cancel")}
+          </Button>
+        </View>
+      </Sheet>
     );
   },
 );

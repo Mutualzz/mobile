@@ -1,4 +1,3 @@
-import { Paper } from "@components/Paper";
 import { Button } from "@components/Button";
 import { SpaceActionConfirmSheet } from "@components/SpaceSettings/SpaceActionConfirmSheet";
 import { useSettingsIconColor } from "@components/UserSettings/settingsTheme";
@@ -7,14 +6,11 @@ import {
   type SpaceSettingsPage,
 } from "@components/SpaceSettings/spaceSettingsPages";
 import { useAppNavigation } from "@hooks/useAppNavigation";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import { useSpaceSettingsAccess } from "@hooks/useSpaceFromRoute";
-import {
-  spaceCategoryTitleKeys,
-  spacePageTitleKeys,
-} from "@mutualzz/i18n";
-import { Box, Modal, Typography } from "@mutualzz/ui-native";
+import { spaceCategoryTitleKeys, spacePageTitleKeys } from "@mutualzz/i18n";
+import { Box, Sheet, Typography } from "@mutualzz/ui-native";
 import type { Space } from "@stores/objects/Space";
 import {
   GearIcon,
@@ -36,10 +32,9 @@ interface Props {
 
 export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
   const { t } = useTranslation("space");
-  const { t: tCommon } = useTranslation("common");
   const app = useAppStore();
   const { navigate } = useAppNavigation();
-  const { openModal } = useModal();
+  const { openSheet } = useSheet();
   const navIconColor = useSettingsIconColor("info");
   const dangerIconColor = useSettingsIconColor("danger");
 
@@ -70,183 +65,156 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
 
   const confirmReport = () => {
     onClose();
-    openModal(
+    openSheet(
       `report-space-${space.id}`,
       <ReportContentSheet
         targetType="space"
         targetId={space.id}
         contentLabel={t("contextMenu.reportSpaceLabel", { ns: "chat" })}
-        modalId={`report-space-${space.id}`}
+        sheetId={`report-space-${space.id}`}
       />,
     );
   };
 
   const confirmLeave = () => {
     onClose();
-    openModal(
+    openSheet(
       "leave-space-confirm",
       <SpaceActionConfirmSheet
         space={space}
         action="leave"
-        modalId="leave-space-confirm"
+        sheetId="leave-space-confirm"
       />,
     );
   };
 
   const confirmDelete = () => {
     onClose();
-    openModal(
+    openSheet(
       "delete-space-confirm",
       <SpaceActionConfirmSheet
         space={space}
         action="delete"
-        modalId="delete-space-confirm"
+        sheetId="delete-space-confirm"
       />,
     );
   };
 
   return (
-    <Modal
+    <Sheet
       open={visible}
       onClose={onClose}
-      layout="fullscreen"
       showCloseButton={false}
-      style={{
-        justifyContent: "flex-end",
-        alignItems: "stretch",
-        backgroundColor: "transparent",
-        paddingVertical: 0,
-      }}
+      enableDynamicSizing
     >
-      <View
-        pointerEvents="box-none"
-        style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}
-      >
-        <Paper
-          variant="elevation"
-          elevation={app.settings?.preferEmbossed ? 4 : 2}
-          style={{
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            padding: 16,
-            gap: 12,
-            maxHeight: "70%",
-          }}
+      <View style={{ width: "100%", padding: 16, gap: 12 }}>
+        <Typography level="body-lg" weight="bold">
+          {space.name}
+        </Typography>
+
+        <ScrollView
+          contentContainerStyle={{ gap: 8 }}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
+          style={{ maxHeight: 420 }}
         >
-          <Typography level="body-lg" weight="bold">
-            {space.name}
-          </Typography>
+          {hasUnread && (
+            <Button
+              variant="soft"
+              horizontalAlign="left"
+              startDecorator={
+                <CheckCircleIcon size={20} weight="fill" color={navIconColor} />
+              }
+              fullWidth
+              onPress={markAllRead}
+            >
+              {t("actions.markAllAsRead")}
+            </Button>
+          )}
 
-          <ScrollView
-            contentContainerStyle={{ gap: 8 }}
-            keyboardShouldPersistTaps="handled"
-          >
-            {hasUnread && (
-              <Button
-                variant="soft"
-                horizontalAlign="left"
-                startDecorator={
-                  <CheckCircleIcon
-                    size={20}
-                    weight="fill"
-                    color={navIconColor}
-                  />
-                }
-                fullWidth
-                onPress={markAllRead}
-              >
-                {t("actions.markAllAsRead")}
-              </Button>
-            )}
+          {canManage && (
+            <Button
+              variant="soft"
+              horizontalAlign="left"
+              startDecorator={
+                <GearIcon size={20} weight="fill" color={navIconColor} />
+              }
+              fullWidth
+              onPress={() => openSettings()}
+            >
+              {t("menu.spaceSettings")}
+            </Button>
+          )}
 
-            {canManage && (
-              <Button
-                variant="soft"
-                horizontalAlign="left"
-                startDecorator={
-                  <GearIcon size={20} weight="fill" color={navIconColor} />
-                }
-                fullWidth
-                onPress={() => openSettings()}
-              >
-                {t("menu.spaceSettings")}
-              </Button>
-            )}
-
-            {categories.map(({ category, pages }) => (
-              <Box key={category} style={{ gap: 6 }}>
-                <Typography level="body-xs" textColor="muted">
-                  {t(spaceCategoryTitleKeys[category])}
-                </Typography>
-                {pages.map((page) => (
-                  <Button
-                    fullWidth
-                    key={page.label}
-                    variant="plain"
-                    horizontalAlign="left"
-                    startDecorator={
-                      <page.Icon size={20} weight="fill" color={navIconColor} />
-                    }
-                    onPress={() => openSettings(page.label)}
-                  >
-                    {pageLabel(page.label)}
-                  </Button>
-                ))}
-              </Box>
-            ))}
-
-            {!isOwner ? (
-              <>
+          {categories.map(({ category, pages }) => (
+            <Box key={category} style={{ gap: 6 }}>
+              <Typography level="body-xs" textColor="muted">
+                {t(spaceCategoryTitleKeys[category])}
+              </Typography>
+              {pages.map((page) => (
                 <Button
+                  fullWidth
+                  key={page.label}
                   variant="plain"
-                  color="danger"
                   horizontalAlign="left"
                   startDecorator={
-                    <FlagIcon size={20} weight="fill" color={dangerIconColor} />
+                    <page.Icon size={20} weight="fill" color={navIconColor} />
                   }
-                  fullWidth
-                  onPress={confirmReport}
+                  onPress={() => openSettings(page.label)}
                 >
-                  {t("menu.reportSpace")}
+                  {pageLabel(page.label)}
                 </Button>
-                <Button
-                  variant="plain"
-                  color="danger"
-                  horizontalAlign="left"
-                  startDecorator={
-                    <SignOutIcon
-                      size={20}
-                      weight="fill"
-                      color={dangerIconColor}
-                    />
-                  }
-                  fullWidth
-                  onPress={confirmLeave}
-                >
-                  {t("menu.leaveSpace")}
-                </Button>
-              </>
-            ) : (
+              ))}
+            </Box>
+          ))}
+
+          {!isOwner ? (
+            <>
               <Button
                 variant="plain"
                 color="danger"
                 horizontalAlign="left"
-                fullWidth
                 startDecorator={
-                  <TrashIcon size={20} weight="fill" color={dangerIconColor} />
+                  <FlagIcon size={20} weight="fill" color={dangerIconColor} />
                 }
-                onPress={confirmDelete}
+                fullWidth
+                onPress={confirmReport}
               >
-                {t("menu.deleteSpace")}
+                {t("menu.reportSpace")}
               </Button>
-            )}
-          </ScrollView>
-
-          <Button variant="plain" fullWidth onPress={onClose}>
-            {tCommon("cancel")}
-          </Button>
-        </Paper>
+              <Button
+                variant="plain"
+                color="danger"
+                horizontalAlign="left"
+                startDecorator={
+                  <SignOutIcon
+                    size={20}
+                    weight="fill"
+                    color={dangerIconColor}
+                  />
+                }
+                fullWidth
+                onPress={confirmLeave}
+              >
+                {t("menu.leaveSpace")}
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="plain"
+              color="danger"
+              horizontalAlign="left"
+              fullWidth
+              startDecorator={
+                <TrashIcon size={20} weight="fill" color={dangerIconColor} />
+              }
+              onPress={confirmDelete}
+            >
+              {t("menu.deleteSpace")}
+            </Button>
+          )}
+        </ScrollView>
       </View>
-    </Modal>
+    </Sheet>
   );
 });

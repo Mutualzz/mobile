@@ -3,13 +3,14 @@ import { UserAvatar } from "@components/User/UserAvatar";
 import { Button } from "@components/Button";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
-import { Box, InputDefault, Typography } from "@mutualzz/ui-native";
-import { useScaledModalListMaxHeight } from "@utils/accessibilityLayout";
+import { Box, InputDefault, Typography, useTheme } from "@mutualzz/ui-native";
+import { useScaledSheetListMaxHeight } from "@utils/accessibilityLayout";
 import type { User } from "@stores/objects/User";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, Pressable } from "react-native";
+import { CheckIcon } from "phosphor-react-native";
 
 interface Props {
   visible: boolean;
@@ -19,6 +20,7 @@ interface Props {
 export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
   const { t } = useTranslation("common");
   const { t: tChat } = useTranslation("chat");
+  const { theme } = useTheme();
   const app = useAppStore();
   const { navigate } = useAppNavigation();
   const [search, setSearch] = useState("");
@@ -26,7 +28,7 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
   const [groupName, setGroupName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const listMaxHeight = useScaledModalListMaxHeight();
+  const listMaxHeight = useScaledSheetListMaxHeight();
 
   const suggestions = useMemo(() => {
     const all = app.getSuggestedGroupDMRecipients();
@@ -65,9 +67,7 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
       onClose();
       navigate(`/@me/${channel.id}`);
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : tChat("dm.createFailed"),
-      );
+      setError(e instanceof Error ? e.message : tChat("dm.createFailed"));
     } finally {
       setSaving(false);
     }
@@ -79,7 +79,6 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
       onClose={onClose}
       title={tChat("dm.createTitle")}
       maxHeight="85%"
-      keyboard="lift"
       elevation={app.settings?.preferEmbossed ? 4 : 2}
     >
       <InputDefault
@@ -128,9 +127,13 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
                     @{item.username}
                   </Typography>
                 </Box>
-                <Typography color="primary">
-                  {isSelected ? tChat("dm.selected") : ""}
-                </Typography>
+                {isSelected && (
+                  <CheckIcon
+                    size={20}
+                    weight="bold"
+                    color={theme.colors.neutral}
+                  />
+                )}
               </Box>
             </Pressable>
           );
@@ -146,12 +149,10 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
         </Typography>
       )}
       <Box style={{ flexDirection: "row", gap: 8 }}>
-        <Button variant="plain" onPress={onClose}>
-          {t("cancel")}
-        </Button>
         <Button
           disabled={selected.length === 0 || saving}
           onPress={() => void create()}
+          expand
         >
           {t("create")}
         </Button>

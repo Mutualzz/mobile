@@ -5,27 +5,18 @@ import { MemberKickSheet } from "@components/SpaceSettings/MemberKickSheet";
 import { RoleHierarchyAssignLock } from "@components/SpaceSettings/RoleHierarchyLock";
 import {
   canAssignRole,
-  getHierarchyContext,
-} from "@components/SpaceSettings/roleHierarchy.utils";
+  getHierarchyContext } from "@components/SpaceSettings/roleHierarchy.utils";
 import { useAppStore } from "@hooks/useStores";
 import type { Role } from "@stores/objects/Role";
 import type { SpaceMember } from "@stores/objects/SpaceMember";
 import type { Space } from "@stores/objects/Space";
-import {
-  Box,
-  ButtonGroup,
-  Divider,
-  Modal,
-  Typography,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { Box, ButtonGroup, Divider, Sheet, Typography, useTheme } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import { CheckIcon, ShieldIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface Props {
   member: SpaceMember;
@@ -40,7 +31,6 @@ export const MemberActionSheet = observer(
     const { t } = useTranslation("chat");
     const { t: tSpace } = useTranslation("space");
     const { theme } = useTheme();
-    const insets = useSafeAreaInsets();
     const [kickOpen, setKickOpen] = useState(false);
     const [banOpen, setBanOpen] = useState(false);
 
@@ -83,8 +73,7 @@ export const MemberActionSheet = observer(
         }
         if (member.roles.has(role.id)) return member.removeRole(role);
         return member.addRole(role);
-      },
-    });
+      }});
 
     const renderRoleRow = (role: Role, locked: boolean) => {
       const hasRole = member.roles.has(role.id);
@@ -104,8 +93,7 @@ export const MemberActionSheet = observer(
               gap: 10,
               padding: 10,
               borderRadius: 10,
-              opacity: interactive ? 1 : 0.85,
-            }}
+              opacity: interactive ? 1 : 0.85}}
           >
             <ShieldIcon
               size={16}
@@ -131,8 +119,7 @@ export const MemberActionSheet = observer(
                     ? `${theme.colors.primary}22`
                     : "transparent",
                   alignItems: "center",
-                  justifyContent: "center",
-                }}
+                  justifyContent: "center"}}
               >
                 {hasRole && (
                   <CheckIcon
@@ -158,42 +145,21 @@ export const MemberActionSheet = observer(
 
     return (
       <>
-        <Modal
+        <Sheet
           open={visible && !kickOpen && !banOpen}
           onClose={onClose}
-          layout="fullscreen"
           showCloseButton={false}
-          style={{
-            justifyContent: "flex-end",
-            alignItems: "stretch",
-            backgroundColor: "transparent",
-            paddingVertical: 0,
-          }}
+      enableDynamicSizing
         >
-          <View
-            pointerEvents="box-none"
-            style={{
-              flex: 1,
-              justifyContent: "flex-end",
-              width: "100%",
-            }}
-          >
+          <View style={{ width: "100%" }}>
             <View onStartShouldSetResponder={() => true}>
               <Box
-                style={{
-                  marginHorizontal: 12,
-                  marginBottom: insets.bottom + 12,
-                }}
-              >
-                <Paper
-                  elevation={app.settings?.preferEmbossed ? 4 : 2}
-                  style={{
-                    borderRadius: 16,
-                    padding: 12,
-                    gap: 8,
-                    maxHeight: "70%",
-                  }}
-                >
+              style={{
+                width: "100%",
+                padding: 16,
+                gap: 8}}
+            >
+                <Box style={{ gap: 8, maxHeight: 420 }}>
                   <Box
                     style={{ alignItems: "center", paddingVertical: 4, gap: 2 }}
                   >
@@ -263,11 +229,11 @@ export const MemberActionSheet = observer(
                       </ButtonGroup>
                     )}
                   </ScrollView>
-                </Paper>
+                </Box>
               </Box>
             </View>
           </View>
-        </Modal>
+        </Sheet>
 
         {kickOpen && (
           <MemberKickSheet

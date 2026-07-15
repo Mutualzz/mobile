@@ -4,13 +4,7 @@ import { Paper } from "@components/Paper";
 import { SpaceIcon } from "@components/Space/SpaceIcon";
 import { useAppStore } from "@hooks/useStores";
 import type { APISpace, HttpException } from "@mutualzz/types";
-import {
-  Box,
-  ButtonGroup,
-  InputDefault,
-  Typography,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { Box, InputDefault, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Space } from "@stores/objects/Space";
 import type { Selection } from "@utils/markdown/types";
 import {
@@ -273,7 +267,13 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
         </Typography>
       )}
 
-      <ButtonGroup spacing={8}>
+      <Box
+        style={{
+          flexDirection: "row",
+          gap: 8,
+          justifyContent: "flex-end",
+        }}
+      >
         {hasChanges && (
           <Button
             variant="plain"
@@ -294,9 +294,11 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
           disabled={!hasChanges || saving || !name.trim()}
           onPress={() => saveProfile()}
         >
-          {saving ? tSettings("profile.saving") : tSettings("profile.saveChanges")}
+          {saving
+            ? tSettings("profile.saving")
+            : tSettings("profile.saveChanges")}
         </Button>
-      </ButtonGroup>
+      </Box>
     </Box>
   );
 });

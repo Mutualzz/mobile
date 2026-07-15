@@ -1,7 +1,5 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
-import { useAppStore } from "@hooks/useStores";
-import { Box, ButtonGroup, Modal, Typography } from "@mutualzz/ui-native";
+import { Box, ButtonGroup, Sheet, Typography } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
@@ -16,7 +14,6 @@ interface Props {
 
 export const CategoryDeleteSheet = observer(
   ({ visible, onClose, channel }: Props) => {
-    const app = useAppStore();
     const { t } = useTranslation("space");
     const { t: tCommon } = useTranslation("common");
     const { mutate: deleteCategory, isPending } = useMutation({
@@ -26,28 +23,13 @@ export const CategoryDeleteSheet = observer(
     });
 
     return (
-      <Modal
+      <Sheet
         open={visible}
         onClose={onClose}
-        layout="fullscreen"
         showCloseButton={false}
-        style={{
-          justifyContent: "flex-end",
-          alignItems: "stretch",
-          backgroundColor: "transparent",
-          paddingVertical: 0,
-        }}
+      enableDynamicSizing
       >
-        <View pointerEvents="box-none" style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}>
-          <Paper
-            elevation={app.settings?.preferEmbossed ? 4 : 2}
-            style={{
-              padding: 24,
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
-              gap: 16,
-            }}
-          >
+        <View style={{ width: "100%", padding: 16, gap: 12 }}>
             <Typography level="body-md" weight="bold">
               {t("channels.deleteCategory.title", { name: channel.name })}
             </Typography>
@@ -74,9 +56,8 @@ export const CategoryDeleteSheet = observer(
                 {tCommon("cancel")}
               </Button>
             </ButtonGroup>
-          </Paper>
         </View>
-      </Modal>
+      </Sheet>
     );
   },
 );

@@ -3,7 +3,7 @@ import { IconButton } from "@components/IconButton";
 import { BottomSheet } from "@components/Keyboard/BottomSheet";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Expression } from "@stores/objects/Expression";
-import { useModalSheetMaxHeight } from "@utils/modalSheet";
+import { useSheetMaxHeight } from "@utils/sheet";
 import { XIcon } from "phosphor-react-native";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
@@ -26,7 +26,7 @@ export function ProfileWidgetStickerPicker({
   const { t: tCommon } = useTranslation("common");
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const sheetHeight = useModalSheetMaxHeight(0.8);
+  const sheetHeight = useSheetMaxHeight(0.8);
   const title = t("profile.inspector.chooseSticker");
 
   const handleSelect = (sticker: Expression) => {

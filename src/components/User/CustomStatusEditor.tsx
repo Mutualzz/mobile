@@ -9,13 +9,7 @@ import {
 } from "@utils/customStatus";
 import { STATUS_DURATION_OPTIONS } from "@utils/statusDurations";
 import type { PresenceActivityEmoji } from "@mutualzz/types";
-import {
-  Box,
-  IconButton,
-  InputDefault,
-  Typography,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { Box, IconButton, InputDefault, Typography, useTheme } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import { XIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";

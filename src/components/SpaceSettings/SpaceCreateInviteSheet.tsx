@@ -1,6 +1,5 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
 import { Box, Typography } from "@mutualzz/ui-native";
@@ -10,24 +9,23 @@ import { Invite } from "@stores/objects/Invite";
 import * as Clipboard from "expo-clipboard";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
-import { Pressable } from "react-native";
+import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 interface Props {
   space: Space;
   channel?: Channel | null;
-  modalId?: string;
+  sheetId?: string;
   onClose?: () => void;
 }
 
 export const SpaceCreateInviteSheet = observer(
-  ({ space, channel, modalId = "space-create-invite", onClose }: Props) => {
+  ({ space, channel, sheetId = "space-create-invite", onClose }: Props) => {
     const { t } = useTranslation("space");
     const { t: tSettings } = useTranslation("settings");
-    const { t: tCommon } = useTranslation("common");
     const app = useAppStore();
-    const { closeModal } = useModal();
-    const close = onClose ?? (() => closeModal(modalId));
+    const { closeSheet } = useSheet();
+    const close = onClose ?? (() => closeSheet(sheetId));
     const [creating, setCreating] = useState(false);
     const [inviteUrl, setInviteUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -74,16 +72,13 @@ export const SpaceCreateInviteSheet = observer(
     };
 
     return (
-      <Paper
-        style={{
-          width: 320,
-          maxWidth: "100%",
-          padding: 16,
-          borderRadius: 12,
-          gap: 12,
-        }}
-        elevation={app.settings?.preferEmbossed ? 4 : 2}
-      >
+      <View
+                style={{
+                    width: "100%",
+                    padding: 16,
+                    gap: 12,
+                }}
+            >
         <Typography level="body-md" weight={700}>
           {t("invites.createTitle")}
         </Typography>
@@ -119,17 +114,9 @@ export const SpaceCreateInviteSheet = observer(
             <Button disabled={creating} onPress={() => void createInvite()}>
               {creating ? t("actions.creating") : t("actions.createInvite")}
             </Button>
-            <Button
-              variant="soft"
-              color="neutral"
-              disabled={creating}
-              onPress={close}
-            >
-              {tCommon("cancel")}
-            </Button>
           </Box>
         )}
-      </Paper>
+      </View>
     );
   },
 );

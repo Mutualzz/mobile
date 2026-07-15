@@ -9,12 +9,7 @@ import {
   type Hex,
   type Size,
 } from "@mutualzz/ui-core";
-import {
-  Avatar as MAvatar,
-  Box,
-  useTheme,
-  type AvatarProps,
-} from "@mutualzz/ui-native";
+import { Avatar as MAvatar, Box, useTheme, type AvatarProps } from "@mutualzz/ui-native";
 import { useAppStore } from "@hooks/useStores";
 import type { AccountStore } from "@stores/Account.store";
 import type { User } from "@stores/objects/User";

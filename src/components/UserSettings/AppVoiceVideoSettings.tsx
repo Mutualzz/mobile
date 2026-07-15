@@ -1,19 +1,10 @@
 import { Button } from "@components/Button";
 import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import type { VoiceMediaDevice } from "@stores/voice/webrtcBridge";
-import {
-  Box,
-  Checkbox,
-  Radio,
-  RadioGroup,
-  Slider,
-  Switch,
-  Typography,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { Box, Checkbox, Radio, RadioGroup, Slider, Switch, Typography, useTheme } from "@mutualzz/ui-native";
 import type { VoiceInputMode } from "@utils/voiceSettings.utils";
 import { CaretRightIcon, CheckIcon, XIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
@@ -76,19 +67,19 @@ function DevicePickerContent({
   title,
   devices,
   selectedId,
-  modalId,
+  sheetId,
   onSelect,
 }: {
   title: string;
   devices: VoiceMediaDevice[];
   selectedId: string | null;
-  modalId: string;
+  sheetId: string;
   onSelect: (deviceId: string) => void;
 }) {
   const { t } = useTranslation("settings");
   const { theme } = useTheme();
   const app = useAppStore();
-  const { closeModal } = useModal();
+  const { closeSheet } = useSheet();
 
   return (
     <Paper
@@ -127,7 +118,7 @@ function DevicePickerContent({
             key={device.deviceId}
             onPress={() => {
               onSelect(device.deviceId);
-              closeModal(modalId);
+              closeSheet(sheetId);
             }}
             style={{
               flexDirection: "row",
@@ -167,7 +158,7 @@ export const AppVoiceVideoSettings = observer(() => {
   const { t } = useTranslation("settings");
   const app = useAppStore();
   const { theme } = useTheme();
-  const { openModal } = useModal();
+  const { openSheet } = useSheet();
   const voice = app.voice;
 
   const [testingCamera, setTestingCamera] = useState(false);
@@ -187,19 +178,19 @@ export const AppVoiceVideoSettings = observer(() => {
     selectedCamera?.deviceId ?? cameras[0]?.deviceId ?? null;
 
   const openDevicePicker = (
-    modalId: string,
+    sheetId: string,
     title: string,
     devices: VoiceMediaDevice[],
     selectedId: string | null,
     onSelect: (deviceId: string) => void,
   ) => {
-    openModal(
-      modalId,
+    openSheet(
+      sheetId,
       <DevicePickerContent
         title={title}
         devices={devices}
         selectedId={selectedId}
-        modalId={modalId}
+        sheetId={sheetId}
         onSelect={onSelect}
       />,
       { layout: "center", showCloseButton: false },

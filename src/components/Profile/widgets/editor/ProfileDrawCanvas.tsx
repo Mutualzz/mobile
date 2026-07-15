@@ -1,12 +1,6 @@
 import { Button } from "@components/Button";
 import { type ColorLike } from "@mutualzz/ui-core";
-import {
-  Box,
-  IconButton,
-  InputColor,
-  Slider,
-  Typography,
-} from "@mutualzz/ui-native";
+import { Box, IconButton, InputColor, Slider, Typography } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import {
   ArrowCounterClockwiseIcon,

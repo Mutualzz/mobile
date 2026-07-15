@@ -99,7 +99,15 @@ export class ChannelStore {
       const bUnread = this.app.readStates.get(b.id)?.isUnread ? 1 : 0;
       if (aUnread !== bUnread) return bUnread - aUnread; // unread first
 
-      // Sort by recent messages
+      const aId = a.lastMessageId;
+      const bId = b.lastMessageId;
+      if (aId && bId) {
+        const diff = BigInt(bId) - BigInt(aId);
+        return diff > 0n ? 1 : diff < 0n ? -1 : 0;
+      }
+      if (aId) return -1;
+      if (bId) return 1;
+
       const aTime =
         a.lastMessage?.createdAt?.getTime() ?? a.createdAt.getTime();
       const bTime =

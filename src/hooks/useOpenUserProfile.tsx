@@ -1,14 +1,13 @@
 import { UserProfileSheet } from "@components/Profile/UserProfileSheet";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import type { AccountStore } from "@stores/Account.store";
 import type { SpaceMember } from "@stores/objects/SpaceMember";
 import type { User } from "@stores/objects/User";
-import { MODAL_SHEET_WRAPPER_STYLE } from "@utils/modalSheet";
+import { PROFILE_SHEET_PROPS } from "@utils/sheet";
 import { useCallback } from "react";
-import { View } from "react-native";
 
 export function useOpenUserProfile() {
-    const { openModal, closeModal } = useModal();
+    const { openSheet, closeSheet } = useSheet();
 
     return useCallback(
         (
@@ -17,29 +16,18 @@ export function useOpenUserProfile() {
             accountMenu = false,
         ) => {
             const id = `user-profile-${user.id}`;
-            closeModal(id);
-            openModal(
+            closeSheet(id);
+            openSheet(
                 id,
-                <View pointerEvents="box-none" style={MODAL_SHEET_WRAPPER_STYLE}>
-                    <UserProfileSheet
-                        user={user}
-                        member={member}
-                        modalId={id}
-                        accountMenu={accountMenu}
-                    />
-                </View>,
-                {
-                    layout: "fullscreen",
-                    showCloseButton: false,
-                    style: {
-                        justifyContent: "flex-end",
-                        alignItems: "stretch",
-                        backgroundColor: "transparent",
-                        paddingVertical: 0,
-                    },
-                },
+                <UserProfileSheet
+                    user={user}
+                    member={member}
+                    sheetId={id}
+                    accountMenu={accountMenu}
+                />,
+                PROFILE_SHEET_PROPS,
             );
         },
-        [openModal, closeModal],
+        [openSheet, closeSheet],
     );
 }

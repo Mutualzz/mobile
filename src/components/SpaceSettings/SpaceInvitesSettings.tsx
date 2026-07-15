@@ -3,7 +3,7 @@ import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
 import { SpaceCreateInviteSheet } from "@components/SpaceSettings/SpaceCreateInviteSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Divider, Typography } from "@mutualzz/ui-native";
 import type { Invite } from "@stores/objects/Invite";
@@ -169,7 +169,7 @@ export const InviteRow = observer(
 
 export const SpaceInvitesSettings = observer(({ space }: Props) => {
   const { t } = useTranslation("space");
-  const { openModal } = useModal();
+  const { openSheet } = useSheet();
   const [now, setNow] = useState(new Date());
 
   useQuery({
@@ -222,7 +222,7 @@ export const SpaceInvitesSettings = observer(({ space }: Props) => {
           <Button
             size="sm"
             onPress={() =>
-              openModal(
+              openSheet(
                 "space-create-invite",
                 <SpaceCreateInviteSheet space={space} />,
               )

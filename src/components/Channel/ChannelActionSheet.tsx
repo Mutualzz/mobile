@@ -1,34 +1,24 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
 import type { Channel } from "@stores/objects/Channel";
 import type { Space } from "@stores/objects/Space";
-import {
-  Box,
-  ButtonGroup,
-  Divider,
-  Modal,
-  Typography,
-} from "@mutualzz/ui-native";
+import { Box, ButtonGroup, Divider, Sheet, Typography } from "@mutualzz/ui-native";
 import {
   flattenChannels,
   getChannelMoveState,
-  moveChannelInList,
-} from "@utils/channelReorder";
+  moveChannelInList } from "@utils/channelReorder";
 import {
   CaretDownIcon,
   CaretUpIcon,
   CheckCircleIcon,
   GearIcon,
   PaperPlaneTiltIcon,
-  TrashIcon,
-} from "phosphor-react-native";
+  TrashIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SpaceInviteToSpaceSheet } from "@components/Space/SpaceInviteToSpaceSheet";
 
 interface Props {
@@ -47,12 +37,10 @@ export const ChannelActionSheet = observer(
     visible,
     onClose,
     onOpenSettings,
-    onDeleteCategory,
-  }: Props) => {
+    onDeleteCategory}: Props) => {
     const app = useAppStore();
     const { t } = useTranslation("chat");
-    const insets = useSafeAreaInsets();
-    const { openModal } = useModal();
+    const { openSheet } = useSheet();
 
     const isCategory = channel.type === ChannelType.Category;
     const readState = !isCategory ? app.readStates.get(channel.id) : null;
@@ -86,7 +74,7 @@ export const ChannelActionSheet = observer(
 
     const openInvite = () => {
       onClose();
-      openModal(
+      openSheet(
         `channel-invite-${channel.id}`,
         <SpaceInviteToSpaceSheet space={space} channel={channel} />,
       );
@@ -113,41 +101,21 @@ export const ChannelActionSheet = observer(
     if (!hasActions) return null;
 
     return (
-      <Modal
-        open={visible}
-        onClose={onClose}
-        layout="fullscreen"
-        showCloseButton={false}
-        style={{
-          justifyContent: "flex-end",
-          alignItems: "stretch",
-          backgroundColor: "transparent",
-          paddingVertical: 0,
-        }}
-      >
-        <View
-          pointerEvents="box-none"
-          style={{
-            flex: 1,
-            justifyContent: "flex-end",
-            width: "100%",
-          }}
+      <Sheet
+          open={visible}
+          onClose={onClose}
+          showCloseButton={false}
+          enableDynamicSizing
         >
+        <View style={{ width: "100%" }}>
           <View onStartShouldSetResponder={() => true}>
             <Box
               style={{
-                marginHorizontal: 12,
-                marginBottom: insets.bottom + 12,
-              }}
+                width: "100%",
+                padding: 16,
+                gap: 8}}
             >
-              <Paper
-                elevation={app.settings?.preferEmbossed ? 4 : 2}
-                style={{
-                  borderRadius: 16,
-                  padding: 12,
-                  gap: 8,
-                }}
-              >
+              <Box style={{ gap: 8 }}>
                 <Box
                   style={{ alignItems: "center", paddingVertical: 4, gap: 2 }}
                 >
@@ -241,11 +209,11 @@ export const ChannelActionSheet = observer(
                     </Button>
                   )}
                 </ButtonGroup>
-              </Paper>
+              </Box>
             </Box>
           </View>
         </View>
-      </Modal>
+      </Sheet>
     );
   },
 );

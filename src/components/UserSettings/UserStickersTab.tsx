@@ -1,16 +1,17 @@
 import { Button } from "@components/Button";
 import { IconButton } from "@components/IconButton";
-import { ExpressionUploadSheet } from "@components/UserSettings/ExpressionUploadSheet";
 import { Paper } from "@components/Paper";
-import { useModal } from "@hooks/useModal";
+import { ExpressionUploadSheet } from "@components/UserSettings/ExpressionUploadSheet";
 import { useAppStore } from "@hooks/useStores";
-import { Box, Divider, Typography } from "@mutualzz/ui-native";
+import { useSheet } from "@hooks/useSheet";
 import { ExpressionType } from "@mutualzz/types";
+import { Box, Divider, Typography } from "@mutualzz/ui-native";
 import type { Expression } from "@stores/objects/Expression";
+import { BOTTOM_SHEET_PROPS } from "@utils/sheet";
+import { useExpressionThumbnailStyle } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
 import { TrashIcon } from "phosphor-react-native";
-import { useExpressionThumbnailStyle } from "@utils/accessibilityLayout";
-import { Image } from "react-native";
+import { InteractionManager, Image } from "react-native";
 import ImagePicker from "react-native-image-crop-picker";
 import { useTranslation } from "react-i18next";
 
@@ -90,7 +91,7 @@ const StickerSection = ({
 export const UserStickersTab = observer(() => {
   const { t } = useTranslation("settings");
   const app = useAppStore();
-  const { openModal } = useModal();
+  const { openSheet, closeSheet } = useSheet();
   const account = app.account;
 
   if (!account) return null;
@@ -112,16 +113,23 @@ export const UserStickersTab = observer(() => {
       .then((image) => {
         const fileName =
           image.filename ?? image.path.split("/").pop() ?? "sticker.png";
+        const sheetId = "expression-upload";
 
-        openModal(
-          "expression-upload",
-          <ExpressionUploadSheet
-            type={ExpressionType.Sticker}
-            uri={image.path}
-            mimeType={image.mime ?? "image/png"}
-            fileName={fileName}
-          />,
-        );
+        InteractionManager.runAfterInteractions(() => {
+          setTimeout(() => {
+            openSheet(
+              sheetId,
+              <ExpressionUploadSheet
+                type={ExpressionType.Sticker}
+                uri={image.path}
+                mimeType={image.mime ?? "image/png"}
+                fileName={fileName}
+                onClose={() => closeSheet(sheetId)}
+              />,
+              BOTTOM_SHEET_PROPS,
+            );
+          }, 300);
+        });
       })
       .catch(() => undefined);
   };

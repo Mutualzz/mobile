@@ -2,7 +2,7 @@ import { ChatComposerPane } from "@components/Message/ChatComposerPane";
 import { VoiceChannelView } from "@components/Views/VoiceChannelView";
 import { VoiceUserBarOverlay } from "@components/User/VoiceUserBarOverlay";
 import { ChannelIcon } from "@components/Channel/ChannelIcon";
-import { MemberListModal } from "@components/MemberList/MemberListModal";
+import { MemberListSheet } from "@components/MemberList/MemberListSheet";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
 import { ArrowLeftIcon, HashIcon, UsersIcon } from "phosphor-react-native";
 import { useScreenComposer } from "@hooks/useScreenComposer";
@@ -100,7 +100,7 @@ export const ChannelContentPane = observer(() => {
                 composerVisible={composerVisible}
             />
 
-            <MemberListModal
+            <MemberListSheet
                 channel={channel}
                 visible={memberListOpen}
                 onClose={() => setMemberListOpen(false)}

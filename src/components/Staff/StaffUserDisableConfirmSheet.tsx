@@ -1,6 +1,5 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
-import { useModal } from "@hooks/useModal";
+import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import { HttpException } from "@mutualzz/types";
 import type { APIPrivateUser } from "@mutualzz/types";
@@ -9,21 +8,22 @@ import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { View } from "react-native";
 
 interface Props {
     userId: string;
     username: string;
     disable: boolean;
     onSuccess: (user: APIPrivateUser) => void;
-    modalId: string;
+    sheetId: string;
 }
 
 export const StaffUserDisableConfirmSheet = observer(
-    ({ userId, username, disable, onSuccess, modalId }: Props) => {
+    ({ userId, username, disable, onSuccess, sheetId }: Props) => {
         const { t } = useTranslation("staff");
         const { t: tCommon } = useTranslation("common");
         const app = useAppStore();
-        const { closeModal } = useModal();
+        const { closeSheet } = useSheet();
         const [reason, setReason] = useState("");
         const [error, setError] = useState<string | null>(null);
 
@@ -35,21 +35,18 @@ export const StaffUserDisableConfirmSheet = observer(
                 ),
             onSuccess: (user) => {
                 onSuccess(user);
-                closeModal(modalId);
+                closeSheet(sheetId);
             },
             onError: (err: HttpException) => setError(err.message),
         });
 
         return (
-            <Paper
+            <View
                 style={{
-                    width: 320,
-                    maxWidth: "100%",
+                    width: "100%",
                     padding: 16,
-                    borderRadius: 12,
                     gap: 12,
                 }}
-                elevation={app.settings?.preferEmbossed ? 4 : 2}
             >
                 <Typography level="body-md" weight={700}>
                     {disable
@@ -91,11 +88,11 @@ export const StaffUserDisableConfirmSheet = observer(
                     variant="soft"
                     color="neutral"
                     disabled={isPending}
-                    onPress={() => closeModal(modalId)}
+                    onPress={() => closeSheet(sheetId)}
                 >
                     {tCommon("cancel")}
                 </Button>
-            </Paper>
+            </View>
         );
     },
 );

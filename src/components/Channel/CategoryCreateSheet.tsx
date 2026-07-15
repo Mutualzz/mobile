@@ -1,8 +1,7 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType, type HttpException } from "@mutualzz/types";
-import { Box, InputDefault, Modal, Typography } from "@mutualzz/ui-native";
+import { Box, InputDefault, Sheet, Typography } from "@mutualzz/ui-native";
 import type { Space } from "@stores/objects/Space";
 import { useMutation } from "@tanstack/react-query";
 import { FolderSimpleIcon } from "phosphor-react-native";
@@ -45,29 +44,13 @@ export const CategoryCreateSheet = observer(
     });
 
     return (
-      <Modal
-        open={visible}
-        onClose={onClose}
-        layout="fullscreen"
-        showCloseButton={false}
-        style={{
-          justifyContent: "flex-end",
-          alignItems: "stretch",
-          backgroundColor: "transparent",
-          paddingVertical: 0,
-        }}
-      >
-        <View pointerEvents="box-none" style={{ flex: 1, justifyContent: "flex-end", width: "100%" }}>
-          <Paper
-            variant="elevation"
-            elevation={app.settings?.preferEmbossed ? 4 : 2}
-            style={{
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
-              padding: 20,
-              gap: 16,
-            }}
-          >
+      <Sheet
+          open={visible}
+          onClose={onClose}
+          showCloseButton={false}
+          enableDynamicSizing
+        >
+        <View style={{ width: "100%", padding: 16, gap: 12 }}>
             <Typography level="body-lg" weight="bold">
               {t("channels.createCategory.title")}
             </Typography>
@@ -83,16 +66,7 @@ export const CategoryCreateSheet = observer(
                 {error}
               </Typography>
             )}
-            <Box
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                gap: 8,
-              }}
-            >
-              <Button color="danger" expand variant="soft" onPress={onClose}>
-                {tCommon("cancel")}
-              </Button>
+            <Box>
               <Button
                 expand
                 color="success"
@@ -102,9 +76,8 @@ export const CategoryCreateSheet = observer(
                 {tCommon("create")}
               </Button>
             </Box>
-          </Paper>
         </View>
-      </Modal>
+      </Sheet>
     );
   },
 );

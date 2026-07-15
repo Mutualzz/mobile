@@ -1,61 +1,78 @@
 import { SpaceEmojisSettings } from "@components/SpaceSettings/SpaceEmojisSettings";
 import { SpaceStickersSettings } from "@components/SpaceSettings/SpaceStickersSettings";
 import { SpaceSettingsScreen } from "@components/SpaceSettings/SpaceSettingsScreen";
-import { Paper } from "@components/Paper";
 import { useRequireSpaceSettingsAccess } from "@hooks/useSpaceFromRoute";
 import { spacePageTitleKeys } from "@mutualzz/i18n";
-import { Box, Typography } from "@mutualzz/ui-native";
+import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
-import { ScrollView } from "react-native";
+import { useState } from "react";
+import { Pressable, ScrollView } from "react-native";
 import { useTranslation } from "react-i18next";
 
+type Tab = "emojis" | "stickers";
+
+const tabs: Tab[] = ["emojis", "stickers"];
+
 const SpaceExpressionsSettingsPage = () => {
-    const { t } = useTranslation("space");
-    const { t: tSettings } = useTranslation("settings");
-    const { space } = useRequireSpaceSettingsAccess();
-    if (!space) return null;
+  const { t } = useTranslation("space");
+  const { t: tSettings } = useTranslation("settings");
+  const { theme } = useTheme();
+  const { space } = useRequireSpaceSettingsAccess();
+  const [currentTab, setCurrentTab] = useState<Tab>("emojis");
 
-    return (
-        <SpaceSettingsScreen title={t(spacePageTitleKeys.expressions)} contentStyle={{ flex: 1 }}>
-            <ScrollView
-                style={{ flex: 1 }}
-                contentContainerStyle={{
-                    padding: 16,
-                    gap: 16,
-                    paddingBottom: 32,
+  if (!space) return null;
+
+  return (
+    <SpaceSettingsScreen
+      title={t(spacePageTitleKeys.expressions)}
+      contentStyle={{ flex: 1 }}
+    >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: 16,
+          paddingBottom: 32,
+          gap: 16,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Box style={{ flexDirection: "row", gap: 16 }}>
+          {tabs.map((tab) => {
+            const selected = currentTab === tab;
+
+            return (
+              <Pressable
+                key={tab}
+                onPress={() => setCurrentTab(tab)}
+                style={{
+                  paddingVertical: 6,
+                  paddingHorizontal: 4,
+                  borderBottomWidth: selected ? 2 : 0,
+                  borderBottomColor: selected
+                    ? theme.typography.colors.accent
+                    : "transparent",
                 }}
-            >
-                <Paper
-                    style={{
-                        padding: 12,
-                        borderRadius: 12,
-                        gap: 4,
-                    }}
+              >
+                <Typography
+                  level="body-sm"
+                  weight={selected ? 700 : 400}
+                  textColor={selected ? undefined : "muted"}
                 >
-                    <Typography level="body-md" weight={700}>
-                        {t("expressions.pageTitle")}
-                    </Typography>
-                    <Typography level="body-sm" textColor="muted">
-                        {t("expressions.pageDescription")}
-                    </Typography>
-                </Paper>
+                  {tSettings(`expressions.${tab}`)}
+                </Typography>
+              </Pressable>
+            );
+          })}
+        </Box>
 
-                <Box style={{ gap: 12 }}>
-                    <Typography level="body-md" weight={700}>
-                        {tSettings("expressions.emojis")}
-                    </Typography>
-                    <SpaceEmojisSettings space={space} />
-                </Box>
-
-                <Box style={{ gap: 12 }}>
-                    <Typography level="body-md" weight={700}>
-                        {tSettings("expressions.stickers")}
-                    </Typography>
-                    <SpaceStickersSettings space={space} />
-                </Box>
-            </ScrollView>
-        </SpaceSettingsScreen>
-    );
+        {currentTab === "emojis" ? (
+          <SpaceEmojisSettings space={space} />
+        ) : (
+          <SpaceStickersSettings space={space} />
+        )}
+      </ScrollView>
+    </SpaceSettingsScreen>
+  );
 };
 
 export default observer(SpaceExpressionsSettingsPage);

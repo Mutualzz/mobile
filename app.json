@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mutualzz",
     "slug": "mutualzz",
-    "version": "3.8.2",
+    "version": "3.9.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "com.mutualzz.app",
@@ -17,10 +17,17 @@
       "infoPlist": {
         "NSUserActivityTypes": [
           "INSendMessageIntent"
-        ]
+        ],
+        "UIBackgroundModes": [
+          "audio"
+        ],
+        "NSSupportsLiveActivities": true
       },
       "entitlements": {
-        "com.apple.developer.usernotifications.communication": true
+        "com.apple.developer.usernotifications.communication": true,
+        "com.apple.security.application-groups": [
+          "group.com.mutualzz.app"
+        ]
       }
     },
     "android": {
@@ -30,7 +37,13 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon.png",
         "backgroundColor": "#88449a"
-      }
+      },
+      "permissions": [
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MICROPHONE",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.WAKE_LOCK"
+      ]
     },
     "experiments": {
       "typedRoutes": true,
@@ -70,7 +83,14 @@
       "@react-native-community/datetimepicker",
       "./plugins/withAnimatedWebp.js",
       "./plugins/withNotifeeMavenRepo.js",
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice channels.",
+          "enableBackgroundPlayback": true,
+          "enableBackgroundRecording": true
+        }
+      ],
       [
         "@config-plugins/react-native-webrtc",
         {
@@ -78,6 +98,7 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice channels."
         }
       ],
+      "./plugins/withNotifeeMicrophoneFgs.js",
       "expo-video",
       "expo-image",
       [
@@ -149,7 +170,15 @@
           }
         ]
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.mutualzz.app",
+          "frequentUpdates": true,
+          "widgets": []
+        }
+      ]
     ],
     "extra": {
       "router": {},
