@@ -11,7 +11,6 @@ import { useAppStore } from "@hooks/useStores";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { VoiceConnectionStatus } from "@stores/Voice.store";
 import { shouldShowVoiceUserBarPill } from "@utils/layout";
-import { getChannelOccupiedAt } from "@utils/voiceElapsed";
 import { observer } from "mobx-react-lite";
 import { Pressable } from "react-native";
 import { HeadphonesOffIcon } from "@components/icons/HeadphonesOffIcon";
