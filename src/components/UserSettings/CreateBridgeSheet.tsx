@@ -12,11 +12,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface Props {
-  onClose: () => void;
+  spaceId: string;
+  onClose?: () => void;
   onCreated?: (bridge: CreatedBridgeResult) => void;
 }
 
-export const CreateBridgeSheet = observer(({ onClose, onCreated }: Props) => {
+export const CreateBridgeSheet = observer(({ spaceId, onClose, onCreated }: Props) => {
   const { t } = useTranslation("settings");
   const { t: tCommon } = useTranslation("common");
   const app = useAppStore();
@@ -29,12 +30,12 @@ export const CreateBridgeSheet = observer(({ onClose, onCreated }: Props) => {
 
   const { mutate, isPending } = useMutation({
     mutationFn: () =>
-      app.rest.post<CreatedBridgeResult>("/@me/bridges", {
+      app.rest.post<CreatedBridgeResult>(`/spaces/${spaceId}/bridge`, {
         name: name.trim() || t("minecraftBridge.namePlaceholder"),
         serverId: sanitizeServerId(serverId),
       }),
     onSuccess: (created) => {
-      void queryClient.invalidateQueries({ queryKey: ["me", "bridges"] });
+      void queryClient.invalidateQueries({ queryKey: ["space", spaceId, "bridge"] });
       onCreated?.(created);
       onClose();
     },

@@ -2,6 +2,7 @@ import type { PermissionFlag } from "@mutualzz/bitfield";
 import type { ComponentType } from "react";
 import type { IconProps } from "phosphor-react-native";
 import {
+    CubeIcon,
     GavelIcon,
     HashIcon,
     PaperPlaneTiltIcon,
@@ -16,9 +17,10 @@ export type SpaceSettingsPage =
     | "invites"
     | "roles"
     | "expressions"
-    | "bans";
+    | "bans"
+    | "minecraft-bridge";
 
-export type SpaceSettingsCategory = "people" | "moderation";
+export type SpaceSettingsCategory = "people" | "integrations" | "moderation";
 
 export interface SpaceSettingsPageDef {
     label: SpaceSettingsPage;
@@ -55,6 +57,13 @@ export const spaceSettingsPages: Record<
             label: "expressions",
             Icon: SmileyIcon,
             permissions: ["ManageExpressions", "CreateExpressions"],
+        },
+    ],
+    integrations: [
+        {
+            label: "minecraft-bridge",
+            Icon: CubeIcon,
+            permissions: ["ManageSpace"],
         },
     ],
     moderation: [

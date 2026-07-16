@@ -9,7 +9,6 @@ import {
 } from "@contexts/UserSettingsSidebar.context";
 import {
   BellIcon,
-  CubeIcon,
   LifebuoyIcon,
   LinkSimpleIcon,
   MicrophoneIcon,
@@ -46,7 +45,6 @@ const settingsPages: SettingsPages = {
     { label: "profile", Icon: PaintBrushIcon },
     { label: "expressions", Icon: SmileyIcon },
     { label: "connections", Icon: LinkSimpleIcon },
-    { label: "minecraft-bridge", Icon: CubeIcon },
   ],
   "app-settings": [
     { label: "appearance", Icon: PaletteIcon },

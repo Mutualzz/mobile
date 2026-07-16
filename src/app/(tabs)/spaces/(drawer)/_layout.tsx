@@ -1,3 +1,4 @@
+import { BridgeChatView } from "@components/Bridge/BridgeChatView";
 import { ChannelContentPane } from "@components/Channel/ChannelContentPane";
 import { ChannelList } from "@components/Channel/ChannelList/ChannelList";
 import { SwipeableDrawer } from "@components/Navigation/SwipeableDrawer";
@@ -5,7 +6,7 @@ import { SpaceLockdownOverlay } from "@components/Space/SpaceLockdownOverlay";
 import { SpacesSidebar } from "@components/Space/SpacesSidebar";
 import { useAppStore } from "@hooks/useStores";
 import { Box, hasOpenSheets } from "@mutualzz/ui-native";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, usePathname } from "expo-router";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef } from "react";
@@ -14,10 +15,13 @@ import { BackHandler } from "react-native";
 const SpacesDrawerLayout = () => {
   const app = useAppStore();
   const activeSpace = app.spaces.active;
-  const { spaceId, channelId } = useLocalSearchParams<{
+  const pathname = usePathname();
+  const { spaceId, channelId, bridgeId } = useLocalSearchParams<{
     spaceId?: string;
     channelId?: string;
+    bridgeId?: string;
   }>();
+  const onBridgeRoute = pathname.includes("/bridges/") || Boolean(bridgeId);
   const lastSyncedChannelIdRef = useRef<string | undefined>(undefined);
   const resolvingChannelIdRef = useRef<string | undefined>(undefined);
   const channelFromRoute = channelId ? app.channels.get(channelId) : undefined;
@@ -30,6 +34,20 @@ const SpacesDrawerLayout = () => {
 
   const syncSpaceAndChannel = useCallback(() => {
     if (app.mode !== "spaces") app.setMode("spaces");
+
+    if (onBridgeRoute) {
+      lastSyncedChannelIdRef.current = undefined;
+      resolvingChannelIdRef.current = undefined;
+      app.setSpacesDrawerOpen(false);
+      const bridgeSpaceId =
+        spaceId ??
+        (bridgeId ? app.bridgeChat.spaceIdByBridge.get(bridgeId) : undefined);
+      if (bridgeSpaceId) {
+        app.spaces.setActive(bridgeSpaceId);
+        app.spaces.setSidebarTab(bridgeSpaceId, "bridges");
+      }
+      return;
+    }
 
     if (channelId) {
       if (lastSyncedChannelIdRef.current === channelId) return;
@@ -74,7 +92,7 @@ const SpacesDrawerLayout = () => {
       app.spaces.setActive(spaceId);
       app.spaces.setMostRecentSpace(spaceId);
     }
-  }, [spaceId, channelId, app]);
+  }, [spaceId, channelId, bridgeId, onBridgeRoute, app]);
 
   useEffect(() => {
     syncSpaceAndChannel();
@@ -92,6 +110,13 @@ const SpacesDrawerLayout = () => {
       () => {
         if (hasOpenSheets()) return false;
         if (app.mode !== "spaces") return false;
+        if (onBridgeRoute) {
+          if (!app.spacesDrawerOpen) {
+            app.setSpacesDrawerOpen(true);
+            return true;
+          }
+          return false;
+        }
         if (!app.channels.activeId) return false;
 
         if (!app.spacesDrawerOpen) {
@@ -103,7 +128,7 @@ const SpacesDrawerLayout = () => {
       },
     );
     return () => subscription.remove();
-  }, [app]);
+  }, [app, onBridgeRoute]);
 
   return (
     <SwipeableDrawer
@@ -131,7 +156,18 @@ const SpacesDrawerLayout = () => {
       }
     >
       <Box style={{ flex: 1, position: "relative" }}>
-        <ChannelContentPane />
+        {bridgeId ? (
+          <BridgeChatView
+            bridgeId={bridgeId}
+            returnToSpaceId={
+              spaceId ??
+              app.bridgeChat.spaceIdByBridge.get(bridgeId) ??
+              activeSpace?.id
+            }
+          />
+        ) : (
+          <ChannelContentPane />
+        )}
         {activeSpace && <SpaceLockdownOverlay space={activeSpace} />}
       </Box>
     </SwipeableDrawer>

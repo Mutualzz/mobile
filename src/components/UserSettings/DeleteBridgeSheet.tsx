@@ -7,6 +7,7 @@ import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
 interface Props {
+  spaceId: string;
   bridgeId: string;
   bridgeName: string;
   onClose: () => void;
@@ -14,21 +15,19 @@ interface Props {
 }
 
 export const DeleteBridgeSheet = observer(
-  ({ bridgeId, bridgeName, onClose, onDeleted }: Props) => {
+  ({ spaceId, bridgeId, bridgeName, onClose, onDeleted }: Props) => {
     const { t } = useTranslation("settings");
     const { t: tCommon } = useTranslation("common");
     const app = useAppStore();
     const queryClient = useQueryClient();
 
     const { mutate, isPending } = useMutation({
-      mutationFn: () => app.rest.delete(`/@me/bridges/${bridgeId}`),
+      mutationFn: () => app.rest.delete(`/spaces/${spaceId}/bridge`),
       onSuccess: () => {
-        queryClient.setQueryData<Array<{ id: string }>>(
-          ["me", "bridges"],
-          (prev) => (prev ?? []).filter((b) => b.id !== bridgeId),
-        );
-        queryClient.removeQueries({ queryKey: ["me", "bridges", bridgeId] });
         app.bridgeChat.clear(bridgeId);
+        void queryClient.invalidateQueries({
+          queryKey: ["space", spaceId, "bridge"],
+        });
         void queryClient.invalidateQueries({ queryKey: ["me", "bridges"] });
         onDeleted?.();
         onClose();

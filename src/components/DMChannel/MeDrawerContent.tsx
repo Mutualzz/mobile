@@ -8,11 +8,13 @@ import { Paper } from "@components/Paper";
 import { Screen } from "@components/Screen/Screen";
 import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { useAppStore } from "@hooks/useStores";
-import { Box } from "@mutualzz/ui-native";
+import { Box, useTheme } from "@mutualzz/ui-native";
+import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import { CubeIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { View } from "react-native";
 
 type Tab = "direct-messages" | "friends" | "bridges";
 type FriendsSubTab = FriendsTab | "add-friend";
@@ -22,7 +24,9 @@ export const MeDrawerContent = observer(() => {
   const { t } = useTranslation("chat");
   const { t: tSpace } = useTranslation("space");
   const { t: tSettings } = useTranslation("settings");
+  const { theme } = useTheme();
   const tabBarInset = useKeyboardChromeInset();
+  const unreadDotSize = useScaledSquareSize(8);
   const [tab, setTab] = useState<Tab>("direct-messages");
   const [friendsSubTab, setFriendsSubTab] = useState<FriendsSubTab>("online");
 
@@ -87,10 +91,20 @@ export const MeDrawerContent = observer(() => {
             variant={tab === "bridges" ? "soft" : "plain"}
             onPress={() => setTab("bridges")}
             startDecorator={<CubeIcon weight="fill" size={16} />}
+            endDecorator={
+              bridgesUnread && tab !== "bridges" ? (
+                <View
+                  style={{
+                    width: unreadDotSize,
+                    height: unreadDotSize,
+                    borderRadius: 9999,
+                    backgroundColor: theme.typography.colors.primary,
+                  }}
+                />
+              ) : undefined
+            }
           >
-            {bridgesUnread
-              ? `${tSettings("minecraftBridge.sidebarTitle")} ·`
-              : tSettings("minecraftBridge.sidebarTitle")}
+            {tSettings("minecraftBridge.sidebarTitle")}
           </Button>
         </Paper>
 

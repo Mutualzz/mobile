@@ -23,7 +23,6 @@ const SettingsLayout = () => {
             <Stack.Screen name="voice_and_video" />
             <Stack.Screen name="connections" />
             <Stack.Screen name="expressions" />
-            <Stack.Screen name="minecraft-bridge" />
             <Stack.Screen name="support" />
             <Stack.Screen name="support/[ticketId]" />
             <Stack.Screen name="avatar-editor" />

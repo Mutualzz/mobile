@@ -5,6 +5,8 @@ import type { AppStore } from "./App.store";
 import { Space } from "./objects/Space";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+export type SpaceSidebarTab = "channels" | "bridges";
+
 export class SpaceStore {
     private readonly spaces: ObservableMap<string, Space>;
 
@@ -12,6 +14,7 @@ export class SpaceStore {
     activeId?: Snowflake;
 
     mostRecentSpaceId?: string | null;
+    sidebarTabBySpace: Record<string, SpaceSidebarTab> = {};
 
     constructor(private readonly app: AppStore) {
         this.spaces = observable.map();
@@ -19,9 +22,17 @@ export class SpaceStore {
 
         makePersistable(this, {
             name: "SpaceStore",
-            properties: ["mostRecentSpaceId"],
+            properties: ["mostRecentSpaceId", "sidebarTabBySpace"],
             storage: AsyncStorage,
         });
+    }
+
+    getSidebarTab(spaceId: string): SpaceSidebarTab {
+        return this.sidebarTabBySpace[spaceId] ?? "channels";
+    }
+
+    setSidebarTab(spaceId: string, tab: SpaceSidebarTab) {
+        this.sidebarTabBySpace = { ...this.sidebarTabBySpace, [spaceId]: tab };
     }
 
     setActive(id?: string) {

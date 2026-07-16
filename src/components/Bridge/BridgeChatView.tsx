@@ -27,9 +27,10 @@ import {
 
 interface Props {
   bridgeId: string;
+  returnToSpaceId?: string;
 }
 
-export const BridgeChatView = observer(({ bridgeId }: Props) => {
+export const BridgeChatView = observer(({ bridgeId, returnToSpaceId }: Props) => {
   const { t } = useTranslation("settings");
   const { theme } = useTheme();
   const app = useAppStore();
@@ -199,6 +200,15 @@ export const BridgeChatView = observer(({ bridgeId }: Props) => {
         <IconButton
           accessibilityLabel="Back"
           onPress={() => {
+            const spaceId =
+              returnToSpaceId ?? bridgesQuery.data?.spaceId ?? undefined;
+            if (spaceId) {
+              app.spaces.setActive(spaceId);
+              app.spaces.setSidebarTab(spaceId, "bridges");
+              app.setSpacesDrawerOpen(true);
+              navigate(`/spaces/${spaceId}`);
+              return;
+            }
             app.setDMDrawerOpen(true);
             navigate("/@me");
           }}

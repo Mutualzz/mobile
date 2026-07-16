@@ -59,6 +59,7 @@ export class BridgeChatStore {
   entriesByBridge = observable.map<string, BridgeFeedEntry[]>();
   playersByBridge = observable.map<string, BridgeOnlinePlayer[]>();
   unreadByBridge = observable.map<string, BridgeUnreadState>();
+  spaceIdByBridge = observable.map<string, string>();
   sendQueue: QueuedSend[] = [];
   hasMoreByBridge = observable.map<string, boolean>();
 
@@ -81,6 +82,18 @@ export class BridgeChatStore {
   get hasAnyUnread(): boolean {
     for (const state of this.unreadByBridge.values()) {
       if (state.unread) return true;
+    }
+    return false;
+  }
+
+  hasUnreadForSpace(spaceId: string): boolean {
+    for (const [bridgeId, bridgeSpaceId] of this.spaceIdByBridge) {
+      if (
+        bridgeSpaceId === spaceId &&
+        this.unreadByBridge.get(bridgeId)?.unread
+      ) {
+        return true;
+      }
     }
     return false;
   }
@@ -168,6 +181,7 @@ export class BridgeChatStore {
     (
       bridges: {
         id: string;
+        spaceId?: string;
         lastMessageId?: string | null;
         lastAckedId?: string | null;
         unread?: boolean;
@@ -179,6 +193,9 @@ export class BridgeChatStore {
           lastAckedId: bridge.lastAckedId ?? null,
           unread: Boolean(bridge.unread),
         });
+        if (bridge.spaceId) {
+          this.spaceIdByBridge.set(bridge.id, bridge.spaceId);
+        }
       }
     },
   );
@@ -264,6 +281,7 @@ export class BridgeChatStore {
     this.playersByBridge.delete(bridgeId);
     this.hasMoreByBridge.delete(bridgeId);
     this.unreadByBridge.delete(bridgeId);
+    this.spaceIdByBridge.delete(bridgeId);
     this.sendQueue = this.sendQueue.filter((item) => item.bridgeId !== bridgeId);
   });
 
@@ -272,6 +290,7 @@ export class BridgeChatStore {
     this.playersByBridge.clear();
     this.hasMoreByBridge.clear();
     this.unreadByBridge.clear();
+    this.spaceIdByBridge.clear();
     this.sendQueue = [];
   });
 }

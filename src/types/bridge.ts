@@ -1,8 +1,9 @@
 export type BridgeSummary = {
   id: string;
   name: string;
+  spaceId?: string;
   status: number;
-  role?: "owner" | "member";
+  role?: "admin" | "member";
   createdAt?: string;
   hubConnected?: boolean;
   onlineCount?: number;
@@ -18,6 +19,7 @@ export type PluginConfig = {
 };
 
 export type BridgeDetail = BridgeSummary & {
+  spaceId?: string;
   hubConnected: boolean;
   connectedServers: string[];
   servers: {

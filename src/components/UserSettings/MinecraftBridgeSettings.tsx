@@ -34,7 +34,7 @@ type BridgeTab = "bridges" | "discord" | "voice" | "link";
 
 type BridgeMemberRow = {
   userId: string;
-  role: "owner" | "member";
+  role: "admin" | "member";
   username: string;
   globalName: string | null;
   avatar: string | null;
@@ -45,8 +45,20 @@ type BridgeMemberRow = {
 };
 const tabs: BridgeTab[] = ["bridges", "discord", "voice", "link"];
 
-const ChecklistItem = ({ done, label }: { done: boolean; label: string }) => (
-  <Box style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+const ChecklistItem = ({
+  done,
+  label,
+  onPress,
+}: {
+  done: boolean;
+  label: string;
+  onPress?: () => void;
+}) => (
+  <Pressable
+    disabled={done || !onPress}
+    onPress={onPress}
+    style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+  >
     {done ? (
       <CheckCircleIcon weight="fill" size={18} />
     ) : (
@@ -59,14 +71,15 @@ const ChecklistItem = ({ done, label }: { done: boolean; label: string }) => (
     >
       {label}
     </Typography>
-  </Box>
+  </Pressable>
 );
 
-export const MinecraftBridgeSettings = observer(() => {
+export const MinecraftBridgeSettings = observer(({ spaceId }: { spaceId: string }) => {
   const { t } = useTranslation("settings");
   const app = useAppStore();
   const queryClient = useQueryClient();
   const { openBottomSheet, closeBottomSheet } = useOpenBottomSheet();
+  const spaceBridgePath = `/spaces/${spaceId}/bridge`;
 
   const [currentTab, setCurrentTab] = useState<BridgeTab>("bridges");
   const [selectedBridgeId, setSelectedBridgeId] = useState<string | null>(null);
@@ -89,27 +102,33 @@ export const MinecraftBridgeSettings = observer(() => {
   >({});
 
   const bridgesQuery = useQuery({
-    queryKey: ["me", "bridges"],
-    queryFn: () => app.rest.get<BridgeSummary[]>("/@me/bridges"),
+    queryKey: ["space", spaceId, "bridge", "list"],
+    queryFn: async () => {
+      try {
+        const detail = await app.rest.get<BridgeDetail>(spaceBridgePath);
+        return [detail as BridgeSummary];
+      } catch {
+        return [] as BridgeSummary[];
+      }
+    },
     refetchInterval: currentTab === "link" ? 5_000 : false,
   });
 
   const detailQuery = useQuery({
-    queryKey: ["me", "bridges", selectedBridgeId],
-    enabled: !!selectedBridgeId,
-    queryFn: () =>
-      app.rest.get<BridgeDetail>(`/@me/bridges/${selectedBridgeId}`),
+    queryKey: ["space", spaceId, "bridge"],
+    enabled: (bridgesQuery.data?.length ?? 0) > 0,
+    queryFn: () => app.rest.get<BridgeDetail>(spaceBridgePath),
   });
 
   const membersQuery = useQuery({
-    queryKey: ["me", "bridges", selectedBridgeId, "members"],
+    queryKey: ["space", spaceId, "bridge", "members"],
     enabled:
       !!selectedBridgeId &&
       (bridgesQuery.data?.find((b) => b.id === selectedBridgeId)?.role ??
-        "owner") !== "member",
+        "admin") !== "member",
     queryFn: () =>
       app.rest.get<{ members: BridgeMemberRow[] }>(
-        `/@me/bridges/${selectedBridgeId}/members`,
+        `${spaceBridgePath}/members`,
       ),
     refetchInterval: 15_000,
   });
@@ -154,7 +173,7 @@ export const MinecraftBridgeSettings = observer(() => {
       return;
     openBottomSheet(
       "create-bridge",
-      <CreateBridgeSheet
+      <CreateBridgeSheet spaceId={spaceId}
         onClose={() => closeBottomSheet("create-bridge")}
         onCreated={handleBridgeCreated}
       />,
@@ -165,7 +184,7 @@ export const MinecraftBridgeSettings = observer(() => {
     mutationFn: () => {
       if (!selectedBridgeId) throw new Error("No bridge selected");
       return app.rest.post<{ token: string; pluginConfig: PluginConfig }>(
-        `/@me/bridges/${selectedBridgeId}/token`,
+        `${spaceBridgePath}/token`,
         { serverId: bindServerId.trim() || undefined },
       );
     },
@@ -182,11 +201,11 @@ export const MinecraftBridgeSettings = observer(() => {
   const renameMutation = useMutation({
     mutationFn: (name: string) => {
       if (!selectedBridgeId) throw new Error("No bridge selected");
-      return app.rest.patch(`/@me/bridges/${selectedBridgeId}`, { name });
+      return app.rest.patch(spaceBridgePath, { name });
     },
     onSuccess: () => {
       setError(null);
-      void queryClient.invalidateQueries({ queryKey: ["me", "bridges"] });
+      void queryClient.invalidateQueries({ queryKey: ["space", spaceId, "bridge"] });
       void queryClient.invalidateQueries({
         queryKey: ["me", "bridges", selectedBridgeId],
       });
@@ -204,7 +223,7 @@ export const MinecraftBridgeSettings = observer(() => {
     }) => {
       if (!selectedBridgeId) throw new Error("No bridge selected");
       return app.rest.patch(
-        `/@me/bridges/${selectedBridgeId}/servers/${encodeURIComponent(serverId)}`,
+        `${spaceBridgePath}/servers/${encodeURIComponent(serverId)}`,
         { displayName },
       );
     },
@@ -220,7 +239,7 @@ export const MinecraftBridgeSettings = observer(() => {
   const bindMutation = useMutation({
     mutationFn: () => {
       if (!selectedBridgeId) throw new Error("No bridge selected");
-      return app.rest.put(`/@me/bridges/${selectedBridgeId}/discord`, {
+      return app.rest.put(`${spaceBridgePath}/discord`, {
         serverId: bindServerId.trim(),
         guildId: guildId.trim(),
         channelId: channelId.trim(),
@@ -238,7 +257,7 @@ export const MinecraftBridgeSettings = observer(() => {
   const bindVoiceMutation = useMutation({
     mutationFn: () => {
       if (!selectedBridgeId) throw new Error("No bridge selected");
-      return app.rest.put(`/@me/bridges/${selectedBridgeId}/voice`, {
+      return app.rest.put(`${spaceBridgePath}/voice`, {
         serverId: bindServerId.trim(),
         name: voiceRoomName.trim() || "default",
         spaceId: voiceSpaceId.trim(),
@@ -258,7 +277,7 @@ export const MinecraftBridgeSettings = observer(() => {
     mutationFn: (bindingId: string) => {
       if (!selectedBridgeId) throw new Error("No bridge selected");
       return app.rest.delete(
-        `/@me/bridges/${selectedBridgeId}/discord/${bindingId}`,
+        `${spaceBridgePath}/discord/${bindingId}`,
       );
     },
     onSuccess: () => {
@@ -282,7 +301,7 @@ export const MinecraftBridgeSettings = observer(() => {
     mutationFn: (bindingId: string) => {
       if (!selectedBridgeId) throw new Error("No bridge selected");
       return app.rest.delete(
-        `/@me/bridges/${selectedBridgeId}/voice/${bindingId}`,
+        `${spaceBridgePath}/voice/${bindingId}`,
       );
     },
     onSuccess: () => {
@@ -329,7 +348,7 @@ export const MinecraftBridgeSettings = observer(() => {
       void queryClient.invalidateQueries({
         queryKey: ["me", "bridges", "link"],
       });
-      void queryClient.invalidateQueries({ queryKey: ["me", "bridges"] });
+      void queryClient.invalidateQueries({ queryKey: ["space", spaceId, "bridge"] });
       if ((data.joinedCount ?? 0) > 0) {
         Alert.alert(
           t("minecraftBridge.joinedBridges", { count: data.joinedCount }),
@@ -415,7 +434,7 @@ export const MinecraftBridgeSettings = observer(() => {
 
   const atBridgeLimit = bridges.filter((b) => b.role !== "member").length >= 5;
   const isOwner =
-    (detail?.role ?? selectedBridge?.role ?? "owner") !== "member";
+    (detail?.role ?? selectedBridge?.role ?? "admin") !== "member";
   const hasPluginConfig =
     isOwner && (!!freshConfig || (detail?.tokens.length ?? 0) > 0);
   const hasDiscord = isOwner && (detail?.discordBindings.length ?? 0) > 0;
@@ -495,22 +514,27 @@ export const MinecraftBridgeSettings = observer(() => {
             <ChecklistItem
               done={bridges.length > 0}
               label={t("minecraftBridge.checklist.bridge")}
+              onPress={() => setCurrentTab("bridges")}
             />
             <ChecklistItem
               done={hasPluginConfig}
               label={t("minecraftBridge.checklist.plugin")}
+              onPress={() => setCurrentTab("bridges")}
             />
             <ChecklistItem
               done={hasDiscord}
               label={t("minecraftBridge.checklist.discord")}
+              onPress={() => setCurrentTab("discord")}
             />
             <ChecklistItem
               done={hasVoice}
               label={t("minecraftBridge.checklist.voice")}
+              onPress={() => setCurrentTab("voice")}
             />
             <ChecklistItem
               done={hasLink}
               label={t("minecraftBridge.checklist.link")}
+              onPress={() => setCurrentTab("link")}
             />
           </Paper>
 
@@ -601,6 +625,7 @@ export const MinecraftBridgeSettings = observer(() => {
                     openBottomSheet(
                       "delete-bridge",
                       <DeleteBridgeSheet
+                        spaceId={spaceId}
                         bridgeId={selectedBridge.id}
                         bridgeName={selectedBridge.name}
                         onClose={() => closeBottomSheet("delete-bridge")}
@@ -747,7 +772,7 @@ export const MinecraftBridgeSettings = observer(() => {
                         <Typography level="body-sm" weight="bold">
                           {displayName}
                           {" · "}
-                          {member.role === "owner"
+                          {member.role === "admin"
                             ? t("minecraftBridge.roleOwner")
                             : t("minecraftBridge.roleMember")}
                         </Typography>
@@ -769,7 +794,7 @@ export const MinecraftBridgeSettings = observer(() => {
                             openBottomSheet(
                               "kick-bridge-member",
                               <KickBridgeMemberSheet
-                                bridgeId={selectedBridge.id}
+                                spaceId={spaceId}
                                 userId={member.userId}
                                 displayName={displayName}
                                 onClose={() =>
@@ -799,7 +824,7 @@ export const MinecraftBridgeSettings = observer(() => {
               elevation={cardElevation}
             >
               <Typography level="body-sm" textColor="muted">
-                {t("minecraftBridge.ownerOnlySettings")}
+                {t("minecraftBridge.adminOnlySettings")}
               </Typography>
               <Button
                 size="sm"
@@ -847,7 +872,7 @@ export const MinecraftBridgeSettings = observer(() => {
               elevation={cardElevation}
             >
               <Typography level="body-sm" textColor="muted">
-                {t("minecraftBridge.ownerOnlySettings")}
+                {t("minecraftBridge.adminOnlySettings")}
               </Typography>
             </Paper>
           ) : (
@@ -1063,7 +1088,7 @@ export const MinecraftBridgeSettings = observer(() => {
             </Typography>
           ) : !isOwner ? (
             <Typography level="body-sm" textColor="muted">
-              {t("minecraftBridge.ownerOnlySettings")}
+              {t("minecraftBridge.adminOnlySettings")}
             </Typography>
           ) : (
             <>

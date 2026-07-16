@@ -7,14 +7,14 @@ import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
 interface Props {
-  bridgeId: string;
+  spaceId: string;
   userId: string;
   displayName: string;
   onClose: () => void;
 }
 
 export const KickBridgeMemberSheet = observer(
-  ({ bridgeId, userId, displayName, onClose }: Props) => {
+  ({ spaceId, userId, displayName, onClose }: Props) => {
     const { t } = useTranslation("settings");
     const { t: tCommon } = useTranslation("common");
     const app = useAppStore();
@@ -22,10 +22,10 @@ export const KickBridgeMemberSheet = observer(
 
     const { mutate, isPending } = useMutation({
       mutationFn: () =>
-        app.rest.delete(`/@me/bridges/${bridgeId}/members/${userId}`),
+        app.rest.delete(`/spaces/${spaceId}/bridge/members/${userId}`),
       onSuccess: () => {
         void queryClient.invalidateQueries({
-          queryKey: ["me", "bridges", bridgeId, "members"],
+          queryKey: ["space", spaceId, "bridge"],
         });
         onClose();
       },
