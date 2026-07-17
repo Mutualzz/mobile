@@ -1,6 +1,7 @@
 import {
   baseDarkTheme,
   baseLightTheme,
+  extractPrimaryFontFamily,
   type ThemeStyle,
   type ThemeType,
 } from "@mutualzz/ui-core";
@@ -10,7 +11,6 @@ import { type IObservableArray, makeAutoObservable, observable } from "mobx";
 import { Theme } from "@stores/objects/Theme";
 import { applyAdaptiveThemeValues } from "@utils/adaptation";
 import { ensureAppFont } from "@utils/fonts/appFontLoader";
-import { extractPrimaryFontFamily } from "@mutualzz/ui-core";
 import { Appearance } from "react-native";
 
 type ApiErrors = Record<string, string>;
@@ -22,6 +22,12 @@ export type ThemeCreatorLoadedType = "default" | "draft" | "custom";
 
 export type ThemeCreatorFilter = ThemeType | ThemeStyle | "adaptive";
 
+export type PendingBackgroundFile = {
+  uri: string;
+  name: string;
+  type: string;
+};
+
 export class ThemeCreatorStore {
   currentCategory: ThemeCreatorCategory = "general";
   currentPage: ThemeCreatorPage = "details";
@@ -32,6 +38,11 @@ export class ThemeCreatorStore {
   loadedType: ThemeCreatorLoadedType = "default";
   errors: ApiErrors = {};
   userInteracted = false;
+  spaceId: string | null = null;
+  pendingBackgroundFile: PendingBackgroundFile | null = null;
+  pendingBackgroundPreviewUrl: string | null = null;
+  clearBackgroundImage = false;
+  previewChangeTheme: ((theme: MzTheme) => void) | null = null;
   private readonly prefersDark: boolean;
 
   constructor() {
@@ -48,7 +59,9 @@ export class ThemeCreatorStore {
 
     makeAutoObservable(
       this,
-      {},
+      {
+        previewChangeTheme: false,
+      },
       {
         autoBind: true,
       },
@@ -57,6 +70,47 @@ export class ThemeCreatorStore {
 
   get nameEmpty() {
     return this.values.name.trim() === "";
+  }
+
+  get previewBackgroundImageUrl() {
+    if (this.clearBackgroundImage) return null;
+    if (this.pendingBackgroundPreviewUrl)
+      return this.pendingBackgroundPreviewUrl;
+    if (this.values.id) {
+      return Theme.resolveBackgroundImageUrl(
+        this.values.id,
+        this.values.backgroundImage,
+      );
+    }
+    return null;
+  }
+
+  buildPreviewEmotion() {
+    let previewThemeValues = this.values;
+
+    if (this.values.adaptive) {
+      previewThemeValues = Theme.serialize(
+        applyAdaptiveThemeValues(this.values),
+      );
+    }
+
+    const emotion = Theme.toEmotion(previewThemeValues);
+    const backgroundImageUrl = this.clearBackgroundImage
+      ? null
+      : (this.pendingBackgroundPreviewUrl ?? emotion.backgroundImageUrl);
+
+    return {
+      ...emotion,
+      backgroundImage: this.clearBackgroundImage
+        ? null
+        : emotion.backgroundImage,
+      backgroundImageUrl,
+    };
+  }
+
+  applyPreview() {
+    if (!this.inPreview || !this.previewChangeTheme) return;
+    this.previewChangeTheme(this.buildPreviewEmotion());
   }
 
   setCurrentCategory(category: ThemeCreatorCategory) {
@@ -77,6 +131,7 @@ export class ThemeCreatorStore {
     if (!this.userInteracted) this.userInteracted = true;
     if (this.loadedType === "default") this.loadedType = "custom";
     this.errors = {};
+    this.applyPreview();
   }
 
   resetToBaseTheme() {
@@ -94,9 +149,11 @@ export class ThemeCreatorStore {
     this.errors = {};
     this.currentPage = "details";
     this.currentCategory = "general";
+    this.clearPendingBackground();
   }
 
   loadValues(theme: APITheme) {
+    this.clearPendingBackground();
     if (this.loadedType === "default") {
       this.values = Theme.serialize({
         ...this.values,
@@ -115,6 +172,9 @@ export class ThemeCreatorStore {
 
   resetValues() {
     this.resetToBaseTheme();
+    this.themeBeforePreview = null;
+    this.inPreview = false;
+    this.previewChangeTheme = null;
   }
 
   addFilter(filter: ThemeCreatorFilter) {
@@ -151,6 +211,32 @@ export class ThemeCreatorStore {
     this.loadedType = type;
   }
 
+  setSpaceId(spaceId: string | null) {
+    this.spaceId = spaceId;
+  }
+
+  setPendingBackgroundFile(file: PendingBackgroundFile | null) {
+    this.pendingBackgroundFile = file;
+    this.pendingBackgroundPreviewUrl = file?.uri ?? null;
+    this.clearBackgroundImage = false;
+    if (!this.userInteracted) this.userInteracted = true;
+    this.applyPreview();
+  }
+
+  markClearBackgroundImage() {
+    this.pendingBackgroundFile = null;
+    this.pendingBackgroundPreviewUrl = null;
+    this.clearBackgroundImage = true;
+    if (!this.userInteracted) this.userInteracted = true;
+    this.applyPreview();
+  }
+
+  clearPendingBackground() {
+    this.pendingBackgroundFile = null;
+    this.pendingBackgroundPreviewUrl = null;
+    this.clearBackgroundImage = false;
+  }
+
   startPreview(
     changeTheme: (theme: MzTheme) => void,
     currentThemeValues?: APITheme,
@@ -158,40 +244,34 @@ export class ThemeCreatorStore {
   ) {
     if (this.inPreview) return;
 
-    let previewThemeValues = this.values;
-
-    if (this.values.adaptive) {
-      previewThemeValues = Theme.serialize(
-        applyAdaptiveThemeValues(this.values),
-      );
-    }
-
     if (!this.themeBeforePreview && currentThemeValues) {
       this.themeBeforePreview = Theme.serialize(currentThemeValues);
     }
 
+    this.previewChangeTheme = this.spaceId ? null : changeTheme;
+    this.inPreview = true;
+
     const fontFamily =
-      extractPrimaryFontFamily(previewThemeValues.typography.fontFamily) ??
-      previewThemeValues.typography.fontFamily;
+      extractPrimaryFontFamily(this.values.typography.fontFamily) ??
+      this.values.typography.fontFamily;
 
     void ensureAppFont(
       fontFamily,
-      ownerUserId ?? previewThemeValues.authorId,
+      ownerUserId ?? this.values.authorId,
     ).finally(() => {
-      changeTheme(Theme.toEmotion(previewThemeValues));
-      this.inPreview = true;
+      this.applyPreview();
     });
   }
 
   stopPreview(changeTheme: (theme: MzTheme) => void) {
     if (!this.inPreview) return;
 
-    if (this.themeBeforePreview) {
+    if (this.themeBeforePreview && !this.spaceId) {
       changeTheme(Theme.toEmotion(this.themeBeforePreview));
     }
 
     this.themeBeforePreview = null;
     this.inPreview = false;
+    this.previewChangeTheme = null;
   }
 }
-

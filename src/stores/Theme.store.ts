@@ -40,7 +40,7 @@ export class ThemeStore {
 
   reset() {
     this.themes.forEach((theme) => {
-      if (theme.author) this.themes.delete(theme.id);
+      if (theme.author || theme.spaceId) this.themes.delete(theme.id);
     });
   }
 

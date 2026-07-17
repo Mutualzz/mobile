@@ -165,8 +165,12 @@ export const ChannelList = observer(() => {
 
   if (!space) return null;
 
+  const hasWallpaper = Boolean(theme.backgroundImageUrl);
+
   return (
     <Screen
+      surfaceRole={hasWallpaper ? "chrome" : undefined}
+      elevation={hasWallpaper ? 0 : undefined}
       style={{
         flexDirection: "column",
         width: "100%",
@@ -178,11 +182,13 @@ export const ChannelList = observer(() => {
       }}
     >
       <ScreenHeader
+        elevation={hasWallpaper ? 0 : undefined}
         style={{
           justifyContent: "space-between",
           borderLeftWidth: 0,
           borderRightWidth: 0,
           borderTopWidth: 0,
+          ...(hasWallpaper ? { backgroundColor: "transparent" } : null),
         }}
       >
         <Pressable

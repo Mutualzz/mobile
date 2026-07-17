@@ -5,6 +5,7 @@ import {
     CubeIcon,
     GavelIcon,
     HashIcon,
+    PaletteIcon,
     PaperPlaneTiltIcon,
     PencilSimpleIcon,
     SmileyIcon,
@@ -13,6 +14,7 @@ import {
 
 export type SpaceSettingsPage =
     | "profile"
+    | "theme"
     | "channels"
     | "invites"
     | "roles"
@@ -36,6 +38,11 @@ export const spaceSettingsPages: Record<
         {
             label: "profile",
             Icon: PencilSimpleIcon,
+            permissions: ["ManageSpace"],
+        },
+        {
+            label: "theme",
+            Icon: PaletteIcon,
             permissions: ["ManageSpace"],
         },
         {

@@ -10,9 +10,14 @@ interface Props extends PropsWithChildren {
 
 export function ComposerFooter({ channelId, children }: Props) {
   const { theme } = useTheme();
+  const hasWallpaper = Boolean(theme.backgroundImageUrl);
 
   return (
-    <View style={{ backgroundColor: theme.colors.surface }}>
+    <View
+      style={{
+        backgroundColor: hasWallpaper ? "transparent" : theme.colors.surface,
+      }}
+    >
       <TypingIndicator channelId={channelId} />
       {children}
     </View>

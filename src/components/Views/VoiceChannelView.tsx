@@ -62,12 +62,20 @@ export const VoiceChannelView = observer(({ channel }: Props) => {
 
   return (
     <>
-      <Screen style={{ flexDirection: "column", borderWidth: 0 }}>
+      <Screen
+        surfaceRole={theme.backgroundImageUrl ? "content" : undefined}
+        elevation={theme.backgroundImageUrl ? 0 : undefined}
+        style={{ flexDirection: "column", borderWidth: 0 }}
+      >
         <ScreenHeader
+          elevation={theme.backgroundImageUrl ? 0 : undefined}
           style={{
             borderLeftWidth: 0,
             borderRightWidth: 0,
             borderTopWidth: 0,
+            ...(theme.backgroundImageUrl
+              ? { backgroundColor: "transparent" }
+              : null),
           }}
         >
           <Pressable hitSlop={8} onPress={() => app.setSpacesDrawerOpen(true)}>

@@ -47,10 +47,14 @@ export const ThemeCreatorManagePage = observer(
 
     const themes = themeCreator.filter(
       loadedType === "custom"
-        ? app.themes.all.filter((t) => t.authorId)
+        ? app.themes.all.filter((t) =>
+            themeCreator.spaceId
+              ? t.spaceId === themeCreator.spaceId
+              : !!t.authorId && !t.spaceId,
+          )
         : loadedType === "draft"
           ? app.drafts.themes.map((draft) => new Theme(app, draft))
-          : app.themes.all.filter((t) => !t.author),
+          : app.themes.all.filter((t) => !t.author && !t.spaceId),
     );
     const sortedThemes = sortThemes(themes);
 

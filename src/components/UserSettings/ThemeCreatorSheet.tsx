@@ -44,7 +44,10 @@ export const ThemeCreatorSheet = observer(
 
   const { values, currentPage, userInteracted, loadedType, nameEmpty } =
     themeCreator;
-  const ownedByUser = !!values.id && app.account?.id === values.authorId;
+  const ownedByUser =
+    !!values.id &&
+    (app.account?.id === values.authorId ||
+      (!!themeCreator.spaceId && values.spaceId === themeCreator.spaceId));
   const existingDraft = app.drafts.existsThemeDraft(values);
 
   const handlePreview = (enabled: boolean) => {
@@ -80,25 +83,87 @@ export const ThemeCreatorSheet = observer(
     }
   };
 
+  const syncBackground = async (themeId: string) => {
+    const spaceId = themeCreator.spaceId;
+    const base = spaceId
+      ? `/spaces/${spaceId}/themes/${themeId}/background`
+      : `@me/themes/${themeId}/background`;
+
+    if (themeCreator.pendingBackgroundFile) {
+      const formData = new FormData();
+      formData.append(
+        "backgroundImage",
+        themeCreator.pendingBackgroundFile as unknown as Blob,
+      );
+      const updated = await app.rest.putFormData<APITheme>(base, formData);
+      app.themes.add(updated);
+      themeCreator.clearPendingBackground();
+      return updated;
+    }
+
+    if (themeCreator.clearBackgroundImage) {
+      const updated = await app.rest.delete<APITheme>(base);
+      app.themes.add(updated);
+      themeCreator.clearPendingBackground();
+      return updated;
+    }
+
+    return null;
+  };
+
   const { mutate: publishTheme, isPending: publishing } = useMutation({
-    mutationKey: ["theme-creator-publish", values.name],
+    mutationKey: [
+      "theme-creator-publish",
+      values.name,
+      themeCreator.spaceId,
+    ],
     mutationFn: async () => {
-      let payload = { ...values, id: Snowflake.generate() };
-      if (values.adaptive) {
-        payload = {
-          ...applyAdaptiveThemeValues(values),
-          id: Snowflake.generate()};
+      const base = values.adaptive
+        ? applyAdaptiveThemeValues(values)
+        : values;
+      const payload = {
+        ...Theme.serialize(base),
+        id: Snowflake.generate(),
+      };
+
+      const spaceId = themeCreator.spaceId;
+      let created: APITheme;
+      if (spaceId) {
+        created = await app.rest.post<APITheme, APITheme>(
+          `/spaces/${spaceId}/themes`,
+          payload,
+        );
+      } else {
+        created = await app.rest.post<APITheme, APITheme>(
+          "@me/themes",
+          payload,
+        );
       }
-      return app.rest.post<APITheme, APITheme>("@me/themes", payload);
+
+      const withBackground = await syncBackground(created.id);
+      return withBackground ?? created;
     },
-    onSuccess: (created) => {
+    onSuccess: async (created) => {
       if (!created) return;
       const newTheme = app.themes.add(created);
-      changeTheme(Theme.toEmotion(newTheme));
-      app.settings?.setCurrentTheme(newTheme.id);
-      app.themes.setCurrentTheme(newTheme.id);
-      app.themes.setCurrentType(newTheme.type);
-      void app.settings?.sync();
+
+      const spaceId = themeCreator.spaceId;
+      if (spaceId) {
+        const space = app.spaces.get(spaceId);
+        if (space) {
+          const formData = new FormData();
+          formData.append("themeId", newTheme.id);
+          await app.rest.patchFormData(`/spaces/${spaceId}`, formData);
+          space.themeId = newTheme.id;
+          space.theme = Theme.serialize(newTheme);
+        }
+      } else {
+        changeTheme(Theme.toEmotion(newTheme));
+        app.settings?.setCurrentTheme(newTheme.id);
+        app.themes.setCurrentTheme(newTheme.id);
+        app.themes.setCurrentType(newTheme.type);
+        void app.settings?.sync();
+      }
 
       themeCreator.setErrors({});
       themeCreator.setLoadedType("custom");
@@ -106,42 +171,89 @@ export const ThemeCreatorSheet = observer(
       themeCreator.stopPreview(changeTheme);
       setError(null);
     },
-    onError: (e) => handleApiError(e, t("themeCreator.errors.publishFailed"))});
+    onError: (e) => handleApiError(e, t("themeCreator.errors.publishFailed")),
+  });
 
   const { mutate: updateTheme, isPending: updating } = useMutation({
-    mutationKey: ["theme-creator-update", values.id],
+    mutationKey: ["theme-creator-update", values.id, themeCreator.spaceId],
     mutationFn: async () => {
-      const payload = values.adaptive
-        ? applyAdaptiveThemeValues(values)
-        : values;
-      return app.rest.patch<APITheme, APITheme>(
-        `@me/themes/${values.id}`,
-        payload,
+      const payload = Theme.serialize(
+        values.adaptive ? applyAdaptiveThemeValues(values) : values,
       );
+
+      const spaceId = themeCreator.spaceId;
+      let updated: APITheme;
+      if (spaceId) {
+        updated = await app.rest.patch<APITheme, APITheme>(
+          `/spaces/${spaceId}/themes/${values.id}`,
+          payload,
+        );
+      } else {
+        updated = await app.rest.patch<APITheme, APITheme>(
+          `@me/themes/${values.id}`,
+          payload,
+        );
+      }
+
+      const withBackground = await syncBackground(updated.id);
+      return withBackground ?? updated;
     },
     onSuccess: (updated) => {
       if (!updated) return;
       app.themes.update(updated);
-      if (app.settings?.currentTheme === updated.id)
+
+      const spaceId = themeCreator.spaceId;
+      if (spaceId) {
+        const space = app.spaces.get(spaceId);
+        if (space?.themeId === updated.id) {
+          space.theme = updated;
+        }
+      } else if (app.settings?.currentTheme === updated.id) {
         changeTheme(Theme.toEmotion(updated));
+      }
+
       themeCreator.setErrors({});
+      themeCreator.loadValues(updated);
       setError(null);
     },
-    onError: (e) => handleApiError(e, t("themeCreator.errors.updateFailed"))});
+    onError: (e) => handleApiError(e, t("themeCreator.errors.updateFailed")),
+  });
 
   const { mutate: deleteTheme, isPending: deleting } = useMutation({
-    mutationKey: ["theme-creator-delete", values.id],
+    mutationKey: ["theme-creator-delete", values.id, themeCreator.spaceId],
     mutationFn: async () => {
       if (!values.id) return null;
+
+      const spaceId = themeCreator.spaceId;
+      if (spaceId) {
+        return app.rest.delete<{ id: string }>(
+          `/spaces/${spaceId}/themes/${values.id}`,
+        );
+      }
+
       return app.rest.delete<{ id: string }>(`@me/themes/${values.id}`);
     },
     onSuccess: (result) => {
       if (!result) return;
 
       const deletingCurrent = activeTheme.id === result.id;
+      const spaceId = themeCreator.spaceId;
+
       app.themes.remove(result.id);
 
-      const remainingCustom = app.themes.all.filter((t) => t.authorId);
+      if (spaceId) {
+        const space = app.spaces.get(spaceId);
+        if (space?.themeId === result.id) {
+          space.themeId = null;
+          space.theme = null;
+        }
+        themeCreator.resetToBaseTheme();
+        return;
+      }
+
+      const remainingCustom = app.themes.all.filter(
+        (t) => t.authorId && !t.spaceId,
+      );
       const fallback = prefersDark ? baseDarkTheme : baseLightTheme;
 
       if (remainingCustom.length === 0) {
@@ -153,9 +265,11 @@ export const ThemeCreatorSheet = observer(
         app.themes.setCurrentTheme(fallback.id);
         changeTheme(Theme.toEmotion(fallback));
       }
-    },
-    onError: (e) => handleApiError(e, t("themeCreator.errors.deleteFailed"))});
 
+      themeCreator.resetToBaseTheme();
+    },
+    onError: (e) => handleApiError(e, t("themeCreator.errors.deleteFailed")),
+  });
   const handleSaveDraft = () => {
     if (existingDraft) app.drafts.updateThemeDraft(values);
     else app.drafts.saveThemeDraft(values);

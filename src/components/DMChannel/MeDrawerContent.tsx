@@ -51,6 +51,8 @@ export const MeDrawerContent = observer(() => {
 
   return (
     <Screen
+      surfaceRole={theme.backgroundImageUrl ? "chrome" : undefined}
+      elevation={theme.backgroundImageUrl ? 0 : undefined}
       style={{
         flexDirection: "column",
         borderTopLeftRadius: 8,
