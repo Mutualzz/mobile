@@ -111,6 +111,7 @@ export const EmojiAutocomplete = observer(
 
     return (
       <Paper
+        surfaceRole="popout"
         elevation={4}
         style={{
           position: "absolute",

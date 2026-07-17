@@ -186,7 +186,7 @@ const ThemeSwatchFill = ({ stops }: { stops: ThemeSwatchStop[] }) => (
   </View>
 );
 
-const ThemeSwatch = ({
+export const ThemeSwatch = ({
   stops,
   selected,
   onPress,
@@ -336,7 +336,7 @@ const IconSwatch = ({
   );
 };
 
-const ThemeGrid = ({
+export const ThemeGrid = ({
   themes,
   isSelected,
   onSelect,
@@ -373,7 +373,7 @@ const ThemeGrid = ({
   </Box>
 );
 
-const SectionHeader = ({ title }: { title: string }) => (
+export const SectionHeader = ({ title }: { title: string }) => (
   <Divider lineColor="muted" style={{ marginTop: 8, marginBottom: 4 }}>
     <Typography level="body-sm" weight={700}>
       {title}
@@ -422,6 +422,7 @@ export const AppAppearanceSettings = observer(() => {
   };
 
   const openThemeCreator = () => {
+    app.themeCreator.setSpaceId(null);
     openSheet(
       "theme-creator",
       <ThemeCreatorSheet
@@ -448,7 +449,9 @@ export const AppAppearanceSettings = observer(() => {
     (theme) => theme.style === "gradient",
   );
 
-  const userThemes = app.themes.all.filter((theme) => theme.author);
+  const userThemes = app.themes.all.filter(
+    (theme) => theme.author && !theme.spaceId,
+  );
 
   const isThemeSelected = (theme: StoreTheme | typeof baseDarkTheme) =>
     theme.id === currentTheme.id && currentType === theme.type;

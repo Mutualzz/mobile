@@ -558,14 +558,18 @@ export const MessageInput = observer(({ channel }: Props) => {
     [triggerTyping],
   );
 
+  const hasWallpaper = Boolean(theme.backgroundImageUrl);
+  const composerElevation = app.settings?.preferEmbossed ? 3 : 0;
+
   return (
     <Paper
-      elevation={app.settings?.preferEmbossed ? 3 : 0}
+      surfaceRole={hasWallpaper ? "composer" : undefined}
+      elevation={hasWallpaper ? 0 : composerElevation}
       transparency={0}
       style={{
         flexShrink: 0,
         flexGrow: 0,
-        backgroundColor: theme.colors.surface,
+        ...(hasWallpaper ? null : { backgroundColor: theme.colors.surface }),
         paddingHorizontal: 12,
         paddingBottom: composerBottomPadding,
         paddingTop: editingMessage ? 0 : 12,
@@ -578,7 +582,8 @@ export const MessageInput = observer(({ channel }: Props) => {
     >
       {app.replyingTo && !editingMessage && (
         <Paper
-          elevation={app.settings?.preferEmbossed ? 3 : 0}
+          surfaceRole={hasWallpaper ? "card" : undefined}
+          elevation={hasWallpaper ? 0 : composerElevation}
           style={{
             flexDirection: "row",
             alignItems: "center",

@@ -16,14 +16,16 @@ struct VoiceChannelLiveActivityWidget: Widget {
     } dynamicIsland: { context in
       DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
-          VoiceChannelSpaceIcon(state: context.state, size: 36)
+          VoiceChannelIdentityView(state: context.state)
+            .frame(width: 172, alignment: .leading)
+            .padding(.top, -6)
         }
         DynamicIslandExpandedRegion(.center) {
-          VoiceChannelTitleStack(state: context.state)
-            .frame(maxWidth: .infinity, alignment: .leading)
+          EmptyView()
         }
         DynamicIslandExpandedRegion(.trailing) {
           VoiceChannelControlsView(state: context.state)
+            .padding(.top, -4)
         }
         DynamicIslandExpandedRegion(.bottom) {
           Button(intent: VoiceDisconnectIntent()) {

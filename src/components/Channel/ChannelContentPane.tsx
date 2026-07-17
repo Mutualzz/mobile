@@ -61,8 +61,12 @@ export const ChannelContentPane = observer(() => {
         return <VoiceChannelView channel={channel} />;
     }
 
+    const hasWallpaper = Boolean(theme.backgroundImageUrl);
+
     return (
         <Screen
+            surfaceRole={hasWallpaper ? "content" : undefined}
+            elevation={hasWallpaper ? 0 : undefined}
             style={{
                 flex: 1,
                 flexDirection: "column",
@@ -73,11 +77,13 @@ export const ChannelContentPane = observer(() => {
             }}
         >
             <ScreenHeader
+                elevation={hasWallpaper ? 0 : undefined}
                 style={{
                     zIndex: 1,
                     borderTopWidth: 0,
                     borderLeftWidth: 0,
                     borderRightWidth: 0,
+                    ...(hasWallpaper ? { backgroundColor: "transparent" } : null),
                 }}
             >
                 <Pressable

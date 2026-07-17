@@ -2,6 +2,7 @@ import type {
   APIExpression,
   APISpaceBan,
   APISpaceMember,
+  APITheme,
   Snowflake,
   SpaceIconFormat,
 } from "@mutualzz/types";
@@ -38,6 +39,8 @@ export class Space {
   name: string;
   description?: string | null = null;
   icon?: string | null = null;
+  themeId?: string | null = null;
+  theme?: APITheme | null = null;
   createdAt: Date;
   updatedAt: Date;
 
@@ -66,6 +69,10 @@ export class Space {
     this.name = space.name;
     this.description = space.description;
     this.icon = space.icon;
+    this.themeId = space.themeId ?? null;
+    this.theme = space.theme ?? null;
+
+    if (space.theme) this.app.themes.add(space.theme);
 
     this.members = new SpaceMemberStore(this.app, this);
     this.roles = new SpaceRoleStore(this.app, this);
@@ -277,6 +284,10 @@ export class Space {
     this.name = space.name;
     this.description = space.description;
     this.icon = space.icon;
+    this.themeId = space.themeId ?? null;
+    this.theme = space.theme ?? null;
+
+    if (space.theme) this.app.themes.add(space.theme);
 
     this.ownerId = space.ownerId;
     if (space.owner) this._owner = this.app.users.add(space.owner);

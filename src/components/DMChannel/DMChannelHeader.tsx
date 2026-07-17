@@ -53,11 +53,15 @@ export function DMChannelHeader({
   return (
     <ScreenHeader
       safeHorizontal={false}
+      elevation={theme.backgroundImageUrl ? 0 : undefined}
       style={{
         paddingHorizontal: 12,
         borderTopWidth: 0,
         borderLeftWidth: 0,
         borderRightWidth: 0,
+        ...(theme.backgroundImageUrl
+          ? { backgroundColor: "transparent" }
+          : null),
       }}
     >
       <Pressable hitSlop={8} onPress={onBack}>

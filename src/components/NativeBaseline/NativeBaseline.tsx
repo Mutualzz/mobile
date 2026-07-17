@@ -1,4 +1,10 @@
-import { dynamicElevation, extractGradientInfo } from "@mutualzz/ui-core";
+import {
+  dynamicElevation,
+  extractGradientInfo,
+  resolveWallpaperDimOverlay,
+  resolveWallpaperScrim,
+  resolveWallpaperSettings,
+} from "@mutualzz/ui-core";
 import {
   Canvas,
   Rect,
@@ -6,7 +12,12 @@ import {
   vec,
 } from "@shopify/react-native-skia";
 import { useMemo } from "react";
-import { StyleSheet, useWindowDimensions } from "react-native";
+import {
+  ImageBackground,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { observer } from "mobx-react-lite";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -27,8 +38,12 @@ const styles = StyleSheet.create({
 const NativeBaseline = observer(({ children }: NativeBaselineProps) => {
   const app = useAppStore();
   const { theme } = useTheme();
-
   const { width, height } = useWindowDimensions();
+  const backgroundImageUrl = theme.backgroundImageUrl;
+  const settings = useMemo(
+    () => resolveWallpaperSettings(theme),
+    [theme.wallpaper, theme.type, theme.colors.background, theme.colors.surface],
+  );
 
   const bg = useMemo(() => theme.colors.background, [theme.colors.background]);
 
@@ -57,6 +72,42 @@ const NativeBaseline = observer(({ children }: NativeBaselineProps) => {
       ),
     };
   }, [gradient, portraitStretch]);
+
+  if (backgroundImageUrl) {
+    return (
+      <GestureHandlerRootView style={styles.fill}>
+        <ImageBackground
+          source={{ uri: backgroundImageUrl }}
+          style={[styles.container, styles.fill]}
+          resizeMode="cover"
+          imageStyle={{
+            opacity: Math.min(Math.max(settings.brightness / 100, 0.2), 1),
+          }}
+        >
+          <View
+            style={[
+              styles.fill,
+              { backgroundColor: resolveWallpaperDimOverlay(theme) },
+            ]}
+          >
+            <View
+              style={[
+                styles.fill,
+                { backgroundColor: resolveWallpaperScrim(theme) },
+              ]}
+            >
+              <SafeAreaView
+                edges={["top", "left", "right"]}
+                style={styles.fill}
+              >
+                {children}
+              </SafeAreaView>
+            </View>
+          </View>
+        </ImageBackground>
+      </GestureHandlerRootView>
+    );
+  }
 
   if (!gradient) {
     return (

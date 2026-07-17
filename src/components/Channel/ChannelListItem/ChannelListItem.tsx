@@ -106,6 +106,9 @@ export const ChannelListItem = observer(
           key={channel.id}
           color={props.color}
           variant={active ? "soft" : "plain"}
+          surfaceRole={
+            active && theme.backgroundImageUrl ? "card" : undefined
+          }
           {...props}
           elevation={0}
           transparency={0}

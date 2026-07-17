@@ -1,9 +1,10 @@
 import { ListSection } from "@components/ListSection";
 import { MemberListItem } from "@components/MemberList/MemberListItem";
+import { Paper } from "@components/Paper";
 import { ScreenHeader } from "@components/Screen/Screen";
 import { IconButton } from "@components/IconButton";
 import { useAppStore } from "@hooks/useStores";
-import { Sheet, Typography } from "@mutualzz/ui-native";
+import { Sheet, Typography, useTheme } from "@mutualzz/ui-native";
 import { XIcon } from "phosphor-react-native";
 import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
@@ -28,6 +29,8 @@ export const MemberListSheet = observer(
   ({ channel, visible, onClose }: Props) => {
     const { t } = useTranslation("chat");
     const app = useAppStore();
+    const { theme } = useTheme();
+    const hasWallpaper = Boolean(theme.backgroundImageUrl);
     const space = channel.spaceId ? app.spaces.get(channel.spaceId) : null;
     const store = space?.memberLists.get(channel.listId);
     const sections = store?.list ?? [];
@@ -97,7 +100,12 @@ export const MemberListSheet = observer(
         enableDynamicSizing={false}
       >
         <View style={{ flex: 1, width: "100%", minHeight: 0 }}>
-          <ScreenHeader>
+          <Paper
+            surfaceRole={hasWallpaper ? "chrome" : undefined}
+            elevation={hasWallpaper ? 0 : undefined}
+            style={{ flex: 1, width: "100%", minHeight: 0 }}
+          >
+          <ScreenHeader elevation={hasWallpaper ? 0 : undefined}>
             <Typography level="body-md" weight="bold" style={{ flex: 1 }}>
               {t("groupDm.membersCount", {
                 value: memberCount || loadedCount,
@@ -180,6 +188,7 @@ export const MemberListSheet = observer(
               )}
             </ScrollView>
           )}
+          </Paper>
         </View>
       </Sheet>
     );

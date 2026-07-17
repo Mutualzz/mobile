@@ -40,6 +40,7 @@ const EmptyDMState = () => {
 
 export const DMContentPane = observer(() => {
   const app = useAppStore();
+  const { theme } = useTheme();
   const composerVisible = useScreenComposer();
   const [addRecipientOpen, setAddRecipientOpen] = useState(false);
   const [manageGroupOpen, setManageGroupOpen] = useState(false);
@@ -59,9 +60,14 @@ export const DMContentPane = observer(() => {
   if (!channel) return <EmptyDMState />;
 
   const dmRecipient = channel.dmRecipient;
+  const hasWallpaper = Boolean(theme.backgroundImageUrl);
 
   return (
-    <Screen style={{ flex: 1, flexDirection: "column", borderWidth: 0 }}>
+    <Screen
+      surfaceRole={hasWallpaper ? "content" : undefined}
+      elevation={hasWallpaper ? 0 : undefined}
+      style={{ flex: 1, flexDirection: "column", borderWidth: 0 }}
+    >
       <DMChannelHeader
         channel={channel}
         onBack={() => app.setDMDrawerOpen(true)}
