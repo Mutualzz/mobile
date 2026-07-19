@@ -1,166 +1,173 @@
+import { HeadphonesOffIcon } from "@components/icons/HeadphonesOffIcon";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppStore } from "@hooks/useStores";
+import { dynamicElevation, formatColor } from "@mutualzz/ui-core";
+import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { VoiceState } from "@stores/objects/VoiceState";
-import type { Space } from "@stores/objects/Space";
-import { Box, IconButton, Slider, Typography, useTheme } from "@mutualzz/ui-native";
-import {
-  MicrophoneSlashIcon,
-  SpeakerHighIcon,
-  SpeakerSlashIcon,
-} from "phosphor-react-native";
+import { MicrophoneSlashIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
-import { Pressable, View } from "react-native";
+import { Pressable } from "react-native";
 import { RTCView } from "react-native-webrtc";
 import { useTranslation } from "react-i18next";
 
 interface Props {
   state: VoiceState;
-  space?: Space | null;
   selfId?: string;
-  showAudioControls?: boolean;
-  onModerate?: () => void;
+  fill?: boolean;
+  tileWidth?: number;
+  onOpenActions?: () => void;
 }
 
 export const VoiceChannelParticipant = observer(
-  ({ state, space, selfId, showAudioControls = false, onModerate }: Props) => {
+  ({
+    state,
+    selfId,
+    fill = false,
+    tileWidth,
+    onOpenActions,
+  }: Props) => {
     const app = useAppStore();
     const { theme } = useTheme();
     const { t } = useTranslation("chat");
     const user = state.user;
     const isSelf = state.userId === selfId;
-    const me = space?.members.me;
-    const canModerate =
-      !isSelf &&
-      !!space &&
-      !!onModerate &&
-      ((me?.hasPermission("MuteMembers") ?? false) ||
-        (me?.hasPermission("DeafenMembers") ?? false) ||
-        (me?.hasPermission("MoveMembers") ?? false));
     const speaking =
       app.voice.isUserSpeaking(state.userId) &&
-      !(isSelf && app.voice.effectiveSelfMute);
-    const volume = app.voice.getUserVoiceVolume(state.userId);
-    const locallyMuted = app.voice.isUserVoiceMuted(state.userId);
-    const cameraStream = app.voice.getCameraStreamForUser(state.userId);
+      !(isSelf && app.voice.effectiveSelfMute) &&
+      !(isSelf && app.voice.effectiveSelfDeaf);
+    const muted = isSelf
+      ? app.voice.effectiveSelfMute
+      : !!(state.selfMute || state.spaceMute);
+    const deafened = isSelf
+      ? app.voice.effectiveSelfDeaf
+      : !!(state.selfDeaf || state.spaceDeaf);
+    const locallyMuted =
+      !isSelf && app.voice.isUserVoiceMuted(state.userId);
+    const cameraStream = isSelf
+      ? app.voice.getLocalCameraStream()
+      : app.voice.getCameraStreamForUser(state.userId);
+    const streamURL = cameraStream?.toURL?.() ?? null;
+    const displayName = user?.displayName ?? t("deletedUser");
+    const interactive = !!onOpenActions && !isSelf;
+    const showMuteBadge = muted || locallyMuted || deafened;
+    const showDeafBadge = deafened;
+    const badgeBackground = formatColor(theme.colors.danger, {
+      alpha: 0.92,
+      format: "hexa",
+    });
 
     return (
       <Pressable
-        disabled={!canModerate}
-        onLongPress={canModerate ? onModerate : undefined}
+        disabled={!interactive}
+        onLongPress={interactive ? onOpenActions : undefined}
+        style={{
+          flex: fill ? 1 : undefined,
+          width: fill ? undefined : tileWidth,
+          maxWidth: fill ? undefined : tileWidth,
+        }}
       >
         <Box
           style={{
-            flexDirection: "column",
-            gap: 12,
-            paddingVertical: 8,
-            paddingHorizontal: 8,
+            flex: fill ? 1 : undefined,
+            width: fill ? "100%" : tileWidth,
+            aspectRatio: fill ? undefined : 1,
+            minHeight: fill ? 200 : undefined,
             borderRadius: 12,
-            backgroundColor: speaking
-              ? `${theme.colors.success}18`
-              : `${theme.typography.colors.muted}14`,
-            borderWidth: speaking ? 1 : 0,
+            overflow: "hidden",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: dynamicElevation(theme.colors.surface, 3),
+            borderWidth: speaking ? 3 : 0,
             borderColor: speaking ? theme.colors.success : "transparent",
           }}
         >
-          {cameraStream && (
-            <View
+          {streamURL ? (
+            <RTCView
+              streamURL={streamURL}
               style={{
-                width: "100%",
-                aspectRatio: 16 / 9,
-                borderRadius: 10,
-                overflow: "hidden",
-                backgroundColor: "#000",
+                position: "absolute",
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0,
               }}
-            >
-              <RTCView
-                streamURL={cameraStream.toURL()}
-                style={{ width: "100%", height: "100%" }}
-                objectFit="cover"
-                mirror={isSelf}
-              />
-            </View>
-          )}
-
-          <Box style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              objectFit="cover"
+              mirror={isSelf}
+              zOrder={0}
+            />
+          ) : (
             <UserAvatar
               user={user ?? undefined}
-              size={40}
+              size={fill ? 96 : tileWidth && tileWidth < 160 ? 64 : 80}
               speaking={speaking}
             />
-            <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
-              <Typography truncate="single">
-                {user?.displayName ?? state.userId}
-                {isSelf ? ` ${t("voice.participant.you")}` : ""}
-              </Typography>
-              {speaking ? (
-                <Typography level="body-xs" textColor="accent">
-                  {t("voice.participant.speaking")}
-                </Typography>
-              ) : state.selfMute || state.spaceMute ? (
-                <Typography level="body-xs" textColor="muted">
-                  {state.spaceMute
-                    ? t("voice.participant.serverMuted")
-                    : t("voice.controls.muted")}
-                </Typography>
-              ) : state.spaceDeaf ? (
-                <Typography level="body-xs" textColor="muted">
-                  {t("voice.participant.serverDeafened")}
-                </Typography>
-              ) : null}
-            </Box>
+          )}
 
-            {!isSelf && showAudioControls ? (
-              <IconButton
-                padding={8}
-                accessibilityLabel={
-                  locallyMuted
-                    ? t("voice.controls.unmuteUserLocally")
-                    : t("voice.controls.muteUserLocally")
-                }
-                onPress={() => app.voice.toggleUserVoiceMuted(state.userId)}
-              >
-                {locallyMuted ? (
-                  <SpeakerSlashIcon
-                    size={18}
-                    color={theme.colors.danger}
-                    weight="fill"
-                  />
-                ) : (
-                  <SpeakerHighIcon
-                    size={18}
-                    color={theme.typography.colors.primary}
-                    weight="fill"
-                  />
-                )}
-              </IconButton>
-            ) : state.selfMute || app.voice.effectiveSelfMute ? (
-              <MicrophoneSlashIcon
-                size={18}
-                color={theme.typography.colors.muted}
-                weight="fill"
-              />
-            ) : null}
-          </Box>
-
-          {!isSelf && showAudioControls && (
-            <Box style={{ gap: 4, paddingHorizontal: 4 }}>
-              <Typography level="body-xs" textColor="muted">
-                {t("voice.controls.volumePercent", { value: volume })}
-              </Typography>
-              <Slider
-                min={0}
-                max={200}
-                step={1}
-                value={volume}
-                onChange={(value) =>
-                  app.voice.setUserVoiceVolume(
-                    state.userId,
-                    Array.isArray(value) ? value[0] : value,
-                  )
-                }
-              />
+          {(showMuteBadge || showDeafBadge) && (
+            <Box
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                zIndex: 2,
+              }}
+            >
+              {showMuteBadge && (
+                <Box
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 999,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: badgeBackground,
+                  }}
+                >
+                  <MicrophoneSlashIcon size={14} weight="fill" color="#fff" />
+                </Box>
+              )}
+              {showDeafBadge && (
+                <Box
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 999,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: badgeBackground,
+                  }}
+                >
+                  <HeadphonesOffIcon size={14} weight="fill" color="#fff" />
+                </Box>
+              )}
             </Box>
           )}
+
+          <Box
+            style={{
+              position: "absolute",
+              left: 10,
+              right: 10,
+              bottom: 10,
+              paddingHorizontal: 8,
+              paddingVertical: 4,
+              borderRadius: 6,
+              zIndex: 2,
+              backgroundColor: formatColor(theme.colors.background, {
+                alpha: 0.65,
+                format: "hexa",
+              }),
+            }}
+          >
+            <Typography level="label-xs" textColor="primary" truncate="single">
+              {isSelf
+                ? `${displayName} ${t("voice.participant.you")}`
+                : displayName}
+            </Typography>
+          </Box>
         </Box>
       </Pressable>
     );

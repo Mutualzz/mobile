@@ -10,6 +10,8 @@ export type VoiceLiveActivityProps = {
   muted: boolean;
   deafened: boolean;
   spaceIconFileName: string;
+  participantIconFileNames: string[];
+  participantOverflow: number;
   accentColor: string;
   textColor: string;
   mutedTextColor: string;

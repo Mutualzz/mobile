@@ -10,6 +10,7 @@ import {
   type MediaStreamTrack,
   mediaDevices,
 } from "react-native-webrtc";
+import { Dimensions } from "react-native";
 
 import type { VoiceInputMode } from "@utils/voiceSettings.utils";
 import { openWebSocket } from "@utils/openWebSocket";
@@ -29,6 +30,11 @@ import {
 } from "./webrtcBridge";
 
 const TRANSPORT_CONNECT_TIMEOUT_MS = 15_000;
+
+function getCaptureVideoOrientation(): 0 | 90 {
+  const { width, height } = Dimensions.get("window");
+  return height >= width ? 90 : 0;
+}
 
 function withTimeout<T>(
   promise: Promise<T>,
@@ -107,11 +113,13 @@ export interface MediasoupSessionOptions {
 export class MediasoupSession {
   private socket: WebSocket | null = null;
   private device: mediasoupClient.types.Device | null = null;
+  private loadedRouterRtpCapabilitiesKey: string | null = null;
   private sendTransport: mediasoupClient.types.Transport | null = null;
   private receiverTransport: mediasoupClient.types.Transport | null = null;
 
   private micTrack: MediaStreamTrack | null = null;
   private cameraTrack: MediaStreamTrack | null = null;
+  private localCameraStream: MediaStream | null = null;
   private micProducer: mediasoupClient.types.Producer | null = null;
   private cameraProducer: mediasoupClient.types.Producer | null = null;
 
@@ -127,6 +135,7 @@ export class MediasoupSession {
   private pendingProducerIds = new Map<string, PendingProducer>();
   private setupComplete = false;
   private consumeAbortSignal: AbortSignal | null = null;
+  private produceChain: Promise<unknown> = Promise.resolve();
 
   private isMuted = false;
   private isDeafened = false;
@@ -162,8 +171,25 @@ export class MediasoupSession {
     );
   }
 
+  private withProduceLock<T>(fn: () => Promise<T>): Promise<T> {
+    const run = this.produceChain.then(fn, fn);
+    this.produceChain = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
+  }
+
   getLocalCameraStream() {
-    return this.cameraTrack ? new MediaStream([this.cameraTrack]) : null;
+    if (!this.cameraTrack) {
+      this.localCameraStream = null;
+      return null;
+    }
+    const existing = this.localCameraStream?.getVideoTracks()[0];
+    if (!this.localCameraStream || existing !== this.cameraTrack) {
+      this.localCameraStream = new MediaStream([this.cameraTrack]);
+    }
+    return this.localCameraStream;
   }
 
   setInputDeviceId(id: string | null) {
@@ -286,29 +312,34 @@ export class MediasoupSession {
 
     this.socket = socket;
 
-    await this.rpc(VoiceOpcodes.VoiceAuthenticate, { token });
+    const authData = await this.rpc(VoiceOpcodes.VoiceAuthenticate, { token });
     if (signal.aborted) return;
 
-    const rtpCapabilities = parseRtpCapabilitiesResponse(
-      await this.rpc(VoiceOpcodes.VoiceGetRTPCapabilities, {}),
-    );
+    let rtpCapabilities: mediasoupClient.types.RtpCapabilities | null = null;
+    try {
+      rtpCapabilities = parseRtpCapabilitiesResponse(authData);
+    } catch {
+      rtpCapabilities = null;
+    }
+    if (!rtpCapabilities) {
+      rtpCapabilities = parseRtpCapabilitiesResponse(
+        await this.rpc(VoiceOpcodes.VoiceGetRTPCapabilities, {}),
+      );
+    }
 
     if (signal.aborted) return;
 
-    const device = await mediasoupClient.Device.factory({
-      handlerName: "ReactNative106",
-    });
-    await device.load({ routerRtpCapabilities: rtpCapabilities });
-    if (signal.aborted) return;
-    this.device = device;
+    const device = await this.ensureDevice(rtpCapabilities, signal);
+    if (!device || signal.aborted) return;
 
-    const recvOptions = parseTransportOptionsResponse(
-      await this.rpc(VoiceOpcodes.VoiceCreateTransport, {
-        direction: "receive",
-      }),
-    );
-
+    const [recvRaw, sendRaw] = await Promise.all([
+      this.rpc(VoiceOpcodes.VoiceCreateTransport, { direction: "receive" }),
+      this.rpc(VoiceOpcodes.VoiceCreateTransport, { direction: "send" }),
+    ]);
     if (signal.aborted) return;
+
+    const recvOptions = parseTransportOptionsResponse(recvRaw);
+    const sendOptions = parseTransportOptionsResponse(sendRaw);
 
     const recvTransport = device.createRecvTransport(recvOptions);
     recvTransport.on("connect", ({ dtlsParameters }, callback, errback) => {
@@ -320,17 +351,6 @@ export class MediasoupSession {
         .catch(errback);
     });
     this.receiverTransport = recvTransport;
-
-    await this.rpc(VoiceOpcodes.VoiceSetRTPCapabilities, {
-      rtpCapabilities: device.recvRtpCapabilities,
-    });
-    if (signal.aborted) return;
-
-    const sendOptions = parseTransportOptionsResponse(
-      await this.rpc(VoiceOpcodes.VoiceCreateTransport, { direction: "send" }),
-    );
-
-    if (signal.aborted) return;
 
     const sendTransport = device.createSendTransport(sendOptions);
     sendTransport.on("connect", ({ dtlsParameters }, callback, errback) => {
@@ -363,7 +383,45 @@ export class MediasoupSession {
     this.sendTransport = sendTransport;
 
     this.setupComplete = true;
-    await this.flushPendingProducers(signal);
+    void this.rpc(VoiceOpcodes.VoiceSetRTPCapabilities, {
+      rtpCapabilities: device.recvRtpCapabilities,
+    }).catch((error) => {
+      this.logger.warn("VoiceSetRTPCapabilities failed", error);
+    });
+    void this.flushPendingProducers(signal).catch((error) => {
+      this.logger.warn("flushPendingProducers failed", error);
+    });
+  }
+
+  private rtpCapabilitiesKey(rtpCapabilities: unknown): string {
+    try {
+      return JSON.stringify(rtpCapabilities);
+    } catch {
+      return "";
+    }
+  }
+
+  private async ensureDevice(
+    rtpCapabilities: mediasoupClient.types.RtpCapabilities,
+    signal: AbortSignal,
+  ): Promise<mediasoupClient.types.Device | null> {
+    const key = this.rtpCapabilitiesKey(rtpCapabilities);
+    if (
+      this.device?.loaded &&
+      this.loadedRouterRtpCapabilitiesKey &&
+      this.loadedRouterRtpCapabilitiesKey === key
+    ) {
+      return this.device;
+    }
+
+    const device = await mediasoupClient.Device.factory({
+      handlerName: "ReactNative106",
+    });
+    await device.load({ routerRtpCapabilities: rtpCapabilities });
+    if (signal.aborted) return null;
+    this.device = device;
+    this.loadedRouterRtpCapabilitiesKey = key;
+    return device;
   }
 
   async startMic(signal: AbortSignal) {
@@ -390,16 +448,28 @@ export class MediasoupSession {
     }
 
     this.micTrack = audioTrack;
-    this.micProducer = await withTimeout(
-      this.sendTransport.produce({
-        track: toProduceTrack(audioTrack, "audio"),
-        appData: { mediaKind: "audio" },
-        codecOptions: { opusStereo: true, opusDtx: true },
-      }),
-      TRANSPORT_CONNECT_TIMEOUT_MS,
-      "Voice transport connection timed out",
-      signal,
-    );
+    try {
+      this.micProducer = await this.withProduceLock(() =>
+        withTimeout(
+          this.sendTransport!.produce({
+            track: toProduceTrack(audioTrack, "audio"),
+            appData: { mediaKind: "audio" },
+            codecOptions: { opusStereo: true, opusDtx: true },
+          }),
+          TRANSPORT_CONNECT_TIMEOUT_MS,
+          "Voice transport connection timed out",
+          signal,
+        ),
+      );
+    } catch (error) {
+      stream.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch {}
+      });
+      this.micTrack = null;
+      throw error;
+    }
 
     const selfId = this.getSelfUserId();
     if (selfId && this.micProducer) {
@@ -417,8 +487,18 @@ export class MediasoupSession {
     const stream = await mediaDevices.getUserMedia({
       audio: false,
       video: this.currentCameraDeviceId
-        ? { deviceId: this.currentCameraDeviceId }
-        : true,
+        ? {
+            deviceId: this.currentCameraDeviceId,
+            width: { ideal: 720 },
+            height: { ideal: 1280 },
+            frameRate: { ideal: 30 },
+          }
+        : {
+            facingMode: "user",
+            width: { ideal: 720 },
+            height: { ideal: 1280 },
+            frameRate: { ideal: 30 },
+          },
     });
 
     if (signal.aborted) {
@@ -430,19 +510,34 @@ export class MediasoupSession {
     if (!videoTrack) return;
 
     this.cameraTrack = videoTrack;
-    this.cameraProducer = await withTimeout(
-      this.sendTransport.produce({
-        track: toProduceTrack(videoTrack, "video"),
-        appData: { mediaKind: "camera" },
-        codecOptions: {
-          videoGoogleStartBitrate: 1000,
-          videoGoogleMaxBitrate: 9000,
-        },
-      }),
-      TRANSPORT_CONNECT_TIMEOUT_MS,
-      "Voice transport connection timed out",
-      signal,
-    );
+    try {
+      this.cameraProducer = await this.withProduceLock(() =>
+        withTimeout(
+          this.sendTransport!.produce({
+            track: toProduceTrack(videoTrack, "video"),
+            appData: {
+              mediaKind: "camera",
+              videoOrientation: getCaptureVideoOrientation(),
+            },
+            codecOptions: {
+              videoGoogleStartBitrate: 1000,
+              videoGoogleMaxBitrate: 9000,
+            },
+          }),
+          TRANSPORT_CONNECT_TIMEOUT_MS,
+          "Voice transport connection timed out",
+          signal,
+        ),
+      );
+    } catch (error) {
+      stream.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch {}
+      });
+      this.cameraTrack = null;
+      throw error;
+    }
   }
 
   async stopCamera() {
@@ -458,6 +553,7 @@ export class MediasoupSession {
         this.cameraTrack.stop();
       } catch {}
       this.cameraTrack = null;
+      this.localCameraStream = null;
     }
 
     if (producerId) {
@@ -468,6 +564,12 @@ export class MediasoupSession {
   }
 
   async restartMic(signal: AbortSignal) {
+    await this.produceChain.then(
+      () => undefined,
+      () => undefined,
+    );
+    if (signal.aborted) return;
+
     const selfId = this.getSelfUserId();
     const producerId = this.micProducer?.id ?? null;
     if (selfId && this.micProducer) {
@@ -532,7 +634,7 @@ export class MediasoupSession {
     } catch {}
     this.sendTransport = null;
     this.receiverTransport = null;
-    this.device = null;
+    this.produceChain = Promise.resolve();
 
     if (this.socket) {
       this.socket.onclose = null;
@@ -563,6 +665,7 @@ export class MediasoupSession {
         this.cameraTrack.stop();
       } catch {}
       this.cameraTrack = null;
+      this.localCameraStream = null;
     }
 
     for (const [, consumer] of this.consumersByProducerId) {
@@ -650,40 +753,61 @@ export class MediasoupSession {
       return;
     }
 
-    this.consumersByProducerId.set(producerId, consumer);
-    this.producerUserMap.set(producerId, userId);
+    try {
+      this.consumersByProducerId.set(producerId, consumer);
+      this.producerUserMap.set(producerId, userId);
 
-    const kind: VoiceMediaKind =
-      consumer.kind === "video" ? "camera" : mediaKind;
+      const kind: VoiceMediaKind =
+        mediaKind === "screen" || mediaKind === "screen-audio"
+          ? mediaKind
+          : consumer.kind === "video"
+            ? "camera"
+            : mediaKind === "camera"
+              ? "camera"
+              : "audio";
 
-    this.producerKindMap.set(producerId, kind);
+      this.producerKindMap.set(producerId, kind);
 
-    const stream = new MediaStream([toNativeMediaStreamTrack(consumer.track)]);
-    this.remoteStreams.set(producerId, stream);
+      const stream = new MediaStream([toNativeMediaStreamTrack(consumer.track)]);
+      this.remoteStreams.set(producerId, stream);
 
-    await this.rpc(VoiceOpcodes.VoiceResumeConsumer, {
-      consumerId: consumer.id,
-    });
+      await this.rpc(VoiceOpcodes.VoiceResumeConsumer, {
+        consumerId: consumer.id,
+      });
 
-    if (kind === "camera") {
-      this.callbacks.onRemoteCameraStream(userId, producerId, stream);
-    } else {
-      if (this.isDeafened) {
-        setConsumerAudioMix(consumer, 100, true);
+      if (kind === "camera") {
+        this.callbacks.onRemoteCameraStream(userId, producerId, stream);
+      } else if (kind === "audio") {
+        if (this.isDeafened) {
+          setConsumerAudioMix(consumer, 100, true);
+        }
+        this.registerAudioSpeaking(userId, producerId, consumer);
+        this.callbacks.onAudioConsumerReady(userId);
+      } else if (kind === "screen-audio") {
+        if (this.isDeafened) {
+          setConsumerAudioMix(consumer, 100, true);
+        }
       }
-      this.registerAudioSpeaking(userId, producerId, consumer);
-      this.callbacks.onAudioConsumerReady(userId);
+    } catch (error) {
+      this.cleanupProducer(producerId);
+      throw error;
     }
   }
 
   private async flushPendingProducers(signal: AbortSignal) {
     const queued = Array.from(this.pendingProducerIds.entries());
-    this.pendingProducerIds.clear();
 
-    for (const [producerId, { userId, mediaKind }] of queued) {
-      if (signal.aborted) return;
-      await this.consumeProducer(producerId, userId, signal, mediaKind);
-    }
+    await Promise.all(
+      queued.map(async ([producerId, { userId, mediaKind }]) => {
+        if (signal.aborted) return;
+        try {
+          await this.consumeProducer(producerId, userId, signal, mediaKind);
+          this.pendingProducerIds.delete(producerId);
+        } catch (error) {
+          this.logger.warn("Pending producer consume failed", error);
+        }
+      }),
+    );
   }
 
   private cleanupProducersForUser(userId: string) {
@@ -838,7 +962,17 @@ export class MediasoupSession {
       const { producerId, userId, mediaKind } = payload;
 
       const resolvedKind: VoiceMediaKind =
-        mediaKind === "camera" ? "camera" : "audio";
+        mediaKind === "screen"
+          ? "screen"
+          : mediaKind === "screen-audio"
+            ? "screen-audio"
+            : mediaKind === "camera"
+              ? "camera"
+              : "audio";
+
+      if (resolvedKind === "screen" || resolvedKind === "screen-audio") {
+        return;
+      }
 
       if (!this.setupComplete) {
         this.pendingProducerIds.set(producerId, {

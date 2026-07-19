@@ -12,18 +12,25 @@ import { PlusIcon } from "phosphor-react-native";
 import { DMChannelCreateSheet } from "./DMChannelCreateSheet";
 import { IconButton } from "@components/IconButton";
 
-const ESTIMATED_DM_ROW_HEIGHT = 64;
-
 export const DMChannelList = observer(() => {
   const { t } = useTranslation("chat");
   const app = useAppStore();
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const dms = app.channels.dms;
 
+  const callEpoch = Array.from(app.calls.callsByChannel.values())
+    .map(
+      (call) =>
+        `${call.channelId}:${call.status}:${call.ringing.join(",")}:${call.accepted.join(",")}`,
+    )
+    .join("|");
+
   const renderItem = useCallback(
     ({ item }: { item: Channel }) => <DMChannelItem channel={item} />,
     [],
   );
+
+  const keyExtractor = useCallback((channel: Channel) => channel.id, []);
 
   return (
     <>
@@ -76,20 +83,16 @@ export const DMChannelList = observer(() => {
           <View style={{ flex: 1, minHeight: 0 }}>
             <FlashList
               data={dms}
-              extraData={dms
+              extraData={`${callEpoch}|${dms
                 .map(
                   (channel) => `${channel.id}:${channel.lastMessageId ?? ""}`,
                 )
-                .join("|")}
-              keyExtractor={(channel) => channel.id}
+                .join("|")}`}
+              keyExtractor={keyExtractor}
               renderItem={renderItem}
               drawDistance={250}
-              overrideItemLayout={(layout: {
-                span?: number;
-                size?: number;
-              }) => {
-                layout.size = ESTIMATED_DM_ROW_HEIGHT;
-              }}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 16 }}
             />
           </View>
         )}

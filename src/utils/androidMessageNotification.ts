@@ -35,6 +35,7 @@ export function parseMessagePushData(
   data: Record<string, unknown>,
 ): MessagePushData | null {
   if (data.displayMode !== MESSAGE_PUSH_DISPLAY_MODE) return null;
+  if (data.pushType === "call" || data.pushType === "call_end") return null;
 
   const url = readString(data, "url");
   const channelId = readString(data, "channelId");
@@ -86,6 +87,33 @@ export function ensureAndroidMessageChannel() {
   })();
 
   return channelReady;
+}
+
+export async function dismissCallNotification(channelId: string) {
+  try {
+    await notifee.cancelNotification(channelId, channelId);
+  } catch {
+  }
+
+  try {
+    const presented = await Notifications.getPresentedNotificationsAsync();
+    await Promise.all(
+      presented
+        .filter((notification) => {
+          const data = notification.request.content.data;
+          if (!data || typeof data !== "object") return false;
+          const payload = data as Record<string, unknown>;
+          return (
+            payload.channelId === channelId &&
+            (payload.pushType === "call" || payload.pushType === "call_end")
+          );
+        })
+        .map((notification) =>
+          Notifications.dismissNotificationAsync(notification.request.identifier),
+        ),
+    );
+  } catch {
+  }
 }
 
 export async function displayAndroidMessageNotification(

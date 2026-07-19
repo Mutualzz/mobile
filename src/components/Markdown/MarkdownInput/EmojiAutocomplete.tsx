@@ -58,11 +58,18 @@ export const EmojiAutocomplete = observer(
       const me = channel?.spaceId
         ? app.spaces.get(channel.spaceId)?.members.me
         : null;
+      const joinedSpaceIds = app.spaces.all.map((space) => space.id);
 
       const allCustomEmojis = app.expressions.all.filter(
         (exp) =>
           exp.type === ExpressionType.Emoji &&
-          canUseCustomEmoji(app.account?.id || "", exp, me, channel),
+          canUseCustomEmoji(
+            app.account?.id || "",
+            exp,
+            me,
+            channel,
+            joinedSpaceIds,
+          ),
       );
 
       const deduplicatedLabels = buildDeduplicatedEmojiLabels(allCustomEmojis);

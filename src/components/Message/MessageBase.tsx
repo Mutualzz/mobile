@@ -143,7 +143,6 @@ export const DetailsBase = styled(Box)({
   flexShrink: 0,
   flexDirection: "row",
   alignItems: "center",
-  paddingLeft: 4,
 });
 
 export const EditedIndicator = () => {
@@ -171,6 +170,7 @@ export const MessageDetails = observer(
           refreshIntervalMs={30_000}
           typographyProps={{
             level: "body-xs",
+            textColor: "muted",
           }}
           accessibilityLabelPrefix={t("a11y.sent")}
         />

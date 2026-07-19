@@ -67,6 +67,41 @@ function findAtomicSpans(
   return merged;
 }
 
+function scanColorTags(
+  value: string,
+  start: number,
+  end: number,
+  ranges: MarkdownRange[],
+) {
+  "worklet";
+  let i = start;
+  const closeTag = "[/color]";
+
+  while (i < end) {
+    if (!value.startsWith("[color=", i)) {
+      i += 1;
+      continue;
+    }
+
+    const closeBracket = value.indexOf("]", i);
+    if (closeBracket === -1 || closeBracket >= end) {
+      i += 1;
+      continue;
+    }
+
+    const openEnd = closeBracket + 1;
+    const closeAt = value.indexOf(closeTag, openEnd);
+    if (closeAt === -1 || closeAt >= end) {
+      i = openEnd;
+      continue;
+    }
+
+    ranges.push({ type: "syntax", start: i, length: openEnd - i });
+    ranges.push({ type: "syntax", start: closeAt, length: closeTag.length });
+    i = closeAt + closeTag.length;
+  }
+}
+
 function scanMarkers(
   value: string,
   start: number,
@@ -168,6 +203,8 @@ export function liveMarkdownParser(
 
     lineStart = i + 1;
   }
+
+  scanColorTags(value, 0, value.length, ranges);
 
   return ranges;
 }

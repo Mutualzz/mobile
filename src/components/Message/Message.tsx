@@ -8,6 +8,7 @@ import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { type MessageLike } from "@stores/objects/Message";
 import { QueuedMessageStatus } from "@stores/objects/QueuedMessage";
 import { GIF_ONLY_URL_PATTERN } from "@utils/gifs";
+import { isSystemMessageType, isSystemUser } from "@utils/systemUser";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -144,7 +145,11 @@ export const Message = observer(({ message, header, highlighted }: Props) => {
                       <UserAvatar user={repliedMessage.author} size="sm" />
                       <ReplyAuthorName>
                         <Typography level="body-xs" textColor="muted">
-                          {repliedMessage.author?.displayName ?? t("unknown")}
+                          {isSystemUser(repliedMessage.author) &&
+                          !isSystemMessageType(repliedMessage.type)
+                            ? t("unknown")
+                            : (repliedMessage.author?.displayName ??
+                              t("unknown"))}
                         </Typography>
                       </ReplyAuthorName>
                       <ReplyContentText>
@@ -194,9 +199,13 @@ export const Message = observer(({ message, header, highlighted }: Props) => {
                     minWidth: 0,
                     flexDirection: "row",
                     alignItems: "center",
+                    gap: 6,
                   }}
                 >
                   <MessageAuthor message={message} space={space} />
+                  <Typography level="body-sm" textColor="muted">
+                    ·
+                  </Typography>
                   <MessageDetails message={message} />
                 </Box>
               )}

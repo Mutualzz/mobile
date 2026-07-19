@@ -31,6 +31,7 @@ import { findCustomEmojiByLabel } from "@utils/expressions";
 import type { Selection } from "@utils/markdown/types";
 
 const BIO_MAX_LENGTH = 2000;
+const PRONOUNS_MAX_LENGTH = 32;
 
 export const ProfileEditorScreen = observer(() => {
   const { t } = useTranslation("settings");
@@ -39,6 +40,7 @@ export const ProfileEditorScreen = observer(() => {
   const { back, navigate } = useAppNavigation();
 
   const [bio, setBio] = useState("");
+  const [pronouns, setPronouns] = useState("");
   const [bioSelection, setBioSelection] = useState<Selection>({
     start: 0,
     end: 0,
@@ -69,6 +71,7 @@ export const ProfileEditorScreen = observer(() => {
 
   const formStateRef = useRef({
     bio,
+    pronouns,
     backgroundColor,
     pageFontFamily,
     profileMusic,
@@ -77,6 +80,7 @@ export const ProfileEditorScreen = observer(() => {
   });
   formStateRef.current = {
     bio,
+    pronouns,
     backgroundColor,
     pageFontFamily,
     profileMusic,
@@ -92,6 +96,7 @@ export const ProfileEditorScreen = observer(() => {
     const isDirty =
       !!p &&
       (state.bio !== (p.bio ?? "") ||
+        state.pronouns !== (p.pronouns ?? "") ||
         state.backgroundColor !== (p.backgroundColor ?? "") ||
         state.pageFontFamily !== (p.pageFontFamily ?? "") ||
         state.bannerHash !== (p.banner ?? null) ||
@@ -136,6 +141,7 @@ export const ProfileEditorScreen = observer(() => {
     if (!profile) return;
 
     setBio(profile.bio ?? "");
+    setPronouns(profile.pronouns ?? "");
     setBackgroundColor(profile.backgroundColor ?? "");
     setPageFontFamily(profile.pageFontFamily ?? "");
     setProfileMusic(profile.profileMusic ?? null);
@@ -206,6 +212,7 @@ export const ProfileEditorScreen = observer(() => {
 
       await app.profiles.save({
         bio: expandedBio || null,
+        pronouns: pronouns.trim() || null,
         banner: bannerHash,
         backgroundColor: backgroundColor.trim() || null,
         backgroundImage: profile.backgroundImage ?? null,
@@ -298,6 +305,26 @@ export const ProfileEditorScreen = observer(() => {
                 ? t("expressions.uploading")
                 : t("profile.editor.changeBanner")}
             </Button>
+          </Paper>
+
+          <Paper
+            style={{
+              borderRadius: 12,
+              padding: 12,
+              gap: 12,
+            }}
+            elevation={app.settings?.preferEmbossed ? 2 : 0}
+          >
+            <Typography level="body-md" weight={700}>
+              {t("profile.editor.pronouns")}
+            </Typography>
+            <Input
+              value={pronouns}
+              onChangeText={(next) =>
+                setPronouns(next.slice(0, PRONOUNS_MAX_LENGTH))
+              }
+              placeholder={t("profile.editor.pronounsPlaceholder")}
+            />
           </Paper>
 
           <Paper

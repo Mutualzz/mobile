@@ -2,6 +2,7 @@ import { BridgeChatView } from "@components/Bridge/BridgeChatView";
 import { DMContentPane } from "@components/DMChannel/DMContentPane";
 import { MeDrawerContent } from "@components/DMChannel/MeDrawerContent";
 import { SwipeableDrawer } from "@components/Navigation/SwipeableDrawer";
+import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { hasOpenSheets } from "@mutualzz/ui-native";
 import { useFocusEffect, useLocalSearchParams, usePathname } from "expo-router";
@@ -9,8 +10,11 @@ import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef } from "react";
 import { BackHandler } from "react-native";
 
+const DRAWER_ANIM_MS = 280;
+
 const MeLayout = () => {
   const app = useAppStore();
+  const { navigate } = useAppNavigation();
   const pathname = usePathname();
   const { channelId, bridgeId } = useLocalSearchParams<{
     channelId?: string;
@@ -18,9 +22,11 @@ const MeLayout = () => {
   }>();
   const lastSyncedChannelIdRef = useRef<string | undefined>(undefined);
   const resolvingChannelIdRef = useRef<string | undefined>(undefined);
+  const prevDrawerOpenRef = useRef(app.dmDrawerOpen);
   const channelFromRoute = channelId ? app.channels.get(channelId) : undefined;
   const onBridgeRoute =
     pathname.includes("/bridges/") || Boolean(bridgeId);
+  const onDetailRoute = Boolean(channelId) || onBridgeRoute;
 
   useEffect(() => {
     return () => {
@@ -35,7 +41,7 @@ const MeLayout = () => {
       lastSyncedChannelIdRef.current = undefined;
       resolvingChannelIdRef.current = undefined;
       app.spaces.unsetActive();
-      app.setDMDrawerOpen(false);
+      if (!app.dmDrawerOpen) app.setDMDrawerOpen(false);
       return;
     }
 
@@ -49,7 +55,7 @@ const MeLayout = () => {
         app.spaces.unsetActive();
         app.channels.setActive(channelId);
         app.channels.setMostRecentChannelForSpace("@me", channelId);
-        app.setDMDrawerOpen(false);
+        if (!app.dmDrawerOpen) app.setDMDrawerOpen(false);
         return;
       }
 
@@ -80,22 +86,36 @@ const MeLayout = () => {
   );
 
   useEffect(() => {
+    const wasOpen = prevDrawerOpenRef.current;
+    prevDrawerOpenRef.current = app.dmDrawerOpen;
+    if (!wasOpen && app.dmDrawerOpen && onDetailRoute) {
+      const timeout = setTimeout(() => {
+        navigate("/@me", { replace: true });
+      }, DRAWER_ANIM_MS);
+      return () => clearTimeout(timeout);
+    }
+  }, [app.dmDrawerOpen, onDetailRoute, navigate]);
+
+  useEffect(() => {
+    if (channelId || onBridgeRoute) {
+      app.setDMDrawerOpen(false);
+    }
+  }, []);
+
+  useEffect(() => {
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
         if (hasOpenSheets()) return false;
         if (app.mode !== "@me") return false;
-        if (onBridgeRoute) {
-          if (!app.dmDrawerOpen) {
-            app.setDMDrawerOpen(true);
-            return true;
-          }
-          return false;
-        }
-        if (!app.channels.activeId) return false;
 
         if (!app.dmDrawerOpen) {
           app.setDMDrawerOpen(true);
+          return true;
+        }
+
+        if (onDetailRoute) {
+          navigate("/@me", { replace: true });
           return true;
         }
 
@@ -103,7 +123,7 @@ const MeLayout = () => {
       },
     );
     return () => subscription.remove();
-  }, [app, onBridgeRoute]);
+  }, [app, onDetailRoute, navigate]);
 
   return (
     <SwipeableDrawer

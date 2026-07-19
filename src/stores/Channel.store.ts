@@ -88,30 +88,43 @@ export class ChannelStore {
       (ch) => ch.type === ChannelType.DM || ch.type === ChannelType.GroupDM,
     );
 
+    const callRank = (channelId: string) => {
+      if (this.app.calls.isRingingForMe(channelId)) return 3;
+      if (this.app.calls.isOutgoing(channelId)) return 2;
+      if (this.app.calls.isActive(channelId)) return 1;
+      return 0;
+    };
+
     return dms.slice().sort((a, b) => {
-      // Filter with mentions
+      const aCall = callRank(a.id);
+      const bCall = callRank(b.id);
+      if (aCall !== bCall) return bCall - aCall;
+
       const aMentions = this.app.readStates.get(a.id)?.mentionCount ?? 0;
       const bMentions = this.app.readStates.get(b.id)?.mentionCount ?? 0;
       if (aMentions > 0 !== bMentions > 0) return bMentions > 0 ? 1 : -1;
 
-      // Filter with unread
       const aUnread = this.app.readStates.get(a.id)?.isUnread ? 1 : 0;
       const bUnread = this.app.readStates.get(b.id)?.isUnread ? 1 : 0;
-      if (aUnread !== bUnread) return bUnread - aUnread; // unread first
+      if (aUnread !== bUnread) return bUnread - aUnread;
 
-      const aId = a.lastMessageId;
-      const bId = b.lastMessageId;
+      const aId = a.lastMessageId ?? a.lastMessage?.id;
+      const bId = b.lastMessageId ?? b.lastMessage?.id;
       if (aId && bId) {
-        const diff = BigInt(bId) - BigInt(aId);
-        return diff > 0n ? 1 : diff < 0n ? -1 : 0;
+        try {
+          const diff = BigInt(bId) - BigInt(aId);
+          return diff > 0n ? 1 : diff < 0n ? -1 : 0;
+        } catch {
+          return 0;
+        }
       }
       if (aId) return -1;
       if (bId) return 1;
 
       const aTime =
-        a.lastMessage?.createdAt?.getTime() ?? a.createdAt.getTime();
+        a.lastMessage?.createdAt?.getTime() ?? a.updatedAt.getTime();
       const bTime =
-        b.lastMessage?.createdAt?.getTime() ?? b.createdAt.getTime();
+        b.lastMessage?.createdAt?.getTime() ?? b.updatedAt.getTime();
       return bTime - aTime;
     });
   }

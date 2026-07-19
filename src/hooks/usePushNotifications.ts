@@ -2,6 +2,7 @@ import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import notifee, { EventType } from "@notifee/react-native";
 import {
+  dismissCallNotification,
   displayAndroidMessageNotification,
   ensureAndroidMessageChannel,
   parseMessagePushData,
@@ -28,6 +29,23 @@ import { Platform } from "react-native";
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
     const data = notification.request.content.data;
+
+    if (data && typeof data === "object") {
+      const payload = data as Record<string, unknown>;
+      if (
+        payload.pushType === "call_end" &&
+        typeof payload.channelId === "string"
+      ) {
+        void dismissCallNotification(payload.channelId);
+        return {
+          shouldShowAlert: false,
+          shouldPlaySound: false,
+          shouldSetBadge: false,
+          shouldShowBanner: false,
+          shouldShowList: false,
+        };
+      }
+    }
 
     if (
       Platform.OS === "android" &&
@@ -248,20 +266,28 @@ export function usePushNotifications(enabled: boolean) {
       console.warn("[push] registration failed", error);
     });
 
-    const receivedSub =
-      Platform.OS === "android"
-        ? Notifications.addNotificationReceivedListener((notification) => {
-            const data = notification.request.content.data;
-            if (!data || typeof data !== "object") return;
+    const receivedSub = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        const data = notification.request.content.data;
+        if (!data || typeof data !== "object") return;
 
-            const parsed = parseMessagePushData(
-              data as Record<string, unknown>,
-            );
-            if (!parsed) return;
+        const payload = data as Record<string, unknown>;
+        if (
+          payload.pushType === "call_end" &&
+          typeof payload.channelId === "string"
+        ) {
+          void dismissCallNotification(payload.channelId);
+          return;
+        }
 
-            void displayAndroidMessageNotification(parsed);
-          })
-        : null;
+        if (Platform.OS !== "android") return;
+
+        const parsed = parseMessagePushData(payload);
+        if (!parsed) return;
+
+        void displayAndroidMessageNotification(parsed);
+      },
+    );
 
     const responseSub = Notifications.addNotificationResponseReceivedListener(
       (response) => {
@@ -276,7 +302,7 @@ export function usePushNotifications(enabled: boolean) {
 
     return () => {
       mounted = false;
-      receivedSub?.remove();
+      receivedSub.remove();
       responseSub.remove();
 
       const token = pushTokenRef.current;

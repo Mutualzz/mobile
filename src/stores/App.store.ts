@@ -34,6 +34,8 @@ import { CustomStatusStore } from "@stores/CustomStatus.store";
 import { VoiceStore } from "@stores/Voice.store";
 import type { Message } from "@stores/objects/Message";
 import { VoiceStatesStore } from "@stores/VoiceStates.store";
+import { CallStore } from "@stores/Call.store";
+import { SoundStore } from "@stores/Sound.store";
 import type { User } from "@stores/objects/User";
 import { initRemoteGameCatalog } from "@presence/remoteGameCatalog";
 import { BridgeChatStore } from "@stores/BridgeChat.store";
@@ -41,6 +43,7 @@ import { startWidgetSnapshotSync } from "@stores/WidgetSnapshot.sync";
 
 export class AppStore {
   isGatewayReady = false;
+  hasBootstrapped = false;
   isAppLoading = true;
   hideSwitcher = false;
   token: string | null = null;
@@ -49,6 +52,8 @@ export class AppStore {
   customStatus = new CustomStatusStore();
   voice = new VoiceStore(this);
   voiceStates = new VoiceStatesStore(this);
+  calls = new CallStore(this);
+  sounds = new SoundStore(this);
   channels = new ChannelStore(this);
   gateway = new GatewayStore(this);
   drafts = new DraftStore();
@@ -115,7 +120,9 @@ export class AppStore {
   }
 
   get isReady() {
-    return !this.isAppLoading && this.isGatewayReady;
+    if (this.isAppLoading) return false;
+    if (!this.token) return true;
+    return this.hasBootstrapped || this.isGatewayReady;
   }
 
   getSuggestedGroupDMRecipients(): User[] {
@@ -218,6 +225,7 @@ export class AppStore {
 
   setGatewayReady(ready: boolean) {
     this.isGatewayReady = ready;
+    if (ready && this.token) this.hasBootstrapped = true;
   }
 
   setAppLoading(loading: boolean) {
@@ -257,6 +265,7 @@ export class AppStore {
     this.token = null;
     this.isAppLoading = false;
     this.isGatewayReady = true;
+    this.hasBootstrapped = false;
     this.account = null;
     if (this.settings) this.settings.dispose();
     this.settings = null;

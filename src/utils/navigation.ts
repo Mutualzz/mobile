@@ -52,16 +52,7 @@ export function navigateOnce(
     router.navigate(href);
 }
 
-export function dismissPresentedStack(
-    back: () => void,
-    getParent?: () => { canGoBack: () => boolean; goBack: () => void } | undefined,
-) {
-    const parent = getParent?.();
-    if (parent?.canGoBack()) {
-        parent.goBack();
-        return;
-    }
-
+export function dismissPresentedStack(back: () => void) {
     back();
 }
 

@@ -9,6 +9,7 @@ import {
   useScaledMentionBadgeStyle,
   useScaledSquareSize,
 } from "@utils/accessibilityLayout";
+import { formatDmMessagePreview } from "@utils/formatDmMessagePreview";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
@@ -68,22 +69,51 @@ export const DMChannelItem = observer(({ channel }: Props) => {
 
   let preview: string | null = null;
   const lastMessage = channel.lastMessage;
-  if (channel.isGroupDM) {
-    preview = `${recipients.length} ${t("groupDm.manage.members")}`;
-  } else if (lastMessage && !("status" in lastMessage)) {
-    preview = `${lastMessage.author?.displayName}: ${lastMessage.content}`;
+  try {
+    if (app.calls.isRingingForMe(channel.id)) {
+      preview = t("call.incoming");
+    } else if (app.calls.isOutgoing(channel.id)) {
+      preview = t("call.calling");
+    } else if (app.calls.isActive(channel.id)) {
+      const inThisCall =
+        app.voice.currentChannelId === channel.id &&
+        app.voice.connectionStatus !== "idle";
+      preview = inThisCall ? t("call.inCall") : t("call.active");
+    } else if (lastMessage && !("status" in lastMessage)) {
+      preview = formatDmMessagePreview(lastMessage, t);
+    }
+
+    if (!preview) {
+      if (channel.isGroupDM) {
+        preview = `${recipients.length} ${t("groupDm.manage.members")}`;
+      } else if (recipient) {
+        const presence = app.presence.get(recipient.id);
+        const status = presence?.status ?? "offline";
+        if (status === "online") preview = t("online");
+        else if (status === "idle") preview = tCommon("status.idle");
+        else if (status === "dnd") preview = tCommon("status.dnd");
+        else preview = t("offline");
+      }
+    }
+  } catch {
+    if (lastMessage && !("status" in lastMessage)) {
+      preview = formatDmMessagePreview(lastMessage, t);
+    }
+    if (!preview && channel.isGroupDM) {
+      preview = `${recipients.length} ${t("groupDm.manage.members")}`;
+    }
   }
 
   const openChannel = () => {
     Keyboard.dismiss();
+
+    app.setDMDrawerOpen(false);
 
     if (!active) {
       app.channels.setActive(channel.id);
       app.channels.setMostRecentChannelForSpace("@me", channel.id);
       navigate(`/@me/${channel.id}`);
     }
-
-    app.setDMDrawerOpen(false);
   };
 
   const accessibilityLabel = `${title}${

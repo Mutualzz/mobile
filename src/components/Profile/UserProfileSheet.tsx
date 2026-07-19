@@ -1,12 +1,13 @@
 import { Button } from "@components/Button";
 import { MarkdownInput } from "@components/Markdown/MarkdownInput/MarkdownInput";
 import { ProfileMarkdownContent } from "@components/Profile/shared/ProfileMarkdownContent";
+import { ProfileScrim } from "@components/Profile/shared/ProfileScrim";
 import { RecentActivitiesSection } from "@components/Profile/shared/RecentActivitiesSection";
 import { UserPresenceCard } from "@components/Profile/UserPresenceCard";
 import { ProfileWidgetGrid } from "@components/Profile/widgets/ProfileWidgetGrid";
 import { ProfileWidgetsEmptyViewer } from "@components/Profile/widgets/ProfileWidgetsEmptyViewer";
-import { ReportContentSheet } from "@components/Report/ReportContentSheet";
 import { ChangeOnlineStatusSheet } from "@components/User/ChangeOnlineStatusSheet";
+import { UserActionSheet } from "@components/User/UserActionSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useUserRelationshipActions } from "@hooks/useUserRelationshipActions";
@@ -30,7 +31,7 @@ import { formatRestError } from "@utils/restError";
 import Snowflake from "@utils/Snowflake";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-  FlagIcon,
+  DotsThreeVerticalIcon,
   GearIcon,
   PaperPlaneTiltIcon,
   PencilSimpleIcon,
@@ -61,7 +62,7 @@ export const UserProfileSheet = observer(
     const { theme } = useTheme();
     const profileMetrics = useScaledProfileMetrics();
     const avatarOverlap = profileMetrics.avatarSize / 2;
-    const { closeSheet, openSheet } = useSheet();
+    const { closeSheet } = useSheet();
     const { openBottomSheet, closeBottomSheet } = useOpenBottomSheet();
     const { navigate } = useAppNavigation();
     const [content, setContent] = useState("");
@@ -92,26 +93,13 @@ export const UserProfileSheet = observer(
     void profile?.updatedAt;
 
     const isSelf = app.account?.id === user.id;
-    const isViewerStaff = app.account?.isStaff ?? false;
     const showAccountMenu = accountMenu && isSelf;
 
     useEffect(() => {
       if (!isSelf) void app.relationships.resolveAll();
     }, [app.relationships, isSelf]);
 
-    const {
-      isFriend,
-      isIncomingRequest,
-      isOutgoingRequest,
-      iBlockedThem,
-      relationshipPending,
-      addFriend,
-      acceptFriend,
-      declineFriend,
-      removeFriend,
-      blockUser,
-      unblockUser,
-    } = useUserRelationshipActions(user.id);
+    const { iBlockedThem } = useUserRelationshipActions(user.id);
 
     const relationship = app.relationships.getForMe(user.id);
     const theyBlockedMe =
@@ -125,6 +113,20 @@ export const UserProfileSheet = observer(
       }
 
       closeSheet(sheetId);
+    };
+
+    const openActionSheet = () => {
+      const id = `user-actions-${user.id}`;
+      openBottomSheet(
+        id,
+        <UserActionSheet
+          user={user as User}
+          embedded
+          onClose={() => closeBottomSheet(id)}
+          hideMessage
+          onNavigate={close}
+        />,
+      );
     };
 
     const { mutate: sendMessage, isPending: sending } = useMutation({
@@ -142,6 +144,7 @@ export const UserProfileSheet = observer(
         setContent("");
         setSelection({ start: 0, end: 0 });
         close();
+        app.setDMDrawerOpen(false);
         navigate(`/@me/${channel.id}`);
       },
       onError: (err) => {
@@ -215,24 +218,6 @@ export const UserProfileSheet = observer(
       navigate(href);
     };
 
-    const openStaffPanel = () => {
-      close();
-      navigate(isSelf ? "/staff" : `/staff/users/${user.id}`);
-    };
-
-    const openReport = () => {
-      close();
-      openSheet(
-        `report-user-${user.id}`,
-        <ReportContentSheet
-          targetType="user"
-          targetId={user.id}
-          contentLabel={tChat("contextMenu.reportAccount")}
-          sheetId={`report-user-${user.id}`}
-        />,
-      );
-    };
-
     const canSubmit = !!content.trim() && !denyMessaging && !sending;
 
     const handleSubmit = () => {
@@ -302,44 +287,6 @@ export const UserProfileSheet = observer(
               <View
                 style={{
                   position: "absolute",
-                  top: 24,
-                  left: 16,
-                  right: 16,
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <IconButton
-                  variant="solid"
-                  color="neutral"
-                  padding={4}
-                  accessibilityLabel={t("a11y.closeProfile")}
-                  onPress={close}
-                  style={{ borderRadius: 9999 }}
-                  size="sm"
-                >
-                  <XIcon size={18} weight="bold" />
-                </IconButton>
-
-                {showAccountMenu && (
-                  <IconButton
-                    variant="solid"
-                    color="neutral"
-                    padding={4}
-                    accessibilityLabel={t("a11y.settings")}
-                    onPress={() => go("/settings")}
-                    style={{ borderRadius: 9999 }}
-                    size="sm"
-                  >
-                    <GearIcon weight="fill" size={18} />
-                  </IconButton>
-                )}
-              </View>
-
-              <View
-                style={{
-                  position: "absolute",
                   left: 16,
                   right: 16,
                   bottom: -avatarOverlap,
@@ -387,21 +334,54 @@ export const UserProfileSheet = observer(
             </View>
 
             <Box style={{ paddingHorizontal: 16, gap: 12 }}>
-              <Box style={{ gap: 4 }}>
-                <Typography level="title-lg" truncate="single">
-                  {displayName}
-                </Typography>
-                <Typography level="body-md" textColor="muted" truncate="single">
-                  @{user.username}
-                </Typography>
-                {presenceLabel && !showAccountMenu && (
-                  <Typography level="body-sm" textColor="accent">
-                    {presenceLabel}
+              <ProfileScrim>
+                <Box>
+                  <Box
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                      flexWrap: "wrap",
+                      minWidth: 0,
+                    }}
+                  >
+                    <Typography level="title-lg" truncate="single">
+                      {displayName}
+                    </Typography>
+                    {(user.pronouns ?? profile?.pronouns) ? (
+                      <>
+                        <Typography level="body-sm" textColor="muted">
+                          ·
+                        </Typography>
+                        <Typography
+                          level="body-sm"
+                          textColor="muted"
+                          truncate="single"
+                        >
+                          {user.pronouns ?? profile?.pronouns}
+                        </Typography>
+                      </>
+                    ) : null}
+                  </Box>
+                  <Typography
+                    level="body-md"
+                    textColor="muted"
+                    truncate="single"
+                  >
+                    @{user.username}
                   </Typography>
-                )}
-              </Box>
-
-              {profile?.bio && <ProfileMarkdownContent value={profile.bio} />}
+                  {presenceLabel && !showAccountMenu && (
+                    <Typography level="body-sm" textColor="accent">
+                      {presenceLabel}
+                    </Typography>
+                  )}
+                </Box>
+                {profile?.bio ? (
+                  <Box style={{ marginTop: 8 }}>
+                    <ProfileMarkdownContent value={profile.bio} />
+                  </Box>
+                ) : null}
+              </ProfileScrim>
 
               {!hasActivityWidget && (
                 <>
@@ -416,8 +396,8 @@ export const UserProfileSheet = observer(
                 </>
               )}
 
-              <Box style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {isSelf && (
+              {isSelf && (
+                <Box style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                   <Button
                     size="sm"
                     color="neutral"
@@ -428,118 +408,8 @@ export const UserProfileSheet = observer(
                   >
                     {tChat("contextMenu.editProfile")}
                   </Button>
-                )}
-                {!isSelf &&
-                  !isFriend &&
-                  !isIncomingRequest &&
-                  !isOutgoingRequest && (
-                    <Button
-                      size="sm"
-                      color="neutral"
-                      variant="soft"
-                      disabled={relationshipPending || iBlockedThem}
-                      onPress={() => addFriend.mutate()}
-                    >
-                      {tChat("contextMenu.addFriend")}
-                    </Button>
-                  )}
-                {!isSelf && isIncomingRequest && (
-                  <>
-                    <Button
-                      size="sm"
-                      color="success"
-                      disabled={relationshipPending || iBlockedThem}
-                      onPress={() => acceptFriend.mutate()}
-                    >
-                      {t("accept")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      color="neutral"
-                      variant="soft"
-                      disabled={relationshipPending || iBlockedThem}
-                      onPress={() => declineFriend.mutate()}
-                    >
-                      {t("decline")}
-                    </Button>
-                  </>
-                )}
-                {!isSelf && isOutgoingRequest && (
-                  <Button
-                    size="sm"
-                    color="neutral"
-                    variant="soft"
-                    disabled={relationshipPending}
-                    onPress={() => declineFriend.mutate()}
-                  >
-                    {tChat("contextMenu.cancelFriendRequest")}
-                  </Button>
-                )}
-                {!isSelf && isFriend && (
-                  <Button
-                    size="sm"
-                    color="neutral"
-                    variant="soft"
-                    disabled={relationshipPending || iBlockedThem}
-                    onPress={() => removeFriend.mutate()}
-                  >
-                    {tChat("contextMenu.removeFriend")}
-                  </Button>
-                )}
-                {!isSelf &&
-                  (iBlockedThem ? (
-                    <Button
-                      size="sm"
-                      color="neutral"
-                      variant="soft"
-                      disabled={relationshipPending}
-                      onPress={() => unblockUser.mutate()}
-                    >
-                      {tChat("contextMenu.unblock")}
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      color="danger"
-                      variant="soft"
-                      disabled={relationshipPending}
-                      onPress={() => blockUser.mutate()}
-                    >
-                      {tChat("contextMenu.block")}
-                    </Button>
-                  ))}
-                {!isSelf && (
-                  <Button
-                    size="sm"
-                    color="neutral"
-                    variant="soft"
-                    onPress={() => go(`/users/${user.username}`)}
-                  >
-                    {tChat("contextMenu.viewProfile")}
-                  </Button>
-                )}
-                {isViewerStaff && !isSelf && (
-                  <Button
-                    size="sm"
-                    color="danger"
-                    variant="soft"
-                    onPress={openStaffPanel}
-                  >
-                    {tChat("contextMenu.openInStaffPanel")}
-                  </Button>
-                )}
-                {!isSelf && (
-                  <Button
-                    size="sm"
-                    color="danger"
-                    variant="soft"
-                    startDecorator={<FlagIcon size={16} weight="fill" />}
-                    onPress={openReport}
-                  >
-                    {t("report.action")}
-                  </Button>
-                )}
-              </Box>
+                </Box>
+              )}
 
               {!isSelf && (
                 <Box
@@ -592,6 +462,60 @@ export const UserProfileSheet = observer(
             </Box>
           </View>
         </ScrollView>
+
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: "absolute",
+            top: 24,
+            left: 16,
+            right: 16,
+            zIndex: 2,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <IconButton
+            variant="solid"
+            color="neutral"
+            padding={4}
+            accessibilityLabel={t("a11y.closeProfile")}
+            onPress={close}
+            style={{ borderRadius: 9999 }}
+            size="sm"
+          >
+            <XIcon size={18} weight="bold" />
+          </IconButton>
+
+          {showAccountMenu ? (
+            <IconButton
+              variant="solid"
+              color="neutral"
+              padding={4}
+              accessibilityLabel={t("a11y.settings")}
+              onPress={() => go("/settings")}
+              style={{ borderRadius: 9999 }}
+              size="sm"
+            >
+              <GearIcon weight="fill" size={18} />
+            </IconButton>
+          ) : !isSelf ? (
+            <IconButton
+              variant="solid"
+              color="neutral"
+              padding={4}
+              accessibilityLabel={t("a11y.moreOptions", {
+                defaultValue: "More options",
+              })}
+              onPress={openActionSheet}
+              style={{ borderRadius: 9999 }}
+              size="sm"
+            >
+              <DotsThreeVerticalIcon size={18} weight="bold" />
+            </IconButton>
+          ) : null}
+        </View>
       </View>
     );
   },

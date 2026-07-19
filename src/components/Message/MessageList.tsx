@@ -441,15 +441,16 @@ export const MessageList = observer(({ channel }: Props) => {
 
     return (
       <Box>
-        {isDM ? (
-          <DMEndMessage channel={channel} />
-        ) : (
-          <SpaceEndMessage
-            channel={channel}
-            canReadHistory={canReadHistory}
-            theme={theme}
-          />
-        )}
+        {!hasNextPage &&
+          (isDM ? (
+            <DMEndMessage channel={channel} />
+          ) : (
+            <SpaceEndMessage
+              channel={channel}
+              canReadHistory={canReadHistory}
+              theme={theme}
+            />
+          ))}
         {isFetchingNextPage && (
           <Box style={{ paddingVertical: 16, alignItems: "center" }}>
             <ActivityIndicator />
@@ -457,7 +458,14 @@ export const MessageList = observer(({ channel }: Props) => {
         )}
       </Box>
     );
-  }, [channel, isDM, canReadHistory, theme, isFetchingNextPage]);
+  }, [
+    channel,
+    isDM,
+    canReadHistory,
+    theme,
+    hasNextPage,
+    isFetchingNextPage,
+  ]);
 
   return (
     <Box style={{ flex: 1, minHeight: 0 }}>
@@ -481,6 +489,8 @@ export const MessageList = observer(({ channel }: Props) => {
         renderScrollComponent={ChatListScrollView}
         ListHeaderComponent={listHeader}
         contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "flex-end",
           paddingHorizontal: 8,
           paddingTop: 8,
           paddingBottom: 8,

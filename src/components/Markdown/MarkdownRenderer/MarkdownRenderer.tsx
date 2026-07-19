@@ -6,6 +6,7 @@ import { emphasisPlugin } from "@components/Markdown/MarkdownRenderer/plugins/em
 import { linkPlugin } from "@components/Markdown/MarkdownRenderer/plugins/links";
 import { mentionPlugin } from "@components/Markdown/MarkdownRenderer/plugins/mention";
 import { spoilerPlugin } from "@components/Markdown/MarkdownRenderer/plugins/spoiler";
+import { colorPlugin } from "@components/Markdown/MarkdownRenderer/plugins/color";
 import { strikethroughPlugin } from "@components/Markdown/MarkdownRenderer/plugins/strikethrough";
 import { underlinePlugin } from "@components/Markdown/MarkdownRenderer/plugins/underline";
 import { Paper } from "@components/Paper";
@@ -49,6 +50,7 @@ export const MarkdownRenderer = observer(
       instance.use(emphasisPlugin);
       instance.use(underlinePlugin);
       instance.use(spoilerPlugin);
+      instance.use(colorPlugin);
       instance.use(mentionPlugin);
       instance.use(linkPlugin);
       instance.use(emojiPlugin);

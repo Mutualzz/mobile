@@ -37,13 +37,14 @@ import {
   startOrUpdateVoiceLiveActivity,
   updateVoiceLiveActivity,
 } from "@utils/voiceLiveActivity";
-import { resolveVoiceLiveActivitySpaceIcon } from "@utils/voiceLiveActivityIcon";
+import { resolveVoiceLiveActivityIcon } from "@utils/voiceLiveActivityIcon";
 import { getVoiceLiveActivityThemeColors } from "@utils/voiceLiveActivityTheme";
 import { ensureVoiceMicPermission } from "@utils/voicePermissions";
 import { AppState, type AppStateStatus } from "react-native";
 import type { MediaStream } from "react-native-webrtc";
 import { mediaDevices } from "react-native-webrtc";
 import i18n from "../i18n";
+import { Channel } from "@stores/objects/Channel";
 
 export type VoiceConnectionStatus =
   | "idle"
@@ -132,12 +133,14 @@ export class VoiceStore {
 
   private pendingEndpoint: string | null = null;
   private pendingToken: string | null = null;
+  private joinPrepPromise: Promise<void> | null = null;
   private readonly session: MediasoupSession;
   private readonly logger = new Logger({ tag: "VoiceStore" });
   private abortController: AbortController | null = null;
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
   private joinTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
   private cameraProducerByUser = new Map<string, string>();
+  private channelSwitchInProgress = false;
   private cameraSuspendedByBackground = false;
   private readonly appStateSubscription = AppState.addEventListener(
     "change",
@@ -150,7 +153,7 @@ export class VoiceStore {
       toggleMute: () => this.setMute(!this.selfMute),
       toggleDeaf: () => this.setDeaf(!this.selfDeaf),
       disconnect: () => {
-        void this.leave();
+        void this.hangupCurrentDmCall();
       },
     };
     bindVoiceLiveActivityHandlers(voiceLiveActivityHandlers);
@@ -164,7 +167,7 @@ export class VoiceStore {
         return;
       }
       if (action === "disconnect") {
-        void this.leave();
+        void this.hangupCurrentDmCall();
       }
     });
     reaction(
@@ -187,6 +190,7 @@ export class VoiceStore {
           const reasonLower = String(reason ?? "").toLowerCase();
           if (reasonLower.includes("moved to another voice channel")) {
             runInAction(() => {
+              this.channelSwitchInProgress = true;
               this.connectionStatus = "connecting";
               this.connectionError = null;
             });
@@ -203,7 +207,9 @@ export class VoiceStore {
             !isSuperseded &&
             this.connectionStatus === "connected" &&
             !!this.currentVoiceTarget &&
-            this.app.isGatewayReady;
+            this.app.isGatewayReady &&
+            (this.currentVoiceTarget.spaceId != null ||
+              !!this.app.calls.getCall(this.currentVoiceTarget.channelId));
           runInAction(() => {
             this.connectionError = canAutoRejoin
               ? null
@@ -315,6 +321,51 @@ export class VoiceStore {
 
   get hasActiveVoiceTarget() {
     return !!this.currentVoiceTarget;
+  }
+
+  private matchesVoiceTarget(
+    target: VoiceTarget | null | undefined,
+    payload: Pick<VoiceServerUpdatePayload, "spaceId" | "channelId">,
+  ) {
+    if (!target) return false;
+    return (
+      String(target.spaceId ?? null) === String(payload.spaceId ?? null) &&
+      String(target.channelId) === String(payload.channelId)
+    );
+  }
+
+  private shouldAcceptVoiceServerUpdate(payload: VoiceServerUpdatePayload) {
+    if (this.matchesVoiceTarget(this.currentVoiceTarget, payload)) return true;
+
+    if (this.currentVoiceTarget) return false;
+
+    const selfId = this.app.account?.id;
+    const selfState = selfId ? this.app.voiceStates.get(selfId) : null;
+    if (selfState?.channelId) {
+      if (
+        payload.spaceId == null &&
+        !this.app.calls.getCall(payload.channelId)
+      ) {
+        return false;
+      }
+      return this.matchesVoiceTarget(
+        {
+          spaceId: selfState.spaceId ?? null,
+          channelId: selfState.channelId,
+        },
+        payload,
+      );
+    }
+
+    if (
+      payload.spaceId == null &&
+      this.connectionStatus === "connecting" &&
+      this.app.calls.getCall(payload.channelId)
+    ) {
+      return true;
+    }
+
+    return false;
   }
 
   get canUseVadInCurrentChannel() {
@@ -442,6 +493,7 @@ export class VoiceStore {
 
     try {
       this.session.setPushToTalkPressed(pressed);
+      this.app.sounds.play(pressed ? "ptt_start" : "ptt_stop");
     } catch (error) {
       this.logger.warn("Failed to apply push-to-talk state", error);
     }
@@ -530,26 +582,13 @@ export class VoiceStore {
           try {
             const tmp = await mediaDevices.getUserMedia({
               audio: true,
-              video: true,
             });
             tmp.getTracks().forEach((track) => {
               try {
                 track.stop();
               } catch {}
             });
-          } catch {
-            try {
-              const tmp = await mediaDevices.getUserMedia({
-                audio: true,
-                video: false,
-              });
-              tmp.getTracks().forEach((track) => {
-                try {
-                  track.stop();
-                } catch {}
-              });
-            } catch {}
-          }
+          } catch {}
         }
       }
 
@@ -603,22 +642,13 @@ export class VoiceStore {
       this.stopKeepAlive();
     }
 
-    await this.setupDevices(true);
-
-    const hasMicPermission = await ensureVoiceMicPermission();
-    if (!hasMicPermission) {
-      runInAction(() => {
-        this.connectionError = i18n.t("voice.errors.micPermissionRequired", {
-          ns: "chat",
-        });
-        this.connectionStatus = "failed";
-        this.currentVoiceTarget = null;
-      });
-      return;
-    }
-
     const preferredSelfMute = this.app.settings?.preferredSelfMute ?? false;
     const preferredSelfDeaf = this.app.settings?.preferredSelfDeaf ?? false;
+    const selfDeaf = preferredSelfDeaf;
+    const selfMute = preferredSelfMute || preferredSelfDeaf;
+
+    this.pendingEndpoint = null;
+    this.pendingToken = null;
 
     runInAction(() => {
       this.currentVoiceTarget = {
@@ -627,27 +657,125 @@ export class VoiceStore {
       };
       this.connectionStatus = "connecting";
       this.connectionError = null;
-      this.selfMute = preferredSelfMute;
-      this.selfDeaf = preferredSelfDeaf;
+      this.selfMute = selfMute;
+      this.selfDeaf = selfDeaf;
+    });
+
+    this.joinPrepPromise = this.setupDevices(true)
+      .then(async () => {
+        const hasMicPermission = await ensureVoiceMicPermission();
+        if (!hasMicPermission) {
+          throw new Error(
+            i18n.t("voice.errors.micPermissionRequired", { ns: "chat" }),
+          );
+        }
+      })
+      .catch((error) => {
+        const message =
+          error instanceof Error
+            ? error.message
+            : i18n.t("voice.errors.micPermissionRequired", { ns: "chat" });
+        this.clearJoinTimeout();
+        this.stopKeepAlive();
+        runInAction(() => {
+          this.connectionError = message;
+          this.connectionStatus = "failed";
+          this.currentVoiceTarget = null;
+        });
+        throw error;
+      });
+
+    this.startJoinTimeout();
+    await this.sendVoiceStateUpdate({ refreshRtc: true });
+  }
+
+  primeJoin(target: VoiceTarget) {
+    const isSame =
+      this.currentVoiceTarget?.spaceId === (target.spaceId ?? null) &&
+      this.currentVoiceTarget?.channelId === target.channelId;
+
+    if (this.currentVoiceTarget && !isSame) {
+      this.clearJoinTimeout();
+      this.abortAndTeardown();
+      this.stopKeepAlive();
+    }
+
+    const preferredSelfMute = this.app.settings?.preferredSelfMute ?? false;
+    const preferredSelfDeaf = this.app.settings?.preferredSelfDeaf ?? false;
+    const selfDeaf = preferredSelfDeaf;
+    const selfMute = preferredSelfMute || preferredSelfDeaf;
+
+    runInAction(() => {
+      this.currentVoiceTarget = {
+        spaceId: target.spaceId ?? null,
+        channelId: target.channelId,
+      };
+      this.connectionStatus = "connecting";
+      this.connectionError = null;
+      this.selfMute = selfMute;
+      this.selfDeaf = selfDeaf;
     });
 
     this.startJoinTimeout();
-    await this.sendVoiceStateUpdate();
-    this.startKeepAlive();
   }
 
   async joinChannel(channelId: Snowflake, spaceId?: Snowflake | null) {
     await this.join({ channelId, spaceId: spaceId ?? null });
   }
 
-  async leave() {
+  async hangupCurrentDmCall() {
+    const target = this.currentVoiceTarget;
+    if (target != null && target.spaceId == null) {
+      const channelId = target.channelId;
+      const call = this.app.calls.getCall(channelId);
+      const selfId = this.app.account?.id
+        ? String(this.app.account.id)
+        : null;
+      const othersInVoice = this.app.voiceStates
+        .getAllByChannel(channelId)
+        .filter((state) => !selfId || String(state.userId) !== selfId);
+
+      if (othersInVoice.length === 0) {
+        await this.app.calls.endOnVoiceLeave(channelId);
+      } else if (
+        call &&
+        selfId &&
+        String(call.initiatorId) !== selfId &&
+        (call.accepted.includes(selfId) || call.ringing.includes(selfId))
+      ) {
+        await this.app.calls.abandon(channelId);
+      }
+    }
+    await this.leave({ skipCallCleanup: true });
+  }
+
+  async leave(options?: { skipCallCleanup?: boolean }) {
+    if (this.connectionStatus === "failed" && !this.currentVoiceTarget) {
+      runInAction(() => {
+        this.connectionStatus = "idle";
+        this.connectionError = null;
+      });
+      return;
+    }
+
+    const shouldPlayDisconnect =
+      this.connectionStatus === "connected" ||
+      this.connectionStatus === "connecting";
+
     this.clearJoinTimeout();
     this.abortAndTeardown();
     this.stopKeepAlive();
     this.cameraSuspendedByBackground = false;
-    await this.teardownVoicePresenceUi();
 
     const selfId = this.app.account?.id;
+    const selfState = selfId ? this.app.voiceStates.get(selfId) : null;
+    const minecraftOwns =
+      selfState?.client === "minecraft" && !!selfState.channelId;
+    const leavingDmCall =
+      this.currentVoiceTarget?.spaceId == null &&
+      !!this.currentVoiceTarget?.channelId
+        ? String(this.currentVoiceTarget.channelId)
+        : null;
 
     runInAction(() => {
       this.connectionStatus = "idle";
@@ -656,6 +784,7 @@ export class VoiceStore {
       this.currentSessionId = null;
       this.pendingEndpoint = null;
       this.pendingToken = null;
+      this.channelSwitchInProgress = false;
       this.cameraEnabled = false;
       this.spaceMute = false;
       this.spaceDeaf = false;
@@ -664,15 +793,71 @@ export class VoiceStore {
       this.pushToTalkActive = false;
     });
     this.cameraProducerByUser.clear();
+
+    void this.teardownVoicePresenceUi();
+
+    if (minecraftOwns) return;
+
     if (selfId) {
       this.app.voiceStates.remove(selfId);
     }
 
-    this.sendVoiceStateUpdate();
+    if (leavingDmCall && !options?.skipCallCleanup) {
+      await this.app.calls.endOnVoiceLeave(leavingDmCall);
+    }
+
+    if (shouldPlayDisconnect) {
+      this.app.sounds.play("call_disconnect");
+    }
+
+    void this.sendVoiceStateUpdate();
   }
 
   async leaveChannel() {
     await this.leave();
+  }
+
+  onRemoteCallEnded(channelId: Snowflake) {
+    if (
+      !this.currentVoiceTarget ||
+      String(this.currentVoiceTarget.channelId) !== String(channelId)
+    ) {
+      return;
+    }
+
+    const shouldPlayDisconnect =
+      this.connectionStatus === "connected" ||
+      this.connectionStatus === "connecting";
+
+    this.clearJoinTimeout();
+    this.abortAndTeardown();
+    this.stopKeepAlive();
+    this.cameraSuspendedByBackground = false;
+    void this.teardownVoicePresenceUi();
+
+    const selfId = this.app.account?.id;
+    if (selfId) {
+      this.app.voiceStates.remove(selfId);
+    }
+
+    runInAction(() => {
+      this.connectionStatus = "idle";
+      this.connectionError = null;
+      this.currentVoiceTarget = null;
+      this.currentSessionId = null;
+      this.pendingEndpoint = null;
+      this.pendingToken = null;
+      this.channelSwitchInProgress = false;
+      this.cameraEnabled = false;
+      this.remoteCameraStreams.clear();
+      this.speakingUsers.clear();
+      this.pushToTalkActive = false;
+    });
+    this.cameraProducerByUser.clear();
+
+    if (shouldPlayDisconnect) {
+      this.app.sounds.play("call_disconnect");
+    }
   }
 
   clear() {
@@ -680,6 +865,8 @@ export class VoiceStore {
     this.abortAndTeardown();
     this.stopKeepAlive();
     void this.teardownVoicePresenceUi();
+    this.pendingEndpoint = null;
+    this.pendingToken = null;
     this.connectionStatus = "idle";
     this.connectionError = null;
     this.currentVoiceTarget = null;
@@ -690,18 +877,55 @@ export class VoiceStore {
     this.speakingUsers.clear();
   }
 
-  onGatewayReconnected() {
-    if (!this.currentVoiceTarget) return;
+  onGatewayDisconnected() {
+    this.stopKeepAlive();
+  }
 
+  onGatewayReconnected() {
     const selfId = this.app.account?.id;
     const selfState = selfId ? this.app.voiceStates.get(selfId) : null;
+
+    if (
+      !this.currentVoiceTarget &&
+      selfState?.channelId &&
+      selfState.spaceId == null &&
+      selfState.client !== "minecraft" &&
+      !this.app.calls.getCall(selfState.channelId)
+    ) {
+      if (selfId) this.app.voiceStates.remove(selfId);
+      void this.app.gateway.sendVoiceStateUpdate({
+        spaceId: null,
+        channelId: null,
+        selfMute: this.selfMute,
+        selfDeaf: this.selfDeaf,
+      });
+      return;
+    }
+
+    if (!this.currentVoiceTarget) return;
+
     if (selfState?.client === "minecraft" && selfState.channelId) {
+      try {
+        this.abortAndTeardown();
+      } catch {}
+      this.stopKeepAlive();
+      this.clearJoinTimeout();
+      void this.teardownVoicePresenceUi();
       runInAction(() => {
         this.connectionStatus = "idle";
+        this.connectionError = null;
         this.currentVoiceTarget = null;
+        this.cameraEnabled = false;
+        this.pushToTalkActive = false;
       });
-      this.stopKeepAlive();
-      void this.teardownVoicePresenceUi();
+      return;
+    }
+
+    if (
+      this.currentVoiceTarget.spaceId == null &&
+      !this.app.calls.getCall(this.currentVoiceTarget.channelId)
+    ) {
+      this.onRemoteCallEnded(this.currentVoiceTarget.channelId);
       return;
     }
 
@@ -715,6 +939,8 @@ export class VoiceStore {
   }
 
   onVoiceServerUpdate(payload: VoiceServerUpdatePayload) {
+    if (!this.shouldAcceptVoiceServerUpdate(payload)) return;
+
     if (!payload.voiceEndpoint?.trim()) {
       this.failJoin(i18n.t("voice.errors.notConfigured", { ns: "chat" }));
       return;
@@ -724,29 +950,59 @@ export class VoiceStore {
     this.pendingToken = payload.voiceToken;
 
     runInAction(() => {
+      this.channelSwitchInProgress = true;
       this.currentVoiceTarget = {
         spaceId: payload.spaceId ?? null,
         channelId: payload.channelId,
       };
       this.currentSessionId = payload.sessionId;
+      this.connectionStatus = "connecting";
+      this.connectionError = null;
     });
 
+    this.startJoinTimeout();
     void this.startConnection();
   }
 
   onVoiceStateSync(payload: VoiceStateSyncPayload) {
+    const channelId = String(payload.channelId);
     for (const state of payload.states) {
       this.syncSelfFromState(state);
       this.app.voiceStates.upsert(state);
     }
 
-    const synced = new Set(payload.states.map((state) => state.userId));
-    for (const existing of this.app.voiceStates.getAllByChannel(
-      payload.channelId,
-    )) {
-      if (!synced.has(existing.userId)) {
+    const synced = new Set(payload.states.map((state) => String(state.userId)));
+    for (const existing of this.app.voiceStates.getAllByChannel(channelId)) {
+      if (!synced.has(String(existing.userId))) {
         this.app.voiceStates.remove(existing.userId);
       }
+    }
+  }
+
+  private playRemoteVoiceMemberSound(
+    userId: string,
+    nextChannelId: string | null,
+  ) {
+    const accountId = this.app.account?.id;
+    if (!accountId || userId === accountId) return;
+    if (this.connectionStatus !== "connected") return;
+
+    const myChannel = this.currentChannelId;
+    if (!myChannel) return;
+
+    const existing = this.app.voiceStates.get(userId);
+    const wasInMine =
+      !!existing?.channelId &&
+      String(existing.channelId) === String(myChannel);
+    const nowInMine =
+      !!nextChannelId && String(nextChannelId) === String(myChannel);
+
+    if (wasInMine && !nowInMine) {
+      this.app.sounds.play("user_leave");
+      return;
+    }
+    if (!wasInMine && nowInMine) {
+      this.app.sounds.play("user_join");
     }
   }
 
@@ -768,11 +1024,22 @@ export class VoiceStore {
           }
         : state;
 
-    this.syncSelfFromState(raw);
-
     const channelId =
       raw.channelId === "null" || raw.channelId == null ? null : raw.channelId;
     const accountId = this.app.account?.id;
+    const existing = this.app.voiceStates.get(raw.userId);
+
+    if (
+      channelId != null &&
+      existing &&
+      typeof raw.updatedAt === "number" &&
+      typeof existing.updatedAt === "number" &&
+      raw.updatedAt < existing.updatedAt
+    ) {
+      return;
+    }
+
+    this.syncSelfFromState(raw);
 
     if (
       accountId &&
@@ -804,11 +1071,14 @@ export class VoiceStore {
       raw.userId === accountId &&
       this.connectionStatus === "connecting"
     ) {
-      this.failJoin(i18n.t("voice.errors.unableToJoin", { ns: "chat" }));
+      this.failJoin(i18n.t("voice.errors.unableToJoin", { ns: "chat" }), {
+        notifyServer: false,
+      });
       return;
     }
 
     if (!channelId) {
+      this.playRemoteVoiceMemberSound(raw.userId, null);
       this.app.voiceStates.remove(raw.userId);
       if (raw.userId !== accountId) {
         runInAction(() => {
@@ -820,6 +1090,7 @@ export class VoiceStore {
       return;
     }
 
+    this.playRemoteVoiceMemberSound(raw.userId, channelId);
     this.app.voiceStates.upsert({
       ...raw,
       channelId,
@@ -839,8 +1110,11 @@ export class VoiceStore {
       this.applySessionVoiceFlags();
       void this.sendVoiceStateUpdate();
       void this.syncVoicePresenceUi();
+      this.app.sounds.play("deafen_off");
       return;
     }
+
+    if (this.selfMute === value) return;
 
     runInAction(() => {
       this.selfMute = value;
@@ -849,10 +1123,12 @@ export class VoiceStore {
     this.applySessionVoiceFlags();
     void this.sendVoiceStateUpdate();
     void this.syncVoicePresenceUi();
+    this.app.sounds.play(value ? "mute_on" : "mute_off");
   }
 
   setDeaf(value: boolean) {
     if (this.spaceDeaf) return;
+    if (this.selfDeaf === value) return;
 
     runInAction(() => {
       this.selfDeaf = value;
@@ -881,6 +1157,7 @@ export class VoiceStore {
     }
     void this.sendVoiceStateUpdate();
     void this.syncVoicePresenceUi();
+    this.app.sounds.play(value ? "deafen_on" : "deafen_off");
   }
 
   setInputDeviceId(deviceId: string) {
@@ -974,8 +1251,6 @@ export class VoiceStore {
     } else {
       await this.sendVoiceStateUpdate({ refreshRtc: true });
     }
-
-    this.startKeepAlive();
   }
 
   private async startConnection() {
@@ -1000,6 +1275,12 @@ export class VoiceStore {
     });
 
     try {
+      if (this.joinPrepPromise) {
+        await this.joinPrepPromise;
+        this.joinPrepPromise = null;
+      }
+      if (signal.aborted) return;
+
       this.session.setInputDeviceId(this.currentInputDeviceId);
       this.session.setCameraDeviceId(
         this.cameraEnabled ? this.currentCameraDeviceId : null,
@@ -1017,22 +1298,30 @@ export class VoiceStore {
       await this.session.connect(fixConnectionUrl(endpoint), token, signal);
       if (signal.aborted) return;
 
-      const hasMicPermission = await ensureVoiceMicPermission();
-      if (!hasMicPermission) {
-        throw new Error(
-          i18n.t("voice.errors.micPermissionRequired", { ns: "chat" }),
+      runInAction(() => {
+        this.connectionStatus = "connected";
+        this.channelSwitchInProgress = false;
+      });
+      this.applySessionVoiceFlags();
+      this.applyVoiceSettings();
+      this.clearJoinTimeout();
+      this.startKeepAlive();
+      void this.activateVoicePresenceUi().catch((error) => {
+        this.logger.warn(
+          "activateVoicePresenceUi failed",
+          error instanceof Error ? error.message : String(error),
         );
-      }
+      });
 
-      try {
-        await this.session.startMic(signal);
-      } catch (error) {
-        this.logger.warn("startMic after connect failed", error);
-      }
-
-      if (signal.aborted) return;
-
-      if (this.cameraEnabled) {
+      void (async () => {
+        const hasMicPermission = await ensureVoiceMicPermission();
+        if (!hasMicPermission || signal.aborted) return;
+        try {
+          await this.session.startMic(signal);
+        } catch (error) {
+          this.logger.warn("startMic after connect failed", error);
+        }
+        if (signal.aborted || !this.cameraEnabled) return;
         try {
           await this.session.startCamera(signal);
         } catch (error) {
@@ -1041,37 +1330,13 @@ export class VoiceStore {
             this.cameraEnabled = false;
           });
         }
-      }
-
-      if (signal.aborted) return;
-
-      runInAction(() => {
-        this.connectionStatus = "connected";
-      });
-      this.applySessionVoiceFlags();
-      this.applyVoiceSettings();
-      this.clearJoinTimeout();
-      this.startKeepAlive();
-      try {
-        await this.activateVoicePresenceUi();
-      } catch (error) {
-        this.logger.warn(
-          "activateVoicePresenceUi failed",
-          error instanceof Error ? error.message : String(error),
-        );
-      }
+      })();
     } catch (error) {
       if (signal.aborted) return;
 
       const message = error instanceof Error ? error.message : String(error);
       this.logger.warn("Voice connection failed", message);
-
-      runInAction(() => {
-        this.connectionStatus = "failed";
-        this.connectionError = message;
-      });
-      this.clearJoinTimeout();
-      void this.teardownVoicePresenceUi();
+      this.failJoin(message);
     }
   }
 
@@ -1091,24 +1356,61 @@ export class VoiceStore {
     }
   }
 
-  private failJoin(message: string) {
+  private failJoin(
+    message: string,
+    options: { notifyServer?: boolean } = {},
+  ) {
     this.clearJoinTimeout();
+
+    const failedTarget = this.currentVoiceTarget;
+    const selfId = this.app.account?.id;
+
     this.abortAndTeardown();
     this.stopKeepAlive();
     this.cameraSuspendedByBackground = false;
     void this.teardownVoicePresenceUi();
+    this.pendingEndpoint = null;
+    this.pendingToken = null;
+
+    if (selfId) {
+      this.app.voiceStates.remove(selfId);
+    }
 
     runInAction(() => {
       this.connectionStatus = "failed";
       this.connectionError = message;
       this.currentVoiceTarget = null;
       this.currentSessionId = null;
+      this.channelSwitchInProgress = false;
       this.cameraEnabled = false;
       this.remoteCameraStreams.clear();
       this.speakingUsers.clear();
     });
     this.cameraProducerByUser.clear();
-    void this.sendVoiceStateUpdate();
+
+    if (options.notifyServer !== false) {
+      void this.app.gateway.sendVoiceStateUpdate({
+        spaceId: failedTarget?.spaceId ?? null,
+        channelId: null,
+        selfMute: this.effectiveSelfMute,
+        selfDeaf: this.effectiveSelfDeaf,
+        client: "mobile",
+      });
+    }
+
+    if (failedTarget && failedTarget.spaceId == null) {
+      void this.app.calls.endOnJoinFail(failedTarget.channelId);
+    }
+  }
+
+  failJoinFromSystem(message: string) {
+    if (
+      this.connectionStatus !== "connecting" &&
+      this.connectionStatus !== "failed"
+    ) {
+      return;
+    }
+    this.failJoin(message, { notifyServer: false });
   }
 
   private abortAndTeardown() {
@@ -1127,8 +1429,12 @@ export class VoiceStore {
     const accountId = this.app.account?.id;
     if (!accountId || raw.userId !== accountId) return;
 
-    this.spaceMute = raw.spaceMute ?? false;
-    this.spaceDeaf = raw.spaceDeaf ?? false;
+    const wasSpaceMuted = this.spaceMute || this.spaceDeaf;
+    const forcedMute = raw.spaceMute ?? false;
+    const forcedDeaf = raw.spaceDeaf ?? false;
+
+    this.spaceMute = forcedMute;
+    this.spaceDeaf = forcedDeaf;
     this.selfMute = this.spaceMute ? true : raw.selfMute;
     this.selfDeaf = this.spaceDeaf ? true : raw.selfDeaf;
 
@@ -1136,15 +1442,146 @@ export class VoiceStore {
     if (this.connectionStatus === "connected") {
       void this.syncVoicePresenceUi();
     }
+
+    if (
+      wasSpaceMuted &&
+      !forcedMute &&
+      !forcedDeaf &&
+      this.connectionStatus === "connected" &&
+      this.abortController
+    ) {
+      void this.session.restartMic(this.abortController.signal).catch((error) => {
+        this.logger.warn("restartMic after unmute failed", error);
+      });
+    }
+  }
+
+  private async resolveVoiceParticipantIcons(channelId: string | null) {
+    const maxVisible = 3;
+    if (!channelId) {
+      return { participantIconFileNames: [] as string[], participantOverflow: 0 };
+    }
+
+    const selfId = this.app.account?.id ? String(this.app.account.id) : null;
+    const states = this.app.voiceStates.getAllByChannel(channelId);
+    const ordered = [
+      ...states.filter((state) => String(state.userId) !== selfId),
+      ...states.filter((state) => String(state.userId) === selfId),
+    ];
+
+    const visible = ordered.slice(0, maxVisible);
+    const participantIconFileNames: string[] = [];
+
+    for (const state of visible) {
+      const user = state.user;
+      if (!user) continue;
+      const fileName = await resolveVoiceLiveActivityIcon({
+        cacheKey: `user-${user.id}`,
+        iconUrl: user.constructAvatarUrl(false, "light", 128, ImageFormat.PNG),
+      });
+      if (fileName) {
+        participantIconFileNames.push(fileName);
+      }
+    }
+
+    return {
+      participantIconFileNames,
+      participantOverflow: Math.max(0, ordered.length - maxVisible),
+    };
   }
 
   private async getVoicePresenceProps() {
     const channel = this.channel;
-    const channelName =
-      channel?.name?.trim() ||
-      i18n.t("voice.title", { ns: "chat" });
-    const space = channel?.space ?? null;
+    const callSubtitle = i18n.t("call.inCall", { ns: "chat" });
+    const participants = await this.resolveVoiceParticipantIcons(
+      channel?.id ?? this.currentChannelId,
+    );
+
+    if (!channel) {
+      return {
+        channelName: i18n.t("voice.title", { ns: "chat" }),
+        spaceName: "",
+        muted: this.effectiveSelfMute === true,
+        deafened: this.effectiveSelfDeaf === true,
+        spaceIconFileName: "",
+        ...participants,
+        ...getVoiceLiveActivityThemeColors(this.app),
+      };
+    }
+
+    if (channel.spaceId == null) {
+      if (channel.isGroupDM) {
+        const spaceName =
+          channel.name?.trim() ||
+          channel.dmRecipients
+            ?.map((user) => user.displayName)
+            .filter(Boolean)
+            .join(", ") ||
+          i18n.t("groupDm.title", { ns: "chat" });
+        const iconUser = channel.dmRecipients?.[0] ?? null;
+        const iconUrl =
+          channel.icon != null
+            ? Channel.constructIconUrl(
+                channel.id,
+                channel.icon.startsWith("a_"),
+                channel.icon,
+                128,
+                ImageFormat.PNG,
+              )
+            : (iconUser?.constructAvatarUrl(
+                false,
+                "light",
+                128,
+                ImageFormat.PNG,
+              ) ?? null);
+        const spaceIconFileName = await resolveVoiceLiveActivityIcon({
+          cacheKey: channel.icon
+            ? `group-${channel.id}`
+            : iconUser
+              ? `user-${iconUser.id}`
+              : null,
+          iconUrl,
+        });
+
+        return {
+          channelName: callSubtitle,
+          spaceName,
+          muted: this.effectiveSelfMute === true,
+          deafened: this.effectiveSelfDeaf === true,
+          spaceIconFileName: spaceIconFileName || "",
+          ...participants,
+          ...getVoiceLiveActivityThemeColors(this.app),
+        };
+      }
+
+      const recipient = channel.dmRecipient ?? null;
+      const spaceName =
+        recipient?.displayName?.trim() ||
+        channel.name?.trim() ||
+        i18n.t("unknownUser", { ns: "chat" });
+      const iconUrl =
+        recipient?.constructAvatarUrl(false, "light", 128, ImageFormat.PNG) ??
+        null;
+      const spaceIconFileName = await resolveVoiceLiveActivityIcon({
+        cacheKey: recipient ? `user-${recipient.id}` : null,
+        iconUrl,
+      });
+
+      return {
+        channelName: callSubtitle,
+        spaceName,
+        muted: this.effectiveSelfMute === true,
+        deafened: this.effectiveSelfDeaf === true,
+        spaceIconFileName: spaceIconFileName || "",
+        ...participants,
+        ...getVoiceLiveActivityThemeColors(this.app),
+      };
+    }
+
+    const space = channel.space ?? null;
     const spaceName = space?.name?.trim() || "";
+    const channelName =
+      channel.name?.trim() || i18n.t("voice.title", { ns: "chat" });
     const iconUrl =
       space?.icon != null
         ? Space.constructIconUrl(
@@ -1155,8 +1592,8 @@ export class VoiceStore {
             ImageFormat.PNG,
           )
         : null;
-    const spaceIconFileName = await resolveVoiceLiveActivitySpaceIcon({
-      spaceId: space?.id ?? null,
+    const spaceIconFileName = await resolveVoiceLiveActivityIcon({
+      cacheKey: space?.id ? `space-${space.id}` : null,
       iconUrl,
     });
 
@@ -1166,6 +1603,7 @@ export class VoiceStore {
       muted: this.effectiveSelfMute === true,
       deafened: this.effectiveSelfDeaf === true,
       spaceIconFileName: spaceIconFileName || "",
+      ...participants,
       ...getVoiceLiveActivityThemeColors(this.app),
     };
   }
@@ -1173,6 +1611,10 @@ export class VoiceStore {
   private getVoiceDeepLinkUrl() {
     const channelId = this.currentChannelId;
     if (!channelId) return "com.mutualzz.app://";
+    const spaceId = this.currentVoiceTarget?.spaceId;
+    if (spaceId == null) {
+      return `com.mutualzz.app:///me/${channelId}`;
+    }
     return `com.mutualzz.app://spaces/channel/${channelId}`;
   }
 
@@ -1223,7 +1665,7 @@ export class VoiceStore {
   }
 
   private sendVoiceStateUpdate(options?: { refreshRtc?: boolean }) {
-    this.app.gateway.sendVoiceStateUpdate({
+    return this.app.gateway.sendVoiceStateUpdate({
       spaceId: this.currentVoiceTarget?.spaceId ?? null,
       channelId: this.currentVoiceTarget?.channelId ?? null,
       selfMute: this.effectiveSelfMute,

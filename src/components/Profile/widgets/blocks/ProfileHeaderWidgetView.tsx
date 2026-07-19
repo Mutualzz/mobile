@@ -1,5 +1,6 @@
 import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
 import { ProfileMarkdownContent } from "@components/Profile/shared/ProfileMarkdownContent";
+import { ProfileScrim } from "@components/Profile/shared/ProfileScrim";
 import { UserAvatar } from "@components/User/UserAvatar";
 import type { AccountStore } from "@stores/Account.store";
 import type { User } from "@stores/objects/User";
@@ -86,17 +87,45 @@ export function ProfileHeaderWidgetView({ block, size, user, profile }: Props) {
               paddingBottom: isLarge ? 2 : 4,
             }}
           >
-            <Typography level={isLarge ? "title-sm" : "body-md"} weight="bold" truncate="double">
-              {user.displayName}
-            </Typography>
+            <ProfileScrim>
+              <Stack
+                direction="row"
+                alignItems="center"
+                minWidth={0}
+                style={{ gap: 6, flexWrap: "wrap" }}
+              >
+                <Typography
+                  level={isLarge ? "title-sm" : "body-md"}
+                  weight="bold"
+                  truncate="single"
+                  style={{ flexShrink: 1 }}
+                >
+                  {user.displayName}
+                </Typography>
+                {(user.pronouns ?? profile.pronouns) ? (
+                  <>
+                    <Typography level="body-sm" textColor="muted">
+                      ·
+                    </Typography>
+                    <Typography
+                      level="body-sm"
+                      textColor="muted"
+                      truncate="single"
+                      style={{ flexShrink: 1 }}
+                    >
+                      {user.pronouns ?? profile.pronouns}
+                    </Typography>
+                  </>
+                ) : null}
+              </Stack>
+              {isLarge && profile.bio ? (
+                <View style={{ marginTop: 6, flex: 1, minHeight: 0 }}>
+                  <ProfileMarkdownContent value={profile.bio} lineClamp={3} />
+                </View>
+              ) : null}
+            </ProfileScrim>
           </Stack>
         </Stack>
-
-        {isLarge && profile.bio ? (
-          <View style={{ flex: 1, minHeight: 0 }}>
-            <ProfileMarkdownContent value={profile.bio} lineClamp={3} />
-          </View>
-        ) : null}
       </Stack>
     </View>
   );

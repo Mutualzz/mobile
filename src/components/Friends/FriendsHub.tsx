@@ -73,12 +73,13 @@ const MessageActions = ({ relationship }: { relationship: Relationship }) => {
       <IconButton
         size="sm"
         variant="soft"
-        onPress={async () => {
+        onPress={async (e) => {
+          e.stopPropagation();
           const user = relationship.otherUser;
           if (!user) return;
           const channel = await app.relationships.openDMWith(user.id);
-          navigate(`/@me/${channel.id}`);
           app.setDMDrawerOpen(false);
+          navigate(`/@me/${channel.id}`);
         }}
       >
         <ChatCircleIcon weight="fill" />

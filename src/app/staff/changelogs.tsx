@@ -2,9 +2,14 @@ import { Button } from "@components/Button";
 import { MarkdownRenderer } from "@components/Markdown/MarkdownRenderer/MarkdownRenderer";
 import { Paper } from "@components/Paper";
 import { Screen } from "@components/Screen/Screen";
+import {
+  WhatsNewSheet,
+  WHATS_NEW_SHEET_ID,
+} from "@components/Sheets/WhatsNewSheet";
 import { StaffHeader } from "@components/Staff/StaffHeader";
 import { useRequireStaffAccess } from "@hooks/useRequireStaffAccess";
 import { useAppStore } from "@hooks/useStores";
+import { useSheet } from "@hooks/useSheet";
 import type { APIChangelog } from "@mutualzz/types";
 import { Box, Input, Typography } from "@mutualzz/ui-native";
 import {
@@ -22,12 +27,40 @@ import { ScrollView } from "react-native";
 
 const PAGE_LIMIT = 25;
 
+const PREVIEW_CHANGELOG_ID = "changelog-preview";
+
+function buildPreviewChangelog(partial: {
+  title?: string;
+  body?: string;
+  imageUrl?: string | null;
+  desktopVersion?: string | null;
+  mobileVersion?: string | null;
+  publishedAt?: Date;
+}): APIChangelog {
+  const now = new Date();
+  return {
+    id: PREVIEW_CHANGELOG_ID,
+    title: partial.title?.trim() || "What’s new in this release",
+    body:
+      partial.body?.trim() ||
+      "## Highlights\n- Something shiny\n- Something fixed\n\nThanks for updating!",
+    imageUrl: partial.imageUrl?.trim() || null,
+    authorId: "0",
+    desktopVersion: partial.desktopVersion?.trim() || null,
+    mobileVersion: partial.mobileVersion?.trim() || "3.12.0",
+    publishedAt: partial.publishedAt ?? now,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
 const StaffChangelogsScreen = () => {
   const { t } = useTranslation("staff");
   const { isStaff } = useRequireStaffAccess();
   const app = useAppStore();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { openSheet } = useSheet();
   const isDeveloper = !!app.account?.isDeveloper;
 
   const [title, setTitle] = useState("");
@@ -36,6 +69,13 @@ const StaffChangelogsScreen = () => {
   const [desktopVersion, setDesktopVersion] = useState("");
   const [mobileVersion, setMobileVersion] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  const previewChangelog = (changelog: APIChangelog) => {
+    openSheet(
+      WHATS_NEW_SHEET_ID,
+      <WhatsNewSheet changelog={changelog} onAck={() => {}} />,
+    );
+  };
 
   useEffect(() => {
     if (isStaff && !isDeveloper) {
@@ -160,22 +200,41 @@ const StaffChangelogsScreen = () => {
               {error}
             </Typography>
           ) : null}
-          <Button
-            variant="solid"
-            color="primary"
-            disabled={!canPublish}
-            onPress={() => {
-              if (!desktopVersion.trim() && !mobileVersion.trim()) {
-                setError(t("changelogs.errors.versionRequired"));
-                return;
+          <Box style={{ flexDirection: "row", gap: 8 }}>
+            <Button
+              variant="soft"
+              color="neutral"
+              onPress={() =>
+                previewChangelog(
+                  buildPreviewChangelog({
+                    title,
+                    body,
+                    imageUrl,
+                    desktopVersion,
+                    mobileVersion,
+                  }),
+                )
               }
-              publishMutation.mutate();
-            }}
-          >
-            {publishMutation.isPending
-              ? t("changelogs.publishing")
-              : t("changelogs.publish")}
-          </Button>
+            >
+              {t("changelogs.preview")}
+            </Button>
+            <Button
+              variant="solid"
+              color="primary"
+              disabled={!canPublish}
+              onPress={() => {
+                if (!desktopVersion.trim() && !mobileVersion.trim()) {
+                  setError(t("changelogs.errors.versionRequired"));
+                  return;
+                }
+                publishMutation.mutate();
+              }}
+            >
+              {publishMutation.isPending
+                ? t("changelogs.publishing")
+                : t("changelogs.publish")}
+            </Button>
+          </Box>
         </Box>
 
         <Box style={{ gap: 8 }}>
@@ -212,15 +271,25 @@ const StaffChangelogsScreen = () => {
                       : ""}
                   </Typography>
                 </Box>
-                <Button
-                  size="sm"
-                  variant="soft"
-                  color="danger"
-                  disabled={deleteMutation.isPending}
-                  onPress={() => deleteMutation.mutate(entry.id)}
-                >
-                  {t("changelogs.delete")}
-                </Button>
+                <Box style={{ flexDirection: "row", gap: 6 }}>
+                  <Button
+                    size="sm"
+                    variant="soft"
+                    color="neutral"
+                    onPress={() => previewChangelog(entry)}
+                  >
+                    {t("changelogs.preview")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="soft"
+                    color="danger"
+                    disabled={deleteMutation.isPending}
+                    onPress={() => deleteMutation.mutate(entry.id)}
+                  >
+                    {t("changelogs.delete")}
+                  </Button>
+                </Box>
               </Box>
               <MarkdownRenderer value={entry.body} />
             </Paper>

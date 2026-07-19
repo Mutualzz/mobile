@@ -16,6 +16,7 @@ import { ImageBackground, StyleSheet, View } from "react-native";
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  overlay: { ...StyleSheet.absoluteFill },
 });
 
 export const SpaceThemeProvider = observer(
@@ -55,26 +56,23 @@ export const SpaceThemeProvider = observer(
         }}
       >
         <View
+          pointerEvents="none"
           style={[
-            styles.fill,
+            styles.overlay,
             { backgroundColor: resolveWallpaperDimOverlay(emotionTheme) },
           ]}
-        >
-          <View
-            style={[
-              styles.fill,
-              { backgroundColor: resolveWallpaperScrim(emotionTheme) },
-            ]}
-          >
-            <Box flex={1}>{children}</Box>
-          </View>
-        </View>
+        />
+        <View
+          pointerEvents="none"
+          style={[
+            styles.overlay,
+            { backgroundColor: resolveWallpaperScrim(emotionTheme) },
+          ]}
+        />
+        <Box flex={1}>{children}</Box>
       </ImageBackground>
     ) : (
-      <Box
-        flex={1}
-        style={{ backgroundColor: String(emotionTheme.colors.background) }}
-      >
+      <Box flex={1} style={{ backgroundColor: "transparent" }}>
         {children}
       </Box>
     );

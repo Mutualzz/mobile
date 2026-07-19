@@ -37,7 +37,7 @@ export const CreateBridgeSheet = observer(({ spaceId, onClose, onCreated }: Prop
     onSuccess: (created) => {
       void queryClient.invalidateQueries({ queryKey: ["space", spaceId, "bridge"] });
       onCreated?.(created);
-      onClose();
+      onClose?.();
     },
     onError: (err: Error) => setError(err.message),
   });
@@ -46,7 +46,7 @@ export const CreateBridgeSheet = observer(({ spaceId, onClose, onCreated }: Prop
     <BottomSheet
       embedded
       open
-      onClose={onClose}
+      onClose={onClose ?? (() => {})}
       title={t("minecraftBridge.createTitle")}
       elevation={app.settings?.preferEmbossed ? 4 : 2}
     >

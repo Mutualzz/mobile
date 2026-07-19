@@ -16,28 +16,19 @@ struct VoiceChannelLiveActivityWidget: Widget {
     } dynamicIsland: { context in
       DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
-          VoiceChannelIdentityView(state: context.state)
-            .frame(width: 172, alignment: .leading)
-            .padding(.top, -6)
+          VoiceChannelIslandIdentityView(state: context.state)
         }
         DynamicIslandExpandedRegion(.center) {
           EmptyView()
         }
         DynamicIslandExpandedRegion(.trailing) {
-          VoiceChannelControlsView(state: context.state)
-            .padding(.top, -4)
+          VoiceParticipantAvatarStack(state: context.state, size: 28, maxVisible: 3)
+            .padding(.trailing, 2)
         }
         DynamicIslandExpandedRegion(.bottom) {
-          Button(intent: VoiceDisconnectIntent()) {
-            Label("Disconnect", systemImage: "phone.down.fill")
-              .font(.headline)
-              .frame(maxWidth: .infinity)
-              .padding(.vertical, 10)
-          }
-          .tint(Color(hex: context.state.dangerColor) ?? .red)
-          .buttonStyle(.borderedProminent)
-          .padding(.horizontal, 8)
-          .padding(.bottom, 4)
+          VoiceChannelBottomControlsView(state: context.state)
+            .padding(.horizontal, 6)
+            .padding(.bottom, 2)
         }
       } compactLeading: {
         VoiceChannelSpaceIcon(state: context.state, size: 20)
@@ -65,12 +56,15 @@ private struct VoiceChannelBannerView: View {
   let state: VoiceChannelAttributes.ContentState
 
   var body: some View {
-    HStack(spacing: 12) {
-      VoiceChannelIdentityView(state: state)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .layoutPriority(1)
-      VoiceChannelControlsView(state: state)
-        .layoutPriority(2)
+    VStack(spacing: 10) {
+      HStack(spacing: 12) {
+        VoiceChannelIdentityView(state: state)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .layoutPriority(1)
+        VoiceParticipantAvatarStack(state: state, size: 30, maxVisible: 3)
+          .layoutPriority(2)
+      }
+      VoiceChannelBottomControlsView(state: state)
     }
     .padding(12)
   }
@@ -86,6 +80,19 @@ private struct VoiceChannelIdentityView: View {
       VoiceChannelTitleStack(state: state)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
+  }
+}
+
+@available(iOS 16.2, *)
+private struct VoiceChannelIslandIdentityView: View {
+  let state: VoiceChannelAttributes.ContentState
+
+  var body: some View {
+    HStack(alignment: .center, spacing: 8) {
+      VoiceChannelSpaceIcon(state: state, size: 28)
+      VoiceChannelTitleStack(state: state)
+    }
+    .padding(.leading, 4)
   }
 }
 
@@ -112,26 +119,28 @@ private struct VoiceChannelTitleStack: View {
 }
 
 @available(iOS 16.2, *)
-private struct VoiceChannelControlsView: View {
+private struct VoiceChannelBottomControlsView: View {
   let state: VoiceChannelAttributes.ContentState
 
   var body: some View {
-    HStack(spacing: 10) {
+    HStack(spacing: 12) {
       Button(intent: VoiceMuteIntent()) {
         VoiceControlCircle(
+          size: 36,
           active: state.muted || state.deafened,
           accent: Color(hex: state.accentColor) ?? .cyan,
           danger: Color(hex: state.dangerColor) ?? .red,
           text: Color(hex: state.textColor) ?? .white
         ) {
           Image(systemName: micSymbol(state: state))
-            .font(.system(size: 17, weight: .semibold))
+            .font(.system(size: 15, weight: .semibold))
         }
       }
       .buttonStyle(.plain)
 
       Button(intent: VoiceDeafenIntent()) {
         VoiceControlCircle(
+          size: 36,
           active: state.deafened,
           accent: Color(hex: state.accentColor) ?? .cyan,
           danger: Color(hex: state.dangerColor) ?? .red,
@@ -142,8 +151,24 @@ private struct VoiceChannelControlsView: View {
             color: state.deafened
               ? (Color(hex: state.textColor) ?? .white)
               : (Color(hex: state.accentColor) ?? .cyan),
-            size: 17
+            size: 15
           )
+        }
+      }
+      .buttonStyle(.plain)
+
+      Spacer(minLength: 0)
+
+      Button(intent: VoiceDisconnectIntent()) {
+        VoiceControlCircle(
+          size: 36,
+          active: true,
+          accent: Color(hex: state.accentColor) ?? .cyan,
+          danger: Color(hex: state.dangerColor) ?? .red,
+          text: Color(hex: state.textColor) ?? .white
+        ) {
+          Image(systemName: "phone.down.fill")
+            .font(.system(size: 14, weight: .semibold))
         }
       }
       .buttonStyle(.plain)
@@ -152,7 +177,78 @@ private struct VoiceChannelControlsView: View {
 }
 
 @available(iOS 16.2, *)
+private struct VoiceParticipantAvatarStack: View {
+  let state: VoiceChannelAttributes.ContentState
+  let size: CGFloat
+  let maxVisible: Int
+
+  private var icons: [String] {
+    Array(state.participantIconFileNames.prefix(maxVisible))
+  }
+
+  private var overlap: CGFloat { size * 0.34 }
+
+  var body: some View {
+    if icons.isEmpty && state.participantOverflow <= 0 {
+      EmptyView()
+    } else {
+      HStack(spacing: -overlap) {
+        ForEach(Array(icons.enumerated()), id: \.offset) { index, fileName in
+          VoiceParticipantAvatar(
+            fileName: fileName,
+            accent: Color(hex: state.accentColor) ?? .cyan,
+            size: size
+          )
+          .zIndex(Double(icons.count - index))
+        }
+
+        if state.participantOverflow > 0 {
+          ZStack {
+            Circle()
+              .fill(Color(hex: state.backgroundColor) ?? Color.black.opacity(0.85))
+            Circle()
+              .strokeBorder(Color.black.opacity(0.35), lineWidth: 1)
+            Text("+\(min(state.participantOverflow, 99))")
+              .font(.system(size: size * 0.34, weight: .bold))
+              .foregroundStyle(Color(hex: state.textColor) ?? .white)
+          }
+          .frame(width: size, height: size)
+          .zIndex(0)
+        }
+      }
+    }
+  }
+}
+
+@available(iOS 16.2, *)
+private struct VoiceParticipantAvatar: View {
+  let fileName: String
+  let accent: Color
+  let size: CGFloat
+
+  var body: some View {
+    Group {
+      if let image = VoiceLiveActivityBridge.loadIcon(fileName: fileName) {
+        Image(uiImage: image)
+          .resizable()
+          .aspectRatio(contentMode: .fill)
+      } else {
+        Circle()
+          .fill(accent.opacity(0.85))
+      }
+    }
+    .frame(width: size, height: size)
+    .clipShape(Circle())
+    .overlay(
+      Circle()
+        .strokeBorder(Color.black.opacity(0.45), lineWidth: 1.5)
+    )
+  }
+}
+
+@available(iOS 16.2, *)
 private struct VoiceControlCircle<Content: View>: View {
+  var size: CGFloat = 40
   let active: Bool
   let accent: Color
   let danger: Color
@@ -162,7 +258,7 @@ private struct VoiceControlCircle<Content: View>: View {
   var body: some View {
     content()
       .foregroundStyle(active ? text : accent)
-      .frame(width: 40, height: 40)
+      .frame(width: size, height: size)
       .background(
         Circle()
           .fill(active ? danger.opacity(0.85) : accent.opacity(0.18))

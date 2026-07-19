@@ -12,27 +12,41 @@ import {
   CheckCircleIcon,
   FlagIcon,
   ProhibitIcon,
+  ShieldCheckIcon,
   UserIcon,
   UserMinusIcon,
   UserPlusIcon,
-  XCircleIcon } from "phosphor-react-native";
+  XCircleIcon,
+} from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
 interface Props {
   user: User;
-  visible: boolean;
+  visible?: boolean;
   onClose: () => void;
   insideDMs?: boolean;
+  hideMessage?: boolean;
+  onNavigate?: () => void;
+  embedded?: boolean;
 }
 
 export const UserActionSheet = observer(
-  ({ user, visible, onClose, insideDMs = false }: Props) => {
+  ({
+    user,
+    visible = true,
+    onClose,
+    insideDMs = false,
+    hideMessage = false,
+    onNavigate,
+    embedded = false,
+  }: Props) => {
     const app = useAppStore();
     const { t } = useTranslation("chat");
     const { navigate } = useAppNavigation();
     const { openSheet } = useSheet();
+    const isViewerStaff = app.account?.isStaff ?? false;
 
     const {
       isFriend,
@@ -45,7 +59,8 @@ export const UserActionSheet = observer(
       declineFriend,
       removeFriend,
       blockUser,
-      unblockUser} = useUserRelationshipActions(user.id, { onComplete: onClose });
+      unblockUser,
+    } = useUserRelationshipActions(user.id, { onComplete: onClose });
 
     const dmChannel =
       insideDMs && app.account
@@ -53,13 +68,22 @@ export const UserActionSheet = observer(
         : null;
     const readState = dmChannel ? app.readStates.get(dmChannel.id) : null;
 
+    const leaveTo = (action: () => void) => {
+      onClose();
+      onNavigate?.();
+      action();
+    };
+
     const { mutate: openDm, isPending: openingDm } = useMutation({
       mutationKey: ["open-dm", user.id],
       mutationFn: () => app.relationships.openDMWith(user.id),
       onSuccess: (channel) => {
         onClose();
+        onNavigate?.();
+        app.setDMDrawerOpen(false);
         navigate(`/@me/${channel.id}`);
-      }});
+      },
+    });
 
     const { mutate: closeDm, isPending: closingDm } = useMutation({
       mutationKey: ["close-dm", user.id],
@@ -72,92 +96,93 @@ export const UserActionSheet = observer(
           navigate("/@me", { replace: true });
         }
       },
-      onSuccess: onClose});
+      onSuccess: onClose,
+    });
 
     const openReport = () => {
-      onClose();
-      openSheet(
-        `report-user-${user.id}`,
-        <ReportContentSheet
-          targetType="user"
-          targetId={user.id}
-          contentLabel={t("contextMenu.reportAccount")}
-          sheetId={`report-user-${user.id}`}
-        />,
-      );
+      leaveTo(() => {
+        openSheet(
+          `report-user-${user.id}`,
+          <ReportContentSheet
+            targetType="user"
+            targetId={user.id}
+            contentLabel={t("contextMenu.reportAccount")}
+            sheetId={`report-user-${user.id}`}
+          />,
+        );
+      });
     };
 
     const viewProfile = () => {
-      onClose();
-      navigate(`/users/${user.username}`);
+      leaveTo(() => navigate(`/users/${user.username}`));
     };
 
-    return (
-      <Sheet
-        open={visible}
-        onClose={onClose}
-        showCloseButton={false}
-      enableDynamicSizing
-      >
-        <View style={{ width: "100%" }}>
-          <View onStartShouldSetResponder={() => true}>
-            <Box
-              style={{
-                width: "100%",
-                padding: 16,
-                gap: 8}}
-            >
-              <Box style={{ gap: 8 }}>
-                <Box
-                  style={{ alignItems: "center", paddingVertical: 8, gap: 4 }}
+    const openStaffPanel = () => {
+      leaveTo(() => navigate(`/staff/users/${user.id}`));
+    };
+
+    const content = (
+      <View style={{ width: "100%" }}>
+        <View onStartShouldSetResponder={() => true}>
+          <Box
+            style={{
+              width: "100%",
+              padding: 16,
+              gap: 8,
+            }}
+          >
+            <Box style={{ gap: 8 }}>
+              <Box
+                style={{ alignItems: "center", paddingVertical: 8, gap: 4 }}
+              >
+                <Typography level="body-md" weight={700} truncate="single">
+                  {user.displayName}
+                </Typography>
+                <Typography
+                  level="body-xs"
+                  textColor="muted"
+                  truncate="single"
                 >
-                  <Typography level="body-md" weight={700} truncate="single">
-                    {user.displayName}
-                  </Typography>
-                  <Typography
-                    level="body-xs"
-                    textColor="muted"
-                    truncate="single"
-                  >
-                    @{user.username}
-                  </Typography>
-                </Box>
+                  @{user.username}
+                </Typography>
+              </Box>
 
-                <Divider lineColor="muted" />
+              <Divider lineColor="muted" />
 
-                <ButtonGroup
-                  orientation="vertical"
-                  variant="plain"
-                  fullWidth
-                  horizontalAlign="left"
-                  spacing={0.5}
-                >
-                  {readState?.isUnread && (
-                    <Button
-                      fullWidth
-                      padding={12}
-                      startDecorator={
-                        <CheckCircleIcon size={20} weight="fill" />
-                      }
-                      onPress={() => {
-                        void readState.ack();
-                        onClose();
-                      }}
-                    >
-                      {t("contextMenu.markAsRead")}
-                    </Button>
-                  )}
-
+              <ButtonGroup
+                orientation="vertical"
+                variant="plain"
+                fullWidth
+                horizontalAlign="left"
+                spacing={0.5}
+              >
+                {readState?.isUnread && (
                   <Button
                     fullWidth
                     padding={12}
-                    startDecorator={<UserIcon size={20} weight="fill" />}
-                    onPress={viewProfile}
+                    startDecorator={
+                      <CheckCircleIcon size={20} weight="fill" />
+                    }
+                    onPress={() => {
+                      void readState.ack();
+                      onClose();
+                    }}
                   >
-                    {t("contextMenu.viewProfile")}
+                    {t("contextMenu.markAsRead")}
                   </Button>
+                )}
 
-                  {!insideDMs ? (
+                <Button
+                  fullWidth
+                  padding={12}
+                  startDecorator={<UserIcon size={20} weight="fill" />}
+                  onPress={viewProfile}
+                >
+                  {t("contextMenu.viewProfile")}
+                </Button>
+
+                {!hideMessage &&
+                  (!insideDMs ? (
                     <Button
                       fullWidth
                       padding={12}
@@ -173,110 +198,140 @@ export const UserActionSheet = observer(
                     <Button
                       fullWidth
                       padding={12}
-                      startDecorator={<XCircleIcon size={20} weight="fill" />}
+                      startDecorator={
+                        <XCircleIcon size={20} weight="fill" />
+                      }
                       disabled={closingDm}
                       onPress={() => closeDm()}
                     >
                       {t("contextMenu.closeDm")}
                     </Button>
-                  )}
+                  ))}
 
-                  {!isFriend && !isIncomingRequest && !isOutgoingRequest && (
+                {!isFriend && !isIncomingRequest && !isOutgoingRequest && (
+                  <Button
+                    fullWidth
+                    padding={12}
+                    startDecorator={<UserPlusIcon size={20} weight="fill" />}
+                    disabled={relationshipPending || iBlockedThem}
+                    onPress={() => addFriend.mutate()}
+                  >
+                    {t("contextMenu.addFriend")}
+                  </Button>
+                )}
+
+                {isIncomingRequest && (
+                  <>
                     <Button
                       fullWidth
                       padding={12}
-                      startDecorator={<UserPlusIcon size={20} weight="fill" />}
+                      color="success"
+                      startDecorator={
+                        <UserPlusIcon size={20} weight="fill" />
+                      }
                       disabled={relationshipPending || iBlockedThem}
-                      onPress={() => addFriend.mutate()}
+                      onPress={() => acceptFriend.mutate()}
                     >
-                      {t("contextMenu.addFriend")}
+                      {t("contextMenu.acceptFriendRequest")}
                     </Button>
-                  )}
-
-                  {isIncomingRequest && (
-                    <>
-                      <Button
-                        fullWidth
-                        padding={12}
-                        color="success"
-                        startDecorator={
-                          <UserPlusIcon size={20} weight="fill" />
-                        }
-                        disabled={relationshipPending || iBlockedThem}
-                        onPress={() => acceptFriend.mutate()}
-                      >
-                        {t("contextMenu.acceptFriendRequest")}
-                      </Button>
-                      <Button
-                        fullWidth
-                        padding={12}
-                        disabled={relationshipPending || iBlockedThem}
-                        onPress={() => declineFriend.mutate()}
-                      >
-                        {t("contextMenu.declineFriendRequest")}
-                      </Button>
-                    </>
-                  )}
-
-                  {isOutgoingRequest && (
                     <Button
                       fullWidth
                       padding={12}
-                      disabled={relationshipPending}
+                      disabled={relationshipPending || iBlockedThem}
                       onPress={() => declineFriend.mutate()}
                     >
-                      {t("contextMenu.cancelFriendRequest")}
+                      {t("contextMenu.declineFriendRequest")}
                     </Button>
-                  )}
+                  </>
+                )}
 
-                  {isFriend && (
-                    <Button
-                      fullWidth
-                      padding={12}
-                      startDecorator={<UserMinusIcon size={20} weight="fill" />}
-                      disabled={relationshipPending || iBlockedThem}
-                      onPress={() => removeFriend.mutate()}
-                    >
-                      {t("contextMenu.removeFriend")}
-                    </Button>
-                  )}
+                {isOutgoingRequest && (
+                  <Button
+                    fullWidth
+                    padding={12}
+                    disabled={relationshipPending}
+                    onPress={() => declineFriend.mutate()}
+                  >
+                    {t("contextMenu.cancelFriendRequest")}
+                  </Button>
+                )}
 
-                  {iBlockedThem ? (
-                    <Button
-                      fullWidth
-                      padding={12}
-                      startDecorator={<ProhibitIcon size={20} weight="fill" />}
-                      disabled={relationshipPending}
-                      onPress={() => unblockUser.mutate()}
-                    >
-                      {t("contextMenu.unblock")}
-                    </Button>
-                  ) : (
-                    <Button
-                      fullWidth
-                      padding={12}
-                      startDecorator={<ProhibitIcon size={20} weight="fill" />}
-                      disabled={relationshipPending}
-                      onPress={() => blockUser.mutate()}
-                    >
-                      {t("contextMenu.block")}
-                    </Button>
-                  )}
+                {isFriend && (
+                  <Button
+                    fullWidth
+                    padding={12}
+                    startDecorator={
+                      <UserMinusIcon size={20} weight="fill" />
+                    }
+                    disabled={relationshipPending || iBlockedThem}
+                    onPress={() => removeFriend.mutate()}
+                  >
+                    {t("contextMenu.removeFriend")}
+                  </Button>
+                )}
 
+                {iBlockedThem ? (
+                  <Button
+                    fullWidth
+                    padding={12}
+                    startDecorator={<ProhibitIcon size={20} weight="fill" />}
+                    disabled={relationshipPending}
+                    onPress={() => unblockUser.mutate()}
+                  >
+                    {t("contextMenu.unblock")}
+                  </Button>
+                ) : (
+                  <Button
+                    fullWidth
+                    padding={12}
+                    startDecorator={<ProhibitIcon size={20} weight="fill" />}
+                    disabled={relationshipPending}
+                    onPress={() => blockUser.mutate()}
+                  >
+                    {t("contextMenu.block")}
+                  </Button>
+                )}
+
+                {isViewerStaff && (
                   <Button
                     fullWidth
                     padding={12}
                     color="danger"
-                    startDecorator={<FlagIcon size={20} weight="fill" />}
-                    onPress={openReport}
+                    startDecorator={
+                      <ShieldCheckIcon size={20} weight="fill" />
+                    }
+                    onPress={openStaffPanel}
                   >
-                    {t("contextMenu.reportUser")}
+                    {t("contextMenu.openInStaffPanel")}
                   </Button>
-                </ButtonGroup>
-              </Box>
+                )}
+
+                <Button
+                  fullWidth
+                  padding={12}
+                  color="danger"
+                  startDecorator={<FlagIcon size={20} weight="fill" />}
+                  onPress={openReport}
+                >
+                  {t("contextMenu.reportUser")}
+                </Button>
+              </ButtonGroup>
             </Box>
-          </View>
+          </Box>
         </View>
+      </View>
+    );
+
+    if (embedded) return content;
+
+    return (
+      <Sheet
+        open={visible}
+        onClose={onClose}
+        showCloseButton={false}
+        enableDynamicSizing
+      >
+        {content}
       </Sheet>
     );
   },

@@ -2,7 +2,9 @@ import {
   getFontByFamily,
   type CustomFontExt,
 } from "@mutualzz/ui-core";
+import { CDNRoutes } from "@mutualzz/types";
 import * as Font from "expo-font";
+import { REST } from "@stores/REST.store";
 
 const loaded = new Set<string>();
 const pending = new Map<string, Promise<void>>();
@@ -49,9 +51,6 @@ export async function ensureCustomFont(
 
   const inflight = pending.get(key);
   if (inflight) return inflight;
-
-  const { REST } = await import("@stores/REST.store");
-  const { CDNRoutes } = await import("@mutualzz/types");
 
   const request = (async () => {
     await Font.loadAsync({

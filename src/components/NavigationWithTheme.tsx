@@ -10,14 +10,17 @@ import { type PropsWithChildren, useMemo } from "react";
 export const NavigationWithTheme = observer(
   ({ children }: PropsWithChildren) => {
     const { theme } = useTheme();
+    const hasWallpaper = Boolean(theme.backgroundImageUrl);
 
     const navTheme: Theme = useMemo(
       () => ({
         dark: theme.type === "dark",
         colors: {
           primary: theme.colors.primary,
-          background: theme.colors.background,
-          card: theme.colors.surface,
+          background: hasWallpaper
+            ? "transparent"
+            : theme.colors.background,
+          card: hasWallpaper ? "transparent" : theme.colors.surface,
           text: theme.typography.colors.primary,
           border: theme.colors.neutral,
           notification: theme.typography.colors.accent,
@@ -41,7 +44,7 @@ export const NavigationWithTheme = observer(
           },
         },
       }),
-      [theme],
+      [theme, hasWallpaper],
     );
 
     return (

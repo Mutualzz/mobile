@@ -26,6 +26,7 @@ type FormatFrame = {
   segments: RunSegment[];
   textProps: {
     weight?: "bold";
+    textColor?: TypographyColor | ColorLike | "inherit";
     style?: TextStyle;
   };
 };
@@ -154,6 +155,17 @@ const createTextRunBuilder = (
       });
     },
     closeStrike(key: string) {
+      const frame = formatStack.pop();
+      if (!frame) return;
+      pushFormatted(key, frame.segments, frame.textProps);
+    },
+    openColor(hex: string) {
+      formatStack.push({
+        segments: [],
+        textProps: { style: { color: hex } },
+      });
+    },
+    closeColor(key: string) {
       const frame = formatStack.pop();
       if (!frame) return;
       pushFormatted(key, frame.segments, frame.textProps);
@@ -533,6 +545,16 @@ export const renderInline = (
         out.push(node);
       };
       pushNode(<Spoiler key={`spoiler-${i}`}>{node.children}</Spoiler>);
+      continue;
+    }
+
+    if (token.type === "color_open") {
+      const hex = token.attrGet("color");
+      if (hex) run.openColor(hex);
+      continue;
+    }
+    if (token.type === "color_close") {
+      run.closeColor(`color-${i}`);
       continue;
     }
 
