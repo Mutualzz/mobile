@@ -8,6 +8,8 @@ public struct VoiceChannelAttributes: ActivityAttributes {
     public var muted: Bool
     public var deafened: Bool
     public var spaceIconFileName: String
+    public var participantIconFileNames: [String]
+    public var participantOverflow: Int
     public var accentColor: String
     public var textColor: String
     public var mutedTextColor: String
@@ -20,6 +22,8 @@ public struct VoiceChannelAttributes: ActivityAttributes {
       muted: Bool,
       deafened: Bool,
       spaceIconFileName: String,
+      participantIconFileNames: [String] = [],
+      participantOverflow: Int = 0,
       accentColor: String,
       textColor: String,
       mutedTextColor: String,
@@ -31,6 +35,8 @@ public struct VoiceChannelAttributes: ActivityAttributes {
       self.muted = muted
       self.deafened = deafened
       self.spaceIconFileName = spaceIconFileName
+      self.participantIconFileNames = participantIconFileNames
+      self.participantOverflow = participantOverflow
       self.accentColor = accentColor
       self.textColor = textColor
       self.mutedTextColor = mutedTextColor

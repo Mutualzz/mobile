@@ -210,6 +210,7 @@ export const BridgeChannelList = observer(
           flex: 1,
           padding: 12,
           marginHorizontal: spaceId ? 8 : 12,
+          borderWidth: 0,
         }}
         elevation={app.settings?.preferEmbossed ? 2 : 0}
       >
@@ -241,7 +242,9 @@ export const BridgeChannelList = observer(
                 size="sm"
                 variant="soft"
                 onPress={() =>
-                  navigate(`/(tabs)/spaces/${spaceId}/settings/minecraft-bridge`)
+                  navigate(
+                    `/(tabs)/spaces/${spaceId}/settings/minecraft-bridge`,
+                  )
                 }
               >
                 {t("minecraftBridge.openSpaceSettings")}

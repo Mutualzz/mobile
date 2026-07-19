@@ -22,6 +22,8 @@ struct VoiceLiveActivityPropsRecord: Record {
   @Field var muted: Bool = false
   @Field var deafened: Bool = false
   @Field var spaceIconFileName: String = ""
+  @Field var participantIconFileNames: [String] = []
+  @Field var participantOverflow: Int = 0
   @Field var accentColor: String = "#00D1C1"
   @Field var textColor: String = "#FFFFFF"
   @Field var mutedTextColor: String = "#B0A8B8"
@@ -182,6 +184,8 @@ private func contentState(
     muted: props.muted,
     deafened: props.deafened,
     spaceIconFileName: props.spaceIconFileName,
+    participantIconFileNames: props.participantIconFileNames,
+    participantOverflow: props.participantOverflow,
     accentColor: props.accentColor,
     textColor: props.textColor,
     mutedTextColor: props.mutedTextColor,

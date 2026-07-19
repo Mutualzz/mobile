@@ -223,6 +223,7 @@ export function parseNewProducerEvent(value: unknown): {
   producerId: string;
   userId: string;
   mediaKind?: string;
+  videoOrientation?: number;
 } | null {
   if (!isRecord(value)) return null;
 
@@ -231,10 +232,19 @@ export function parseNewProducerEvent(value: unknown): {
   if (typeof producerId !== "string" || producerId.length === 0) return null;
   if (typeof userId !== "string" || userId.length === 0) return null;
 
+  const videoOrientation = value.videoOrientation;
   return {
     producerId,
     userId,
     mediaKind:
       typeof value.mediaKind === "string" ? value.mediaKind : undefined,
+    videoOrientation:
+      typeof videoOrientation === "number" &&
+      (videoOrientation === 0 ||
+        videoOrientation === 90 ||
+        videoOrientation === 180 ||
+        videoOrientation === 270)
+        ? videoOrientation
+        : undefined,
   };
 }

@@ -1,6 +1,6 @@
 import { ChatComposerPane } from "@components/Message/ChatComposerPane";
 import { DMChannelHeader } from "@components/DMChannel/DMChannelHeader";
-import { VoiceUserBarOverlay } from "@components/User/VoiceUserBarOverlay";
+import { DMCallView } from "@components/DMChannel/DMCallView";
 import { GroupDMAddRecipientSheet } from "@components/DMChannel/GroupDMAddRecipientSheet";
 import { GroupDMManageSheet } from "@components/DMChannel/GroupDMManageSheet";
 import { Screen } from "@components/Screen/Screen";
@@ -83,6 +83,7 @@ export const DMContentPane = observer(() => {
             : undefined
         }
       />
+      <DMCallView channel={channel} />
       <ChatComposerPane channel={channel} composerVisible={composerVisible} />
 
       {channel.isGroupDM ? (
@@ -108,8 +109,6 @@ export const DMContentPane = observer(() => {
           />
         )
       )}
-
-      <VoiceUserBarOverlay />
     </Screen>
   );
 });

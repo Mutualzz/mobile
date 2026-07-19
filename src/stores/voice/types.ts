@@ -1,3 +1,1 @@
-import type { MediaStream } from "react-native-webrtc";
-
-export type VoiceMediaKind = "audio" | "camera";
+export type VoiceMediaKind = "audio" | "camera" | "screen" | "screen-audio";

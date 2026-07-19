@@ -72,8 +72,15 @@ export const EmojiPickerContent = observer(
     const meId = app.account?.id ?? "";
 
     const canUseEmoji = useCallback(
-      (emoji: Expression) => canUseCustomEmoji(meId, emoji, me, channel),
-      [channel, me, meId],
+      (emoji: Expression) =>
+        canUseCustomEmoji(
+          meId,
+          emoji,
+          me,
+          channel,
+          app.spaces.all.map((space) => space.id),
+        ),
+      [app.spaces.all, channel, me, meId],
     );
 
     const myEmojis = app.expressions.emojis

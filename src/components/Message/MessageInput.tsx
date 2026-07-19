@@ -347,21 +347,6 @@ export const MessageInput = observer(({ channel }: Props) => {
       const replyingTo = app.replyingTo;
       const repliedToId = replyingTo?.id;
       const mentionReply = app.replyMention;
-      const repliedToPayload: APIMessage | undefined =
-        replyingTo && repliedToId
-          ? {
-              id: replyingTo.id,
-              content: replyingTo.content,
-              authorId: replyingTo.authorId,
-              channelId: replyingTo.channelId!,
-              spaceId: replyingTo.spaceId,
-              type: replyingTo.type,
-              createdAt: replyingTo.createdAt,
-              author: replyingTo.author?.toJSON(),
-              edited: false,
-              flags: 0n,
-            }
-          : undefined;
 
       const msg = app.queue.add({
         id: nonce,
@@ -375,7 +360,7 @@ export const MessageInput = observer(({ channel }: Props) => {
         expressionIds: stickerIds,
         expressions: stickerList.map((sticker) => sticker.toJSON()),
         repliedToId,
-        repliedTo: repliedToPayload,
+        repliedTo: replyingTo ?? null,
         mentionReply,
       });
 

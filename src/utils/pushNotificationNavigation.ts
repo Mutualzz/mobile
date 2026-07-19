@@ -14,7 +14,8 @@ export function resolveNotificationHref(
     typeof data.channelId === "string" && data.channelId.length > 0
       ? data.channelId
       : undefined;
-  const pushType = data.pushType === "dm" ? "dm" : "mention";
+  const pushType =
+    data.pushType === "dm" || data.pushType === "call" ? "dm" : "mention";
 
   const url = typeof data.url === "string" ? data.url : undefined;
   if (url) {

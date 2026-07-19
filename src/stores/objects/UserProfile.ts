@@ -17,6 +17,7 @@ export class UserProfile {
   backgroundImage?: string | null;
   banner?: string | null;
   bio?: string | null;
+  pronouns?: string | null;
   pageFontFamily?: string | null;
   profileMusic?: APIProfileMusic | null;
   blocks: APIProfileBlock[];
@@ -30,6 +31,7 @@ export class UserProfile {
     this.backgroundImage = profile.backgroundImage ?? null;
     this.banner = profile.banner ?? null;
     this.bio = profile.bio ?? null;
+    this.pronouns = profile.pronouns ?? null;
     this.pageFontFamily = profile.pageFontFamily ?? null;
     this.profileMusic = profile.profileMusic ?? null;
     this.blocks = profile.blocks ?? [];
@@ -45,6 +47,7 @@ export class UserProfile {
     this.backgroundImage = profile.backgroundImage ?? null;
     this.banner = profile.banner ?? null;
     this.bio = profile.bio ?? null;
+    this.pronouns = profile.pronouns ?? null;
     this.pageFontFamily = profile.pageFontFamily ?? null;
     this.profileMusic = profile.profileMusic ?? null;
     this.blocks = profile.blocks ?? [];

@@ -68,7 +68,7 @@ export const SheetContext = createContext<SheetContextProps>({
   },
 });
 
-const FINALIZE_CLOSE_FALLBACK_MS = 750;
+const FINALIZE_CLOSE_FALLBACK_MS = 1200;
 
 function resolveActiveHostId(hosts: SheetHostEntry[]): string {
   const focused = hosts.filter((host) => host.focused);

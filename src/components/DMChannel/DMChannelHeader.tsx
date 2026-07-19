@@ -5,13 +5,16 @@ import { ChannelType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import type { Channel } from "@stores/objects/Channel";
+import { useAppStore } from "@hooks/useStores";
 import {
   ArrowLeftIcon,
   DotsThreeOutlineVerticalIcon,
+  PhoneIcon,
   UserPlusIcon,
 } from "phosphor-react-native";
 import { Image, Pressable } from "react-native";
 import { useTranslation } from "react-i18next";
+import { observer } from "mobx-react-lite";
 
 interface Props {
   channel: Channel;
@@ -21,13 +24,14 @@ interface Props {
   onOpenUserMenu?: () => void;
 }
 
-export function DMChannelHeader({
+export const DMChannelHeader = observer(function DMChannelHeader({
   channel,
   onBack,
   onOpenAddRecipient,
   onOpenManage,
   onOpenUserMenu,
 }: Props) {
+  const app = useAppStore();
   const { t } = useTranslation("chat");
   const { theme } = useTheme();
   const headerIconSize = useScaledSquareSize(32);
@@ -49,6 +53,29 @@ export function DMChannelHeader({
       : null;
 
   const isFull = (channel.recipientIds?.length ?? 0) >= 10;
+  const callActive = app.calls.isActive(channel.id);
+  const inThisCall =
+    app.voice.currentChannelId === channel.id &&
+    app.voice.connectionStatus !== "idle";
+  const ringingForMe = app.calls.isRingingForMe(channel.id);
+  const outgoing = app.calls.isOutgoing(channel.id);
+  const participantCount = Array.from(channel.voiceStates.values()).length;
+
+  const callStatus = !callActive
+    ? null
+    : ringingForMe
+      ? t("call.incoming")
+      : outgoing
+        ? t("call.calling")
+        : inThisCall
+          ? t("call.inCall")
+          : t("call.active");
+
+  const shownSubtitle = callStatus
+    ? participantCount > 0
+      ? `${callStatus} · ${participantCount}`
+      : callStatus
+    : subtitle;
 
   return (
     <ScreenHeader
@@ -108,48 +135,83 @@ export function DMChannelHeader({
           <Typography weight={700} truncate="single">
             {title}
           </Typography>
-          {subtitle && (
+          {shownSubtitle && (
             <Typography level="body-xs" textColor="muted" truncate="single">
-              {subtitle}
+              {shownSubtitle}
             </Typography>
           )}
         </Box>
       </Box>
 
-      {channel.isGroupDM ? (
-        <Box style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
-          <IconButton
-            padding={6}
-            color="neutral"
-            onPress={onOpenAddRecipient}
-            disabled={isFull}
-            accessibilityLabel={
-              isFull ? t("header.dm.groupFull") : t("header.dm.addToGroup")
+      <Box style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+        <IconButton
+          padding={6}
+          color={callActive || inThisCall ? "success" : "neutral"}
+          disabled={inThisCall}
+          accessibilityLabel={
+            inThisCall
+              ? t("call.inCall")
+              : callActive
+                ? t("call.join")
+                : t("call.startHint")
+          }
+          onPress={() => {
+            if (inThisCall) return;
+            if (ringingForMe) {
+              void app.calls.accept(channel.id);
+              return;
             }
-          >
-            <UserPlusIcon size={20} weight="fill" />
-          </IconButton>
-          <IconButton
-            padding={6}
-            color="neutral"
-            onPress={onOpenManage}
-            accessibilityLabel={t("groupDm.manage.title")}
-          >
-            <DotsThreeOutlineVerticalIcon size={20} weight="bold" />
-          </IconButton>
-        </Box>
-      ) : (
-        onOpenUserMenu && (
-          <IconButton
-            padding={6}
-            color="neutral"
-            onPress={onOpenUserMenu}
-            accessibilityLabel={t("groupDm.conversationOptionsA11y")}
-          >
-            <DotsThreeOutlineVerticalIcon size={20} weight="bold" />
-          </IconButton>
-        )
-      )}
+            if (callActive) {
+              void app.voice.join({
+                spaceId: null,
+                channelId: channel.id,
+              });
+              return;
+            }
+            void app.calls.startCall(channel.id, { silent: false });
+          }}
+          onLongPress={() => {
+            if (inThisCall || callActive) return;
+            void app.calls.startCall(channel.id, { silent: true });
+          }}
+        >
+          <PhoneIcon size={20} weight="fill" />
+        </IconButton>
+        {channel.isGroupDM ? (
+          <>
+            <IconButton
+              padding={6}
+              color="neutral"
+              onPress={onOpenAddRecipient}
+              disabled={isFull}
+              accessibilityLabel={
+                isFull ? t("header.dm.groupFull") : t("header.dm.addToGroup")
+              }
+            >
+              <UserPlusIcon size={20} weight="fill" />
+            </IconButton>
+            <IconButton
+              padding={6}
+              color="neutral"
+              onPress={onOpenManage}
+              accessibilityLabel={t("groupDm.manage.title")}
+            >
+              <DotsThreeOutlineVerticalIcon size={20} weight="bold" />
+            </IconButton>
+          </>
+        ) : (
+          onOpenUserMenu && (
+            <IconButton
+              padding={6}
+              color="neutral"
+              onPress={onOpenUserMenu}
+              accessibilityLabel={t("groupDm.conversationOptionsA11y")}
+            >
+              <DotsThreeOutlineVerticalIcon size={20} weight="bold" />
+            </IconButton>
+          )
+        )}
+      </Box>
     </ScreenHeader>
   );
-}
+});

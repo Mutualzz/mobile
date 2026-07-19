@@ -7,6 +7,7 @@ import "../i18n";
 
 import { AppCrashFallback } from "@components/ErrorBoundary/AppCrashFallback";
 import { BootSplash } from "@components/BootSplash";
+import { IncomingCallOverlay } from "@components/Call/IncomingCallOverlay";
 import { ChangelogPrompt } from "@components/Changelog/ChangelogPrompt";
 import { NativeBaseline } from "@components/NativeBaseline/NativeBaseline";
 import { NavigationWithTheme } from "@components/NavigationWithTheme";
@@ -95,7 +96,10 @@ const Root = () => {
           app.rest.setToken(value);
           if (app.gateway.readyState === GatewayStatus.CLOSED) {
             app.setGatewayReady(false);
-            app.gateway.connect();
+            void app.gateway.connect().catch((error) => {
+              logger.error("Gateway connect failed", error);
+              app.gateway.startReconnect();
+            });
           } else {
             logger.debug("Gateway connect called but socket is not closed");
           }
@@ -137,6 +141,7 @@ const Root = () => {
                     <SheetProvider>
                       <BottomSheetModalProvider>
                         <ChangelogPrompt />
+                        <IncomingCallOverlay />
                         <Stack screenOptions={{ headerShown: false }}>
                           <Stack.Screen name="(tabs)" />
                           <Stack.Screen

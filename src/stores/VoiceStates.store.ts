@@ -42,6 +42,12 @@ export class VoiceStatesStore {
         return newVoiceState;
     }
 
+    set(states: JSONVoiceState[]) {
+        for (const state of states) {
+            this.upsert(state);
+        }
+    }
+
     replace(states: JSONVoiceState[]) {
         const nextIds = new Set<Snowflake>();
 
@@ -69,9 +75,15 @@ export class VoiceStatesStore {
         return this.states.get(userId);
     }
 
-    getAllByChannel(channelId?: Snowflake | null) {
-        return this.all
-            .filter((state) => state.channelId === (channelId ?? null))
-            .sort((a, b) => (a.joinedAt ?? 0) - (b.joinedAt ?? 0));
-    }
+  getAllByChannel(channelId?: Snowflake | null) {
+    const target = channelId == null ? null : String(channelId);
+    return this.all
+      .filter(
+        (state) =>
+          state.channelId != null &&
+          String(state.channelId) === target &&
+          !state.disconnectedAt,
+      )
+      .sort((a, b) => (a.joinedAt ?? 0) - (b.joinedAt ?? 0));
+  }
 }

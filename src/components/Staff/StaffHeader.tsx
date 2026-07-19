@@ -1,10 +1,8 @@
 import { ScreenHeader } from "@components/Screen/Screen";
 import { useAppNavigation } from "@hooks/useAppNavigation";
-import { exitStaffPanel } from "@utils/navigation";
 import { Typography, useTheme } from "@mutualzz/ui-native";
 import { ArrowLeftIcon, XIcon } from "phosphor-react-native";
 import type { Href } from "expo-router";
-import { useNavigation } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
@@ -20,8 +18,8 @@ interface Props {
 export const StaffHeader = observer(
   ({ title, showBack = false, backHref, backLabel, onClose }: Props) => {
     const { t } = useTranslation("staff");
-    const { back, navigate } = useAppNavigation();
-    const navigation = useNavigation();
+    const { back, navigate, canDismiss, canGoBack, dismiss } =
+      useAppNavigation();
     const { theme } = useTheme();
     const resolvedBackLabel = backLabel ?? t("title");
 
@@ -42,7 +40,14 @@ export const StaffHeader = observer(
         return;
       }
 
-      exitStaffPanel(back, () => navigation.getParent() ?? undefined);
+      if (canDismiss()) {
+        dismiss();
+        return;
+      }
+
+      if (canGoBack()) {
+        back();
+      }
     };
 
     return (

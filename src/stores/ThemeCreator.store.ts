@@ -258,9 +258,11 @@ export class ThemeCreatorStore {
     void ensureAppFont(
       fontFamily,
       ownerUserId ?? this.values.authorId,
-    ).finally(() => {
-      this.applyPreview();
-    });
+    )
+      .catch(() => undefined)
+      .finally(() => {
+        this.applyPreview();
+      });
   }
 
   stopPreview(changeTheme: (theme: MzTheme) => void) {

@@ -9,6 +9,7 @@ export const canUseCustomEmoji = (
   emoji: Expression,
   currentMember?: SpaceMember | null,
   channel?: Channel | null,
+  joinedSpaceIds?: readonly Snowflake[] | null,
 ) => {
   if (emoji.type !== ExpressionType.Emoji) return false;
 
@@ -17,7 +18,8 @@ export const canUseCustomEmoji = (
   const inSpace = !!channel?.spaceId && !!currentMember;
 
   if (!inSpace) {
-    return !emoji.spaceId && meId === emoji.authorId;
+    if (!emoji.spaceId) return meId === emoji.authorId;
+    return !!joinedSpaceIds?.includes(emoji.spaceId);
   }
 
   if (emoji.spaceId === currentMember.spaceId) return true;
@@ -30,11 +32,12 @@ export function getUsableCustomEmojis(
   meId: Snowflake,
   currentMember?: SpaceMember | null,
   channel?: Channel | null,
+  joinedSpaceIds?: readonly Snowflake[] | null,
 ): Expression[] {
   return expressions.filter(
     (exp) =>
       exp.type === ExpressionType.Emoji &&
-      canUseCustomEmoji(meId, exp, currentMember, channel),
+      canUseCustomEmoji(meId, exp, currentMember, channel, joinedSpaceIds),
   );
 }
 
@@ -44,12 +47,14 @@ export function getCustomEmojiLabel(
   meId: Snowflake,
   currentMember?: SpaceMember | null,
   channel?: Channel | null,
+  joinedSpaceIds?: readonly Snowflake[] | null,
 ): string {
   const usable = getUsableCustomEmojis(
     expressions,
     meId,
     currentMember,
     channel,
+    joinedSpaceIds,
   );
   const labels = buildDeduplicatedEmojiLabels(usable);
   return labels.get(expression) ?? expression.name;
@@ -61,12 +66,14 @@ export function findCustomEmojiByLabel(
   meId: Snowflake,
   currentMember?: SpaceMember | null,
   channel?: Channel | null,
+  joinedSpaceIds?: readonly Snowflake[] | null,
 ): Expression | null {
   const usable = getUsableCustomEmojis(
     expressions,
     meId,
     currentMember,
     channel,
+    joinedSpaceIds,
   );
   const labels = buildDeduplicatedEmojiLabels(usable);
   const lowerLabel = label.toLowerCase();

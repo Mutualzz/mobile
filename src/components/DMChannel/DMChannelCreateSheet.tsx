@@ -66,6 +66,7 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
             });
       onClose();
       navigate(`/@me/${channel.id}`);
+      app.setDMDrawerOpen(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : tChat("dm.createFailed"));
     } finally {

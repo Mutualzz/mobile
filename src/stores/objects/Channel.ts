@@ -95,8 +95,10 @@ export class Channel {
 
     if (channel.messages) this.messages.addAll(channel.messages);
 
-    if (channel.lastMessage)
+    if (channel.lastMessage) {
       this._lastMessage = this.messages.add(channel.lastMessage);
+      this.lastMessageId = channel.lastMessage.id;
+    }
 
     this.recipientIds = channel.recipientIds ?? this.recipientIds ?? null;
     if (channel.recipients)
@@ -307,11 +309,24 @@ export class Channel {
   }
 
   update(channel: APIChannel) {
-    this.type = channel.type;
-    this.name = channel.name;
-    this.topic = channel.topic;
-    this.position = channel.position;
-    this.nsfw = channel.nsfw;
+    if (
+      channel &&
+      typeof channel === "object" &&
+      ("initiatorId" in channel ||
+        "ringing" in channel ||
+        "accepted" in channel ||
+        "soloTimeoutMs" in channel)
+    ) {
+      return;
+    }
+
+    if (channel.type !== undefined && channel.type !== null) {
+      this.type = channel.type;
+    }
+    if (channel.name !== undefined) this.name = channel.name;
+    if (channel.topic !== undefined) this.topic = channel.topic;
+    if (channel.position !== undefined) this.position = channel.position;
+    if (channel.nsfw !== undefined) this.nsfw = channel.nsfw;
 
     this.parentId = channel.parentId ?? null;
     this._parent = channel.parent
@@ -335,16 +350,31 @@ export class Channel {
       ),
     );
 
-    this.flags = BitField.fromString(channelFlags, channel.flags.toString());
+    if (channel.flags != null) {
+      this.flags = BitField.fromString(channelFlags, channel.flags.toString());
+    }
 
-    this.createdAt = new Date(channel.createdAt);
-    this.updatedAt = new Date(channel.updatedAt);
+    if (channel.createdAt != null) {
+      this.createdAt = new Date(channel.createdAt);
+    }
+    if (channel.updatedAt != null) {
+      this.updatedAt = new Date(channel.updatedAt);
+    }
 
     this.raw = channel;
 
-    this._lastMessage = channel.lastMessage
-      ? this.messages.add(channel.lastMessage)
-      : null;
+    if (channel.lastMessageId !== undefined) {
+      this.lastMessageId = channel.lastMessageId;
+    }
+
+    if (channel.lastMessage !== undefined) {
+      this._lastMessage = channel.lastMessage
+        ? this.messages.add(channel.lastMessage)
+        : null;
+      if (channel.lastMessage) {
+        this.lastMessageId = channel.lastMessage.id;
+      }
+    }
 
     this.space?.members.me?.invalidateChannelPermCache?.();
   }

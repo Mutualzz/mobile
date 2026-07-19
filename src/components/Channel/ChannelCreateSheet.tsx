@@ -49,6 +49,7 @@ export const ChannelCreateSheet = observer(
         onClose();
         if (newChannel.type === ChannelType.Text) {
           navigate(`/spaces/channel/${newChannel.id}`);
+          app.setSpacesDrawerOpen(false);
         }
       },
       onError: (err: HttpException) => {

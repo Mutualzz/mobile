@@ -27,11 +27,10 @@ import { useAppStore } from "@hooks/useStores";
 
 const styles = StyleSheet.create({
   fill: {
-    ...StyleSheet.absoluteFill,
-  },
-  container: {
-    position: "relative",
     flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFill,
   },
 });
 
@@ -78,32 +77,29 @@ const NativeBaseline = observer(({ children }: NativeBaselineProps) => {
       <GestureHandlerRootView style={styles.fill}>
         <ImageBackground
           source={{ uri: backgroundImageUrl }}
-          style={[styles.container, styles.fill]}
+          style={styles.fill}
           resizeMode="cover"
           imageStyle={{
             opacity: Math.min(Math.max(settings.brightness / 100, 0.2), 1),
           }}
         >
           <View
+            pointerEvents="none"
             style={[
-              styles.fill,
+              styles.overlay,
               { backgroundColor: resolveWallpaperDimOverlay(theme) },
             ]}
-          >
-            <View
-              style={[
-                styles.fill,
-                { backgroundColor: resolveWallpaperScrim(theme) },
-              ]}
-            >
-              <SafeAreaView
-                edges={["top", "left", "right"]}
-                style={styles.fill}
-              >
-                {children}
-              </SafeAreaView>
-            </View>
-          </View>
+          />
+          <View
+            pointerEvents="none"
+            style={[
+              styles.overlay,
+              { backgroundColor: resolveWallpaperScrim(theme) },
+            ]}
+          />
+          <SafeAreaView edges={["top", "left", "right"]} style={styles.fill}>
+            {children}
+          </SafeAreaView>
         </ImageBackground>
       </GestureHandlerRootView>
     );
@@ -111,11 +107,10 @@ const NativeBaseline = observer(({ children }: NativeBaselineProps) => {
 
   if (!gradient) {
     return (
-      <GestureHandlerRootView>
+      <GestureHandlerRootView style={styles.fill}>
         <SafeAreaView
           edges={["top", "left", "right"]}
           style={[
-            styles.container,
             styles.fill,
             {
               backgroundColor: app.settings?.preferEmbossed
@@ -134,11 +129,8 @@ const NativeBaseline = observer(({ children }: NativeBaselineProps) => {
   const { start, end } = angleToSkia(activeGradient.angle, width, height);
 
   return (
-    <GestureHandlerRootView>
-      <SafeAreaView
-        edges={["top", "left", "right"]}
-        style={[styles.container, styles.fill]}
-      >
+    <GestureHandlerRootView style={styles.fill}>
+      <SafeAreaView edges={["top", "left", "right"]} style={styles.fill}>
         {width > 0 && height > 0 && (
           <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
             <Rect dither x={0} y={0} width={width} height={height}>

@@ -107,19 +107,47 @@ export const UserBar = observer(() => {
 
   let voiceSubtitle: string | undefined;
   if (voiceChannel) {
-    voiceSubtitle =
-      `${voiceChannel.name ?? t("voice.title")} / ${voiceChannel.space?.name ?? ""}`.trim();
+    if (voiceChannel.spaceId) {
+      voiceSubtitle =
+        `${voiceChannel.name ?? t("voice.title")} / ${voiceChannel.space?.name ?? ""}`.trim();
+    } else {
+      voiceSubtitle =
+        voiceChannel.name ||
+        voiceChannel.dmRecipient?.displayName ||
+        t("call.inCall");
+    }
   } else if (voiceStatus === "failed") {
     voiceSubtitle = voiceError ?? t("voice.connection.unableToConnect");
   }
 
   const canHangup =
-    Boolean(app.voice.currentSpaceId) && Boolean(app.voice.currentChannelId);
+    Boolean(app.voice.currentChannelId) || voiceStatus === "failed";
   const cameraEnabled = app.voice.cameraEnabled;
   const isPushToTalk = app.voice.isPushToTalkMode;
   const pushToTalkActive = app.voice.pushToTalkActive;
   const canUsePushToTalk =
     isPushToTalk && voiceStatus === "connected" && !app.voice.effectiveSelfMute;
+
+  const goToVoiceChannel = () => {
+    if (!voiceChannel) return;
+
+    app.channels.setActive(voiceChannel.id);
+
+    if (voiceChannel.spaceId) {
+      app.spaces.setActive(voiceChannel.spaceId);
+      app.channels.setMostRecentChannelForSpace(
+        voiceChannel.spaceId,
+        voiceChannel.id,
+      );
+      app.setSpacesDrawerOpen(false);
+      navigate(`/spaces/channel/${voiceChannel.id}`);
+      return;
+    }
+
+    app.channels.setMostRecentChannelForSpace("@me", voiceChannel.id);
+    app.setDMDrawerOpen(false);
+    navigate(`/@me/${voiceChannel.id}`);
+  };
 
   return (
     <>
@@ -143,38 +171,50 @@ export const UserBar = observer(() => {
                 gap: 8,
               }}
             >
-              <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                <Typography
-                  level="body-sm"
-                  weight={700}
-                  truncate="single"
-                  style={{ color: voiceTitleColor }}
-                >
-                  {voiceTitle}
-                </Typography>
-                {voiceSubtitle && (
+              <Pressable
+                onPress={goToVoiceChannel}
+                disabled={!voiceChannel}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  voiceSubtitle
+                    ? `${voiceTitle}, ${voiceSubtitle}`
+                    : voiceTitle
+                }
+                style={{ flex: 1, minWidth: 0 }}
+              >
+                <Box style={{ flex: 1, minWidth: 0, gap: 2 }}>
                   <Typography
-                    level="body-xs"
-                    textColor="secondary"
+                    level="body-sm"
+                    weight={700}
                     truncate="single"
-                    style={{ fontFamily: "monospace" }}
+                    style={{ color: voiceTitleColor }}
                   >
-                    {voiceSubtitle}
+                    {voiceTitle}
                   </Typography>
-                )}
-                {selfElapsed && (
-                  <Typography
-                    level="body-xs"
-                    textColor="muted"
-                    accessibilityLabel={t("voice.elapsedInChannel", {
-                      time: selfElapsed,
-                    })}
-                    style={{ fontVariant: ["tabular-nums"] }}
-                  >
-                    {selfElapsed}
-                  </Typography>
-                )}
-              </Box>
+                  {voiceSubtitle && (
+                    <Typography
+                      level="body-xs"
+                      textColor="secondary"
+                      truncate="single"
+                      style={{ fontFamily: "monospace" }}
+                    >
+                      {voiceSubtitle}
+                    </Typography>
+                  )}
+                  {selfElapsed && (
+                    <Typography
+                      level="body-xs"
+                      textColor="muted"
+                      accessibilityLabel={t("voice.elapsedInChannel", {
+                        time: selfElapsed,
+                      })}
+                      style={{ fontVariant: ["tabular-nums"] }}
+                    >
+                      {selfElapsed}
+                    </Typography>
+                  )}
+                </Box>
+              </Pressable>
 
               <Box
                 style={{ flexDirection: "row", alignItems: "center", gap: 2 }}
@@ -205,7 +245,9 @@ export const UserBar = observer(() => {
                   variant="plain"
                   padding={4}
                   disabled={!canHangup}
-                  onPress={() => app.voice.leave()}
+                  onPress={() => {
+                    void app.voice.hangupCurrentDmCall();
+                  }}
                   accessibilityLabel={t("voice.connection.disconnectA11y")}
                 >
                   <PhoneXIcon weight="fill" color={theme.colors.danger} />

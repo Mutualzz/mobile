@@ -7,7 +7,6 @@ import { IconButton } from "@components/IconButton";
 import { MessageDateSeparator } from "@components/Message/MessageDateSeparator";
 import { Paper } from "@components/Paper";
 import { Screen } from "@components/Screen/Screen";
-import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { useAppStore } from "@hooks/useStores";
 import type { BridgeDetail } from "@app-types/bridge";
@@ -34,7 +33,6 @@ export const BridgeChatView = observer(({ bridgeId, returnToSpaceId }: Props) =>
   const { t } = useTranslation("settings");
   const { theme } = useTheme();
   const app = useAppStore();
-  const { navigate } = useAppNavigation();
   const queryClient = useQueryClient();
   const tabBarInset = useKeyboardChromeInset();
   const [message, setMessage] = useState("");
@@ -206,11 +204,9 @@ export const BridgeChatView = observer(({ bridgeId, returnToSpaceId }: Props) =>
               app.spaces.setActive(spaceId);
               app.spaces.setSidebarTab(spaceId, "bridges");
               app.setSpacesDrawerOpen(true);
-              navigate(`/spaces/${spaceId}`);
               return;
             }
             app.setDMDrawerOpen(true);
-            navigate("/@me");
           }}
         >
           <CaretLeftIcon weight="bold" />
