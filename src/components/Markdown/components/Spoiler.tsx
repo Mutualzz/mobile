@@ -1,6 +1,8 @@
 import styled from "@emotion/native";
 import { dynamicElevation } from "@mutualzz/ui-core";
 import { Box, Typography } from "@mutualzz/ui-native";
+import { useAppStore } from "@hooks/useStores";
+import { observer } from "mobx-react-lite";
 import { useState, type PropsWithChildren, type ReactNode } from "react";
 import { Pressable } from "react-native";
 
@@ -28,8 +30,10 @@ const isTextOnly = (children: ReactNode) =>
     (Array.isArray(children) &&
         children.every((child) => typeof child === "string"));
 
-export const Spoiler = ({ children }: PropsWithChildren) => {
-    const [revealed, setRevealed] = useState(false);
+export const Spoiler = observer(({ children }: PropsWithChildren) => {
+    const app = useAppStore();
+    const revealAll = app.settings?.extendedSettings.revealAllSpoilers ?? false;
+    const [revealed, setRevealed] = useState(revealAll);
 
     return (
         <Pressable
@@ -50,4 +54,4 @@ export const Spoiler = ({ children }: PropsWithChildren) => {
             </SpoilerWrapper>
         </Pressable>
     );
-};
+});

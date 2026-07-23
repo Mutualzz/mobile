@@ -17,7 +17,7 @@ import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import type { VoiceState } from "@stores/objects/VoiceState";
 import { FLOATING_USER_BAR_HEIGHT, TAB_BAR_VERTICAL_GAP } from "@utils/layout";
-import { getChannelOccupiedAt } from "@utils/voiceElapsed";
+import { getChannelOccupiedAt } from "@mutualzz/client";
 import { ArrowLeftIcon, ChatCircleIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";

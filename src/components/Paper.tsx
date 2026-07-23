@@ -17,8 +17,6 @@ const PaperComponent = forwardRef<View, PaperProps>(
         : (elevation ??
           (embossed ? DEFAULT_ELEVATION.embossed : DEFAULT_ELEVATION.flat));
 
-    // Honor an explicit variant (e.g. UserAvatar default-avatar paper).
-    // Otherwise follow the global embossed preference.
     const resolvedVariant =
       variant ??
       (!app.token ? "elevation" : embossed ? "elevation" : "outlined");

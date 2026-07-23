@@ -1,6 +1,9 @@
 import { Button } from "@components/Button";
 import { Screen } from "@components/Screen/Screen";
-import { Paper } from "@components/Paper";
+import {
+  SettingsNavButton,
+  SettingsNavSection,
+} from "@components/UserSettings/SettingsField";
 import { SettingsHeader } from "@components/UserSettings/SettingsHeader";
 import { useSettingsIconColor } from "@components/UserSettings/settingsTheme";
 import {
@@ -9,6 +12,8 @@ import {
 } from "@contexts/UserSettingsSidebar.context";
 import {
   BellIcon,
+  ChatTextIcon,
+  DevicesIcon,
   LifebuoyIcon,
   LinkSimpleIcon,
   MicrophoneIcon,
@@ -25,10 +30,10 @@ import {
   settingsCategoryTitleKeys,
   settingsPageTitleKeys,
 } from "@mutualzz/i18n";
-import { ButtonGroup, Divider, Typography } from "@mutualzz/ui-native";
+import { Box, ButtonGroup, Divider, Typography } from "@mutualzz/ui-native";
 import { type Href } from "expo-router";
 import { observer } from "mobx-react-lite";
-import { Fragment, type ComponentType } from "react";
+import { type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import type { IconProps } from "phosphor-react-native";
 
@@ -42,13 +47,16 @@ interface Pages {
 const settingsPages: SettingsPages = {
   "user-settings": [
     { label: "my-account", Icon: UserGearIcon },
+    { label: "sessions", Icon: DevicesIcon },
     { label: "profile", Icon: PaintBrushIcon },
     { label: "expressions", Icon: SmileyIcon },
     { label: "connections", Icon: LinkSimpleIcon },
   ],
   "app-settings": [
     { label: "appearance", Icon: PaletteIcon },
+    { label: "messages", Icon: ChatTextIcon },
     { label: "notifications", Icon: BellIcon },
+    { label: "privacy", Icon: ShieldIcon },
     { label: "voice_and_video", Icon: MicrophoneIcon },
   ],
 };
@@ -86,24 +94,14 @@ const SettingsIndex = () => {
     >
       <SettingsHeader title={t("title")} />
       {categories.map(([category, pages], index) => (
-        <Fragment key={`settings-sidebar-category-fragment-${category}`}>
-          <Paper
-            style={{
-              marginHorizontal: 12,
-              padding: 12,
-              borderRadius: 12,
-              flexDirection: "column",
-              minWidth: 0,
-            }}
-            elevation={app.settings?.preferEmbossed ? 3 : 0}
+        <Box key={category}>
+          <SettingsNavSection
+            title={t(
+              settingsCategoryTitleKeys[
+                category as keyof typeof settingsCategoryTitleKeys
+              ],
+            )}
           >
-            <Typography level="body-sm" textColor="muted">
-              {t(
-                settingsCategoryTitleKeys[
-                  category as keyof typeof settingsCategoryTitleKeys
-                ],
-              )}
-            </Typography>
             <ButtonGroup
               orientation="vertical"
               variant="plain"
@@ -125,7 +123,7 @@ const SettingsIndex = () => {
                 </Button>
               ))}
             </ButtonGroup>
-          </Paper>
+          </SettingsNavSection>
           {index < categories.length - 1 && (
             <Divider
               style={{
@@ -135,83 +133,29 @@ const SettingsIndex = () => {
               lineColor="muted"
             />
           )}
-        </Fragment>
+        </Box>
       ))}
 
-      <Paper
-        elevation={app.settings?.preferEmbossed ? 3 : 0}
-        style={{
-          marginHorizontal: 12,
-          borderRadius: 12,
-          flexDirection: "column",
-          minWidth: 0,
-        }}
-      >
-        <Button
-          variant="plain"
-          fullWidth
-          padding={12}
-          horizontalAlign="left"
-          style={{ borderRadius: 12, minWidth: 0 }}
-          startDecorator={
-            <LifebuoyIcon weight="fill" size={20} color={navIconColor} />
-          }
-          onPress={() => navigate("/settings/support" as Href)}
-        >
-          {t("helpAndSupport")}
-        </Button>
-      </Paper>
+      <SettingsNavButton
+        label={t("helpAndSupport")}
+        icon={<LifebuoyIcon weight="fill" size={20} color={navIconColor} />}
+        onPress={() => navigate("/settings/support" as Href)}
+      />
 
-      {app.account?.isStaff && (
-        <Paper
-          elevation={app.settings?.preferEmbossed ? 3 : 0}
-          style={{
-            marginHorizontal: 12,
-            borderRadius: 12,
-            flexDirection: "column",
-            minWidth: 0,
-          }}
-        >
-          <Button
-            variant="plain"
-            fullWidth
-            padding={12}
-            horizontalAlign="left"
-            style={{ borderRadius: 12, minWidth: 0 }}
-            startDecorator={
-              <ShieldIcon weight="fill" size={20} color={navIconColor} />
-            }
-            onPress={() => navigate("/staff")}
-          >
-            {t("staffPanel")}
-          </Button>
-        </Paper>
-      )}
+      {app.account?.isStaff ? (
+        <SettingsNavButton
+          label={t("staffPanel")}
+          icon={<ShieldIcon weight="fill" size={20} color={navIconColor} />}
+          onPress={() => navigate("/staff")}
+        />
+      ) : null}
 
-      <Paper
-        elevation={app.settings?.preferEmbossed ? 3 : 0}
-        style={{
-          marginHorizontal: 12,
-          borderRadius: 12,
-          flexDirection: "column",
-          minWidth: 0,
-        }}
-      >
-        <Button
-          variant="plain"
-          color="danger"
-          fullWidth
-          padding={12}
-          horizontalAlign="left"
-          style={{ borderRadius: 12, minWidth: 0 }}
-          startDecorator={
-            <SignOutIcon weight="fill" size={20} color={dangerIconColor} />
-          }
-          onPress={() => app.logout()}
-        >
-          {t("logOut")}
-        </Button>
-      </Paper>
+      <SettingsNavButton
+        label={t("logOut")}
+        icon={<SignOutIcon weight="fill" size={20} color={dangerIconColor} />}
+        onPress={() => app.logout()}
+        color="danger"
+      />
     </Screen>
   );
 };

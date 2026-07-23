@@ -1,6 +1,6 @@
 import { MessageType } from "@mutualzz/types";
-import { isCallNoticeMessage } from "@utils/callNoticeMessage";
-import { isSystemMessageType, isSystemUser } from "@utils/systemUser";
+import { isCallNoticeMessage } from "@mutualzz/client";
+import { isSystemMessageType, isSystemUser } from "@mutualzz/client";
 
 interface PreviewMessage {
   type?: MessageType | number | string;

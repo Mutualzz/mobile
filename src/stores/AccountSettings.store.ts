@@ -1,10 +1,30 @@
-import type { APIUserSettings, AppMode, Snowflake } from "@mutualzz/types";
-import { ObservableOrderedSet } from "@utils/ObservableOrderedSet";
+import type {
+  APIUserSettings,
+  AppMode,
+  Snowflake,
+  UserExtendedSettings,
+} from "@mutualzz/types";
+import {
+  applyExtendedSettingsInPlace,
+  mergeExtendedSettings,
+} from "@mutualzz/types";
+import {
+  AccountSettingsSyncEngine,
+  buildAccountSettingsPatch,
+  isFavoriteEmoji,
+  isFavoriteGif,
+  mergeRemoteExtendedSettings,
+  moveSpaceOrder,
+  ObservableOrderedSet,
+  resetSpaceOrder as buildDefaultSpaceOrder,
+  toggleFavoriteEmoji,
+  toggleFavoriteGif,
+  type AccountSettingsPatch,
+} from "@mutualzz/client";
 import { comparer, makeAutoObservable, observable, reaction } from "mobx";
+import { AppState, type AppStateStatus, Alert } from "react-native";
+import i18n from "../i18n";
 import type { AppStore } from "./App.store";
-import { AppState, type AppStateStatus } from "react-native";
-
-type SettingsPatch = Omit<APIUserSettings, "updatedAt">;
 
 const SYNC_DEBOUNCE_MS = 2_000;
 
@@ -12,7 +32,7 @@ export class AccountSettingsStore {
   currentTheme?: string | null = "baseDark";
   currentIcon?: string | null;
   preferredMode: AppMode;
-  preferEmbossed = false;
+  preferEmbossed: boolean;
   preferredSelfMute = false;
   preferredSelfDeaf = false;
   pushEnabled = true;
@@ -23,25 +43,27 @@ export class AccountSettingsStore {
   spacePositions: ObservableOrderedSet<string>;
   favoriteEmojis = observable.array<string>([]);
   favoriteGifs = observable.array<string>([]);
+  favoriteStickers = observable.array<string>([]);
+  extendedSettings: UserExtendedSettings;
   updatedAt: Date;
 
-  private lastSyncedHash: string;
+  private syncEngine: AccountSettingsSyncEngine;
   private syncIntervalId?: ReturnType<typeof setInterval>;
   private debounceTimerId?: ReturnType<typeof setTimeout>;
-  private appStateSubscription: { remove: () => void };
   private disposeReaction: () => void;
+  private appStateSubscription: { remove: () => void };
 
   constructor(
     private readonly app: AppStore,
     settings: APIUserSettings,
   ) {
-    this.currentTheme = settings.currentTheme;
+    this.preferEmbossed = settings.preferEmbossed ?? true;
+    this.currentTheme = settings.currentTheme ?? "baseDark";
     this.currentIcon = settings.currentIcon;
     this.preferredMode = settings.preferredMode;
     this.spacePositions = new ObservableOrderedSet(
       settings.spacePositions.map(String),
     );
-    this.preferEmbossed = settings.preferEmbossed;
     this.preferredSelfMute = settings.preferredSelfMute ?? false;
     this.preferredSelfDeaf = settings.preferredSelfDeaf ?? false;
     this.pushEnabled = settings.pushEnabled ?? true;
@@ -51,19 +73,23 @@ export class AccountSettingsStore {
     this.shareRecentActivity = settings.shareRecentActivity ?? true;
     this.favoriteEmojis = observable.array(settings.favoriteEmojis ?? []);
     this.favoriteGifs = observable.array(settings.favoriteGifs ?? []);
+    this.favoriteStickers = observable.array(settings.favoriteStickers ?? []);
+    this.extendedSettings = observable.object(
+      mergeExtendedSettings(settings.extendedSettings),
+    );
     this.updatedAt = new Date(settings.updatedAt);
 
-    this.lastSyncedHash = this.computeHash(this.getSyncPayload());
-
-    makeAutoObservable(this);
+    this.syncEngine = new AccountSettingsSyncEngine(
+      buildAccountSettingsPatch(this),
+    );
 
     this.disposeReaction = reaction(
       () => this.getSyncPayload(),
       () => this.scheduleSync(),
-      {
-        equals: comparer.structural,
-      },
+      { equals: comparer.structural },
     );
+
+    makeAutoObservable(this, {}, { autoBind: true });
 
     this.appStateSubscription = AppState.addEventListener(
       "change",
@@ -91,32 +117,8 @@ export class AccountSettingsStore {
     this.appStateSubscription.remove();
   }
 
-  private getSyncPayload(): SettingsPatch {
-    return {
-      spacePositions: this.spacePositions.toArray(),
-      preferredMode: this.preferredMode,
-      preferEmbossed: this.preferEmbossed,
-      currentTheme: this.currentTheme,
-      currentIcon: this.currentIcon,
-      preferredSelfMute: this.preferredSelfMute,
-      preferredSelfDeaf: this.preferredSelfDeaf,
-      pushEnabled: this.pushEnabled,
-      pushDirectMessages: this.pushDirectMessages,
-      pushMentions: this.pushMentions,
-      shareActivity: this.shareActivity,
-      shareRecentActivity: this.shareRecentActivity,
-      favoriteEmojis: [...this.favoriteEmojis],
-      favoriteGifs: [...this.favoriteGifs],
-      favoriteStickers: [],
-    };
-  }
-
-  private computeHash(payload: SettingsPatch): string {
-    return JSON.stringify(payload);
-  }
-
   private get isDirty(): boolean {
-    return this.computeHash(this.getSyncPayload()) !== this.lastSyncedHash;
+    return this.syncEngine.isDirty(this.getSyncPayload());
   }
 
   setPreferEmbossed(prefer: boolean) {
@@ -128,18 +130,11 @@ export class AccountSettingsStore {
   }
 
   toggleFavoriteGif(entry: string) {
-    const url = entry.split("|")[0];
-    const idx = this.favoriteGifs.findIndex((f) => f.split("|")[0] === url);
-    if (idx === -1) {
-      this.favoriteGifs.push(entry);
-    } else {
-      this.favoriteGifs.splice(idx, 1);
-    }
+    this.favoriteGifs.replace(toggleFavoriteGif(this.favoriteGifs, entry));
   }
 
   isFavoriteGif(url: string) {
-    const bare = url.split("|")[0];
-    return this.favoriteGifs.some((f) => f.split("|")[0] === bare);
+    return isFavoriteGif(this.favoriteGifs, url);
   }
 
   setCurrentTheme(theme: string | null) {
@@ -149,6 +144,26 @@ export class AccountSettingsStore {
 
   setPreferredMode(mode: AppMode) {
     this.preferredMode = mode;
+  }
+
+  patchExtendedSettings(
+    patch: Partial<UserExtendedSettings>,
+    options?: { sync?: "debounced" | "immediate" },
+  ) {
+    applyExtendedSettingsInPlace(this.extendedSettings, patch);
+    if (patch.replyWithMention != undefined) {
+      this.app.replyMention = patch.replyWithMention;
+    }
+    if (patch.defaultMemberListVisible != undefined) {
+      this.app.memberListVisible = patch.defaultMemberListVisible;
+    }
+    if (options?.sync === "immediate") {
+      this.flush();
+    }
+  }
+
+  get extended() {
+    return this.extendedSettings;
   }
 
   setCurrentIcon(icon?: string | null) {
@@ -177,18 +192,45 @@ export class AccountSettingsStore {
   }
 
   setShareActivity(value: boolean) {
+    const changed = this.shareActivity !== value;
     this.shareActivity = value;
+    if (changed) {
+      this.app.gateway?.refreshPresenceActivities?.();
+    }
   }
 
   setShareRecentActivity(value: boolean) {
     this.shareRecentActivity = value;
   }
 
-  getPendingOverrides(): SettingsPatch | null {
+  toggleFavoriteEmoji(unified: string, skinTone: string | null = null) {
+    this.favoriteEmojis.replace(
+      toggleFavoriteEmoji(this.favoriteEmojis, unified, skinTone),
+    );
+  }
+
+  isFavoriteEmoji(unified: string, skinTone: string | null = null) {
+    return isFavoriteEmoji(this.favoriteEmojis, unified, skinTone);
+  }
+
+  toggleFavoriteSticker(id: string) {
+    const idx = this.favoriteStickers.indexOf(id);
+    if (idx === -1) {
+      this.favoriteStickers.push(id);
+    } else {
+      this.favoriteStickers.splice(idx, 1);
+    }
+  }
+
+  isFavoriteSticker(id: string) {
+    return this.favoriteStickers.includes(id);
+  }
+
+  getPendingOverrides(): AccountSettingsPatch | null {
     return this.isDirty ? this.getSyncPayload() : null;
   }
 
-  applyLocalOverrides(payload: SettingsPatch) {
+  applyLocalOverrides(payload: AccountSettingsPatch) {
     this.spacePositions.replace(payload.spacePositions.map(String));
     this.currentTheme = payload.currentTheme;
     this.currentIcon = payload.currentIcon;
@@ -203,6 +245,35 @@ export class AccountSettingsStore {
     this.shareRecentActivity = payload.shareRecentActivity ?? true;
     this.favoriteEmojis = observable.array(payload.favoriteEmojis ?? []);
     this.favoriteGifs = observable.array(payload.favoriteGifs ?? []);
+    this.favoriteStickers = observable.array(payload.favoriteStickers ?? []);
+    applyExtendedSettingsInPlace(
+      this.extendedSettings,
+      payload.extendedSettings ?? {},
+    );
+  }
+
+  private mergeRemoteExtendedSettings(remote: Partial<UserExtendedSettings>) {
+    const patch = mergeRemoteExtendedSettings(
+      this.extendedSettings,
+      this.syncEngine.syncedSnapshot.extendedSettings,
+      remote,
+    );
+    if (!patch) return;
+
+    applyExtendedSettingsInPlace(this.extendedSettings, patch);
+    this.applyExtendedSettingsSideEffects(patch, this.extendedSettings);
+  }
+
+  private applyExtendedSettingsSideEffects(
+    patch: Partial<UserExtendedSettings>,
+    merged: UserExtendedSettings,
+  ) {
+    if (patch.replyWithMention != undefined) {
+      this.app.replyMention = merged.replyWithMention;
+    }
+    if (patch.defaultMemberListVisible != undefined) {
+      this.app.memberListVisible = merged.defaultMemberListVisible;
+    }
   }
 
   update(settings: Partial<APIUserSettings>) {
@@ -227,6 +298,9 @@ export class AccountSettingsStore {
     if (settings.favoriteGifs != undefined)
       this.favoriteGifs = observable.array(settings.favoriteGifs);
 
+    if (settings.favoriteStickers != undefined)
+      this.favoriteStickers = observable.array(settings.favoriteStickers);
+
     if (settings.preferredSelfMute != undefined)
       this.preferredSelfMute = settings.preferredSelfMute;
 
@@ -242,16 +316,34 @@ export class AccountSettingsStore {
     if (settings.pushMentions != undefined)
       this.pushMentions = settings.pushMentions;
 
-    if (settings.shareActivity != undefined)
+    if (settings.shareActivity != undefined) {
+      const changed = this.shareActivity !== settings.shareActivity;
       this.shareActivity = settings.shareActivity;
+      if (changed) this.app.gateway?.refreshPresenceActivities?.();
+    }
 
     if (settings.shareRecentActivity != undefined)
       this.shareRecentActivity = settings.shareRecentActivity;
 
+    if (settings.extendedSettings != undefined) {
+      if (this.isDirty) {
+        this.mergeRemoteExtendedSettings(settings.extendedSettings);
+      } else {
+        applyExtendedSettingsInPlace(
+          this.extendedSettings,
+          settings.extendedSettings,
+        );
+        this.applyExtendedSettingsSideEffects(
+          settings.extendedSettings,
+          this.extendedSettings,
+        );
+      }
+    }
+
     if (settings.updatedAt != undefined)
       this.updatedAt = new Date(settings.updatedAt);
 
-    this.lastSyncedHash = this.computeHash(this.getSyncPayload());
+    this.syncEngine.markSynced(this.getSyncPayload());
   }
 
   startSyncing() {
@@ -281,33 +373,33 @@ export class AccountSettingsStore {
     newOrder.forEach((id) => this.spacePositions.addLast(id));
   }
 
+  resetSpaceOrder() {
+    this.reorderSpaces(
+      buildDefaultSpaceOrder(this.app.spaces.all.map((space) => space.id)),
+    );
+    this.flush();
+  }
+
   moveSpace(fromIndex: number, toIndex: number) {
     const items = this.app.spaces.positioned.map((s) => s.id);
-    if (
-      fromIndex === toIndex ||
-      fromIndex < 0 ||
-      toIndex < 0 ||
-      fromIndex >= items.length ||
-      toIndex >= items.length
-    ) {
-      return;
-    }
-    const [removed] = items.splice(fromIndex, 1);
-    if (removed == null) return;
-    items.splice(toIndex, 0, removed);
-    this.reorderSpaces(items);
+    const next = moveSpaceOrder(items, fromIndex, toIndex);
+    if (!next) return;
+    this.reorderSpaces(next);
   }
 
   async sync() {
-    if (!this.app.account) return;
-    if (!this.isDirty) return;
+    await this.syncEngine.sync(
+      {
+        getPayload: () => this.getSyncPayload(),
+        applyServerUpdate: (res) => this.update(res),
+        applyLocalOverrides: (payload) => this.applyLocalOverrides(payload),
+        onSyncFailed: () => Alert.alert(i18n.t("settings:syncFailed")),
+      },
+      { account: this.app.account, rest: this.app.rest },
+    );
+  }
 
-    const payload = this.getSyncPayload();
-
-    const res = await this.app.rest
-      .patch<APIUserSettings, SettingsPatch>("/@me/settings", payload)
-      .catch(() => null);
-
-    if (res) this.update(res);
+  private getSyncPayload(): AccountSettingsPatch {
+    return buildAccountSettingsPatch(this);
   }
 }

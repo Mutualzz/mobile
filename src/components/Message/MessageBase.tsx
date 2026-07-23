@@ -3,6 +3,8 @@ import styled from "@emotion/native";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { Message, type MessageLike } from "@stores/objects/Message";
 import { useScaledMessageInfoWidth } from "@utils/accessibilityLayout";
+import { getMessageLayoutStyles } from "@utils/messageLayout";
+import { useAppStore } from "@hooks/useStores";
 import { observer } from "mobx-react-lite";
 import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,13 +15,34 @@ interface Props extends PropsWithChildren, ViewProps {
   system?: boolean;
 }
 
-export const MessageBase = styled(Box)<Props>(({ header, system }) => ({
-  flexDirection: system ? "row" : "column",
-  paddingTop: 2,
-  paddingBottom: 2,
+export const MessageBase = observer(function MessageBase({
+  header,
+  system,
+  style,
+  ...props
+}: Props) {
+  const app = useAppStore();
+  const extended = app.settings?.extendedSettings;
+  const layoutStyles = getMessageLayoutStyles(
+    extended?.messageDisplay ?? "default",
+    extended?.uiDensity ?? "default",
+  );
 
-  ...(header ? { marginTop: 10 } : {}),
-}));
+  return (
+    <Box
+      style={[
+        {
+          flexDirection: system ? "row" : "column",
+          paddingTop: layoutStyles.paddingYNative,
+          paddingBottom: layoutStyles.paddingYNative,
+          ...(header ? { marginTop: layoutStyles.headerMarginTopNative } : {}),
+        },
+        style,
+      ]}
+      {...props}
+    />
+  );
+});
 
 export const MessageRow = styled(Box)<{ header?: boolean }>(({ header }) => ({
   flexDirection: "row",
@@ -148,7 +171,11 @@ export const DetailsBase = styled(Box)({
 export const EditedIndicator = () => {
   const { t } = useTranslation("chat");
   return (
-    <Typography level="body-xs" textColor="muted" style={{ marginLeft: 4 }}>
+    <Typography
+      level="body-xs"
+      textColor="muted"
+      style={{ marginLeft: 4, opacity: 0.75 }}
+    >
       {t("message.edited")}
     </Typography>
   );
@@ -156,17 +183,20 @@ export const EditedIndicator = () => {
 
 export const MessageDetails = observer(
   ({ message }: { message: MessageLike }) => {
+    const app = useAppStore();
     const { t } = useTranslation("common");
     const isEdited = message instanceof Message && message.edited;
+    const timestampFormat =
+      app.settings?.extendedSettings.timestampFormat ?? "relative";
 
     return (
-      <DetailsBase>
+      <DetailsBase style={{ opacity: 0.6 }}>
         <Time
           value={message.createdAt}
-          defaultMode="relative"
-          toggleOnPress
+          defaultMode={timestampFormat === "absolute" ? "absolute" : "relative"}
+          toggleOnPress={timestampFormat === "relative"}
           toggleToMode="calendar"
-          relativeStyle="long"
+          relativeStyle="short"
           refreshIntervalMs={30_000}
           typographyProps={{
             level: "body-xs",

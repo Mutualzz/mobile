@@ -4,7 +4,7 @@ import type { PresencePayload } from "@mutualzz/types";
 import { useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
-import { getNonCustomActivities } from "@utils/customStatus";
+import { getNonCustomActivities } from "@mutualzz/client";
 
 interface Props {
   presence: PresencePayload;

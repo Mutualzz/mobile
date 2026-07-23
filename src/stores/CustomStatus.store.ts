@@ -5,7 +5,7 @@ import type {
     PresenceActivity,
     PresenceActivityEmoji,
 } from "@mutualzz/types";
-import { hasCustomStatusContent } from "@utils/customStatus";
+import { hasCustomStatusContent } from "@mutualzz/client";
 import { makePersistable } from "mobx-persist-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 

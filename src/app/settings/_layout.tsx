@@ -17,14 +17,16 @@ const SettingsLayout = () => {
           >
             <Stack.Screen name="index" />
             <Stack.Screen name="my-account" />
+            <Stack.Screen name="sessions" />
             <Stack.Screen name="profile" />
             <Stack.Screen name="appearance" />
+            <Stack.Screen name="messages" />
+            <Stack.Screen name="privacy" />
             <Stack.Screen name="notifications" />
             <Stack.Screen name="voice_and_video" />
             <Stack.Screen name="connections" />
             <Stack.Screen name="expressions" />
             <Stack.Screen name="support" />
-            <Stack.Screen name="support/[ticketId]" />
             <Stack.Screen name="avatar-editor" />
             <Stack.Screen name="profile-editor" />
             <Stack.Screen name="profile-widgets" />

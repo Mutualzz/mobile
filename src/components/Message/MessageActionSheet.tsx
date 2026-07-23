@@ -22,7 +22,7 @@ import type { SkinTone } from "@utils/emojis/emojiPickerData";
 import type { PickerEmoji } from "@utils/emojis/emojiPickerData";
 import {
   expressionToReactionEmoji,
-  pickerEmojiToReactionEmoji } from "@utils/reactions";
+  pickerEmojiToReactionEmoji } from "@mutualzz/client";
 import {
   useScaledSquareSize,
   useScaledTouchTarget } from "@utils/accessibilityLayout";
@@ -95,10 +95,14 @@ export const MessageActionSheet = observer(
 
     const me = message.space?.members.me;
     const canEdit = message.author?.id === app.account?.id;
-    const canDelete = canEdit || !!me?.hasPermission("ManageMessages");
+    const canDelete =
+      canEdit || !!me?.hasPermission("ManageMessages", message.channel);
     const canCopy = !!message.content?.trim();
     const canReply = true;
     const canReport = message.author?.id !== app.account?.id;
+    const canReact = !message.space
+      ? true
+      : !!me?.hasPermission("AddReactions", message.channel);
     const hasActions = canReply || canCopy || canEdit || canDelete || canReport;
 
     const handleQuickReaction = (item: QuickReactionItem) => {
@@ -192,6 +196,7 @@ export const MessageActionSheet = observer(
                 gap: 8}}
             >
                 <Box style={{ gap: 12 }}>
+                  {canReact && (
                   <Box
                     style={{
                       flexDirection: "row",
@@ -227,8 +232,9 @@ export const MessageActionSheet = observer(
                       />
                     </Pressable>
                   </Box>
+                  )}
 
-                  {hasActions && <Divider lineColor="muted" />}
+                  {canReact && hasActions && <Divider lineColor="muted" />}
 
                   {hasActions && (
                     <ButtonGroup
@@ -303,7 +309,7 @@ export const MessageActionSheet = observer(
         </Sheet>
 
         <ReactionEmojiPicker
-          visible={pickerOpen}
+          visible={canReact && pickerOpen}
           onClose={() => setPickerOpen(false)}
           onSelectEmoji={handlePickerEmoji}
           onSelectCustomEmoji={handlePickerCustom}

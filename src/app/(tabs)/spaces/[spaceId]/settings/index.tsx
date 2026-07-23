@@ -3,6 +3,10 @@ import { Screen } from "@components/Screen/Screen";
 import { Paper } from "@components/Paper";
 import { SpaceActionConfirmSheet } from "@components/SpaceSettings/SpaceActionConfirmSheet";
 import { SpaceSettingsHeader } from "@components/SpaceSettings/SpaceSettingsHeader";
+import {
+  SettingsNavButton,
+  SettingsNavSection,
+} from "@components/UserSettings/SettingsField";
 import { useSettingsIconColor } from "@components/UserSettings/settingsTheme";
 import { useSheet } from "@hooks/useSheet";
 import { useAppNavigation } from "@hooks/useAppNavigation";
@@ -16,7 +20,7 @@ import {
   spaceCategoryTitleKeys,
   spacePageTitleKeys,
 } from "@mutualzz/i18n";
-import { ButtonGroup, Divider, Typography } from "@mutualzz/ui-native";
+import { Box, ButtonGroup, Divider, Typography } from "@mutualzz/ui-native";
 import type { Href } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { Fragment } from "react";
@@ -71,18 +75,7 @@ const SpaceSettingsIndex = () => {
 
       {categories.map(({ category, pages }, index) => (
         <Fragment key={`space-settings-category-${category}`}>
-          <Paper
-            style={{
-              marginHorizontal: 12,
-              padding: 12,
-              borderRadius: 12,
-              minWidth: 0,
-            }}
-            elevation={app.settings?.preferEmbossed ? 3 : 0}
-          >
-            <Typography level="body-sm" textColor="muted">
-              {t(spaceCategoryTitleKeys[category])}
-            </Typography>
+          <SettingsNavSection title={t(spaceCategoryTitleKeys[category])}>
             <ButtonGroup
               color="info"
               orientation="vertical"
@@ -109,7 +102,7 @@ const SpaceSettingsIndex = () => {
                 </Button>
               ))}
             </ButtonGroup>
-          </Paper>
+          </SettingsNavSection>
           {index < categories.length - 1 && (
             <Divider
               style={{ paddingInline: 16, opacity: 0.5 }}
@@ -119,64 +112,39 @@ const SpaceSettingsIndex = () => {
         </Fragment>
       ))}
 
-      <Paper
-        style={{
-          marginHorizontal: 12,
-          borderRadius: 12,
-          minWidth: 0,
-        }}
-        elevation={app.settings?.preferEmbossed ? 3 : 0}
-      >
-        {isOwner ? (
-          <Button
-            variant="plain"
-            color="danger"
-            fullWidth
-            padding={12}
-            horizontalAlign="left"
-            style={{ borderRadius: 12, minWidth: 0 }}
-            startDecorator={
-              <TrashIcon weight="fill" size={20} color={dangerIconColor} />
-            }
-            onPress={() =>
-              openSheet(
-                "delete-space-confirm",
-                <SpaceActionConfirmSheet
-                  space={space}
-                  action="delete"
-                  sheetId="delete-space-confirm"
-                />,
-              )
-            }
-          >
-            {t("actions.deleteSpace")}
-          </Button>
-        ) : (
-          <Button
-            variant="plain"
-            color="danger"
-            fullWidth
-            padding={12}
-            horizontalAlign="left"
-            style={{ borderRadius: 12, minWidth: 0 }}
-            startDecorator={
-              <SignOutIcon weight="fill" size={20} color={dangerIconColor} />
-            }
-            onPress={() =>
-              openSheet(
-                "leave-space-confirm",
-                <SpaceActionConfirmSheet
-                  space={space}
-                  action="leave"
-                  sheetId="leave-space-confirm"
-                />,
-              )
-            }
-          >
-            {t("actions.leaveSpace")}
-          </Button>
-        )}
-      </Paper>
+      {isOwner ? (
+        <SettingsNavButton
+          label={t("actions.deleteSpace")}
+          icon={<TrashIcon weight="fill" size={20} color={dangerIconColor} />}
+          color="danger"
+          onPress={() =>
+            openSheet(
+              "delete-space-confirm",
+              <SpaceActionConfirmSheet
+                space={space}
+                action="delete"
+                sheetId="delete-space-confirm"
+              />,
+            )
+          }
+        />
+      ) : (
+        <SettingsNavButton
+          label={t("actions.leaveSpace")}
+          icon={<SignOutIcon weight="fill" size={20} color={dangerIconColor} />}
+          color="danger"
+          onPress={() =>
+            openSheet(
+              "leave-space-confirm",
+              <SpaceActionConfirmSheet
+                space={space}
+                action="leave"
+                sheetId="leave-space-confirm"
+              />,
+            )
+          }
+        />
+      )}
     </Screen>
   );
 };

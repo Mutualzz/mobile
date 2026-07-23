@@ -1,6 +1,6 @@
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
-import { FLOATING_USER_BAR_HEIGHT } from "@utils/layout";
+import { FLOATING_USER_BAR_CHROME_HEIGHT } from "@utils/layout";
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -43,7 +43,7 @@ const TabBar = ({ children }: Props) => {
         style={{
           width: "100%",
           maxWidth: 420,
-          minHeight: FLOATING_USER_BAR_HEIGHT,
+          minHeight: FLOATING_USER_BAR_CHROME_HEIGHT,
           borderRadius: 16,
           justifyContent: "center",
           borderLeftWidth: 0,

@@ -2,7 +2,7 @@ import { UserProfileTrigger } from "@components/Profile/UserProfileTrigger";
 import { Box, Typography } from "@mutualzz/ui-native";
 import type { MessageLike } from "@stores/objects/Message";
 import type { Space } from "@stores/objects/Space";
-import { isSystemMessageType, isSystemUser } from "@utils/systemUser";
+import { isSystemMessageType, isSystemUser } from "@mutualzz/client";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 

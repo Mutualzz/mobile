@@ -73,3 +73,7 @@ export function getMessageGifMaxWidth(windowWidth: number) {
     );
 }
 
+export function getCommentGifMaxWidth(windowWidth: number) {
+    return Math.min(windowWidth - 120, 280);
+}
+

@@ -1,130 +1,60 @@
-import { PostActions } from "@components/Feed/PostActions";
-import { PostAttachment } from "@components/Feed/PostAttachment";
 import { PostCommentsSheet } from "@components/Feed/PostCommentsSheet";
-import { SharePostSheet } from "@components/Feed/SharePostSheet";
-import { IconButton } from "@components/IconButton";
+import { PostFeedActions } from "@components/Feed/PostFeedActions";
+import { PostFeedHeader } from "@components/Feed/PostFeedHeader";
 import { MarkdownRenderer } from "@components/Markdown/MarkdownRenderer/MarkdownRenderer";
 import { MessageEmbed } from "@components/Message/MessageEmbed";
 import { MessageSticker } from "@components/Message/MessageSticker";
 import { Paper } from "@components/Paper";
-import { ReportContentSheet } from "@components/Report/ReportContentSheet";
-import { UserAvatar } from "@components/User/UserAvatar";
-import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import { ExpressionType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Post } from "@stores/objects/Post";
 import { GIF_ONLY_URL_PATTERN } from "@utils/gifs";
-import dayjs from "dayjs";
-import { FlagIcon, TrashIcon } from "phosphor-react-native";
+import { FEED_COLUMN_MAX_WIDTH } from "@utils/feedLayout";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { ScrollView, useWindowDimensions } from "react-native";
 
 interface Props {
   post: Post;
   defaultCommentsOpen?: boolean;
-  layout?: "card" | "snap";
-  itemHeight?: number;
 }
 
-export const PostCard = observer(
-  ({ post, defaultCommentsOpen, layout = "card", itemHeight }: Props) => {
-    const { t } = useTranslation("chat");
-    const app = useAppStore();
-    const { theme } = useTheme();
-    const { openSheet } = useSheet();
-    const { width } = useWindowDimensions();
-    const isSnap = layout === "snap";
-    const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen ?? false);
-    const [shareOpen, setShareOpen] = useState(false);
+export const PostCard = observer(({ post, defaultCommentsOpen }: Props) => {
+  const app = useAppStore();
+  const { theme } = useTheme();
+  const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen ?? false);
 
-    const stickerExpressions = post.expressions.filter(
-      (e) => e.type === ExpressionType.Sticker,
-    );
+  const stickerExpressions = post.expressions.filter(
+    (e) => e.type === ExpressionType.Sticker,
+  );
 
-    const hasGifEmbed = post.embeds.some((e) => e.type === "gifv");
-    const isOnlyGifUrl =
-      hasGifEmbed &&
-      !!post.content &&
-      GIF_ONLY_URL_PATTERN.test(post.content.trim()) &&
-      !post.content.trim().includes(" ");
+  const hasGifEmbed = post.embeds.some((e) => e.type === "gifv");
+  const isOnlyGifUrl =
+    hasGifEmbed &&
+    !!post.content &&
+    GIF_ONLY_URL_PATTERN.test(post.content.trim()) &&
+    !post.content.trim().includes(" ");
 
-    const isOwner = post.authorId === app.account?.id;
-
-    const card = (
+  return (
+    <>
       <Paper
         style={{
+          width: "100%",
+          maxWidth: FEED_COLUMN_MAX_WIDTH,
+          alignSelf: "center",
           borderRadius: 12,
           overflow: "hidden",
-          padding: 14,
-          gap: 12,
-          width: "100%",
-          maxWidth: isSnap ? Math.min(width - 24, 560) : undefined,
-          alignSelf: isSnap ? "center" : undefined,
+          padding: 12,
+          gap: 10,
         }}
-        elevation={app.settings?.preferEmbossed ? 3 : 0}
+        elevation={app.settings?.preferEmbossed ? 4 : 0}
       >
-        <Box
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-        >
-          <Box
-            style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}
-          >
-            <UserAvatar user={post.author} size="md" badge />
-            <Box style={{ flex: 1, minWidth: 0 }}>
-              <Typography level="body-md" weight={700} truncate="single">
-                {post.author?.displayName ?? t("unknownUser")}
-              </Typography>
-              <Typography level="body-xs" textColor="muted">
-                {dayjs(post.createdAt).fromNow()}
-              </Typography>
-            </Box>
-          </Box>
-
-          {isOwner ? (
-            <IconButton
-              variant="plain"
-              color="danger"
-              padding={6}
-              onPress={() => void post.delete()}
-              accessibilityLabel={t("feed.actions.deletePost")}
-            >
-              <TrashIcon size={18} />
-            </IconButton>
-          ) : (
-            <IconButton
-              variant="plain"
-              color="danger"
-              padding={6}
-              onPress={() =>
-                openSheet(
-                  `report-post-${post.id}`,
-                  <ReportContentSheet
-                    targetType="post"
-                    targetId={post.id}
-                    contentLabel={t("feed.report.thisPost")}
-                    sheetId={`report-post-${post.id}`}
-                  />,
-                )
-              }
-              accessibilityLabel={t("feed.actions.reportPost")}
-            >
-              <FlagIcon size={18} />
-            </IconButton>
-          )}
-        </Box>
+        <PostFeedHeader post={post} />
 
         {stickerExpressions.length > 0 && (
           <Box style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {stickerExpressions.map((sticker) => (
-              <MessageSticker key={sticker.id} sticker={sticker} size={80} />
+              <MessageSticker key={sticker.id} sticker={sticker} size={64} />
             ))}
           </Box>
         )}
@@ -137,18 +67,6 @@ export const PostCard = observer(
           <Box style={{ gap: 8 }}>
             {post.embeds.map((embed, index) => (
               <MessageEmbed key={index} embed={embed} />
-            ))}
-          </Box>
-        )}
-
-        {post.attachments.length > 0 && (
-          <Box style={{ gap: 8 }}>
-            {post.attachments.map((attachment) => (
-              <PostAttachment
-                key={attachment.id}
-                attachment={attachment}
-                maxWidth={width - 56}
-              />
             ))}
           </Box>
         )}
@@ -167,61 +85,18 @@ export const PostCard = observer(
           </Box>
         )}
 
-        <PostActions
-          liked={post.liked}
-          saved={post.saved}
-          shared={post.shared}
-          likeCount={post.likeCount}
-          commentCount={post.commentCount}
-          shareCount={post.shareCount}
-          commentsOpen={commentsOpen}
-          iconColor={theme.typography.colors.primary}
-          onLike={() => void post.toggleLike()}
-          onComment={() => setCommentsOpen(true)}
-          onShare={() => setShareOpen(true)}
-          onSave={() => void post.toggleSave()}
+        <PostFeedActions
+          post={post}
+          commentsActive={commentsOpen}
+          onOpenComments={() => setCommentsOpen(true)}
         />
       </Paper>
-    );
 
-    return (
-      <>
-        {isSnap ? (
-          <Box
-            style={{
-              height: itemHeight,
-              width: "100%",
-              justifyContent: "center",
-              paddingHorizontal: 12,
-            }}
-          >
-            <ScrollView
-              contentContainerStyle={{
-                flexGrow: 1,
-                justifyContent: "center",
-                paddingVertical: 16,
-              }}
-              showsVerticalScrollIndicator={false}
-            >
-              {card}
-            </ScrollView>
-          </Box>
-        ) : (
-          card
-        )}
-
-        <PostCommentsSheet
-          open={commentsOpen}
-          onClose={() => setCommentsOpen(false)}
-          post={post}
-        />
-
-        <SharePostSheet
-          visible={shareOpen}
-          post={post}
-          onClose={() => setShareOpen(false)}
-        />
-      </>
-    );
-  },
-);
+      <PostCommentsSheet
+        open={commentsOpen}
+        onClose={() => setCommentsOpen(false)}
+        post={post}
+      />
+    </>
+  );
+});

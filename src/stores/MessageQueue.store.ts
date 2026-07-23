@@ -23,13 +23,13 @@ export class MessageQueue {
     }
 
     remove(id: Snowflake) {
-        const message = this.messages.find((x) => x.id === id);
+        const message = this.messages.find((x) => String(x.id) === String(id));
         if (!message) return;
         this.messages.remove(message);
     }
 
     send(id: Snowflake) {
-        const message = this.messages.find((x) => x.id === id);
+        const message = this.messages.find((x) => String(x.id) === String(id));
         if (!message) return;
         message.status = QueuedMessageStatus.Sending;
     }
@@ -42,10 +42,20 @@ export class MessageQueue {
         if (!message.nonce) return;
 
         const nonce = String(message.nonce);
-        if (!this.get(message.channelId).find((x) => String(x.id) === nonce))
+        if (!this.get(message.channelId).some((x) => String(x.id) === nonce))
             return;
 
         this.remove(nonce);
+    }
+
+    commitSentMessage(message: APIMessage) {
+        const channel = this.app.channels.get(message.channelId);
+        if (channel) {
+            const added = channel.messages.add(message);
+            channel.updateLastMessage(added);
+        }
+
+        this.handleIncomingMessage(message);
     }
 
     clear() {

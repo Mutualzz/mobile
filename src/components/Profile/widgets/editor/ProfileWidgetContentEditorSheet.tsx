@@ -26,6 +26,7 @@ import {
   pickProfileImageForUpload,
   recropProfileImageFromUrl,
 } from "@utils/profileImagePicker";
+import ImagePicker from "react-native-image-crop-picker";
 import {
   clampProfileBlockCornerRadius,
   isCustomProfileBlockCornerRadius,
@@ -801,6 +802,7 @@ function ProfileImageFields({
         );
       } finally {
         setUploading(false);
+        void ImagePicker.clean();
       }
     } catch (e) {
       setError(

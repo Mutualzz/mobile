@@ -6,7 +6,7 @@ import {
     buildUnifiedWithSkinTone,
     unifiedToEmoji,
 } from "@utils/emojis/unified";
-import { expressionToReactionEmoji } from "@utils/reactions";
+import { expressionToReactionEmoji } from "@mutualzz/client";
 
 export type QuickReactionItem =
     | {
@@ -104,6 +104,16 @@ export const getQuickReactionItems = (
 ): QuickReactionItem[] => {
     const items: QuickReactionItem[] = [];
     const seen = new Set<string>();
+
+    for (const key of app.settings?.extendedSettings.quickReactionEmojis ?? []) {
+        if (items.length >= limit) break;
+
+        const item = resolveFavoriteKey(key, app);
+        if (!item || seen.has(item.key)) continue;
+
+        seen.add(item.key);
+        items.push(item);
+    }
 
     for (const key of app.settings?.favoriteEmojis ?? []) {
         if (items.length >= limit) break;

@@ -1,3 +1,4 @@
+import type { Theme } from "@emotion/react";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
@@ -8,7 +9,7 @@ import type { Space } from "@stores/objects/Space";
 import { FlashList, type FlashListRef } from "@shopify/flash-list";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -23,6 +24,10 @@ import { Paper } from "@components/Paper";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { IconButton } from "@components/IconButton";
 import { HashIcon, ArrowDownIcon } from "phosphor-react-native";
+import {
+  getChatFontScale,
+  subscribeChatFontScale,
+} from "@utils/chatFontScale";
 
 const CHAT_DRAW_DISTANCE = Math.ceil(Dimensions.get("window").height);
 interface Props {
@@ -44,7 +49,7 @@ const SpaceEndMessage = ({
 }: {
   channel: Channel | null | undefined;
   canReadHistory: boolean;
-  theme: ReturnType<typeof useTheme>["theme"];
+  theme: Theme;
 }) => {
   const app = useAppStore();
   const { t } = useTranslation("chat");
@@ -150,7 +155,6 @@ const ScrollToBottomFab = ({
     >
       <IconButton
         padding={10}
-        color="neutral"
         variant="soft"
         onPress={onPress}
         accessibilityLabel={t("message.scrollToLatestA11y")}
@@ -164,6 +168,11 @@ const ScrollToBottomFab = ({
 export const MessageList = observer(({ channel }: Props) => {
   const app = useAppStore();
   const { theme } = useTheme();
+  const chatFontScale = useSyncExternalStore(
+    subscribeChatFontScale,
+    getChatFontScale,
+    getChatFontScale,
+  );
   const listRef = useRef<FlashListRef<MessageGroupType>>(null);
   const isAtBottomRef = useRef(true);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
@@ -221,6 +230,7 @@ export const MessageList = observer(({ channel }: Props) => {
 
   const ackLatest = useCallback(() => {
     if (!channel?.id) return;
+    if (!isAtBottomRef.current) return;
 
     const lastMessage = channel.lastMessage;
     if (!lastMessage || "status" in lastMessage) return;
@@ -468,7 +478,14 @@ export const MessageList = observer(({ channel }: Props) => {
   ]);
 
   return (
-    <Box style={{ flex: 1, minHeight: 0 }}>
+    <Box
+      style={{
+        flex: 1,
+        minHeight: 0,
+        transform: [{ scale: chatFontScale }],
+        transformOrigin: "top",
+      }}
+    >
       <FlashList
         ref={listRef}
         key={channel?.id}

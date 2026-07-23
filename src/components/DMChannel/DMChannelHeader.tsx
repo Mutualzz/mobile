@@ -146,14 +146,14 @@ export const DMChannelHeader = observer(function DMChannelHeader({
       <Box style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
         <IconButton
           padding={6}
-          color={callActive || inThisCall ? "success" : "neutral"}
+          color={callActive || inThisCall ? "success" : undefined}
           disabled={inThisCall}
           accessibilityLabel={
             inThisCall
               ? t("call.inCall")
               : callActive
                 ? t("call.join")
-                : t("call.startHint")
+                : t("call.start")
           }
           onPress={() => {
             if (inThisCall) return;
@@ -181,7 +181,6 @@ export const DMChannelHeader = observer(function DMChannelHeader({
           <>
             <IconButton
               padding={6}
-              color="neutral"
               onPress={onOpenAddRecipient}
               disabled={isFull}
               accessibilityLabel={
@@ -192,7 +191,6 @@ export const DMChannelHeader = observer(function DMChannelHeader({
             </IconButton>
             <IconButton
               padding={6}
-              color="neutral"
               onPress={onOpenManage}
               accessibilityLabel={t("groupDm.manage.title")}
             >
@@ -203,7 +201,6 @@ export const DMChannelHeader = observer(function DMChannelHeader({
           onOpenUserMenu && (
             <IconButton
               padding={6}
-              color="neutral"
               onPress={onOpenUserMenu}
               accessibilityLabel={t("groupDm.conversationOptionsA11y")}
             >

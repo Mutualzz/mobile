@@ -1,6 +1,9 @@
 import { Button } from "@components/Button";
 import { SettingsScreen } from "@components/UserSettings/SettingsScreen";
-import { Paper } from "@components/Paper";
+import {
+  SettingsScroll,
+  SettingsSection,
+} from "@components/UserSettings/SettingsField";
 import { MarkdownInput } from "@components/Markdown/MarkdownInput/MarkdownInput";
 import {
   prepareMobileBlocksForSave,
@@ -13,7 +16,9 @@ import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage"
 import { Box, Input, Typography, hasOpenSheets } from "@mutualzz/ui-native";
 import type { ColorLike } from "@mutualzz/ui-core";
 import { useScaledProfilePreviewHeight } from "@utils/accessibilityLayout";
+import { getErrorMessage } from "@utils/errors";
 import { pickProfileImageAsset } from "@utils/profileImagePicker";
+import ImagePicker from "react-native-image-crop-picker";
 import { useFocusEffect } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
@@ -23,7 +28,6 @@ import {
   ActivityIndicator,
   Alert,
   BackHandler,
-  ScrollView,
 } from "react-native";
 import type { APIMobileProfileBlock, APIProfileMusic } from "@mutualzz/types";
 import { expandCustomEmojiShortcodes } from "@utils/markdown/composerQueries";
@@ -89,6 +93,7 @@ export const ProfileEditorScreen = observer(() => {
   };
   const profileRef = useRef(profile);
   profileRef.current = profile;
+  const initialMobileBlocksRef = useRef<string | null>(null);
 
   const handleBack = useCallback(() => {
     const state = formStateRef.current;
@@ -102,7 +107,7 @@ export const ProfileEditorScreen = observer(() => {
         state.bannerHash !== (p.banner ?? null) ||
         JSON.stringify(state.profileMusic) !==
           JSON.stringify(p.profileMusic ?? null) ||
-        JSON.stringify(state.mobileBlocks) !== JSON.stringify(p.mobileBlocks));
+        JSON.stringify(state.mobileBlocks) !== initialMobileBlocksRef.current);
 
     if (isDirty) {
       Alert.alert(
@@ -147,7 +152,13 @@ export const ProfileEditorScreen = observer(() => {
     setProfileMusic(profile.profileMusic ?? null);
     setBannerHash(profile.banner ?? null);
     setBannerPreview(profile.constructBannerUrl());
-    setMobileBlocks(JSON.parse(JSON.stringify(profile.mobileBlocks)));
+    const nextMobileBlocks = JSON.parse(
+      JSON.stringify(profile.mobileBlocks),
+    ) as APIMobileProfileBlock[];
+    setMobileBlocks(nextMobileBlocks);
+    if (initialMobileBlocksRef.current === null) {
+      initialMobileBlocksRef.current = JSON.stringify(nextMobileBlocks);
+    }
   }, [profile?.updatedAt, profile?.userId]);
 
   useFocusEffect(
@@ -187,6 +198,7 @@ export const ProfileEditorScreen = observer(() => {
         setError(getErrorMessage(e, t("profile.editor.failedUploadBanner")));
       } finally {
         setUploadingBanner(false);
+        void ImagePicker.clean();
       }
     } catch (e) {
       setError(getErrorMessage(e, t("profile.editor.failedPickBanner")));
@@ -210,6 +222,8 @@ export const ProfileEditorScreen = observer(() => {
         findCustomEmojiByLabel(app.expressions.all, name, account.id),
       );
 
+      const savedMobileBlocks = prepareMobileBlocksForSave(mobileBlocks);
+
       await app.profiles.save({
         bio: expandedBio || null,
         pronouns: pronouns.trim() || null,
@@ -219,8 +233,10 @@ export const ProfileEditorScreen = observer(() => {
         pageFontFamily: pageFontFamily.trim() || null,
         profileMusic: profileMusic || null,
         blocks: profile.blocks,
-        mobileBlocks: prepareMobileBlocksForSave(mobileBlocks),
+        mobileBlocks: savedMobileBlocks,
       });
+
+      initialMobileBlocksRef.current = JSON.stringify(savedMobileBlocks);
     } catch (e) {
       setError(getErrorMessage(e, t("profile.editor.failedSaveProfile")));
     } finally {
@@ -245,31 +261,12 @@ export const ProfileEditorScreen = observer(() => {
           <ActivityIndicator />
         </Box>
       ) : (
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-            padding: 16,
-            paddingBottom: 32,
-            gap: 16,
-          }}
-          keyboardShouldPersistTaps="handled"
-        >
+        <SettingsScroll>
           <Typography level="body-sm" textColor="muted">
             {t("profile.editor.mobileDescription")}
           </Typography>
 
-          <Paper
-            style={{
-              borderRadius: 12,
-              overflow: "hidden",
-              gap: 12,
-              padding: 12,
-            }}
-            elevation={app.settings?.preferEmbossed ? 2 : 0}
-          >
-            <Typography level="body-md" weight={700}>
-              {t("profile.editor.banner")}
-            </Typography>
+          <SettingsSection title={t("profile.editor.banner")}>
             {bannerPreview ? (
               <ProfileBlockImage
                 uri={bannerPreview}
@@ -305,19 +302,9 @@ export const ProfileEditorScreen = observer(() => {
                 ? t("expressions.uploading")
                 : t("profile.editor.changeBanner")}
             </Button>
-          </Paper>
+          </SettingsSection>
 
-          <Paper
-            style={{
-              borderRadius: 12,
-              padding: 12,
-              gap: 12,
-            }}
-            elevation={app.settings?.preferEmbossed ? 2 : 0}
-          >
-            <Typography level="body-md" weight={700}>
-              {t("profile.editor.pronouns")}
-            </Typography>
+          <SettingsSection title={t("profile.editor.pronouns")}>
             <Input
               value={pronouns}
               onChangeText={(next) =>
@@ -325,19 +312,9 @@ export const ProfileEditorScreen = observer(() => {
               }
               placeholder={t("profile.editor.pronounsPlaceholder")}
             />
-          </Paper>
+          </SettingsSection>
 
-          <Paper
-            style={{
-              borderRadius: 12,
-              padding: 12,
-              gap: 12,
-            }}
-            elevation={app.settings?.preferEmbossed ? 2 : 0}
-          >
-            <Typography level="body-md" weight={700}>
-              {t("profile.editor.bio")}
-            </Typography>
+          <SettingsSection title={t("profile.editor.bio")}>
             <MarkdownInput
               value={bio}
               onChange={(next) => setBio(next.slice(0, BIO_MAX_LENGTH))}
@@ -349,21 +326,9 @@ export const ProfileEditorScreen = observer(() => {
               elevation={0}
               style={{ minHeight: bioMinHeight }}
             />
-          </Paper>
+          </SettingsSection>
 
-          <Paper
-            style={{
-              borderRadius: 12,
-              padding: 12,
-              gap: 12,
-              overflow: "hidden",
-              minHeight: 96,
-            }}
-            elevation={app.settings?.preferEmbossed ? 2 : 0}
-          >
-            <Typography level="body-md" weight={700}>
-              {t("profile.editor.background")}
-            </Typography>
+          <SettingsSection title={t("profile.editor.background")}>
             {profile ? (
               <Box
                 style={{
@@ -386,38 +351,18 @@ export const ProfileEditorScreen = observer(() => {
               showRandom
               fullWidth
             />
-          </Paper>
+          </SettingsSection>
 
-          <Paper
-            style={{
-              borderRadius: 12,
-              padding: 12,
-              gap: 12,
-            }}
-            elevation={app.settings?.preferEmbossed ? 2 : 0}
-          >
-            <Typography level="body-md" weight={700}>
-              {t("profile.editor.pageFont")}
-            </Typography>
+          <SettingsSection title={t("profile.editor.pageFont")}>
             <Input
               value={pageFontFamily}
               onChangeText={setPageFontFamily}
               placeholder={t("profile.editor.pageFontPlaceholder")}
               autoCapitalize="none"
             />
-          </Paper>
+          </SettingsSection>
 
-          <Paper
-            style={{
-              borderRadius: 12,
-              padding: 12,
-              gap: 12,
-            }}
-            elevation={app.settings?.preferEmbossed ? 2 : 0}
-          >
-            <Typography level="body-md" weight={700}>
-              {t("profile.editor.profileMusicUrl")}
-            </Typography>
+          <SettingsSection title={t("profile.editor.profileMusicUrl")}>
             <Input
               value={profileMusic?.url ?? ""}
               onChangeText={(value) =>
@@ -426,20 +371,9 @@ export const ProfileEditorScreen = observer(() => {
               placeholder={t("profile.editor.urlPlaceholder")}
               autoCapitalize="none"
             />
-          </Paper>
+          </SettingsSection>
 
-          <Paper
-            style={{
-              borderRadius: 12,
-              padding: 12,
-              gap: 12,
-              overflow: "hidden",
-            }}
-            elevation={app.settings?.preferEmbossed ? 2 : 0}
-          >
-            <Typography level="body-md" weight={700}>
-              {t("profile.editor.mobileWidgets")}
-            </Typography>
+          <SettingsSection title={t("profile.editor.mobileWidgets")}>
             <Typography level="body-sm" textColor="muted">
               {mobileBlocks.length > 0
                 ? t("profile.editor.widgetCount", {
@@ -454,13 +388,13 @@ export const ProfileEditorScreen = observer(() => {
             >
               {t("profile.editor.editWidgets")}
             </Button>
-          </Paper>
+          </SettingsSection>
 
-          {error && (
+          {error ? (
             <Typography level="body-sm" color="danger" variant="plain">
               {error}
             </Typography>
-          )}
+          ) : null}
 
           <Button
             color="primary"
@@ -469,21 +403,9 @@ export const ProfileEditorScreen = observer(() => {
           >
             {saving ? t("profile.saving") : t("profile.editor.saveProfile")}
           </Button>
-        </ScrollView>
+        </SettingsScroll>
       )}
     </SettingsScreen>
   );
 });
 
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message;
-  if (
-    typeof error === "object" &&
-    error &&
-    "message" in error &&
-    typeof error.message === "string"
-  ) {
-    return error.message;
-  }
-  return fallback;
-}

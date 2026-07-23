@@ -1,6 +1,7 @@
 import { Button } from "@components/Button";
 import { type ColorLike } from "@mutualzz/ui-core";
-import { Box, IconButton, InputColor, Slider, Typography } from "@mutualzz/ui-native";
+import { IconButton } from "@components/IconButton";
+import { Box, InputColor, Slider, Typography } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import {
   ArrowCounterClockwiseIcon,
@@ -298,7 +299,7 @@ export function ProfileDrawCanvas({
         })}
         <IconButton
           variant={erasing ? "solid" : "plain"}
-          color="neutral"
+          color={erasing ? "neutral" : undefined}
           padding={6}
           accessibilityLabel={t("profile.draw.eraser")}
           onPress={() => setErasing(true)}
@@ -307,7 +308,6 @@ export function ProfileDrawCanvas({
         </IconButton>
         <IconButton
           variant="plain"
-          color="neutral"
           padding={6}
           accessibilityLabel={t("profile.draw.brush")}
           onPress={() => setErasing(false)}
@@ -354,7 +354,6 @@ export function ProfileDrawCanvas({
       <Box style={{ flexDirection: "row", gap: 8 }}>
         <IconButton
           variant="soft"
-          color="neutral"
           accessibilityLabel={t("profile.draw.undo")}
           disabled={strokes.length === 0}
           onPress={undo}
@@ -363,7 +362,6 @@ export function ProfileDrawCanvas({
         </IconButton>
         <IconButton
           variant="soft"
-          color="neutral"
           accessibilityLabel={t("profile.draw.redo")}
           disabled={redoStack.length === 0}
           onPress={redo}

@@ -2,12 +2,14 @@ import { Paper } from "@components/Paper";
 import { AvatarStudioMethodCards } from "@components/Avatar/AvatarStudioMethodCards";
 import { Button } from "@components/Button";
 import { UserAvatar } from "@components/User/UserAvatar";
+import { SettingsSection, SettingsScroll } from "@components/UserSettings/SettingsField";
 import { useSettingsIconColor } from "@components/UserSettings/settingsTheme";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import type { APIPrivateUser } from "@mutualzz/types";
 import { Box, Divider, Input, Typography } from "@mutualzz/ui-native";
 import { useScaledSettingsProfileCardMetrics } from "@utils/accessibilityLayout";
+import { getErrorMessage } from "@utils/errors";
 import type { ColorLike } from "@mutualzz/ui-core";
 import { observer } from "mobx-react-lite";
 import {
@@ -130,7 +132,7 @@ export const UserProfileSettings = observer(() => {
   };
 
   return (
-    <Box style={{ gap: 16 }}>
+    <SettingsScroll>
       <Paper
         style={{
           borderRadius: 12,
@@ -169,23 +171,10 @@ export const UserProfileSettings = observer(() => {
         </Box>
       </Paper>
 
-      <Paper
-        variant="soft"
-        style={{
-          padding: 16,
-          borderRadius: 12,
-          gap: 12,
-        }}
-        elevation={embossed ? 2 : 0}
+      <SettingsSection
+        title={t("profile.avatarStudio")}
+        description={t("profile.avatarStudioDescriptionMobile")}
       >
-        <Box style={{ gap: 4 }}>
-          <Typography level="body-md" weight={700}>
-            {t("profile.avatarStudio")}
-          </Typography>
-          <Typography level="body-sm" textColor="muted">
-            {t("profile.avatarStudioDescriptionMobile")}
-          </Typography>
-        </Box>
         <Button
           color="primary"
           disabled={uploadingAvatar}
@@ -195,7 +184,7 @@ export const UserProfileSettings = observer(() => {
             ? t("expressions.uploading")
             : t("profile.uploadAvatar")}
         </Button>
-      </Paper>
+      </SettingsSection>
 
       <AvatarStudioMethodCards
         embossed={embossed}
@@ -216,24 +205,10 @@ export const UserProfileSettings = observer(() => {
 
       <Divider lineColor="muted" style={{ opacity: 0.35 }} />
 
-      <Paper
-        variant="soft"
-        style={{
-          padding: 16,
-          borderRadius: 12,
-          gap: 12,
-        }}
-        elevation={embossed ? 2 : 0}
+      <SettingsSection
+        title={t("account.displayName")}
+        description={t("profile.displayNameDescription")}
       >
-        <Box style={{ gap: 4 }}>
-          <Typography level="body-md" weight={700}>
-            {t("account.displayName")}
-          </Typography>
-          <Typography level="body-sm" textColor="muted">
-            {t("profile.displayNameDescription")}
-          </Typography>
-        </Box>
-
         <Input
           value={globalName}
           onChangeText={setGlobalName}
@@ -248,11 +223,11 @@ export const UserProfileSettings = observer(() => {
           <Typography level="body-md">@{account.username}</Typography>
         </Box>
 
-        {error && (
+        {error ? (
           <Typography level="body-sm" color="danger" variant="plain">
             {error}
           </Typography>
-        )}
+        ) : null}
 
         <Button
           color="primary"
@@ -261,27 +236,14 @@ export const UserProfileSettings = observer(() => {
         >
           {savingName ? t("profile.saving") : t("profile.saveChanges")}
         </Button>
-      </Paper>
+      </SettingsSection>
 
       <Divider lineColor="muted" style={{ opacity: 0.35 }} />
 
-      <Paper
-        variant="soft"
-        style={{
-          padding: 16,
-          borderRadius: 12,
-          gap: 12,
-        }}
-        elevation={embossed ? 2 : 0}
+      <SettingsSection
+        title={t("profile.profilePage")}
+        description={t("profile.profilePageDescription")}
       >
-        <Box style={{ gap: 4 }}>
-          <Typography level="body-md" weight={700}>
-            {t("profile.profilePage")}
-          </Typography>
-          <Typography level="body-sm" textColor="muted">
-            {t("profile.profilePageDescription")}
-          </Typography>
-        </Box>
         <Button
           color="primary"
           startDecorator={
@@ -291,20 +253,8 @@ export const UserProfileSettings = observer(() => {
         >
           {t("profile.customizeProfile")}
         </Button>
-      </Paper>
-    </Box>
+      </SettingsSection>
+    </SettingsScroll>
   );
 });
 
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message;
-  if (
-    typeof error === "object" &&
-    error &&
-    "message" in error &&
-    typeof error.message === "string"
-  ) {
-    return error.message;
-  }
-  return fallback;
-}

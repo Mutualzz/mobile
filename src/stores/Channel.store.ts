@@ -361,6 +361,10 @@ export class ChannelStore {
     return this.collapsedCategories.get(spaceId)?.has(categoryId) ?? false;
   }
 
+  resetCollapsedCategories() {
+    this.collapsedCategories.clear();
+  }
+
   getSpaceVisibleChannels(spaceId: string, types?: ChannelType[]): Channel[] {
     const space = this.app.spaces.get(spaceId);
     if (!space) return [];

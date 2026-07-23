@@ -24,6 +24,7 @@ export class User {
   createdAt: Date;
   updatedAt: Date;
   flags: BitField<UserFlags>;
+  viewerCanDm?: boolean;
 
   raw: APIUser;
 
@@ -39,6 +40,7 @@ export class User {
     this.updatedAt = new Date(user.updatedAt);
 
     this.flags = BitField.fromString(userFlags, user.flags.toString());
+    this.viewerCanDm = user.viewerCanDm;
 
     this.raw = user;
 
@@ -68,6 +70,7 @@ export class User {
     this.updatedAt = new Date(user.updatedAt);
 
     this.flags = BitField.fromString(userFlags, user.flags.toString());
+    this.viewerCanDm = user.viewerCanDm;
 
     this.raw = user;
 

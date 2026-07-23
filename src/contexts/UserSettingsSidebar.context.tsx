@@ -7,13 +7,20 @@ import {
 
 export type UserSettingsSidebarPage =
     | "my-account"
+    | "sessions"
     | "profile"
     | "expressions"
     | "appearance"
+    | "messages"
     | "notifications"
     | "voice_and_video"
     | "connections"
-    | "support";
+    | "privacy"
+    | "support"
+    | "text_and_chat"
+    | "accessibility"
+    | "layout"
+    | "composer";
 export type UserSettingsSidebarCategories = "user-settings" | "app-settings";
 
 interface UserSettingsSidebarContextProps {

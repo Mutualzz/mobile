@@ -1,6 +1,6 @@
 import { Logger } from "@mutualzz/logger";
 import { HttpStatusCode } from "@mutualzz/types";
-import { formatRestError, parseXhrJson } from "@utils/restError";
+import { formatRestError, parseXhrJson } from "@mutualzz/client";
 import { fixConnectionUrl } from "@utils/urls";
 import { EventEmitter } from "events";
 import { Platform } from "react-native";

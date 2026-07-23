@@ -127,6 +127,8 @@ export class VoiceStore {
   voiceInputSensitivity = DEFAULT_VOICE_INPUT_SENSITIVITY;
   voiceInputSensitivityAuto = true;
   voiceInputMode: VoiceInputMode = "voice_activity";
+  microphoneVolume = 100;
+  speakerVolume = 100;
   noiseSuppression = true;
   noiseSuppressionPending = false;
   pushToTalkActive = false;
@@ -275,6 +277,8 @@ export class VoiceStore {
         "voiceInputSensitivity",
         "voiceInputSensitivityAuto",
         "voiceInputMode",
+        "microphoneVolume",
+        "speakerVolume",
         "noiseSuppression",
         "currentInputDeviceId",
         "currentCameraDeviceId",
@@ -454,6 +458,14 @@ export class VoiceStore {
       this.setPushToTalkPressed(false);
     }
     this.applyVoiceSettings();
+  }
+
+  setMicrophoneVolume(volume: number) {
+    this.microphoneVolume = Math.min(200, Math.max(0, Math.round(volume)));
+  }
+
+  setSpeakerVolume(volume: number) {
+    this.speakerVolume = Math.min(200, Math.max(0, Math.round(volume)));
   }
 
   async setNoiseSuppression(enabled: boolean) {

@@ -64,7 +64,6 @@ export const VoiceChannelChatSheet = observer(
             </Typography>
             <IconButton
               padding={6}
-              color="neutral"
               accessibilityLabel={t("header.voice.closeChatA11y")}
               onPress={handleClose}
             >

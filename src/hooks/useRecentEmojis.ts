@@ -29,7 +29,13 @@ async function saveRecent(recents: RecentEmoji[]) {
     try {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(recents));
     } catch {
-        // ignore persistence errors
+    }
+}
+
+export async function clearRecentEmojisStorage() {
+    try {
+        await AsyncStorage.removeItem(STORAGE_KEY);
+    } catch {
     }
 }
 
@@ -86,5 +92,10 @@ export function useRecentEmojis() {
         [],
     );
 
-    return { recents, addRecentStandard, addRecentCustom };
+    const clearRecents = useCallback(() => {
+        void clearRecentEmojisStorage();
+        setRecents([]);
+    }, []);
+
+    return { recents, addRecentStandard, addRecentCustom, clearRecents };
 }

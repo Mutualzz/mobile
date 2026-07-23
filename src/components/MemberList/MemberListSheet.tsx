@@ -164,6 +164,7 @@ export const MemberListSheet = observer(
                         }
                         member={member}
                         space={space}
+                        channelId={channel.id}
                         isOwner={
                           (member.userId ?? member.user?.id) ===
                           space?.ownerId

@@ -7,127 +7,117 @@ import type { User } from "./objects/User";
 import { omitBooleanRelations } from "@utils/apiRelations";
 
 export interface MessageGroup {
-    author: User;
-    messages: MessageLike[];
-    createdAt: Date;
+  author: User;
+  messages: MessageLike[];
+  createdAt: Date;
 }
 
 export class MessageStore {
-    private readonly app: AppStore;
-    private readonly channelId: Snowflake;
+  private readonly app: AppStore;
+  private readonly channelId: Snowflake;
 
-    private readonly messages: IObservableArray<Message>;
+  private readonly messages: IObservableArray<Message>;
 
-    constructor(app: AppStore, channelId: Snowflake) {
-        this.app = app;
-        this.channelId = channelId;
+  constructor(app: AppStore, channelId: Snowflake) {
+    this.app = app;
+    this.channelId = channelId;
 
-        this.messages = observable.array([]);
+    this.messages = observable.array([]);
 
-        makeAutoObservable(this);
-    }
+    makeAutoObservable(this);
+  }
 
-    clear() {
-        this.messages.clear();
-    }
+  clear() {
+    this.messages.clear();
+  }
 
-    add(message: APIMessage) {
-        const data = omitBooleanRelations(message, [
-            "author",
-            "channel",
-            "space",
-        ]);
-        const existing = this.get(data.id);
-        if (existing) return existing;
+  add(message: APIMessage) {
+    const data = omitBooleanRelations(message, ["author", "channel", "space"]);
+    const existing = this.get(data.id);
+    if (existing) return existing;
 
-        const newMessage = new Message(this.app, data);
-        this.messages.push(newMessage);
-        return newMessage;
-    }
+    const newMessage = new Message(this.app, data);
+    this.messages.push(newMessage);
+    return newMessage;
+  }
 
-    addAll(messages: APIMessage[]) {
-        return messages.map((message) => this.add(message));
-    }
+  addAll(messages: APIMessage[]) {
+    return messages.map((message) => this.add(message));
+  }
 
-    get(id: string) {
-        return this.messages.find((message) => message.id === id);
-    }
+  get(id: string) {
+    return this.messages.find((message) => message.id === id);
+  }
 
-    has(id: string) {
-        return this.messages.some((message) => message.id === id);
-    }
+  has(id: string) {
+    return this.messages.some((message) => message.id === id);
+  }
 
-    remove(id: Snowflake) {
-        const message = this.get(id);
-        if (!message) return;
-        this.messages.remove(message);
-    }
+  remove(id: Snowflake) {
+    const message = this.get(id);
+    if (!message) return;
+    this.messages.remove(message);
+  }
 
-    update(message: APIMessage) {
-        const data = omitBooleanRelations(message, [
-            "author",
-            "channel",
-            "space",
-        ]);
-        const oldMessage = this.get(data.id);
-        if (!oldMessage) return;
+  update(message: APIMessage) {
+    const data = omitBooleanRelations(message, ["author", "channel", "space"]);
+    const oldMessage = this.get(data.id);
+    if (!oldMessage) return;
 
-        oldMessage.update(data);
-    }
+    oldMessage.update(data);
+  }
 
-    get count() {
-        return this.messages.length;
-    }
+  get count() {
+    return this.messages.length;
+  }
 
-    get groups(): MessageGroup[] {
-        const sortedMessages: MessageLike[] = [
-            ...this.messages,
-            ...this.app.queue.get(this.channelId),
-        ];
+  get groups(): MessageGroup[] {
+    const sortedMessages: MessageLike[] = [
+      ...this.messages,
+      ...this.app.queue.get(this.channelId),
+    ];
 
-        return sortedMessages
-            .slice()
-            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-            .reduce((groups, message) => {
-                const lastGroup = groups[groups.length - 1];
-                const lastMessage =
-                    lastGroup?.messages[lastGroup.messages.length - 1];
-                if (
-                    lastMessage &&
-                    lastMessage.author?.id === message.author?.id &&
-                    lastMessage.type === message.type &&
-                    message.type === MessageType.Default &&
-                    lastMessage.createdAt.getTime() -
-                        message.createdAt.getTime() <=
-                        10 * 60 * 1000
-                ) {
-                    lastGroup.messages.push(message);
-                    lastGroup.createdAt = message.createdAt;
-                } else {
-                    groups.push({
-                        author: message.author!,
-                        messages: [message],
-                        createdAt: message.createdAt,
-                    });
-                }
-                return groups;
-            }, [] as MessageGroup[]);
-    }
-
-    get all() {
-        return this.messages;
-    }
-
-    async resolve(channelId: string, id: string, force = false) {
-        if (this.has(id) && !force) return this.get(id);
-        const message = await this.app.rest.get<APIMessage>(
-            `/channels/${channelId}/messages/${id}`,
-        );
-        if (!message) return undefined;
-        if (this.has(message.id)) {
-            this.update(message);
-            return this.get(message.id);
+    return sortedMessages
+      .slice()
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .reduce((groups, message) => {
+        const lastGroup = groups[groups.length - 1];
+        const lastMessage = lastGroup?.messages[lastGroup.messages.length - 1];
+        if (
+          lastMessage &&
+          lastMessage.author?.id === message.author?.id &&
+          lastMessage.type === message.type &&
+          message.type === MessageType.Default &&
+          lastMessage.createdAt.getTime() - message.createdAt.getTime() <=
+            10 * 60 * 1000
+        ) {
+          lastGroup.messages.push(message);
+          lastGroup.createdAt = message.createdAt;
+        } else {
+          groups.push({
+            author: message.author!,
+            messages: [message],
+            createdAt: message.createdAt,
+          });
         }
-        return this.add(message);
+        return groups;
+      }, [] as MessageGroup[]);
+  }
+
+  get all() {
+    return this.messages;
+  }
+
+  async resolve(channelId: string, id: string, force = false) {
+    if (this.has(id) && !force) return this.get(id);
+    const message = await this.app.rest.get<APIMessage>(
+      `/channels/${channelId}/messages/${id}`,
+    );
+    if (!message) return undefined;
+    if (this.has(message.id)) {
+      this.update(message);
+      return this.get(message.id);
     }
+    return this.add(message);
+  }
 }

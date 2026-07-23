@@ -1,4 +1,4 @@
-import { formatVoiceElapsed } from "@utils/voiceElapsed";
+import { formatVoiceElapsed } from "@mutualzz/client";
 import { useEffect, useState } from "react";
 
 export function useElapsedClock(

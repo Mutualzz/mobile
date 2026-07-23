@@ -2,23 +2,24 @@ import { IconButton } from "@components/IconButton";
 import { useTheme } from "@mutualzz/ui-native";
 import {
   computeContainedSize,
+  getCommentGifMaxWidth,
   getMessageGifMaxWidth,
   MESSAGE_GIF_MAX_HEIGHT,
 } from "@utils/gifs";
-import { buildVideoHtml, VIDEO_SIZE_SCRIPT } from "@utils/webViewVideo";
 import { Image as ExpoImage } from "expo-image";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { StarIcon } from "phosphor-react-native";
+import { appStore } from "@hooks/useStores";
+import { openExternalLink } from "@utils/openExternalLink";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Image,
-  Linking,
   Pressable,
   StyleSheet,
   View,
   useWindowDimensions,
 } from "react-native";
-import WebView, { type WebViewMessageEvent } from "react-native-webview";
 
 interface Props {
   mediaUrl: string;
@@ -26,6 +27,8 @@ interface Props {
   pageUrl?: string | null;
   isFavorited: boolean;
   onToggleFavorite: () => void;
+  compact?: boolean;
+  autoplay?: boolean;
 }
 
 type NaturalSize = { width: number; height: number };
@@ -36,18 +39,71 @@ function cacheKeyFor(mediaUrl: string, imageUrl?: string | null) {
   return imageUrl || mediaUrl;
 }
 
+function GifVideoPlayer({
+  uri,
+  width,
+  height,
+  autoplay = true,
+}: {
+  uri: string;
+  width: number;
+  height: number;
+  autoplay?: boolean;
+}) {
+  const player = useVideoPlayer(uri, (instance) => {
+    instance.loop = true;
+    instance.muted = true;
+  });
+  const [hovering, setHovering] = useState(false);
+
+  useEffect(() => {
+    if (autoplay || hovering) {
+      player.play();
+      return;
+    }
+
+    player.pause();
+  }, [player, uri, autoplay, hovering]);
+
+  const handlePress = () => {
+    if (autoplay) return;
+    player.play();
+  };
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      onHoverIn={() => setHovering(true)}
+      onHoverOut={() => setHovering(false)}
+      style={{ width, height }}
+    >
+      <VideoView
+        player={player}
+        style={{ width, height }}
+        contentFit="contain"
+        nativeControls={false}
+        allowsPictureInPicture={false}
+      />
+    </Pressable>
+  );
+}
+
 export function MessageGifEmbed({
   mediaUrl,
   imageUrl,
   pageUrl,
   isFavorited,
   onToggleFavorite,
+  compact = false,
+  autoplay = true,
 }: Props) {
   const { t } = useTranslation("chat");
   const { theme } = useTheme();
   const { width: windowWidth } = useWindowDimensions();
-  const maxWidth = getMessageGifMaxWidth(windowWidth);
-  const maxHeight = MESSAGE_GIF_MAX_HEIGHT;
+  const maxWidth = compact
+    ? getCommentGifMaxWidth(windowWidth)
+    : getMessageGifMaxWidth(windowWidth);
+  const maxHeight = compact ? 220 : MESSAGE_GIF_MAX_HEIGHT;
 
   const isVideo = /\.(mp4|webm)(\?|$)/i.test(mediaUrl);
   const sizingUri = imageUrl || (!isVideo ? mediaUrl : null);
@@ -58,13 +114,16 @@ export function MessageGifEmbed({
     () => naturalSizeCache.get(cacheKey) ?? null,
   );
 
-  const lockSize = useCallback((width: number, height: number) => {
-    if (lockedRef.current || !width || !height) return;
-    lockedRef.current = true;
-    const next = { width, height };
-    naturalSizeCache.set(cacheKey, next);
-    setNaturalSize(next);
-  }, [cacheKey]);
+  const lockSize = useCallback(
+    (width: number, height: number) => {
+      if (lockedRef.current || !width || !height) return;
+      lockedRef.current = true;
+      const next = { width, height };
+      naturalSizeCache.set(cacheKey, next);
+      setNaturalSize(next);
+    },
+    [cacheKey],
+  );
 
   useEffect(() => {
     lockedRef.current = naturalSizeCache.has(cacheKey);
@@ -88,23 +147,6 @@ export function MessageGifEmbed({
     };
   }, [sizingUri, lockSize]);
 
-  const handleVideoMessage = useCallback(
-    (event: WebViewMessageEvent) => {
-      if (sizingUri || lockedRef.current) return;
-      try {
-        const data = JSON.parse(event.nativeEvent.data) as {
-          type?: string;
-          width?: number;
-          height?: number;
-        };
-        if (data.type !== "size" || !data.width || !data.height) return;
-        lockSize(data.width, data.height);
-      } catch {
-      }
-    },
-    [lockSize, sizingUri],
-  );
-
   const displaySize = useMemo(
     () =>
       computeContainedSize(
@@ -116,20 +158,9 @@ export function MessageGifEmbed({
     [naturalSize, maxWidth, maxHeight],
   );
 
-  const html = useMemo(
-    () =>
-      buildVideoHtml(mediaUrl, {
-        posterUrl: imageUrl,
-        autoplay: true,
-        loop: true,
-        muted: true,
-      }),
-    [mediaUrl, imageUrl],
-  );
-
   const openPage = () => {
     if (!pageUrl) return;
-    Linking.openURL(pageUrl).catch(() => undefined);
+    void openExternalLink(appStore, pageUrl);
   };
 
   return (
@@ -152,18 +183,11 @@ export function MessageGifEmbed({
         ]}
       >
         {isVideo ? (
-          <WebView
-            source={{ html }}
-            style={styles.media}
-            scrollEnabled={false}
-            javaScriptEnabled
-            injectedJavaScript={VIDEO_SIZE_SCRIPT}
-            onMessage={handleVideoMessage}
-            allowsInlineMediaPlayback
-            mediaPlaybackRequiresUserAction={false}
-            originWhitelist={["*"]}
-            backgroundColor="transparent"
-            containerStyle={styles.media}
+          <GifVideoPlayer
+            uri={mediaUrl}
+            width={displaySize.width}
+            height={displaySize.height}
+            autoplay={autoplay}
           />
         ) : (
           <Pressable
@@ -174,7 +198,7 @@ export function MessageGifEmbed({
             <ExpoImage
               source={{ uri: imageUrl || mediaUrl }}
               style={styles.media}
-              contentFit="cover"
+              contentFit="contain"
               recyclingKey={cacheKey}
             />
           </Pressable>
@@ -183,7 +207,6 @@ export function MessageGifEmbed({
 
       <IconButton
         padding={6}
-        color="neutral"
         variant="plain"
         onPress={onToggleFavorite}
         accessibilityLabel={
@@ -211,12 +234,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: "hidden",
     backgroundColor: "transparent",
-    borderWidth: 0,
   },
   media: {
     width: "100%",
     height: "100%",
-    borderWidth: 0,
     backgroundColor: "transparent",
   },
   favoriteBtn: {
@@ -225,6 +246,5 @@ const styles = StyleSheet.create({
     right: 6,
     backgroundColor: "rgba(0,0,0,0.55)",
     borderRadius: 6,
-    borderWidth: 0,
   },
 });

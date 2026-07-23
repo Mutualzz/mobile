@@ -19,7 +19,7 @@ import { Logger } from "@mutualzz/logger";
 import { GatewayCloseCodes } from "@mutualzz/types";
 import { GatewayStatus } from "@stores/Gateway.store";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { calendarStrings } from "@utils/i18n";
+import { calendarStrings } from "@mutualzz/client";
 import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
 import dayjs from "dayjs";
 import calendar from "dayjs/plugin/calendar";
@@ -66,6 +66,8 @@ const Root = () => {
     tag: "App",
   });
   const [showBootSplash, setShowBootSplash] = useState(true);
+  const reducedMotion = app.settings?.extendedSettings.reducedMotion ?? false;
+  const modalAnimation = reducedMotion ? "none" : "slide_from_bottom";
 
   usePushNotifications(!!app.token);
 
@@ -148,14 +150,14 @@ const Root = () => {
                             name="settings"
                             options={{
                               presentation: "modal",
-                              animation: "slide_from_bottom",
+                              animation: modalAnimation,
                             }}
                           />
                           <Stack.Screen
                             name="staff"
                             options={{
                               presentation: "modal",
-                              animation: "slide_from_bottom",
+                              animation: modalAnimation,
                             }}
                           />
                         </Stack>

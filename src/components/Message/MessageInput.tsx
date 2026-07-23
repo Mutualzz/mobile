@@ -5,6 +5,7 @@ import { Paper } from "@components/Paper";
 import { CHAT_COMPOSER_NATIVE_ID } from "@contexts/ChatKeyboard.context";
 import {
   CheckIcon,
+  EyeSlashIcon,
   FileIcon,
   PaperclipIcon,
   PaperPlaneTiltIcon,
@@ -25,7 +26,7 @@ import type { Message } from "@stores/objects/Message";
 import type { Expression } from "@stores/objects/Expression";
 import type { GifResult } from "@utils/gifs";
 import { resolveGifSendUrl } from "@utils/gifs";
-import { formatRestError } from "@utils/restError";
+import { formatRestError } from "@mutualzz/client";
 import { expandCustomEmojiShortcodes } from "@utils/markdown/composerQueries";
 import {
   findCustomEmojiByLabel,
@@ -41,18 +42,17 @@ import { replaceRange } from "@utils/markdown/textUtils";
 import type { Selection } from "@utils/markdown/types";
 import type { PickerEmoji, SkinTone } from "@utils/emojis/emojiPickerData";
 import { unifiedToEmoji } from "@utils/emojis/unified";
-import Snowflake from "@utils/Snowflake";
+import { Snowflake } from "@mutualzz/client";
 import { createSystemMessage } from "@utils/index";
 import { messageFlags } from "@mutualzz/bitfield";
 import {
   HttpException,
   HttpStatusCode,
-  type APIMessage,
   ChannelType,
   MessageType,
 } from "@mutualzz/types";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Image, Pressable } from "react-native";
 import * as ImagePicker from "expo-image-picker";
@@ -66,6 +66,7 @@ interface PickedAttachment {
   type: string;
   name: string;
   size?: number;
+  spoiler?: boolean;
 }
 
 function extensionForAttachmentMime(mime: string, isVideo: boolean) {
@@ -141,10 +142,21 @@ export const MessageInput = observer(({ channel }: Props) => {
     ? !denySendingMessages
     : !!space?.members.me?.canAttachFiles(channel);
 
-  const showExpressionPicker = !editingMessage && !denySendingMessages;
+  const showExpressionPicker =
+    !editingMessage &&
+    !denySendingMessages &&
+    ((app.settings?.extendedSettings.showEmojiPicker ?? true) ||
+      (app.settings?.extendedSettings.showGifPicker ?? true) ||
+      (app.settings?.extendedSettings.showStickerPicker ?? true));
 
   useEffect(() => {
     app.setReplyingTo(null);
+    channel.messages.all.forEach((msg) => msg.setEditing(false));
+    setContent("");
+    setEntities([]);
+    setSelection({ start: 0, end: 0 });
+    setStickers([]);
+    setAttachments([]);
   }, [app, channel.id]);
 
   useEffect(() => {
@@ -193,8 +205,9 @@ export const MessageInput = observer(({ channel }: Props) => {
     };
   }, []);
 
-  const triggerTyping = useCallback(() => {
+  const triggerTyping = () => {
     if (editingMessage || denySendingMessages) return;
+    if (app.settings?.extendedSettings.sendTypingIndicators === false) return;
 
     if (!typingCooldownRef.current) {
       void app.rest.post(`/channels/${channel.id}/typing`);
@@ -207,34 +220,28 @@ export const MessageInput = observer(({ channel }: Props) => {
     typingCooldownRef.current = setTimeout(() => {
       typingCooldownRef.current = null;
     }, 8000);
-  }, [app.rest, channel.id, editingMessage, denySendingMessages]);
+  };
 
-  const cancelEditing = useCallback(() => {
+  const cancelEditing = () => {
     editingMessage?.setEditing(false);
     setContent("");
     setEntities([]);
     setSelection({ start: 0, end: 0 });
     setStickers([]);
-  }, [editingMessage]);
+  };
 
-  const insertIntoComposer = useCallback(
-    (insert: string) => {
-      const rep = replaceRange(content, selection.start, selection.end, insert);
-      const caret = selection.start + insert.length;
-      setEntities((prev) => shiftEntitiesForEdit(prev, content, rep.text));
-      setContent(rep.text);
-      setSelection({ start: caret, end: caret });
-      triggerTyping();
-    },
-    [content, selection.end, selection.start, triggerTyping],
-  );
+  const insertIntoComposer = (insert: string) => {
+    const rep = replaceRange(content, selection.start, selection.end, insert);
+    const caret = selection.start + insert.length;
+    setEntities((prev) => shiftEntitiesForEdit(prev, content, rep.text));
+    setContent(rep.text);
+    setSelection({ start: caret, end: caret });
+    triggerTyping();
+  };
 
-  const rawContent = useMemo(
-    () => entitiesToRawMarkdown(content, entities),
-    [content, entities],
-  );
+  const rawContent = entitiesToRawMarkdown(content, entities);
 
-  const canSubmit = useCallback(() => {
+  const canSubmit = () => {
     if (editingMessage) {
       return (
         !!rawContent.trim() &&
@@ -246,15 +253,9 @@ export const MessageInput = observer(({ channel }: Props) => {
       !!content && !!content.trim() && !!content.replace(/\r?\n|\r/g, "");
 
     return hasText || stickers.length > 0 || attachments.length > 0;
-  }, [
-    content,
-    editingMessage,
-    rawContent,
-    stickers.length,
-    attachments.length,
-  ]);
+  };
 
-  const pickAttachments = useCallback(async () => {
+  const pickAttachments = async () => {
     if (denySendingMessages || !canAttachFiles || editingMessage) return;
     if (attachments.length >= MAX_ATTACHMENTS) return;
 
@@ -283,150 +284,147 @@ export const MessageInput = observer(({ channel }: Props) => {
           type,
           name,
           size: a.fileSize ?? undefined,
+          spoiler: false,
         };
       });
 
     setAttachments((prev) => [...prev, ...next].slice(0, MAX_ATTACHMENTS));
-  }, [attachments.length, canAttachFiles, denySendingMessages, editingMessage]);
+  };
 
-  const removeAttachment = useCallback((index: number) => {
+  const removeAttachment = (index: number) => {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
-  }, []);
+  };
 
-  const expandCustomEmoji = useCallback(
-    (text: string) => {
-      const currentMember = channel.spaceId
-        ? app.spaces.get(channel.spaceId)?.members.me
-        : null;
+  const toggleAttachmentSpoiler = (index: number) => {
+    setAttachments((prev) =>
+      prev.map((file, i) =>
+        i === index ? { ...file, spoiler: !file.spoiler } : file,
+      ),
+    );
+  };
 
-      return expandCustomEmojiShortcodes(text, (name) =>
-        findCustomEmojiByLabel(
-          app.expressions.all,
-          name,
-          meId ?? "",
-          currentMember,
-          channel,
-        ),
-      );
-    },
-    [app.expressions.all, app.spaces, channel, meId],
-  );
+  const expandCustomEmoji = (text: string) => {
+    const currentMember = channel.spaceId
+      ? app.spaces.get(channel.spaceId)?.members.me
+      : null;
 
-  const saveEdit = useCallback(
-    async (message: Message) => {
-      if (!canSubmit() || saving) return;
+    return expandCustomEmojiShortcodes(text, (name) =>
+      findCustomEmojiByLabel(
+        app.expressions.all,
+        name,
+        meId ?? "",
+        currentMember,
+        channel,
+      ),
+    );
+  };
 
-      setSaving(true);
-      try {
-        await message.edit(expandCustomEmoji(rawContent));
-        setContent("");
-        setEntities([]);
-        setSelection({ start: 0, end: 0 });
-        setStickers([]);
-      } catch {
-        // keep editing state so the user can retry
-      } finally {
-        setSaving(false);
-      }
-    },
-    [canSubmit, expandCustomEmoji, rawContent, saving],
-  );
+  const saveEdit = async (message: Message) => {
+    if (!canSubmit() || saving) return;
 
-  const sendContent = useCallback(
-    async (
-      text: string,
-      stickerList: Expression[] = [],
-      fileList: PickedAttachment[] = [],
-    ) => {
-      const trimmed = text.trim();
-      if (!trimmed && stickerList.length === 0 && fileList.length === 0) return;
+    setSaving(true);
+    try {
+      await message.edit(expandCustomEmoji(rawContent));
+      setContent("");
+      setEntities([]);
+      setSelection({ start: 0, end: 0 });
+      setStickers([]);
+    } catch {
+    } finally {
+      setSaving(false);
+    }
+  };
 
-      const nonce = Snowflake.generate();
-      const author = app.account!.raw;
-      const stickerIds = stickerList.map((sticker) => sticker.id);
-      const replyingTo = app.replyingTo;
-      const repliedToId = replyingTo?.id;
-      const mentionReply = app.replyMention;
+  const sendContent = async (
+    text: string,
+    stickerList: Expression[] = [],
+    fileList: PickedAttachment[] = [],
+  ) => {
+    const trimmed = text.trim();
+    if (!trimmed && stickerList.length === 0 && fileList.length === 0) return;
 
-      const msg = app.queue.add({
-        id: nonce,
-        content: text,
-        author,
-        authorId: author.id,
-        channelId: channel.id,
-        spaceId: channel.space?.id ?? null,
-        createdAt: new Date().toISOString(),
-        type: repliedToId ? MessageType.Reply : MessageType.Default,
-        expressionIds: stickerIds,
-        expressions: stickerList.map((sticker) => sticker.toJSON()),
-        repliedToId,
-        repliedTo: replyingTo ?? null,
-        mentionReply,
-      });
+    const nonce = Snowflake.generate();
+    const author = app.account!.raw;
+    const stickerIds = stickerList.map((sticker) => sticker.id);
+    const replyingTo = app.replyingTo;
+    const repliedToId = replyingTo?.id;
+    const mentionReply = app.replyMention;
 
-      app.setReplyingTo(null);
+    const msg = app.queue.add({
+      id: nonce,
+      content: text,
+      author,
+      authorId: author.id,
+      channelId: channel.id,
+      spaceId: channel.space?.id ?? null,
+      createdAt: new Date().toISOString(),
+      type: repliedToId ? MessageType.Reply : MessageType.Default,
+      expressionIds: stickerIds,
+      expressions: stickerList.map((sticker) => sticker.toJSON()),
+      repliedToId,
+      repliedTo: replyingTo ?? null,
+      mentionReply,
+    });
 
-      const body = {
-        content: text,
-        nonce,
-        ...(stickerIds.length > 0 ? { expressionIds: stickerIds } : {}),
-        ...(repliedToId ? { repliedToId, mentionReply } : {}),
-      };
+    app.setReplyingTo(null);
 
-      try {
-        if (isDM && theyBlockedMe) {
-          throw new HttpException(
-            HttpStatusCode.Forbidden,
-            t("cannotMessagePerson"),
-          );
-        }
+    const body = {
+      content: text,
+      nonce,
+      ...(stickerIds.length > 0 ? { expressionIds: stickerIds } : {}),
+      ...(repliedToId ? { repliedToId, mentionReply } : {}),
+    };
 
-        let result: APIMessage | undefined;
-        if (fileList.length > 0) {
-          const formData = new FormData();
-          if (text) formData.append("content", text);
-          formData.append("nonce", String(nonce));
-          stickerIds.forEach((id) =>
-            formData.append("expressionIds[]", String(id)),
-          );
-          if (repliedToId) {
-            formData.append("repliedToId", repliedToId);
-            formData.append("mentionReply", String(mentionReply));
-          }
-          fileList.forEach((file) => {
-            formData.append("attachments", {
-              uri: file.uri,
-              type: file.type,
-              name: file.name,
-            } as unknown as Blob);
-          });
-          result = await channel.sendMessage(formData, msg);
-        } else {
-          result = await channel.sendMessage(body, msg);
-        }
-
-        if (result?.nonce) {
-          app.queue.handleIncomingMessage(result);
-        }
-        app.queue.remove(nonce);
-      } catch (e) {
-        const error = formatRestError(e, t("unknownError"));
-
-        msg.fail(error);
-
-        const sysMessage = await createSystemMessage(
-          app,
-          channel.id,
-          error,
-          messageFlags.Ephemeral,
+    try {
+      if (isDM && theyBlockedMe) {
+        throw new HttpException(
+          HttpStatusCode.Forbidden,
+          t("cannotMessagePerson"),
         );
-        if (sysMessage) channel.messages.add(sysMessage);
       }
-    },
-    [app, channel, isDM, theyBlockedMe],
-  );
 
-  const sendMessage = useCallback(async () => {
+      if (fileList.length > 0) {
+        const formData = new FormData();
+        if (text) formData.append("content", text);
+        formData.append("nonce", String(nonce));
+        stickerIds.forEach((id) =>
+          formData.append("expressionIds[]", String(id)),
+        );
+        if (repliedToId) {
+          formData.append("repliedToId", repliedToId);
+          formData.append("mentionReply", String(mentionReply));
+        }
+        fileList.forEach((file) => {
+          formData.append("attachments", {
+            uri: file.uri,
+            type: file.type,
+            name: file.name,
+          } as unknown as Blob);
+          formData.append(
+            "attachmentSpoilers[]",
+            String(file.spoiler ?? false),
+          );
+        });
+        await channel.sendMessage(formData, msg);
+      } else {
+        await channel.sendMessage(body, msg);
+      }
+    } catch (e) {
+      const error = formatRestError(e, t("unknownError"));
+
+      msg.fail(error);
+
+      const sysMessage = await createSystemMessage(
+        app,
+        channel.id,
+        error,
+        messageFlags.Ephemeral,
+      );
+      if (sysMessage) channel.messages.add(sysMessage);
+    }
+  };
+
+  const sendMessage = async () => {
     if (editingMessage) {
       await saveEdit(editingMessage);
       return;
@@ -445,68 +443,49 @@ export const MessageInput = observer(({ channel }: Props) => {
     setAttachments([]);
 
     await sendContent(text, stickerList, fileList);
-  }, [
-    canAttachFiles,
-    canSubmit,
-    editingMessage,
-    expandCustomEmoji,
-    rawContent,
-    saveEdit,
-    sendContent,
-    stickers,
-    attachments,
-  ]);
+  };
 
-  const handleSelectEmoji = useCallback(
-    (emoji: PickerEmoji, skinTone: SkinTone) => {
-      const unified =
-        (skinTone && emoji.skinVariations?.[skinTone]?.unified) ||
-        emoji.unified;
-      insertIntoComposer(unifiedToEmoji(unified));
-    },
-    [insertIntoComposer],
-  );
+  const handleSelectEmoji = (emoji: PickerEmoji, skinTone: SkinTone) => {
+    const unified =
+      (skinTone && emoji.skinVariations?.[skinTone]?.unified) ||
+      emoji.unified;
+    insertIntoComposer(unifiedToEmoji(unified));
+  };
 
-  const handleSelectCustomEmoji = useCallback(
-    (expression: Expression) => {
-      const currentMember = channel.spaceId
-        ? app.spaces.get(channel.spaceId)?.members.me
-        : null;
-      const label = getCustomEmojiLabel(
-        app.expressions.all,
-        expression,
-        meId ?? "",
-        currentMember,
-        channel,
-      );
-      insertIntoComposer(`:${label}:`);
-    },
-    [app.expressions.all, app.spaces, channel, insertIntoComposer, meId],
-  );
+  const handleSelectCustomEmoji = (expression: Expression) => {
+    const currentMember = channel.spaceId
+      ? app.spaces.get(channel.spaceId)?.members.me
+      : null;
+    const label = getCustomEmojiLabel(
+      app.expressions.all,
+      expression,
+      meId ?? "",
+      currentMember,
+      channel,
+    );
+    insertIntoComposer(`:${label}:`);
+  };
 
-  const handleSelectGif = useCallback(
-    (gif: GifResult) => {
-      if (denySendingMessages || editingMessage) return;
-      setContent("");
-      setEntities([]);
-      setSelection({ start: 0, end: 0 });
-      setStickers([]);
-      void sendContent(resolveGifSendUrl(gif));
-    },
-    [denySendingMessages, editingMessage, sendContent],
-  );
+  const handleSelectGif = (gif: GifResult) => {
+    if (denySendingMessages || editingMessage) return;
+    setContent("");
+    setEntities([]);
+    setSelection({ start: 0, end: 0 });
+    setStickers([]);
+    void sendContent(resolveGifSendUrl(gif));
+  };
 
-  const handleSelectSticker = useCallback((sticker: Expression) => {
+  const handleSelectSticker = (sticker: Expression) => {
     setStickers((prev) => {
       if (prev.some((entry) => entry.id === sticker.id)) return prev;
       if (prev.length >= MAX_STICKERS) return prev;
       return [...prev, sticker];
     });
-  }, []);
+  };
 
-  const handleRemoveSticker = useCallback((stickerId: string) => {
+  const handleRemoveSticker = (stickerId: string) => {
     setStickers((prev) => prev.filter((sticker) => sticker.id !== stickerId));
-  }, []);
+  };
 
   const placeholder = (() => {
     if (denySendingMessages) {
@@ -535,13 +514,10 @@ export const MessageInput = observer(({ channel }: Props) => {
       : t("composer.placeholder.channelFallback");
   })();
 
-  const handleContentChange = useCallback(
-    (next: string) => {
-      setContent(next);
-      triggerTyping();
-    },
-    [triggerTyping],
-  );
+  const handleContentChange = (next: string) => {
+    setContent(next);
+    triggerTyping();
+  };
 
   const hasWallpaper = Boolean(theme.backgroundImageUrl);
   const composerElevation = app.settings?.preferEmbossed ? 3 : 0;
@@ -599,7 +575,6 @@ export const MessageInput = observer(({ channel }: Props) => {
           )}
           <IconButton
             padding={6}
-            color="neutral"
             onPress={() => app.setReplyingTo(null)}
             accessibilityLabel={t("edit.cancelReplyA11y")}
           >
@@ -634,7 +609,6 @@ export const MessageInput = observer(({ channel }: Props) => {
           </Typography>
           <IconButton
             padding={6}
-            color="neutral"
             onPress={cancelEditing}
             accessibilityLabel={t("edit.cancelA11y")}
           >
@@ -673,7 +647,6 @@ export const MessageInput = observer(({ channel }: Props) => {
               />
               <IconButton
                 padding={4}
-                color="neutral"
                 onPress={() => handleRemoveSticker(sticker.id)}
                 accessibilityLabel={t("composer.removeSticker")}
                 style={{
@@ -706,7 +679,9 @@ export const MessageInput = observer(({ channel }: Props) => {
           {attachments.map((file, index) => {
             const isImage = file.type.startsWith("image/");
             const isVideo = file.type.startsWith("video/");
+            const isSpoiler = file.spoiler ?? false;
             const previewSize = feedSizes.sticker;
+            const canMarkSpoiler = isImage || isVideo;
 
             return (
               <Box
@@ -740,7 +715,12 @@ export const MessageInput = observer(({ channel }: Props) => {
                   <>
                     <Image
                       source={{ uri: file.uri }}
-                      style={{ width: previewSize, height: previewSize }}
+                      style={{
+                        width: previewSize,
+                        height: previewSize,
+                        opacity: isSpoiler ? 0.35 : 1,
+                      }}
+                      blurRadius={isSpoiler ? 12 : 0}
                       resizeMode="cover"
                       accessibilityLabel={file.name}
                     />
@@ -784,9 +764,26 @@ export const MessageInput = observer(({ channel }: Props) => {
                     </Typography>
                   </>
                 )}
+                {canMarkSpoiler && (
+                  <IconButton
+                    padding={4}
+                    color={isSpoiler ? "warning" : undefined}
+                    onPress={() => toggleAttachmentSpoiler(index)}
+                    accessibilityLabel={t("composer.markAsSpoiler")}
+                    style={{
+                      position: "absolute",
+                      bottom: -4,
+                      left: -4,
+                      backgroundColor: `${theme.colors.neutral}88`,
+                      borderRadius: 999,
+                      zIndex: 1,
+                    }}
+                  >
+                    <EyeSlashIcon size={12} weight="fill" />
+                  </IconButton>
+                )}
                 <IconButton
                   padding={4}
-                  color="neutral"
                   onPress={() => removeAttachment(index)}
                   accessibilityLabel={t("composer.removeAttachment")}
                   style={{
@@ -814,7 +811,6 @@ export const MessageInput = observer(({ channel }: Props) => {
       >
         <IconButton
           padding={8}
-          color="neutral"
           onPress={() => void pickAttachments()}
           accessibilityLabel={t("composer.addAttachment")}
           hitSlop={4}
@@ -836,7 +832,7 @@ export const MessageInput = observer(({ channel }: Props) => {
           entities={entities}
           onChangeEntities={setEntities}
           channelId={channel.id}
-          enableEmoticons
+          enableEmoticons={app.settings?.extended.convertEmoticons ?? true}
           placeholder={placeholder}
           editable={!denySendingMessages}
           nativeID={CHAT_COMPOSER_NATIVE_ID}
@@ -849,7 +845,6 @@ export const MessageInput = observer(({ channel }: Props) => {
             showExpressionPicker ? (
               <IconButton
                 padding={4}
-                color="neutral"
                 onPress={() => setPickerOpen(true)}
                 accessibilityLabel={t("composer.openExpressionPicker")}
                 hitSlop={4}
@@ -888,7 +883,9 @@ export const MessageInput = observer(({ channel }: Props) => {
         visible={pickerOpen}
         onClose={() => setPickerOpen(false)}
         channel={channel}
-        showStickers={showExpressionPicker}
+        showEmoji={app.settings?.extendedSettings.showEmojiPicker ?? true}
+        showGifs={app.settings?.extendedSettings.showGifPicker ?? true}
+        showStickers={app.settings?.extendedSettings.showStickerPicker ?? true}
         onSelectEmoji={handleSelectEmoji}
         onSelectCustomEmoji={handleSelectCustomEmoji}
         onSelectGif={handleSelectGif}

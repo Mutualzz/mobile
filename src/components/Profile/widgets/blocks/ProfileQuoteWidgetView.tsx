@@ -6,6 +6,7 @@ import type {
 } from "@mutualzz/types";
 import type { ColorLike } from "@mutualzz/ui-core";
 import { dynamicElevation, formatColor } from "@mutualzz/ui-core";
+import type { Theme } from "@emotion/react";
 import { Box, Stack, Typography, useTheme } from "@mutualzz/ui-native";
 import Color from "color";
 import { QuotesIcon } from "phosphor-react-native";
@@ -23,7 +24,7 @@ const LINE_CLAMP: Record<ProfileBlockSize, number> = { s: 2, m: 4, l: 8 };
 
 const variantStyles = (
   preferEmbossed: boolean,
-  theme: ReturnType<typeof useTheme>["theme"],
+  theme: Theme,
 ) => {
   const accentBg = formatColor(theme.colors.primary, {
     darken: 25,

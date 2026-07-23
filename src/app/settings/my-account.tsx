@@ -1,6 +1,7 @@
 import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { SettingsScreen } from "@components/UserSettings/SettingsScreen";
+import { SettingsScroll, SettingsSection, SettingsActionRow } from "@components/UserSettings/SettingsField";
 import { ChangePasswordSheet } from "@components/UserSettings/ChangePasswordSheet";
 import { DeleteAccountSheet } from "@components/UserSettings/DeleteAccountSheet";
 import { EmailChangeSheet } from "@components/UserSettings/EmailChangeSheet";
@@ -14,53 +15,11 @@ import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { ColorLike } from "@mutualzz/ui-core";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
-import { type PropsWithChildren, type ReactNode, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
 
-function maskEmail(email: string) {
-  const atIndex = email.indexOf("@");
-  if (atIndex === -1) return "****";
-
-  const domain = email.slice(atIndex + 1);
-  if (!domain) return "****";
-
-  return `${"*".repeat(atIndex)}@${domain}`;
-}
-
-function AccountRow({
-  label,
-  labelSuffix,
-  children,
-  action,
-}: PropsWithChildren<{
-  label: string;
-  labelSuffix?: ReactNode;
-  action?: ReactNode;
-}>) {
-  return (
-    <Box
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-        minWidth: 0,
-      }}
-    >
-      <Box style={{ flex: 1, gap: 4, minWidth: 0 }}>
-        <Box style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <Typography level="body-sm" weight={700}>
-            {label}
-          </Typography>
-          {labelSuffix}
-        </Box>
-        {children}
-      </Box>
-      {action}
-    </Box>
-  );
-}
+import { maskEmail } from "@mutualzz/client";
 
 const MyAccountSettings = () => {
   const { t } = useTranslation("settings");
@@ -106,10 +65,8 @@ const MyAccountSettings = () => {
   const elevation = app.settings?.preferEmbossed ? 4 : 2;
 
   return (
-    <SettingsScreen
-      title={t("pages.myAccount")}
-      contentStyle={{ padding: 16, gap: 20 }}
-    >
+    <SettingsScreen title={t("pages.myAccount")} contentStyle={{ flex: 1 }}>
+      <SettingsScroll>
       <Paper
         style={{
           borderRadius: 12,
@@ -164,122 +121,90 @@ const MyAccountSettings = () => {
             }}
             elevation={app.settings?.preferEmbossed ? -2 : 0}
           >
-            <AccountRow
-              label={t("account.displayName")}
-              action={
-                <Button
-                  size="sm"
-                  variant="soft"
-                  color="neutral"
-                  onPress={() => navigate("/settings/profile")}
-                >
-                  {t("account.edit")}
-                </Button>
-              }
-            >
-              <Typography level="body-sm" textColor="muted">
-                {account.globalName ?? t("account.notSet")}
-              </Typography>
-            </AccountRow>
+            <SettingsActionRow
+              title={t("account.displayName")}
+              description={account.globalName ?? t("account.notSet")}
+              actionLabel={t("account.edit")}
+              onPress={() => navigate("/settings/profile")}
+            />
 
-            <AccountRow
-              label={t("account.username")}
-              action={
-                <Button
-                  size="sm"
-                  variant="soft"
-                  color="neutral"
-                  onPress={() =>
-                    openBottomSheet(
-                      "change-username",
-                      <UsernameChangeSheet
-                        onClose={() => closeBottomSheet("change-username")}
-                      />,
-                    )
-                  }
-                >
-                  {t("account.edit")}
-                </Button>
-              }
-            >
-              <Typography level="body-sm" textColor="muted">
-                {account.username}
-              </Typography>
-            </AccountRow>
-
-            <AccountRow
-              label={t("account.email")}
-              labelSuffix={
-                !isVerified && (
-                  <Typography level="body-xs" color="danger">
-                    {t("account.unverified")}
-                  </Typography>
+            <SettingsActionRow
+              title={t("account.username")}
+              description={account.username}
+              actionLabel={t("account.edit")}
+              onPress={() =>
+                openBottomSheet(
+                  "change-username",
+                  <UsernameChangeSheet
+                    onClose={() => closeBottomSheet("change-username")}
+                  />,
                 )
               }
-              action={
-                <Button
-                  size="sm"
-                  variant="soft"
-                  color="neutral"
-                  disabled={confirmingEmail}
-                  onPress={() => sendConfirmEmail()}
-                >
-                  {t("account.edit")}
-                </Button>
-              }
-            >
-              <Box
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 8,
-                  flexWrap: "wrap",
-                }}
-              >
-                <Typography level="body-sm" textColor="muted">
-                  {hideEmail && isVerified
-                    ? maskEmail(account.email ?? "")
-                    : (account.email ?? t("account.notSet"))}
-                </Typography>
-                {isVerified ? (
-                  <Pressable
-                    onPress={() => setHideEmail((value) => !value)}
-                    accessibilityRole="button"
-                  >
-                    <Typography level="body-xs" color="info">
-                      {hideEmail ? t("account.show") : t("account.hide")}
+            />
+
+            <SettingsActionRow
+              title={t("account.email")}
+              description={
+                <Box style={{ gap: 4 }}>
+                  {!isVerified && (
+                    <Typography level="body-xs" color="danger">
+                      {t("account.unverified")}
                     </Typography>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    onPress={() => sendEmailVerification()}
-                    disabled={sendingCode}
-                    accessibilityRole="button"
+                  )}
+                  <Box
                     style={{
-                      paddingHorizontal: 8,
-                      paddingVertical: 2,
-                      borderRadius: 16,
-                      backgroundColor: `${theme.colors.success}22`,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
                     }}
                   >
-                    <Typography level="body-xs" color="success" weight={600}>
-                      {sendingCode ? t("account.sending") : t("account.verify")}
+                    <Typography level="body-xs" textColor="muted">
+                      {hideEmail && isVerified
+                        ? maskEmail(account.email ?? "")
+                        : (account.email ?? t("account.notSet"))}
                     </Typography>
-                  </Pressable>
-                )}
-              </Box>
-            </AccountRow>
+                    {isVerified ? (
+                      <Pressable
+                        onPress={() => setHideEmail((value) => !value)}
+                        accessibilityRole="button"
+                      >
+                        <Typography level="body-xs" color="info">
+                          {hideEmail ? t("account.show") : t("account.hide")}
+                        </Typography>
+                      </Pressable>
+                    ) : (
+                      <Pressable
+                        onPress={() => sendEmailVerification()}
+                        disabled={sendingCode}
+                        accessibilityRole="button"
+                        style={{
+                          paddingHorizontal: 8,
+                          paddingVertical: 2,
+                          borderRadius: 16,
+                          backgroundColor: `${theme.colors.success}22`,
+                        }}
+                      >
+                        <Typography level="body-xs" color="success" weight={600}>
+                          {sendingCode ? t("account.sending") : t("account.verify")}
+                        </Typography>
+                      </Pressable>
+                    )}
+                  </Box>
+                </Box>
+              }
+              actionLabel={t("account.edit")}
+              actionDisabled={confirmingEmail}
+              onPress={() => sendConfirmEmail()}
+            />
           </Paper>
         </Box>
       </Paper>
 
-      <Box style={{ gap: 8 }}>
-        <Typography level="body-sm" weight={700}>
-          {t("account.password")}
-        </Typography>
-        <Button
-          size="sm"
-          style={{ alignSelf: "flex-start" }}
+      <SettingsSection title={t("account.password")}>
+        <SettingsActionRow
+          title={t("account.password")}
+          actionLabel={t("account.changePassword")}
           onPress={() =>
             openBottomSheet(
               "change-password",
@@ -288,15 +213,10 @@ const MyAccountSettings = () => {
               />,
             )
           }
-        >
-          {t("account.changePassword")}
-        </Button>
-      </Box>
+        />
+      </SettingsSection>
 
-      <Box style={{ gap: 8 }}>
-        <Typography level="body-sm" weight={700} color="danger">
-          {t("account.dangerZone")}
-        </Typography>
+      <SettingsSection title={t("account.dangerZone")}>
         <Typography level="body-sm" textColor="muted">
           {t("account.dangerZoneDescription")}
         </Typography>
@@ -315,7 +235,8 @@ const MyAccountSettings = () => {
         >
           {t("account.deleteAccount")}
         </Button>
-      </Box>
+      </SettingsSection>
+      </SettingsScroll>
     </SettingsScreen>
   );
 };

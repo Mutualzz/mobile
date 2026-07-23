@@ -2,7 +2,7 @@ import { MarkdownRenderer } from "@components/Markdown/MarkdownRenderer/Markdown
 import { UserAvatar } from "@components/User/UserAvatar";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { type MessageLike } from "@stores/objects/Message";
-import { isCallNoticeMessage } from "@utils/callNoticeMessage";
+import { isCallNoticeMessage } from "@mutualzz/client";
 import { observer } from "mobx-react-lite";
 import { PhoneSlashIcon } from "phosphor-react-native";
 import { MessageAuthor } from "./MessageAuthor";

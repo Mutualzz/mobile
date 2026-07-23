@@ -103,11 +103,7 @@ export const BridgeChannelList = observer(
           app.setSpacesDrawerOpen(false);
           app.setDMDrawerOpen(false);
           navigate(`/spaces/bridges/${bridge.id}`);
-          return;
         }
-        navigate(`/@me/bridges/${bridge.id}`);
-        app.setDMDrawerOpen(false);
-        app.setSpacesDrawerOpen(false);
       },
       [app, navigate, spaceId],
     );

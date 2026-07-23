@@ -6,7 +6,9 @@ import { RecentActivitiesSection } from "@components/Profile/shared/RecentActivi
 import { UserPresenceCard } from "@components/Profile/UserPresenceCard";
 import { ProfileWidgetGrid } from "@components/Profile/widgets/ProfileWidgetGrid";
 import { ProfileWidgetsEmptyViewer } from "@components/Profile/widgets/ProfileWidgetsEmptyViewer";
+import { CustomStatusDisplay } from "@components/CustomStatus/CustomStatusDisplay";
 import { ChangeOnlineStatusSheet } from "@components/User/ChangeOnlineStatusSheet";
+import { CustomStatusSheet } from "@components/User/CustomStatusSheet";
 import { UserActionSheet } from "@components/User/UserActionSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppNavigation } from "@hooks/useAppNavigation";
@@ -18,17 +20,17 @@ import type { AccountStore } from "@stores/Account.store";
 import type { SpaceMember } from "@stores/objects/SpaceMember";
 import type { User } from "@stores/objects/User";
 import type { ProfileHeaderBlock } from "@mutualzz/types";
+import { IconButton } from "@components/IconButton";
 import {
   Box,
   Divider,
-  IconButton,
   Typography,
   useTheme,
 } from "@mutualzz/ui-native";
 import { useScaledProfileMetrics } from "@utils/accessibilityLayout";
-import { getNonCustomActivities } from "@utils/customStatus";
-import { formatRestError } from "@utils/restError";
-import Snowflake from "@utils/Snowflake";
+import { getNonCustomActivities, hasCustomStatusContent } from "@mutualzz/client";
+import { formatRestError } from "@mutualzz/client";
+import { Snowflake } from "@mutualzz/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   DotsThreeVerticalIcon,
@@ -68,7 +70,7 @@ export const UserProfileSheet = observer(
     const [content, setContent] = useState("");
     const [selection, setSelection] = useState({ start: 0, end: 0 });
 
-    const openStatusSheet = () => {
+    const openOnlineStatusSheet = () => {
       openBottomSheet(
         "change-online-status",
         <ChangeOnlineStatusSheet
@@ -79,32 +81,59 @@ export const UserProfileSheet = observer(
       );
     };
 
-    useEffect(() => {
-      app.gateway.subscribeUser(user.id);
-      return () => app.gateway.unsubscribeUser(user.id);
-    }, [app.gateway, user.id]);
+    const openCustomStatusSheet = () => {
+      openBottomSheet(
+        "custom-status",
+        <CustomStatusSheet
+          embedded
+          onClose={() => closeBottomSheet("custom-status")}
+          onDone={() => closeBottomSheet("custom-status")}
+        />,
+      );
+    };
 
-    const { data: fetchedProfile } = useQuery({
-      queryKey: ["profile-popout", user.id],
-      queryFn: () => app.profiles.resolve(user.id),
+    const isSelf =
+      app.account?.id != null &&
+      String(app.account.id) === String(user.id);
+    const showAccountMenu = accountMenu && isSelf;
+
+    const { data: fetchedProfile, isFetched: profileFetchDone } = useQuery({
+      queryKey: ["profile-popout", user.id, app.account?.id],
+      enabled: !!user.id && (!isSelf || !!app.account),
+      queryFn: () => app.profiles.resolve(user.id, true),
     });
 
-    const profile = app.profiles.get(user.id) ?? fetchedProfile;
-    void profile?.updatedAt;
+    const profileRestricted =
+      !isSelf && profileFetchDone && fetchedProfile === undefined;
+    const displayProfile = profileRestricted
+      ? undefined
+      : (fetchedProfile ?? app.profiles.get(user.id));
+    void displayProfile?.updatedAt;
 
-    const isSelf = app.account?.id === user.id;
-    const showAccountMenu = accountMenu && isSelf;
+    useEffect(() => {
+      if (profileRestricted) return;
+      app.gateway.subscribeUser(user.id);
+      return () => app.gateway.unsubscribeUser(user.id);
+    }, [app.gateway, user.id, profileRestricted]);
 
     useEffect(() => {
       if (!isSelf) void app.relationships.resolveAll();
     }, [app.relationships, isSelf]);
+
+    useEffect(() => {
+      if (isSelf) return;
+      void app.users.resolve(user.id);
+    }, [app.users, isSelf, user.id]);
 
     const { iBlockedThem } = useUserRelationshipActions(user.id);
 
     const relationship = app.relationships.getForMe(user.id);
     const theyBlockedMe =
       !!relationship?.isBlocked && relationship.userId !== app.account?.id;
-    const denyMessaging = !!user.flags?.has("System") || iBlockedThem;
+    const denyMessaging =
+      !!user.flags?.has("System") ||
+      iBlockedThem ||
+      ("viewerCanDm" in user && user.viewerCanDm === false);
 
     const close = () => {
       if (onClose) {
@@ -155,18 +184,27 @@ export const UserProfileSheet = observer(
       },
     });
 
-    const bannerUrl = profile?.constructBannerUrl();
+    const bannerUrl = profileRestricted
+      ? undefined
+      : displayProfile?.constructBannerUrl();
     const displayName = member?.displayName ?? user.displayName;
-    const presence = app.presence.get(user.id);
+    const presence = profileRestricted ? undefined : app.presence.get(user.id);
     const customActivity = presence?.activities.find(
       (a) => a.type === "custom",
     );
-    const customStatus = isSelf
+    const customStatusText = isSelf
       ? app.customStatus.effectiveText
-      : customActivity?.state;
+      : (customActivity?.state ?? customActivity?.name ?? "");
+    const customStatusEmoji = isSelf
+      ? app.customStatus.effectiveEmoji
+      : (customActivity?.emoji ?? null);
+    const hasCustomStatus = hasCustomStatusContent(
+      customStatusText,
+      customStatusEmoji,
+    );
     const presenceLabel =
-      customActivity?.state && !isSelf
-        ? customActivity.state
+      hasCustomStatus && !isSelf
+        ? customStatusText
         : (() => {
             switch (presence?.status) {
               case "online":
@@ -182,12 +220,13 @@ export const UserProfileSheet = observer(
             }
           })();
 
-    const headerBlock = profile?.blocks.find(
+    const headerBlock = displayProfile?.blocks.find(
       (block): block is ProfileHeaderBlock => block.type === "header",
     );
 
     const hasActivityWidget =
-      profile?.mobileBlocks.some((block) => block.type === "activity") ?? false;
+      displayProfile?.mobileBlocks.some((block) => block.type === "activity") ??
+      false;
 
     const isPresenceActive =
       presence?.status === "online" ||
@@ -235,7 +274,9 @@ export const UserProfileSheet = observer(
           backgroundColor: theme.colors.surface,
         }}
       >
-        {profile ? <ProfileBackgroundLayer profile={profile} /> : null}
+        {displayProfile && !profileRestricted ? (
+          <ProfileBackgroundLayer profile={displayProfile} />
+        ) : null}
 
         <ScrollView
           style={{ flex: 1 }}
@@ -251,10 +292,10 @@ export const UserProfileSheet = observer(
                   backgroundColor: bannerUrl ? undefined : user.accentColor,
                 }}
               >
-                {bannerUrl && (
+                {bannerUrl && displayProfile && (
                   <ProfileBlockImage
                     uri={bannerUrl}
-                    assetHash={profile?.banner}
+                    assetHash={displayProfile.banner}
                     style={{ width: "100%", height: "100%" }}
                     resizeMode="cover"
                   />
@@ -297,7 +338,7 @@ export const UserProfileSheet = observer(
               >
                 <Pressable
                   disabled={!showAccountMenu}
-                  onPress={() => showAccountMenu && openStatusSheet()}
+                  onPress={() => showAccountMenu && openOnlineStatusSheet()}
                 >
                   <UserAvatar
                     user={user}
@@ -309,7 +350,7 @@ export const UserProfileSheet = observer(
 
                 {showAccountMenu && (
                   <Pressable
-                    onPress={openStatusSheet}
+                    onPress={openCustomStatusSheet}
                     style={{ flex: 1, minWidth: 0, marginBottom: 4 }}
                   >
                     <Box
@@ -320,13 +361,18 @@ export const UserProfileSheet = observer(
                         backgroundColor: theme.colors.surface,
                       }}
                     >
-                      <Typography
-                        level="body-sm"
-                        textColor={customStatus ? undefined : "muted"}
-                        truncate="double"
-                      >
-                        {customStatus || t("customStatus.setShort")}
-                      </Typography>
+                      {hasCustomStatus ? (
+                        <CustomStatusDisplay
+                          text={customStatusText}
+                          emoji={customStatusEmoji}
+                          truncate="double"
+                          emojiSize={16}
+                        />
+                      ) : (
+                        <Typography level="body-sm" textColor="muted" truncate="double">
+                          {t("customStatus.setShort")}
+                        </Typography>
+                      )}
                     </Box>
                   </Pressable>
                 )}
@@ -348,7 +394,8 @@ export const UserProfileSheet = observer(
                     <Typography level="title-lg" truncate="single">
                       {displayName}
                     </Typography>
-                    {(user.pronouns ?? profile?.pronouns) ? (
+                    {(user.pronouns ?? displayProfile?.pronouns) &&
+                    !profileRestricted ? (
                       <>
                         <Typography level="body-sm" textColor="muted">
                           ·
@@ -358,7 +405,7 @@ export const UserProfileSheet = observer(
                           textColor="muted"
                           truncate="single"
                         >
-                          {user.pronouns ?? profile?.pronouns}
+                          {user.pronouns ?? displayProfile?.pronouns}
                         </Typography>
                       </>
                     ) : null}
@@ -370,20 +417,20 @@ export const UserProfileSheet = observer(
                   >
                     @{user.username}
                   </Typography>
-                  {presenceLabel && !showAccountMenu && (
+                  {profileRestricted ? null : presenceLabel && !showAccountMenu ? (
                     <Typography level="body-sm" textColor="accent">
                       {presenceLabel}
                     </Typography>
-                  )}
+                  ) : null}
                 </Box>
-                {profile?.bio ? (
+                {!profileRestricted && displayProfile?.bio ? (
                   <Box style={{ marginTop: 8 }}>
-                    <ProfileMarkdownContent value={profile.bio} />
+                    <ProfileMarkdownContent value={displayProfile.bio} />
                   </Box>
                 ) : null}
               </ProfileScrim>
 
-              {!hasActivityWidget && (
+              {!profileRestricted && !hasActivityWidget && (
                 <>
                   {presence ? (
                     <UserPresenceCard presence={presence} isCompact />
@@ -453,9 +500,10 @@ export const UserProfileSheet = observer(
 
               <Divider />
 
-              {profile &&
-                (profile.mobileBlocks.length > 0 ? (
-                  <ProfileWidgetGrid profile={profile} user={user} />
+              {!profileRestricted &&
+                displayProfile &&
+                (displayProfile.mobileBlocks.length > 0 ? (
+                  <ProfileWidgetGrid profile={displayProfile} user={user} />
                 ) : (
                   <ProfileWidgetsEmptyViewer />
                 ))}

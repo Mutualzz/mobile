@@ -5,7 +5,7 @@ import {
   SectionHeader,
   ThemeGrid,
   ThemeSwatch,
-} from "@components/UserSettings/AppAppearanceSettings";
+} from "@components/Theme/ThemePicker";
 import { ThemeCreatorSheet } from "@components/UserSettings/ThemeCreatorSheet";
 import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
@@ -145,7 +145,6 @@ export const SpaceThemeSettings = observer(({ space }: Props) => {
               padding={6}
               size={16}
               variant="soft"
-              color="neutral"
               onPress={openThemeCreator}
             >
               <PaletteIcon weight="fill" />

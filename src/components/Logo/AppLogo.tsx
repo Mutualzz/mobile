@@ -10,9 +10,11 @@ interface Props {
   size?: number;
   onPress?: () => void;
   style?: ImageProps["style"];
+  selected?: boolean;
 }
 
-export const AppLogo = observer(({ size = 48, onPress, style }: Props) => {
+export const AppLogo = observer(
+  ({ size = 48, onPress, style, selected = false }: Props) => {
   const app = useAppStore();
   const { theme } = useTheme();
 
@@ -20,6 +22,7 @@ export const AppLogo = observer(({ size = 48, onPress, style }: Props) => {
     ? (app.themes.get(app.themes.currentIcon) ?? theme)
     : theme;
   const primary = Theme.toEmotion(themeToUse).colors.primary;
+  const borderRadius = selected ? 15 : size / 2;
 
   const image = (
     <View
@@ -27,7 +30,7 @@ export const AppLogo = observer(({ size = 48, onPress, style }: Props) => {
         {
           width: size,
           height: size,
-          borderRadius: size / 2,
+          borderRadius,
           backgroundColor: primary,
           overflow: "hidden",
         },
@@ -45,8 +48,13 @@ export const AppLogo = observer(({ size = 48, onPress, style }: Props) => {
   if (!onPress) return image;
 
   return (
-    <Pressable onPress={onPress} hitSlop={8}>
+    <Pressable
+      onPress={onPress}
+      hitSlop={8}
+      accessibilityState={{ selected }}
+    >
       {image}
     </Pressable>
   );
-});
+},
+);

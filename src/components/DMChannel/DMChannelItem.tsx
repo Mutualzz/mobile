@@ -14,6 +14,7 @@ import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
+import { BellSlashIcon } from "phosphor-react-native";
 import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -45,7 +46,8 @@ export const DMChannelItem = observer(({ channel }: Props) => {
 
   const readState = app.readStates.get(channel.id);
   const isUnread = readState?.isUnread ?? false;
-  const mentionCount = readState?.mentionCount ?? 0;
+  const mentionCount = readState?.displayMentionCount ?? 0;
+  const isNotificationMuted = readState?.isNotificationMuted ?? false;
 
   const relationship =
     channel.type === ChannelType.DM && recipient
@@ -173,11 +175,20 @@ export const DMChannelItem = observer(({ channel }: Props) => {
           {!active && (
             <Box
               style={{
-                minWidth: 16,
+                flexDirection: "row",
                 alignItems: "center",
+                gap: 4,
+                minWidth: 16,
                 justifyContent: "center",
               }}
             >
+              {isNotificationMuted && (
+                <BellSlashIcon
+                  size={14}
+                  weight="fill"
+                  color={theme.typography.colors.muted}
+                />
+              )}
               {mentionCount > 0 ? (
                 <Box
                   style={{

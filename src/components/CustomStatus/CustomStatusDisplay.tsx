@@ -1,12 +1,9 @@
 import { CustomStatusEmoji } from "@components/CustomStatus/CustomStatusEmoji";
 import { useAppStore } from "@hooks/useStores";
-import type {
-  PresenceActivity,
-  PresenceActivityEmoji,
-} from "@mutualzz/types";
-import type { ColorLike, TypographyColor } from "@mutualzz/ui-core";
+import type { PresenceActivity, PresenceActivityEmoji } from "@mutualzz/types";
+import { hasStatusEmoji } from "@mutualzz/client";
 import { Box, Typography } from "@mutualzz/ui-native";
-import { hasStatusEmoji } from "@utils/customStatus";
+import type { TypographyColor } from "@mutualzz/ui-core";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 
@@ -14,8 +11,9 @@ interface Props {
   activity?: PresenceActivity | null;
   text?: string | null;
   emoji?: PresenceActivityEmoji | null;
-  textColor?: ColorLike | TypographyColor;
-  truncate?: boolean;
+  level?: "body-xs" | "body-sm" | "body-md";
+  textColor?: TypographyColor;
+  truncate?: boolean | "single" | "double";
   emojiSize?: number;
 }
 
@@ -37,9 +35,10 @@ export const CustomStatusDisplay = observer(
     activity,
     text,
     emoji,
-    textColor = "accent",
-    truncate = true,
-    emojiSize = 16,
+    level = "body-sm",
+    textColor,
+    truncate = "single",
+    emojiSize = 20,
   }: Props) => {
     const app = useAppStore();
     const statusText = (text ?? activity?.state ?? activity?.name ?? "").trim();
@@ -47,7 +46,7 @@ export const CustomStatusDisplay = observer(
 
     useEffect(() => {
       if (statusEmoji?.id && !app.expressions.get(statusEmoji.id)) {
-        app.expressions.resolve(statusEmoji.id);
+        void app.expressions.resolve(statusEmoji.id);
       }
     }, [app.expressions, statusEmoji?.id]);
 
@@ -59,9 +58,15 @@ export const CustomStatusDisplay = observer(
 
     const statusLabel = statusText ? (
       <Typography
-        level="body-xs"
-        textColor={textColor}
-        truncate={truncate ? "single" : undefined}
+        level={level}
+        {...(textColor ? { textColor } : {})}
+        truncate={
+          truncate === false
+            ? undefined
+            : truncate === true
+              ? "single"
+              : truncate ?? "single"
+        }
         style={{ flexShrink: 1, minWidth: 0 }}
       >
         {statusText}
@@ -75,7 +80,7 @@ export const CustomStatusDisplay = observer(
         style={{
           flexDirection: "row",
           alignItems: "center",
-          gap: 4,
+          gap: 6,
           minWidth: 0,
           flexShrink: 1,
         }}

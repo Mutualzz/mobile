@@ -1,8 +1,12 @@
-import { Button } from "@components/Button";
 import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
 import { SpaceCreateInviteSheet } from "@components/SpaceSettings/SpaceCreateInviteSheet";
 import { UserAvatar } from "@components/User/UserAvatar";
+import {
+  SettingsActionRow,
+  SettingsScroll,
+  SettingsSection,
+} from "@components/UserSettings/SettingsField";
 import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Divider, Typography } from "@mutualzz/ui-native";
@@ -13,7 +17,6 @@ import * as Clipboard from "expo-clipboard";
 import { observer } from "mobx-react-lite";
 import { CopyIcon, TrashIcon } from "phosphor-react-native";
 import { useEffect, useRef, useState } from "react";
-import { ScrollView } from "react-native";
 import { useTranslation } from "react-i18next";
 
 interface Props {
@@ -113,7 +116,6 @@ export const InviteRow = observer(
           <IconButton
             padding={6}
             size={16}
-            color="neutral"
             variant="soft"
             onPress={() => void copyInviteLink()}
             accessibilityLabel={t("invites.copyInviteUrl")}
@@ -187,51 +189,30 @@ export const SpaceInvitesSettings = observer(({ space }: Props) => {
     space.members.me?.hasPermission("ManageChannels") ?? false;
 
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{
-        padding: 16,
-        paddingBottom: 32,
-        gap: 16,
-      }}
-    >
-      <Box
-        style={{
-          flexDirection: "row",
-          flexWrap: "wrap",
-          gap: 8,
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Typography level="body-md" weight={700}>
-          {t("invites.activeLinks")}
-        </Typography>
-        <Box style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-          {canManageChannels && (
-            <Button
-              size="sm"
-              color="danger"
-              variant="soft"
-              disabled={invites.length === 0}
-              onPress={() => void space.deleteAll()}
-            >
-              {t("actions.deleteAllInvites")}
-            </Button>
-          )}
-          <Button
-            size="sm"
-            onPress={() =>
-              openSheet(
-                "space-create-invite",
-                <SpaceCreateInviteSheet space={space} />,
-              )
-            }
-          >
-            {t("actions.createInvite")}
-          </Button>
-        </Box>
-      </Box>
+    <SettingsScroll>
+      <SettingsSection title={t("invites.activeLinks")}>
+        {canManageChannels && (
+          <SettingsActionRow
+            title={t("actions.deleteAllInvites")}
+            actionLabel={t("actions.deleteAllInvites")}
+            actionColor="danger"
+            onPress={() => {
+              if (invites.length === 0) return;
+              void space.deleteAll();
+            }}
+          />
+        )}
+        <SettingsActionRow
+          title={t("actions.createInvite")}
+          actionLabel={t("actions.createInvite")}
+          onPress={() =>
+            openSheet(
+              "space-create-invite",
+              <SpaceCreateInviteSheet space={space} />,
+            )
+          }
+        />
+      </SettingsSection>
 
       {invites.length === 0 ? (
         <Typography
@@ -253,6 +234,6 @@ export const SpaceInvitesSettings = observer(({ space }: Props) => {
           ))}
         </Box>
       )}
-    </ScrollView>
+    </SettingsScroll>
   );
 });

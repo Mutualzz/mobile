@@ -2,53 +2,53 @@ import { IconButton } from "@components/IconButton";
 import { AppLogo } from "@components/Logo/AppLogo";
 import { ReorderableVerticalList } from "@components/Reorder/ReorderableVerticalList";
 import { Screen } from "@components/Screen/Screen";
-import { type PillType, SidebarPill } from "@components/SidebarPill";
+import {
+  type PillType,
+  SidebarRailSlot,
+  SIDEBAR_RAIL_ITEM_SIZE,
+} from "@components/SidebarPill";
 import { SpaceIcon } from "@components/Space/SpaceIcon";
 import { SpaceInviteSheet } from "@components/Space/SpaceInviteSheet";
 import { PlusIcon } from "phosphor-react-native";
 import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
+import { useBridgeListSync } from "@hooks/useBridgeListSync";
+import { useNavigateToModeHub } from "@hooks/useNavigateToModeHub";
 import { useSheet } from "@hooks/useSheet";
-import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
-import { Box } from "@mutualzz/ui-native";
 import type { Space } from "@stores/objects/Space";
-import { useRouter } from "expo-router";
+import { usePathname } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
 
 const SidebarSpace = observer(
-  ({ space, active }: { space: Space; active: boolean }) => {
+  ({
+    space,
+    active,
+    onSelect,
+  }: {
+    space: Space;
+    active: boolean;
+    onSelect: (spaceId: string) => void;
+  }) => {
     const { t } = useTranslation("chat");
     const app = useAppStore();
-    const router = useRouter();
 
     const pillType: PillType = (() => {
       if (active) return "active";
       if (space.channels.some((ch) => app.readStates.get(ch.id)?.isUnread))
         return "unread";
+      if (app.bridgeChat.hasUnreadForSpace(space.id)) return "unread";
       return "none";
     })();
 
     return (
-      <Box
-        style={{
-          position: "relative",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <SidebarPill type={pillType} />
+      <SidebarRailSlot type={pillType}>
         <Pressable
           onPress={() => {
             if (active) return;
-
-            app.spaces.setActive(space.id);
-            app.spaces.setMostRecentSpace(space.id);
-            app.channels.setActive();
-            app.setSpacesDrawerOpen(true);
-            router.replace(`/spaces/${space.id}`);
+            onSelect(space.id);
           }}
           accessibilityRole="button"
           accessibilityLabel={`${space.name}${
@@ -56,24 +56,33 @@ const SidebarSpace = observer(
           }`}
           accessibilityState={{ selected: active }}
         >
-          <SpaceIcon selected={active} space={space} size={44} />
+          <SpaceIcon
+            selected={active}
+            space={space}
+            size={SIDEBAR_RAIL_ITEM_SIZE}
+          />
         </Pressable>
-      </Box>
+      </SidebarRailSlot>
     );
   },
 );
 
 export const SpacesSidebar = observer(() => {
   const app = useAppStore();
-  const { navigate } = useAppNavigation();
+  useBridgeListSync();
+  const { navigateToModeHub, navigateToSpaceHub } = useNavigateToModeHub();
   const { openSheet } = useSheet();
+  const pathname = usePathname();
   const tabBarInset = useKeyboardChromeInset();
 
-  const dmPillType: PillType = app.channels.dms.some(
-    (ch) => app.readStates.get(ch.id)?.isUnread,
-  )
-    ? "unread"
-    : "none";
+  const onDms = pathname.startsWith("/@me") || app.mode === "@me";
+
+  const dmPillType: PillType = (() => {
+    if (onDms) return "active";
+    if (app.channels.dms.some((ch) => app.readStates.get(ch.id)?.isUnread))
+      return "unread";
+    return "none";
+  })();
 
   const spaces = app.spaces.positioned;
   const canReorderSpaces = spaces.length > 1;
@@ -105,23 +114,16 @@ export const SpacesSidebar = observer(() => {
       }}
       elevation={app.settings?.preferEmbossed ? 2 : 0}
     >
-      <Box
-        style={{
-          position: "relative",
-          justifyContent: "center",
-          alignItems: "center",
-          marginBottom: 4,
-        }}
-      >
-        <SidebarPill type={dmPillType} />
+      <SidebarRailSlot type={dmPillType} style={{ marginBottom: 4 }}>
         <AppLogo
-          size={52}
+          size={SIDEBAR_RAIL_ITEM_SIZE}
+          selected={onDms}
           onPress={() => {
-            app.setMode("@me");
-            navigate("/@me");
+            if (onDms) return;
+            navigateToModeHub("@me");
           }}
         />
-      </Box>
+      </SidebarRailSlot>
 
       <ReorderableVerticalList
         items={spaces}
@@ -129,12 +131,17 @@ export const SpacesSidebar = observer(() => {
         enabled={canReorderSpaces}
         dragTarget="row"
         rowGap={12}
-        estimatedRowHeight={52}
+        estimatedRowHeight={SIDEBAR_RAIL_ITEM_SIZE + 12}
         style={{ width: "100%" }}
         renderItem={(space) => (
           <SidebarSpace
-            active={space.id === app.spaces.activeId}
+            active={
+              !onDms &&
+              app.mode === "spaces" &&
+              space.id === app.spaces.activeId
+            }
             space={space}
+            onSelect={navigateToSpaceHub}
           />
         )}
       />

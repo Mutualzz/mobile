@@ -1,4 +1,3 @@
-import { ModeSwitcher } from "@components/ModeSwitcher";
 import { SheetHostBootstrap } from "@components/SheetHost/SheetHostBootstrap";
 import TabBar from "@components/Tabs/TabBar";
 import { UserBar } from "@components/User/UserBar";
@@ -56,7 +55,6 @@ const AppLayout = () => {
           <TabBar>
             <UserBar />
           </TabBar>
-          {!app.hideSwitcher && <ModeSwitcher />}
         </Box>
       </Tabs>
     </SheetHostBootstrap>

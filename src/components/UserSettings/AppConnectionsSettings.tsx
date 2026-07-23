@@ -1,8 +1,19 @@
 import { Button } from "@components/Button";
-import { Paper } from "@components/Paper";
+import {
+  SettingsScroll,
+  SettingsSection,
+  SettingsToggleRow,
+} from "@components/UserSettings/SettingsField";
 import { SettingsScreen } from "@components/UserSettings/SettingsScreen";
 import { useAppStore } from "@hooks/useStores";
-import { Divider, Switch, Typography } from "@mutualzz/ui-native";
+import { Divider, Typography } from "@mutualzz/ui-native";
+import {
+  SPOTIFY_CONNECTION_QUERY_KEY,
+  USER_CONNECTIONS_QUERY_KEY,
+  type ConnectionProvider,
+  type ProviderConnectionDto,
+  type SpotifyConnectionDto,
+} from "@mutualzz/client";
 import {
   GithubLogoIcon,
   LinkSimpleIcon,
@@ -13,32 +24,9 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
-import { Alert, Linking, ScrollView, View } from "react-native";
-import type { ComponentType } from "react";
+import { Alert, Linking, View } from "react-native";
+import type { ComponentType, ReactNode } from "react";
 import type { IconProps } from "phosphor-react-native";
-
-type ConnectionProvider = "github" | "twitch" | "steam";
-
-interface ProviderConnectionDto {
-  provider: ConnectionProvider;
-  available: boolean;
-  connected: boolean;
-  displayName: string | null;
-  externalUrl: string | null;
-  shareOnProfile: boolean;
-  expired?: boolean;
-}
-
-type SpotifyConnectionDto =
-  | { connected: false; available: boolean }
-  | {
-      connected: true;
-      displayName: string | null;
-      externalUrl: string | null;
-      shareSpotify: boolean;
-      available: boolean;
-      expired?: boolean;
-    };
 
 const PROVIDER_ICONS: Record<
   ConnectionProvider | "spotify",
@@ -50,6 +38,90 @@ const PROVIDER_ICONS: Record<
   spotify: SpotifyLogoIcon,
 };
 
+function ConnectionCard({
+  icon,
+  name,
+  status,
+  action,
+  connected,
+  shareTitle,
+  shareDescription,
+  shareChecked,
+  onShareChange,
+  sharePending,
+  externalUrl,
+  openProfileLabel,
+}: {
+  icon: ReactNode;
+  name: string;
+  status: string;
+  action: ReactNode;
+  connected: boolean;
+  shareTitle: string;
+  shareDescription: string;
+  shareChecked: boolean;
+  onShareChange: (checked: boolean) => void;
+  sharePending?: boolean;
+  externalUrl?: string | null;
+  openProfileLabel: string;
+}) {
+  return (
+    <SettingsSection>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            flex: 1,
+          }}
+        >
+          {icon}
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Typography level="body-md" weight="bold">
+              {name}
+            </Typography>
+            <Typography level="body-sm" textColor="muted">
+              {status}
+            </Typography>
+          </View>
+        </View>
+        {action}
+      </View>
+
+      {connected ? (
+        <>
+          <Divider />
+          <SettingsToggleRow
+            title={shareTitle}
+            description={shareDescription}
+            checked={shareChecked}
+            disabled={sharePending}
+            onChange={onShareChange}
+          />
+          {externalUrl ? (
+            <Button
+              size="sm"
+              variant="plain"
+              startDecorator={<LinkSimpleIcon size={16} />}
+              onPress={() => Linking.openURL(externalUrl)}
+            >
+              {openProfileLabel}
+            </Button>
+          ) : null}
+        </>
+      ) : null}
+    </SettingsSection>
+  );
+}
+
 export const AppConnectionsSettings = observer(() => {
   const { t } = useTranslation("settings");
   const { t: tCommon } = useTranslation("common");
@@ -57,13 +129,13 @@ export const AppConnectionsSettings = observer(() => {
   const queryClient = useQueryClient();
 
   const connectionQuery = useQuery({
-    queryKey: ["spotify-connection"],
+    queryKey: SPOTIFY_CONNECTION_QUERY_KEY,
     queryFn: () => app.rest.get<SpotifyConnectionDto>("/@me/spotify"),
     staleTime: 60_000,
   });
 
   const providersQuery = useQuery({
-    queryKey: ["user-connections"],
+    queryKey: USER_CONNECTIONS_QUERY_KEY,
     queryFn: () =>
       app.rest.get<{ providers: ProviderConnectionDto[] }>("/@me/connections"),
     staleTime: 30_000,
@@ -90,7 +162,7 @@ export const AppConnectionsSettings = observer(() => {
     mutationFn: (provider: ConnectionProvider) =>
       app.rest.delete(`/@me/connections/${provider}`),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["user-connections"] });
+      await queryClient.invalidateQueries({ queryKey: USER_CONNECTIONS_QUERY_KEY });
     },
   });
 
@@ -103,7 +175,7 @@ export const AppConnectionsSettings = observer(() => {
         shareOnProfile: opts.shareOnProfile,
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["user-connections"] });
+      await queryClient.invalidateQueries({ queryKey: USER_CONNECTIONS_QUERY_KEY });
     },
   });
 
@@ -128,7 +200,7 @@ export const AppConnectionsSettings = observer(() => {
   const disconnectSpotifyMutation = useMutation({
     mutationFn: () => app.rest.delete("/@me/spotify"),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["spotify-connection"] });
+      await queryClient.invalidateQueries({ queryKey: SPOTIFY_CONNECTION_QUERY_KEY });
     },
   });
 
@@ -136,7 +208,7 @@ export const AppConnectionsSettings = observer(() => {
     mutationFn: (shareSpotify: boolean) =>
       app.rest.patch("/@me/spotify", { shareSpotify }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["spotify-connection"] });
+      await queryClient.invalidateQueries({ queryKey: SPOTIFY_CONNECTION_QUERY_KEY });
     },
   });
 
@@ -158,54 +230,28 @@ export const AppConnectionsSettings = observer(() => {
   const spotify = connectionQuery.data;
   const providers = providersQuery.data?.providers ?? [];
 
-  return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 12 }}
-    >
-      <Typography level="body-sm" textColor="muted">
-        {t("connections.title")}
-      </Typography>
+  const spotifyStatus = spotify?.connected
+    ? spotify.displayName || t("connections.spotify.connected")
+    : spotify?.available
+      ? t("connections.spotify.disconnected")
+      : t("connections.spotify.unavailable");
 
-      <Paper
-        style={{
-          borderRadius: 12,
-          padding: 14,
-          flexDirection: "column",
-          gap: 12,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-              flex: 1,
-            }}
-          >
-            <SpotifyLogoIcon size={24} weight="fill" />
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Typography level="body-md" weight="bold">
-                {t("connections.spotify.name")}
-              </Typography>
-              <Typography level="body-sm" textColor="muted">
-                {spotify?.connected
-                  ? spotify.displayName || t("connections.spotify.connected")
-                  : spotify?.available
-                    ? t("connections.spotify.disconnected")
-                    : t("connections.spotify.unavailable")}
-              </Typography>
-            </View>
-          </View>
-          {spotify?.connected ? (
+  return (
+    <SettingsScroll>
+      <ConnectionCard
+        icon={<SpotifyLogoIcon size={24} weight="fill" />}
+        name={t("connections.spotify.name")}
+        status={spotifyStatus}
+        connected={!!spotify?.connected}
+        shareTitle={t("connections.spotify.showActivity")}
+        shareDescription={t("connections.spotify.showActivityDescription")}
+        shareChecked={spotify?.connected ? spotify.shareSpotify : false}
+        sharePending={shareSpotifyMutation.isPending}
+        onShareChange={(checked) => shareSpotifyMutation.mutate(checked)}
+        externalUrl={spotify?.connected ? spotify.externalUrl : null}
+        openProfileLabel={t("connections.openProfile")}
+        action={
+          spotify?.connected ? (
             <Button
               size="sm"
               color="danger"
@@ -226,91 +272,40 @@ export const AppConnectionsSettings = observer(() => {
             >
               {t("connections.spotify.connect")}
             </Button>
-          ) : null}
-        </View>
-
-        {spotify?.connected && (
-          <>
-            <Divider />
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-              }}
-            >
-              <View style={{ flex: 1 }}>
-                <Typography level="body-md" weight="bold">
-                  {t("connections.spotify.showActivity")}
-                </Typography>
-                <Typography level="body-sm" textColor="muted">
-                  {t("connections.spotify.showActivityDescription")}
-                </Typography>
-              </View>
-              <Switch
-                checked={spotify.shareSpotify}
-                onChange={(checked) => shareSpotifyMutation.mutate(checked)}
-              />
-            </View>
-            {spotify.externalUrl ? (
-              <Button
-                size="sm"
-                variant="plain"
-                startDecorator={<LinkSimpleIcon size={16} />}
-                onPress={() => Linking.openURL(spotify.externalUrl!)}
-              >
-                {t("connections.openProfile")}
-              </Button>
-            ) : null}
-          </>
-        )}
-      </Paper>
+          ) : null
+        }
+      />
 
       {providers.map((provider) => {
         const Icon = PROVIDER_ICONS[provider.provider];
+        const status = provider.connected
+          ? provider.displayName ||
+            t(`connections.${provider.provider}.connected`)
+          : provider.available
+            ? t(`connections.${provider.provider}.disconnected`)
+            : t("connections.notConfigured");
+
         return (
-          <Paper
+          <ConnectionCard
             key={provider.provider}
-            style={{
-              borderRadius: 12,
-              padding: 14,
-              flexDirection: "column",
-              gap: 12,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 10,
-                  flex: 1,
-                }}
-              >
-                <Icon size={24} weight="fill" />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Typography level="body-md" weight="bold">
-                    {t(`connections.${provider.provider}.name`)}
-                  </Typography>
-                  <Typography level="body-sm" textColor="muted">
-                    {provider.connected
-                      ? provider.displayName ||
-                        t(`connections.${provider.provider}.connected`)
-                      : provider.available
-                        ? t(`connections.${provider.provider}.disconnected`)
-                        : t("connections.notConfigured")}
-                  </Typography>
-                </View>
-              </View>
-              {provider.connected ? (
+            icon={<Icon size={24} weight="fill" />}
+            name={t(`connections.${provider.provider}.name`)}
+            status={status}
+            connected={provider.connected}
+            shareTitle={t("connections.showOnProfile")}
+            shareDescription={t("connections.showOnProfileDescription")}
+            shareChecked={provider.shareOnProfile}
+            sharePending={shareProviderMutation.isPending}
+            onShareChange={(checked) =>
+              shareProviderMutation.mutate({
+                provider: provider.provider,
+                shareOnProfile: checked,
+              })
+            }
+            externalUrl={provider.externalUrl}
+            openProfileLabel={t("connections.openProfile")}
+            action={
+              provider.connected ? (
                 <Button
                   size="sm"
                   color="danger"
@@ -342,54 +337,12 @@ export const AppConnectionsSettings = observer(() => {
                 <Typography level="body-sm" textColor="muted">
                   {t("connections.unavailable")}
                 </Typography>
-              )}
-            </View>
-
-            {provider.connected && (
-              <>
-                <Divider />
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 12,
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Typography level="body-md" weight="bold">
-                      {t("connections.showOnProfile")}
-                    </Typography>
-                    <Typography level="body-sm" textColor="muted">
-                      {t("connections.showOnProfileDescription")}
-                    </Typography>
-                  </View>
-                  <Switch
-                    checked={provider.shareOnProfile}
-                    onChange={(checked) =>
-                      shareProviderMutation.mutate({
-                        provider: provider.provider,
-                        shareOnProfile: checked,
-                      })
-                    }
-                  />
-                </View>
-                {provider.externalUrl ? (
-                  <Button
-                    size="sm"
-                    variant="plain"
-                    startDecorator={<LinkSimpleIcon size={16} />}
-                    onPress={() => Linking.openURL(provider.externalUrl!)}
-                  >
-                    {t("connections.openProfile")}
-                  </Button>
-                ) : null}
-              </>
-            )}
-          </Paper>
+              )
+            }
+          />
         );
       })}
-    </ScrollView>
+    </SettingsScroll>
   );
 });
 

@@ -6,13 +6,15 @@ import { RoleMention } from "@components/Markdown/components/mention/RoleMention
 import { UserMention } from "@components/Markdown/components/mention/UserMention";
 import { Spoiler } from "@components/Markdown/components/Spoiler";
 import type { Theme } from "@emotion/react";
-import type { TypographyColor } from "@mutualzz/ui-core";
+import type { TypographyColor, TypographyLevel } from "@mutualzz/ui-core";
 import type { ColorLike } from "@mutualzz/ui-core";
 import type { Snowflake } from "@mutualzz/types";
 import { Box, Typography } from "@mutualzz/ui-native";
+import { openExternalLink } from "@utils/openExternalLink";
+import { appStore } from "@hooks/useStores";
 import type { ReactElement, ReactNode } from "react";
 import { isValidElement } from "react";
-import { Linking, Text, type TextStyle } from "react-native";
+import { Text, type TextStyle } from "react-native";
 
 const inlineRowStyle = {
   flexDirection: "row" as const,
@@ -20,12 +22,36 @@ const inlineRowStyle = {
   alignItems: "center" as const,
 };
 
+type BlockStackFrame = {
+  token: any;
+  children: ReactNode[];
+  inlineLevel?: TypographyLevel;
+  inlineWeight?: 700;
+};
+
+const headingTypographyLevel = (tag: string): TypographyLevel => {
+  switch (tag) {
+    case "h1":
+      return "h3";
+    case "h2":
+      return "h4";
+    case "h3":
+      return "h5";
+    case "h4":
+      return "h6";
+    case "h5":
+      return "body-lg";
+    default:
+      return "body-md";
+  }
+};
+
 type RunSegment = string | ReactElement;
 
 type FormatFrame = {
   segments: RunSegment[];
   textProps: {
-    weight?: "bold";
+    weight?: "bold" | 700;
     textColor?: TypographyColor | ColorLike | "inherit";
     style?: TextStyle;
   };
@@ -36,8 +62,9 @@ const isTypographyElement = (node: ReactNode) =>
 
 const createTextRunBuilder = (
   textProps: {
-    level: "body-sm";
+    level: TypographyLevel;
     textColor: TypographyColor | ColorLike | "inherit";
+    weight?: 700;
   },
   theme: Theme,
   flushTo: (node: ReactNode) => void,
@@ -112,7 +139,7 @@ const createTextRunBuilder = (
             color: theme.colors.info,
             textDecorationLine: "underline",
           }}
-          onPress={() => href && Linking.openURL(href)}
+          onPress={() => href && void openExternalLink(appStore, href)}
         >
           {content}
         </Text>,
@@ -184,7 +211,7 @@ const createTextRunBuilder = (
             color: theme.colors.info,
             textDecorationLine: "underline",
           }}
-          onPress={() => href && Linking.openURL(href)}
+          onPress={() => href && void openExternalLink(appStore, href)}
         >
           {linkSegments}
         </Text>,
@@ -203,17 +230,40 @@ export const renderBlocks = (
   textColor: TypographyColor | ColorLike | "inherit" = "primary",
 ) => {
   const out: ReactNode[] = [];
-  const stack: any[] = [];
+  const stack: BlockStackFrame[] = [];
+
+  const currentInlineStyle = () => {
+    for (let i = stack.length - 1; i >= 0; i -= 1) {
+      const frame = stack[i];
+      if (frame.inlineLevel) {
+        return {
+          level: frame.inlineLevel,
+          weight: frame.inlineWeight,
+        };
+      }
+    }
+    return undefined;
+  };
 
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
 
     if (t.type.endsWith("_open")) {
-      stack.push({ token: t, children: [] as ReactNode[] });
+      stack.push({
+        token: t,
+        children: [],
+        ...(t.type === "heading_open"
+          ? {
+              inlineLevel: headingTypographyLevel(t.tag),
+              inlineWeight: 700 as const,
+            }
+          : null),
+      });
       continue;
     }
     if (t.type.endsWith("_close")) {
       const node = stack.pop();
+      if (!node) continue;
       const el = renderBlockNode(theme, node.token, node.children, i);
       if (stack.length) stack[stack.length - 1].children.push(el);
       else out.push(el);
@@ -221,19 +271,31 @@ export const renderBlocks = (
     }
 
     if (t.type === "inline") {
+      const inlineStyle = currentInlineStyle();
       const inline = renderInline(
         theme,
         t.children ?? [],
         isEmojiOnly,
         spaceId,
         textColor,
+        inlineStyle?.level,
+        inlineStyle?.weight,
       );
       if (stack.length) stack[stack.length - 1].children.push(inline);
       else out.push(inline);
       continue;
     }
 
-    const leaf = renderInline(theme, [t], isEmojiOnly, spaceId, textColor);
+    const inlineStyle = currentInlineStyle();
+    const leaf = renderInline(
+      theme,
+      [t],
+      isEmojiOnly,
+      spaceId,
+      textColor,
+      inlineStyle?.level,
+      inlineStyle?.weight,
+    );
     if (stack.length) stack[stack.length - 1].children.push(leaf);
     else out.push(leaf);
   }
@@ -260,9 +322,10 @@ export const renderBlockNode = (
         <Box
           key={key}
           style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            alignItems: "center",
+            alignSelf: "stretch",
+            marginTop: 12,
+            marginBottom: 4,
+            gap: 2,
           }}
         >
           {children}
@@ -343,13 +406,16 @@ export const renderInline = (
   isEmojiOnly: boolean,
   spaceId?: Snowflake | null,
   textColor: TypographyColor | ColorLike | "inherit" = "primary",
+  level: TypographyLevel = "body-sm",
+  weight?: 700,
 ) => {
   const out: ReactNode[] = [];
   const stack: { type: string; attrs?: any; children: ReactNode[] }[] = [];
 
   const textProps = {
-    level: "body-sm" as const,
+    level,
     textColor,
+    weight,
   };
 
   let flushTarget: (node: ReactNode) => void = (node) => {

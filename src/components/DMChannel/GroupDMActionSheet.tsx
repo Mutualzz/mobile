@@ -1,6 +1,7 @@
 import { Button } from "@components/Button";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
+import { NotificationLevel } from "@mutualzz/types";
 import { Box, ButtonGroup, Divider, Sheet, Typography } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import { useMutation } from "@tanstack/react-query";
@@ -8,7 +9,9 @@ import {
   CheckCircleIcon,
   GearIcon,
   SignOutIcon,
-  TrashIcon } from "phosphor-react-native";
+  TrashIcon,
+  BellSlashIcon,
+} from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
@@ -100,6 +103,101 @@ export const GroupDMActionSheet = observer(
                     >
                       {t("contextMenu.markAsRead")}
                     </Button>
+                  )}
+
+                  {readState && (
+                    <>
+                      <Button
+                        fullWidth
+                        padding={12}
+                        onPress={() => {
+                          void app.readStates.patchNotificationSettings(
+                            channel.id,
+                            { useSpaceDefault: true },
+                          );
+                          onClose();
+                        }}
+                      >
+                        {t("contextMenu.useSpaceDefault")}
+                      </Button>
+                      <Button
+                        fullWidth
+                        padding={12}
+                        onPress={() => {
+                          void app.readStates.patchNotificationSettings(
+                            channel.id,
+                            {
+                              notificationLevel: NotificationLevel.All,
+                              useSpaceDefault: false,
+                            },
+                          );
+                          onClose();
+                        }}
+                      >
+                        {t("contextMenu.notificationAll")}
+                      </Button>
+                      <Button
+                        fullWidth
+                        padding={12}
+                        onPress={() => {
+                          void app.readStates.patchNotificationSettings(
+                            channel.id,
+                            {
+                              notificationLevel: NotificationLevel.Mentions,
+                              useSpaceDefault: false,
+                            },
+                          );
+                          onClose();
+                        }}
+                      >
+                        {t("contextMenu.notificationMentions")}
+                      </Button>
+                      <Button
+                        fullWidth
+                        padding={12}
+                        onPress={() => {
+                          void app.readStates.patchNotificationSettings(
+                            channel.id,
+                            {
+                              notificationLevel: NotificationLevel.Nothing,
+                              useSpaceDefault: false,
+                            },
+                          );
+                          onClose();
+                        }}
+                      >
+                        {t("contextMenu.notificationNothing")}
+                      </Button>
+                      <Button
+                        fullWidth
+                        padding={12}
+                        startDecorator={
+                          <BellSlashIcon size={20} weight="fill" />
+                        }
+                        onPress={() => {
+                          void app.readStates.patchNotificationSettings(
+                            channel.id,
+                            { muteDuration: "forever" },
+                          );
+                          onClose();
+                        }}
+                      >
+                        {t("contextMenu.muteChannel")}
+                      </Button>
+                      <Button
+                        fullWidth
+                        padding={12}
+                        onPress={() => {
+                          void app.readStates.patchNotificationSettings(
+                            channel.id,
+                            { muteDuration: "off" },
+                          );
+                          onClose();
+                        }}
+                      >
+                        {t("contextMenu.unmuteChannel")}
+                      </Button>
+                    </>
                   )}
 
                   {isOwner && (
