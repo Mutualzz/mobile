@@ -3,12 +3,13 @@ import { AvatarDrawEditor } from "@components/Avatar/AvatarDrawEditor";
 import { AvatarStudioMethodCards } from "@components/Avatar/AvatarStudioMethodCards";
 import { IconButton } from "@components/IconButton";
 import { SettingsScreen } from "@components/UserSettings/SettingsScreen";
-import { Paper } from "@components/Paper";
+import { SettingsSection } from "@components/UserSettings/SettingsField";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { ImageFormat, type Sizes, type APIPrivateUser } from "@mutualzz/types";
 import { Box, Typography } from "@mutualzz/ui-native";
 import { useScaledAvatarEditorSizes } from "@utils/accessibilityLayout";
+import { getErrorMessage } from "@utils/errors";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -105,18 +106,10 @@ export default observer(function AvatarEditorScreen() {
         ref={scrollRef}
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 32 }}
       >
-        <Paper
-          variant="soft"
-          style={{ padding: 16, borderRadius: 12, gap: 12 }}
-          elevation={app.settings?.preferEmbossed ? 2 : 0}
-        >
-          <Typography level="body-md" weight={700}>
-            {t("profile.avatarStudio")}
-          </Typography>
-          <Typography level="body-sm" textColor="muted">
-            {t("profile.avatarStudioDescriptionMobile")}
-          </Typography>
-        </Paper>
+        <SettingsSection
+          title={t("profile.avatarStudio")}
+          description={t("profile.avatarStudioDescriptionMobile")}
+        />
 
         <AvatarStudioMethodCards
           embossed={app.settings?.preferEmbossed}
@@ -130,16 +123,10 @@ export default observer(function AvatarEditorScreen() {
           onOpenDraft={(draftId) => openDrawEditor(draftId)}
         />
 
-        <Paper
-          style={{ padding: 16, borderRadius: 12, gap: 12 }}
-          elevation={app.settings?.preferEmbossed ? 2 : 0}
+        <SettingsSection
+          title={t("profile.currentAvatar")}
+          description={t("profile.currentAvatarDescription")}
         >
-          <Typography level="body-md" weight={700}>
-            {t("profile.currentAvatar")}
-          </Typography>
-          <Typography level="body-sm" textColor="muted">
-            {t("profile.currentAvatarDescription")}
-          </Typography>
           <Box style={{ alignItems: "center", paddingVertical: 4 }}>
             <Image
               source={{
@@ -159,23 +146,17 @@ export default observer(function AvatarEditorScreen() {
               }}
             />
           </Box>
-        </Paper>
+        </SettingsSection>
 
         <View
           onLayout={(event) => {
             presetsOffsetRef.current = event.nativeEvent.layout.y;
           }}
         >
-          <Paper
-            style={{ padding: 16, borderRadius: 12, gap: 12 }}
-            elevation={app.settings?.preferEmbossed ? 2 : 0}
+          <SettingsSection
+            title={t("profile.avatarPresets")}
+            description={t("profile.avatarPresetsDescription")}
           >
-            <Typography level="body-md" weight={700}>
-              {t("profile.avatarPresets")}
-            </Typography>
-            <Typography level="body-sm" textColor="muted">
-              {t("profile.avatarPresetsDescription")}
-            </Typography>
             {previousAvatars.length === 0 ? (
               <Typography textColor="muted" level="body-sm">
                 {t("profile.noPreviousAvatars")}
@@ -218,7 +199,7 @@ export default observer(function AvatarEditorScreen() {
                 ))}
               </Box>
             )}
-          </Paper>
+          </SettingsSection>
         </View>
 
         {error && (
@@ -241,15 +222,3 @@ export default observer(function AvatarEditorScreen() {
   );
 });
 
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message;
-  if (
-    typeof error === "object" &&
-    error &&
-    "message" in error &&
-    typeof error.message === "string"
-  ) {
-    return error.message;
-  }
-  return fallback;
-}

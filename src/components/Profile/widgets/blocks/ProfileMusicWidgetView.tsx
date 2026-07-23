@@ -51,7 +51,6 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
     ? (block.image ?? null)
     : (block.track?.image ?? block.image ?? null);
 
-  // Playback priority: uploaded audio > 30s preview > YouTube (matches desktop)
   const audioSrc = audioHash
     ? profile.constructProfileMusicAudioUrl(audioHash)
     : (block.track?.previewUrl ?? block.previewUrl ?? null);

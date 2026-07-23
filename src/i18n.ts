@@ -28,7 +28,7 @@ import "dayjs/locale/tr";
 import "dayjs/locale/uk";
 import "dayjs/locale/zh-cn";
 import "dayjs/locale/zh-tw";
-import { calendarStrings } from "@utils/i18n";
+import { calendarStrings } from "@mutualzz/client";
 
 const device = getLocales()[0];
 const deviceTag = device?.languageTag ?? device?.languageCode ?? "en";

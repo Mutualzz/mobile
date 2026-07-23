@@ -5,68 +5,88 @@ import { useAppStore } from "@hooks/useStores";
 import type { APIMessageEmbed } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { useScaledSquareSize } from "@utils/accessibilityLayout";
+import { openExternalLink } from "@utils/openExternalLink";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
-import { Image, Linking, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Image, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import WebView from "react-native-webview";
+import { MessageEmbedSpoiler } from "./MessageEmbedSpoiler";
 import { MessageGifEmbed } from "./MessageGifEmbed";
 
-function openUrl(url?: string | null) {
+function openUrl(app: ReturnType<typeof useAppStore>, url?: string | null) {
     if (!url) return;
-    Linking.openURL(url).catch(() => {});
+    void openExternalLink(app, url);
 }
 
 export const MessageEmbed = observer(
-    ({ embed }: { embed: APIMessageEmbed }) => {
+    ({ embed, compact }: { embed: APIMessageEmbed; compact?: boolean }) => {
         const { t } = useTranslation("chat");
         const app = useAppStore();
         const { theme } = useTheme();
         const { width } = useWindowDimensions();
-        const maxEmbedWidth = Math.min(width - 80, 560);
+        const maxEmbedWidth = compact
+            ? Math.min(width - 120, 280)
+            : Math.min(width - 80, 560);
         const spotifyEmbedHeight = useScaledSquareSize(80);
         const youtubeHeight = Math.round(maxEmbedWidth * (9 / 16));
 
         if (embed.spotify) {
             return (
-                <View style={[styles.webviewWrap, { width: maxEmbedWidth, height: spotifyEmbedHeight }]}>
-                    <WebView
-                        testID="embed-webview"
-                        source={{ uri: embed.spotify.embedUrl }}
-                        style={styles.webview}
-                        scrollEnabled={false}
-                        javaScriptEnabled
-                        domStorageEnabled
-                        allowsInlineMediaPlayback
-                        mediaPlaybackRequiresUserAction={false}
-                    />
-                </View>
+                <MessageEmbedSpoiler
+                    spoiler={embed.spoiler}
+                    width={maxEmbedWidth}
+                    height={spotifyEmbedHeight}
+                    borderRadius={8}
+                >
+                    <View style={[styles.webviewWrap, { width: maxEmbedWidth, height: spotifyEmbedHeight }]}>
+                        <WebView
+                            testID="embed-webview"
+                            source={{ uri: embed.spotify.embedUrl }}
+                            style={styles.webview}
+                            scrollEnabled={false}
+                            javaScriptEnabled
+                            domStorageEnabled
+                            allowsInlineMediaPlayback
+                            mediaPlaybackRequiresUserAction={false}
+                        />
+                    </View>
+                </MessageEmbedSpoiler>
             );
         }
 
         if (embed.youtube) {
             return (
-                <View
-                    style={[
-                        styles.webviewWrap,
-                        styles.youtubeWrap,
-                        { width: maxEmbedWidth, height: youtubeHeight },
-                    ]}
+                <MessageEmbedSpoiler
+                    spoiler={embed.spoiler}
+                    width={maxEmbedWidth}
+                    height={youtubeHeight}
+                    borderRadius={8}
                 >
-                    <WebView
-                        testID="embed-webview"
-                        source={{ uri: embed.youtube.embedUrl }}
-                        style={styles.webview}
-                        javaScriptEnabled
-                        domStorageEnabled
-                        allowsFullscreenVideo
-                    />
-                </View>
+                    <View
+                        style={[
+                            styles.webviewWrap,
+                            styles.youtubeWrap,
+                            { width: maxEmbedWidth, height: youtubeHeight },
+                        ]}
+                    >
+                        <WebView
+                            testID="embed-webview"
+                            source={{ uri: embed.youtube.embedUrl }}
+                            style={styles.webview}
+                            javaScriptEnabled
+                            domStorageEnabled
+                            allowsFullscreenVideo
+                        />
+                    </View>
+                </MessageEmbedSpoiler>
             );
         }
 
         if (embed.type === "post" && embed.post) {
             return <PostEmbedPreview post={embed.post} />;
         }
+
+        const gifAutoplay = app.settings?.extendedSettings.gifAutoplay ?? true;
 
         if (embed.type === "gifv") {
             const mediaUrl = embed.media || embed.image || embed.url || "";
@@ -85,18 +105,23 @@ export const MessageEmbed = observer(
 
             if (mediaUrl) {
                 return (
-                    <MessageGifEmbed
-                        mediaUrl={mediaUrl}
-                        imageUrl={embed.image}
-                        pageUrl={embed.url}
-                        isFavorited={isFavorited}
-                        onToggleFavorite={handleToggleFavorite}
-                    />
+                    <MessageEmbedSpoiler spoiler={embed.spoiler}>
+                        <MessageGifEmbed
+                            mediaUrl={mediaUrl}
+                            imageUrl={embed.image}
+                            pageUrl={embed.url}
+                            isFavorited={isFavorited}
+                            onToggleFavorite={handleToggleFavorite}
+                            compact={compact}
+                            autoplay={gifAutoplay}
+                        />
+                    </MessageEmbedSpoiler>
                 );
             }
         }
 
         return (
+            <MessageEmbedSpoiler spoiler={embed.spoiler}>
             <Paper
                 style={{
                     width: "100%",
@@ -132,7 +157,7 @@ export const MessageEmbed = observer(
                 )}
                 {embed.image && !embed.media && (
                     <Pressable
-                        onPress={() => openUrl(embed.url)}
+                        onPress={() => openUrl(app, embed.url)}
                         style={styles.imagePressable}
                     >
                         <Image
@@ -144,6 +169,7 @@ export const MessageEmbed = observer(
                     </Pressable>
                 )}
             </Paper>
+            </MessageEmbedSpoiler>
         );
     },
 );

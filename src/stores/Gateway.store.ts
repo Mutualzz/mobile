@@ -24,6 +24,8 @@ import {
   type APIUser,
   type APIUserProfile,
   type APIUserSettings,
+  type APIReadState,
+  type APISpaceNotificationSettings,
   GatewayCloseCodes,
   GatewayDispatchEvents,
   GatewayOpcodes,
@@ -36,12 +38,12 @@ import {
   type PresenceSchedule,
   type PresencePayload,
 } from "@mutualzz/types";
-import { type Codec, createCodec, type Encoding } from "@utils/codec";
+import { type Codec, createCodec, type Encoding } from "@mutualzz/client";
 import {
   type Compression,
   type Compressor,
   createCompressor,
-} from "@utils/compressor";
+} from "@mutualzz/client";
 import { makeAutoObservable } from "mobx";
 import type { NativeEventSubscription } from "react-native";
 import { AppState, Alert, type AppStateStatus } from "react-native";
@@ -606,6 +608,22 @@ export class GatewayStore {
     });
   }
 
+  refreshPresenceActivities() {
+    this.lastPresenceHash = null;
+    if (!this.socket || this.readyState !== GatewayStatus.OPEN) return;
+    if (!this.app.account?.id) return;
+
+    const draft: PresenceUpdateDraft = {
+      status: this.getEffectiveStatus(),
+      device: "mobile",
+      activities: this.app.customStatus.activity
+        ? [this.app.customStatus.activity]
+        : [],
+    };
+
+    this.sendPresenceUpdate(draft);
+  }
+
   sendVoiceStateUpdate(payload: {
     spaceId: Snowflake | null;
     channelId: Snowflake | null;
@@ -782,6 +800,14 @@ export class GatewayStore {
     this.dispatchHandlers.set(
       GatewayDispatchEvents.MessageAckBulk,
       this.onMessageAckBulk,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.ReadStateUpdate,
+      this.onReadStateUpdate,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.SpaceNotificationSettingsUpdate,
+      this.onSpaceNotificationSettingsUpdate,
     );
 
     // Invites
@@ -1391,6 +1417,7 @@ export class GatewayStore {
       settings,
       expressions,
       readStates,
+      spaceNotificationSettings,
       mergedPresences,
       presenceSchedule,
       customStatusSchedule,
@@ -1412,6 +1439,9 @@ export class GatewayStore {
     this.app.relationships.addAll(relationships ?? []);
     this.app.expressions.addAll(expressions);
     this.app.readStates.addAll(readStates);
+    if (spaceNotificationSettings?.length) {
+      this.app.spaceNotifications.addAll(spaceNotificationSettings);
+    }
     this.app.calls.hydrate(calls);
     if (Array.isArray(voiceStates)) {
       this.app.voiceStates.replace(voiceStates);
@@ -1767,6 +1797,18 @@ export class GatewayStore {
     } else {
       this.app.readStates.updateLocal(payload.channelId, payload.lastMessageId);
     }
+  };
+
+  private onReadStateUpdate = (payload: APIReadState) => {
+    const existing = this.app.readStates.get(payload.id);
+    if (existing) existing.mergeFromServer(payload);
+    else this.app.readStates.addAll([payload]);
+  };
+
+  private onSpaceNotificationSettingsUpdate = (
+    payload: APISpaceNotificationSettings,
+  ) => {
+    this.app.spaceNotifications.upsert(payload);
   };
 
   private onMessageAckBulk = (

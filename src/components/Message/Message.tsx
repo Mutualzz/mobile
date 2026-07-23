@@ -8,7 +8,7 @@ import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { type MessageLike } from "@stores/objects/Message";
 import { QueuedMessageStatus } from "@stores/objects/QueuedMessage";
 import { GIF_ONLY_URL_PATTERN } from "@utils/gifs";
-import { isSystemMessageType, isSystemUser } from "@utils/systemUser";
+import { isSystemMessageType, isSystemUser } from "@mutualzz/client";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -32,7 +32,7 @@ import {
 } from "./MessageBase";
 import { MessageEmbed } from "./MessageEmbed";
 import { CodedLinkPreview } from "@components/Space/CodedLinkPreview";
-import { shouldHideInviteUrlContent } from "@utils/inviteLinks";
+import { shouldHideInviteUrlContent } from "@mutualzz/client";
 import { MessageReactions } from "./MessageReactions";
 import { MessageSticker } from "./MessageSticker";
 import { MessageAttachment } from "./MessageAttachment";
@@ -42,14 +42,24 @@ import { QueuedMessage } from "@stores/objects/QueuedMessage";
 interface Props {
   message: MessageLike;
   header?: boolean;
+  showAvatar?: boolean;
+  compact?: boolean;
   highlighted?: boolean;
 }
 
-export const Message = observer(({ message, header, highlighted }: Props) => {
+export const Message = observer(
+  ({
+    message,
+    header,
+    showAvatar = !!header,
+    compact = false,
+    highlighted,
+  }: Props) => {
   const app = useAppStore();
   const { t } = useTranslation("chat");
   const { theme } = useTheme();
   const space = message.spaceId ? app.spaces.get(message.spaceId) : null;
+  const showLinkEmbeds = app.settings?.extendedSettings.showLinkEmbeds ?? true;
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
   const isSent = message instanceof MessageModel;
   const isQueued = message instanceof QueuedMessage;
@@ -142,7 +152,9 @@ export const Message = observer(({ message, header, highlighted }: Props) => {
                 <ReplyContent>
                   {repliedMessage ? (
                     <>
-                      <UserAvatar user={repliedMessage.author} size="sm" />
+                      {!compact && (
+                        <UserAvatar user={repliedMessage.author} size="sm" />
+                      )}
                       <ReplyAuthorName>
                         <Typography level="body-xs" textColor="muted">
                           {isSystemUser(repliedMessage.author) &&
@@ -176,23 +188,28 @@ export const Message = observer(({ message, header, highlighted }: Props) => {
             </Pressable>
           )}
 
-          <MessageRow header={header}>
+          <MessageRow header={header && !compact}>
             <MessageInfo>
-              {header && message.author && (
-                <UserProfileTrigger
-                  user={message.author}
-                  member={
-                    space && message.author.id
-                      ? space.members.get(message.author.id)
-                      : undefined
-                  }
-                >
-                  <UserAvatar user={message.author} />
-                </UserProfileTrigger>
+              {compact || !showAvatar ? null : (
+                message.author && (
+                  <UserProfileTrigger
+                    user={message.author}
+                    member={
+                      space && message.author.id
+                        ? space.members.get(message.author.id)
+                        : undefined
+                    }
+                  >
+                    <UserAvatar
+                      user={message.author}
+                      size={header ? "md" : "sm"}
+                    />
+                  </UserProfileTrigger>
+                )
               )}
             </MessageInfo>
             <MessageContent>
-              {header && (
+              {header && !compact && (
                 <Box
                   style={{
                     flexShrink: 1,
@@ -220,6 +237,12 @@ export const Message = observer(({ message, header, highlighted }: Props) => {
                   message.status === QueuedMessageStatus.Failed
                 }
               >
+                {compact && header && (
+                  <Box style={{ marginBottom: 2 }}>
+                    <MessageAuthor message={message} space={space} />
+                  </Box>
+                )}
+
                 {stickerExpressions.length > 0 && (
                   <Box
                     style={{
@@ -270,7 +293,9 @@ export const Message = observer(({ message, header, highlighted }: Props) => {
                   ))}
               </MessageContentText>
 
-              {"embeds" in message && message.embeds.length > 0 && (
+              {"embeds" in message &&
+                showLinkEmbeds &&
+                message.embeds.length > 0 && (
                 <Box
                   style={{
                     paddingBottom: 4,

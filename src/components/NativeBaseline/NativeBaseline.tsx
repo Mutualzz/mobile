@@ -37,6 +37,7 @@ const styles = StyleSheet.create({
 const NativeBaseline = observer(({ children }: NativeBaselineProps) => {
   const app = useAppStore();
   const { theme } = useTheme();
+  const highContrast = app.settings?.extendedSettings.highContrast ?? false;
   const { width, height } = useWindowDimensions();
   const backgroundImageUrl = theme.backgroundImageUrl;
   const settings = useMemo(
@@ -116,6 +117,9 @@ const NativeBaseline = observer(({ children }: NativeBaselineProps) => {
               backgroundColor: app.settings?.preferEmbossed
                 ? dynamicElevation(theme.colors.surface, 2)
                 : theme.colors.background,
+              ...(highContrast
+                ? { borderWidth: 1, borderColor: theme.colors.neutral }
+                : {}),
             },
           ]}
         >

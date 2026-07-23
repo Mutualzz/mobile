@@ -6,7 +6,7 @@ import { Box, Sheet, Typography } from "@mutualzz/ui-native";
 import type { Post } from "@stores/objects/Post";
 import type { Channel } from "@stores/objects/Channel";
 import type { User } from "@stores/objects/User";
-import Snowflake from "@utils/Snowflake";
+import { Snowflake } from "@mutualzz/client";
 import { CheckIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";

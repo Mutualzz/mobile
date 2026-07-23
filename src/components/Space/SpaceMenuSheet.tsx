@@ -9,6 +9,7 @@ import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import { useSpaceSettingsAccess } from "@hooks/useSpaceFromRoute";
+import { NotificationLevel } from "@mutualzz/types";
 import { spaceCategoryTitleKeys, spacePageTitleKeys } from "@mutualzz/i18n";
 import { Box, Sheet, Typography } from "@mutualzz/ui-native";
 import type { Space } from "@stores/objects/Space";
@@ -18,6 +19,7 @@ import {
   TrashIcon,
   CheckCircleIcon,
   FlagIcon,
+  BellSlashIcon,
 } from "phosphor-react-native";
 import { ReportContentSheet } from "@components/Report/ReportContentSheet";
 import { observer } from "mobx-react-lite";
@@ -32,6 +34,7 @@ interface Props {
 
 export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
   const { t } = useTranslation("space");
+  const { t: tChat } = useTranslation("chat");
   const app = useAppStore();
   const { navigate } = useAppNavigation();
   const { openSheet } = useSheet();
@@ -43,6 +46,14 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
   const { canManage } = useSpaceSettingsAccess(space);
   const isOwner = space.ownerId === app.account?.id;
   const hasUnread = space.hasUnread();
+  const spaceSettings = app.spaceNotifications.get(space.id);
+
+  const patchSpaceNotifications = (
+    body: Parameters<typeof app.spaceNotifications.patch>[1],
+  ) => {
+    void app.spaceNotifications.patch(space.id, body);
+    onClose();
+  };
 
   const pageLabel = (label: SpaceSettingsPage) => {
     const key = spacePageTitleKeys[label];
@@ -131,6 +142,115 @@ export const SpaceMenuSheet = observer(({ space, visible, onClose }: Props) => {
               {t("actions.markAllAsRead")}
             </Button>
           )}
+
+          <Typography level="body-xs" textColor="muted">
+            {tChat("contextMenu.notificationLevel")}
+          </Typography>
+          <Button
+            variant="plain"
+            horizontalAlign="left"
+            fullWidth
+            onPress={() => patchSpaceNotifications({ level: NotificationLevel.All })}
+          >
+            {tChat("contextMenu.notificationAll")}
+          </Button>
+          <Button
+            variant="plain"
+            horizontalAlign="left"
+            fullWidth
+            onPress={() =>
+              patchSpaceNotifications({ level: NotificationLevel.Mentions })
+            }
+          >
+            {tChat("contextMenu.notificationMentions")}
+          </Button>
+          <Button
+            variant="plain"
+            horizontalAlign="left"
+            fullWidth
+            onPress={() =>
+              patchSpaceNotifications({ level: NotificationLevel.Nothing })
+            }
+          >
+            {tChat("contextMenu.notificationNothing")}
+          </Button>
+
+          <Typography level="body-xs" textColor="muted">
+            {tChat("contextMenu.muteSpace")}
+          </Typography>
+          <Button
+            variant="plain"
+            horizontalAlign="left"
+            startDecorator={<BellSlashIcon size={20} weight="fill" />}
+            fullWidth
+            onPress={() => patchSpaceNotifications({ muteDuration: "1h" })}
+          >
+            {tChat("contextMenu.muteDuration1h")}
+          </Button>
+          <Button
+            variant="plain"
+            horizontalAlign="left"
+            fullWidth
+            onPress={() => patchSpaceNotifications({ muteDuration: "8h" })}
+          >
+            {tChat("contextMenu.muteDuration8h")}
+          </Button>
+          <Button
+            variant="plain"
+            horizontalAlign="left"
+            fullWidth
+            onPress={() => patchSpaceNotifications({ muteDuration: "24h" })}
+          >
+            {tChat("contextMenu.muteDuration24h")}
+          </Button>
+          <Button
+            variant="plain"
+            horizontalAlign="left"
+            fullWidth
+            onPress={() => patchSpaceNotifications({ muteDuration: "1w" })}
+          >
+            {tChat("contextMenu.muteDuration1w")}
+          </Button>
+          <Button
+            variant="plain"
+            horizontalAlign="left"
+            fullWidth
+            onPress={() => patchSpaceNotifications({ muteDuration: "forever" })}
+          >
+            {tChat("contextMenu.muteUntilTurnBackOn")}
+          </Button>
+          <Button
+            variant="plain"
+            horizontalAlign="left"
+            fullWidth
+            onPress={() => patchSpaceNotifications({ muteDuration: "off" })}
+          >
+            {tChat("contextMenu.unmuteSpace")}
+          </Button>
+          <Button
+            variant="plain"
+            horizontalAlign="left"
+            fullWidth
+            onPress={() =>
+              patchSpaceNotifications({
+                suppressEveryone: !(spaceSettings?.suppressEveryone ?? false),
+              })
+            }
+          >
+            {tChat("contextMenu.suppressEveryone")}
+          </Button>
+          <Button
+            variant="plain"
+            horizontalAlign="left"
+            fullWidth
+            onPress={() =>
+              patchSpaceNotifications({
+                suppressRoles: !(spaceSettings?.suppressRoles ?? false),
+              })
+            }
+          >
+            {tChat("contextMenu.suppressRoles")}
+          </Button>
 
           {canManage && (
             <Button

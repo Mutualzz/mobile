@@ -20,6 +20,8 @@ interface Props {
   onClose: () => void;
   channel?: Channel | null;
   initialTab?: ExpressionPickerTab;
+  showEmoji?: boolean;
+  showGifs?: boolean;
   showStickers?: boolean;
   onSelectEmoji: (emoji: PickerEmoji, skinTone: SkinTone) => void;
   onSelectCustomEmoji: (expression: Expression) => void;
@@ -44,6 +46,8 @@ export const ExpressionPickerSheet = observer(
     onClose,
     channel,
     initialTab = "emoji",
+    showEmoji = true,
+    showGifs = true,
     showStickers = true,
     onSelectEmoji,
     onSelectCustomEmoji,
@@ -60,9 +64,12 @@ export const ExpressionPickerSheet = observer(
       setTab(initialTab);
     }, [isActive, initialTab]);
 
-    const tabs = showStickers
-      ? TAB_DEFS
-      : TAB_DEFS.filter((entry) => entry.id !== "stickers");
+    const tabs = TAB_DEFS.filter((entry) => {
+      if (entry.id === "emoji") return showEmoji;
+      if (entry.id === "gifs") return showGifs;
+      if (entry.id === "stickers") return showStickers;
+      return true;
+    });
 
     const panel = (
       <View
@@ -134,7 +141,7 @@ export const ExpressionPickerSheet = observer(
               );
             })}
           </Box>
-          <IconButton padding={6} color="neutral" onPress={onClose}>
+          <IconButton padding={6} onPress={onClose}>
             <XIcon size={20} />
           </IconButton>
         </Box>

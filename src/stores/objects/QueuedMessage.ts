@@ -5,7 +5,7 @@ import type {
   Snowflake,
 } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
-import { formatRestError } from "@utils/restError";
+import { formatRestError } from "@mutualzz/client";
 import { action, makeObservable, observable } from "mobx";
 import type { Expression } from "./Expression";
 import { MessageBase, messageBaseMobxAnnotations } from "./MessageBase";
@@ -119,11 +119,7 @@ export class QueuedMessage extends MessageBase {
     };
 
     try {
-      const result = await channel.sendMessage(body, this);
-      if (result?.nonce) {
-        this.app.queue.handleIncomingMessage(result);
-      }
-      this.app.queue.remove(this.id);
+      await channel.sendMessage(body, this);
     } catch (e) {
       this.fail(formatRestError(e, i18n.t("errors.unknown", { ns: "common" })));
     }

@@ -1,6 +1,6 @@
 import { REST, type REST as RESTType } from "@stores/REST.store";
 import type { APIMessage } from "@mutualzz/types";
-import Snowflake from "@utils/Snowflake";
+import { Snowflake } from "@mutualzz/client";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 

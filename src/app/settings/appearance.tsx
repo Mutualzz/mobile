@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 const AppearanceSettings = () => {
   const { t } = useTranslation("settings");
   return (
-    <SettingsScreen title={t("pages.appearance")}>
+    <SettingsScreen title={t("pages.appearance")} contentStyle={{ flex: 1 }}>
       <AppAppearanceSettings />
     </SettingsScreen>
   );

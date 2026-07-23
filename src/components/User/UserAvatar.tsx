@@ -30,6 +30,7 @@ interface UserAvatarProps extends AvatarProps {
   badge?: boolean;
   showInvisible?: boolean;
   speaking?: boolean;
+  typing?: boolean;
 }
 
 const baseSizeMap: Record<Size, number> = {
@@ -46,6 +47,7 @@ export const UserAvatar = observer(
     badge = false,
     showInvisible,
     speaking = false,
+    typing = false,
     size: sizeProp,
     style,
     ...props
@@ -129,7 +131,7 @@ export const UserAvatar = observer(
       </Paper>
     );
 
-    const showBadge = badge && !!status;
+    const showBadge = badge && (!!status || typing);
 
     if (!showBadge && !speaking) return avatarBody;
 
@@ -153,9 +155,10 @@ export const UserAvatar = observer(
         )}
         {showBadge && (
           <StatusBadge
-            status={status}
+            status={status ?? "online"}
             size={size}
             showInvisible={showInvisible}
+            typing={typing}
           />
         )}
       </Box>

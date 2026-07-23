@@ -19,7 +19,9 @@ const ChatFooter = observer(
     composerVisible: boolean;
   }) => (
     <ComposerFooter channelId={channel.id}>
-      {composerVisible ? <MessageInput channel={channel} /> : null}
+      {composerVisible ? (
+        <MessageInput key={channel.id} channel={channel} />
+      ) : null}
     </ComposerFooter>
   ),
 );

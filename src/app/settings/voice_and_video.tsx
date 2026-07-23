@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 const VoiceVideoSettings = () => {
   const { t } = useTranslation("settings");
   return (
-    <SettingsScreen title={t("pages.voiceAndVideo")}>
+    <SettingsScreen title={t("pages.voiceAndVideo")} contentStyle={{ flex: 1 }}>
       <AppVoiceVideoSettings />
     </SettingsScreen>
   );

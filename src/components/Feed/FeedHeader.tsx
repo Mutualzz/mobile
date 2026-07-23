@@ -135,8 +135,12 @@ export const FeedHeader = observer(() => {
       >
         <PostComposer
           onPosted={() => {
-            void queryClient.invalidateQueries({ queryKey: ["posts", "for-you"] });
-            void queryClient.invalidateQueries({ queryKey: ["posts", "friends"] });
+            void queryClient.invalidateQueries({
+              queryKey: ["posts", "for-you"],
+            });
+            void queryClient.invalidateQueries({
+              queryKey: ["posts", "friends"],
+            });
             setComposeOpen(false);
           }}
         />

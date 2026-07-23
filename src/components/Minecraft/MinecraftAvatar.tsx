@@ -1,4 +1,4 @@
-import { minecraftAvatarUrl } from "@utils/minecraft";
+import { minecraftAvatarUrl } from "@mutualzz/client";
 import { Box, useTheme } from "@mutualzz/ui-native";
 import { CubeIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";

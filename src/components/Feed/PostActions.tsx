@@ -1,5 +1,5 @@
 import { IconButton } from "@components/IconButton";
-import { Box, Typography } from "@mutualzz/ui-native";
+import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import {
   BookmarkSimpleIcon,
   ChatCircleIcon,
@@ -133,6 +133,8 @@ export function PostActions({
   overlay = false,
 }: PostActionsProps) {
   const { t } = useTranslation("chat");
+  const { theme } = useTheme();
+  const resolvedIconColor = iconColor ?? theme.typography.colors.primary;
   const weight = (active: boolean) => (active ? "fill" : "regular");
   const isRail = layout === "rail";
   const iconSize = isRail ? 28 : 22;
@@ -144,10 +146,14 @@ export function PostActions({
         active={liked}
         count={likeCount}
         onPress={onLike}
-        labelColor={iconColor}
+        labelColor={resolvedIconColor}
         overlay={overlay}
         icon={
-          <HeartIcon size={iconSize} color={iconColor} weight={weight(liked)} />
+          <HeartIcon
+            size={iconSize}
+            color={resolvedIconColor}
+            weight={weight(liked)}
+          />
         }
       />
       <PostRailAction
@@ -155,12 +161,12 @@ export function PostActions({
         active={!!commentsOpen}
         count={commentCount}
         onPress={onComment}
-        labelColor={iconColor}
+        labelColor={resolvedIconColor}
         overlay={overlay}
         icon={
           <ChatCircleIcon
             size={iconSize}
-            color={iconColor}
+            color={resolvedIconColor}
             weight={weight(!!commentsOpen)}
           />
         }
@@ -170,12 +176,12 @@ export function PostActions({
         active={shared}
         count={shareCount}
         onPress={onShare}
-        labelColor={iconColor}
+        labelColor={resolvedIconColor}
         overlay={overlay}
         icon={
           <RepeatIcon
             size={iconSize}
-            color={iconColor}
+            color={resolvedIconColor}
             weight={weight(shared)}
           />
         }
@@ -193,14 +199,14 @@ export function PostActions({
             <FeedOverlayChip size={44}>
               <BookmarkSimpleIcon
                 size={iconSize}
-                color={iconColor}
+                color={resolvedIconColor}
                 weight={weight(saved)}
               />
             </FeedOverlayChip>
           ) : (
             <BookmarkSimpleIcon
               size={iconSize}
-              color={iconColor}
+              color={resolvedIconColor}
               weight={weight(saved)}
             />
           )}
@@ -216,7 +222,7 @@ export function PostActions({
         >
           <BookmarkSimpleIcon
             size={iconSize}
-            color={iconColor}
+            color={resolvedIconColor}
             weight={weight(saved)}
           />
         </IconButton>

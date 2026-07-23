@@ -108,8 +108,6 @@ export async function pickProfileImageForUpload(): Promise<PickedProfileImage | 
   } catch (error) {
     if (isPickerCancelled(error)) return null;
     throw error;
-  } finally {
-    void ImagePicker.clean();
   }
 }
 
@@ -155,8 +153,6 @@ export async function pickProfileImageAsset(
   } catch (error) {
     if (isPickerCancelled(error)) return null;
     throw error;
-  } finally {
-    void ImagePicker.clean();
   }
 }
 

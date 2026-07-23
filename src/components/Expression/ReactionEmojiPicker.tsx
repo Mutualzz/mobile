@@ -71,7 +71,7 @@ export const ReactionEmojiPicker = observer(
               >
                 {resolvedTitle}
               </Typography>
-              <IconButton padding={6} color="neutral" onPress={onClose}>
+              <IconButton padding={6} onPress={onClose}>
                 <XIcon size={20} />
               </IconButton>
             </Box>

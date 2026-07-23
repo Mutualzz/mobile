@@ -3,7 +3,7 @@ import type {
   APIProfileBlock,
   ProfileBlockType,
 } from "@mutualzz/types";
-import Snowflake from "@utils/Snowflake";
+import { Snowflake } from "@mutualzz/client";
 import i18n from "../../../../i18n";
 
 type DistributiveOmit<T, K extends keyof T> = T extends unknown

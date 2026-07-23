@@ -1,7 +1,7 @@
 import { Button } from "@components/Button";
 import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
-import { ChannelType } from "@mutualzz/types";
+import { ChannelType, NotificationLevel } from "@mutualzz/types";
 import type { Channel } from "@stores/objects/Channel";
 import type { Space } from "@stores/objects/Space";
 import { Box, ButtonGroup, Divider, Sheet, Typography } from "@mutualzz/ui-native";
@@ -14,6 +14,7 @@ import {
   CaretUpIcon,
   CheckCircleIcon,
   GearIcon,
+  BellSlashIcon,
   PaperPlaneTiltIcon,
   TrashIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
@@ -91,8 +92,10 @@ export const ChannelActionSheet = observer(
     };
 
     const hasMarkRead = !!readState?.isUnread;
+    const hasNotificationActions = !!readState;
     const hasActions =
       hasMarkRead ||
+      hasNotificationActions ||
       canInvite ||
       canManageChannels ||
       canReorder ||
@@ -144,6 +147,101 @@ export const ChannelActionSheet = observer(
                     >
                       {t("contextMenu.markAsRead")}
                     </Button>
+                  )}
+
+                  {hasNotificationActions && (
+                    <>
+                      <Button
+                        fullWidth
+                        padding={12}
+                        onPress={() => {
+                          void app.readStates.patchNotificationSettings(
+                            channel.id,
+                            { useSpaceDefault: true },
+                          );
+                          onClose();
+                        }}
+                      >
+                        {t("contextMenu.useSpaceDefault")}
+                      </Button>
+                      <Button
+                        fullWidth
+                        padding={12}
+                        onPress={() => {
+                          void app.readStates.patchNotificationSettings(
+                            channel.id,
+                            {
+                              notificationLevel: NotificationLevel.All,
+                              useSpaceDefault: false,
+                            },
+                          );
+                          onClose();
+                        }}
+                      >
+                        {t("contextMenu.notificationAll")}
+                      </Button>
+                      <Button
+                        fullWidth
+                        padding={12}
+                        onPress={() => {
+                          void app.readStates.patchNotificationSettings(
+                            channel.id,
+                            {
+                              notificationLevel: NotificationLevel.Mentions,
+                              useSpaceDefault: false,
+                            },
+                          );
+                          onClose();
+                        }}
+                      >
+                        {t("contextMenu.notificationMentions")}
+                      </Button>
+                      <Button
+                        fullWidth
+                        padding={12}
+                        onPress={() => {
+                          void app.readStates.patchNotificationSettings(
+                            channel.id,
+                            {
+                              notificationLevel: NotificationLevel.Nothing,
+                              useSpaceDefault: false,
+                            },
+                          );
+                          onClose();
+                        }}
+                      >
+                        {t("contextMenu.notificationNothing")}
+                      </Button>
+                      <Button
+                        fullWidth
+                        padding={12}
+                        startDecorator={
+                          <BellSlashIcon size={20} weight="fill" />
+                        }
+                        onPress={() => {
+                          void app.readStates.patchNotificationSettings(
+                            channel.id,
+                            { muteDuration: "forever" },
+                          );
+                          onClose();
+                        }}
+                      >
+                        {t("contextMenu.muteChannel")}
+                      </Button>
+                      <Button
+                        fullWidth
+                        padding={12}
+                        onPress={() => {
+                          void app.readStates.patchNotificationSettings(
+                            channel.id,
+                            { muteDuration: "off" },
+                          );
+                          onClose();
+                        }}
+                      >
+                        {t("contextMenu.unmuteChannel")}
+                      </Button>
+                    </>
                   )}
 
                   {!isCategory && canInvite && (

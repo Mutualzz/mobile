@@ -15,6 +15,10 @@ export const TypingIndicator = observer(({ channelId }: Props) => {
     const typingAvatarSize = useScaledSquareSize(20);
     const users = app.typing.getUsersTyping(channelId);
 
+    if (app.settings?.extendedSettings.showTypingIndicators === false) {
+        return null;
+    }
+
     if (users.length === 0) return null;
 
     const text =

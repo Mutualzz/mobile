@@ -3,90 +3,96 @@ import {
   formatProfileUrlLabel,
   resolveProfileUrl,
 } from "@components/Profile/widgets/blocks/profileLink.utils";
+import { useAppStore } from "@hooks/useStores";
 import type {
   MobileProfileLinksBlock,
   ProfileBlockSize,
 } from "@mutualzz/types";
 import { Stack, Typography } from "@mutualzz/ui-native";
 import { useScaledProfileWidgetLinkMetrics } from "@utils/accessibilityLayout";
+import { openExternalLink } from "@utils/openExternalLink";
 import { ArrowSquareOutIcon } from "phosphor-react-native";
-import { Linking, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
+import { observer } from "mobx-react-lite";
 
 const VISIBLE_COUNT: Record<ProfileBlockSize, number> = { s: 1, m: 2, l: 4 };
 
-const LinkRow = ({
-  label,
-  url,
-  compact = false,
-}: {
-  label: string;
-  url: string;
-  compact?: boolean;
-}) => {
-  const metrics = useScaledProfileWidgetLinkMetrics();
-  const resolved = resolveProfileUrl(url);
-  const kind = resolved?.kind ?? "website";
-  const accent = resolved?.color ?? "#6366F1";
-  const subtitle = resolved ? formatProfileUrlLabel(resolved) : url;
-  const iconSize = compact ? metrics.iconSize - 4 : metrics.iconSize;
+const LinkRow = observer(
+  ({
+    label,
+    url,
+    compact = false,
+  }: {
+    label: string;
+    url: string;
+    compact?: boolean;
+  }) => {
+    const app = useAppStore();
+    const metrics = useScaledProfileWidgetLinkMetrics();
+    const resolved = resolveProfileUrl(url);
+    const kind = resolved?.kind ?? "website";
+    const accent = resolved?.color ?? "#6366F1";
+    const subtitle = resolved ? formatProfileUrlLabel(resolved) : url;
+    const iconSize = compact ? metrics.iconSize - 4 : metrics.iconSize;
 
-  return (
-    <Pressable
-      onPress={() => void Linking.openURL(url)}
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: compact ? 8 : 10,
-        paddingVertical: compact ? metrics.rowPaddingV - 1 : metrics.rowPaddingV,
-        paddingHorizontal: metrics.rowPaddingH,
-        borderRadius: compact ? 8 : 10,
-        backgroundColor: `${accent}18`,
-        borderWidth: 1,
-        borderColor: `${accent}44`,
-      }}
-    >
-      <View
+    return (
+      <Pressable
+        onPress={() => void openExternalLink(app, url)}
         style={{
-          width: iconSize,
-          height: iconSize,
-          borderRadius: compact ? 6 : 8,
+          flexDirection: "row",
           alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: `${accent}22`,
+          gap: compact ? 8 : 10,
+          paddingVertical: compact ? metrics.rowPaddingV - 1 : metrics.rowPaddingV,
+          paddingHorizontal: metrics.rowPaddingH,
+          borderRadius: compact ? 8 : 10,
+          backgroundColor: `${accent}18`,
           borderWidth: 1,
-          borderColor: `${accent}55`,
-          flexShrink: 0,
+          borderColor: `${accent}44`,
         }}
       >
-        <ProfileLinkKindIcon
-          kind={kind}
-          size={compact ? metrics.iconGlyph - 2 : metrics.iconGlyph}
-          color={accent}
-        />
-      </View>
-      <Stack direction="column" style={{ flex: 1, minWidth: 0, gap: 1 }}>
-        <Typography
-          level={compact ? "body-xs" : "body-sm"}
-          weight="bold"
-          truncate="single"
+        <View
+          style={{
+            width: iconSize,
+            height: iconSize,
+            borderRadius: compact ? 6 : 8,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: `${accent}22`,
+            borderWidth: 1,
+            borderColor: `${accent}55`,
+            flexShrink: 0,
+          }}
         >
-          {label}
-        </Typography>
-        {resolved && !compact ? (
-          <Typography level="body-xs" textColor="muted" truncate="single">
-            {subtitle}
+          <ProfileLinkKindIcon
+            kind={kind}
+            size={compact ? metrics.iconGlyph - 2 : metrics.iconGlyph}
+            color={accent}
+          />
+        </View>
+        <Stack direction="column" style={{ flex: 1, minWidth: 0, gap: 1 }}>
+          <Typography
+            level={compact ? "body-xs" : "body-sm"}
+            weight="bold"
+            truncate="single"
+          >
+            {label}
           </Typography>
-        ) : null}
-      </Stack>
-      <ArrowSquareOutIcon
-        size={compact ? 12 : 14}
-        color={accent}
-        style={{ opacity: 0.75, flexShrink: 0 }}
-      />
-    </Pressable>
-  );
-};
+          {resolved && !compact ? (
+            <Typography level="body-xs" textColor="muted" truncate="single">
+              {subtitle}
+            </Typography>
+          ) : null}
+        </Stack>
+        <ArrowSquareOutIcon
+          size={compact ? 12 : 14}
+          color={accent}
+          style={{ opacity: 0.75, flexShrink: 0 }}
+        />
+      </Pressable>
+    );
+  },
+);
 
 interface Props {
   block: MobileProfileLinksBlock;

@@ -5,7 +5,7 @@ import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import type { User } from "@stores/objects/User";
-import { Box, ButtonGroup, Divider, Sheet, Typography } from "@mutualzz/ui-native";
+import { Box, ButtonGroup, Divider, Sheet, Slider, Switch, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import {
   ChatCircleIcon,
@@ -19,6 +19,7 @@ import {
   XCircleIcon,
 } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 
@@ -47,6 +48,13 @@ export const UserActionSheet = observer(
     const { navigate } = useAppNavigation();
     const { openSheet } = useSheet();
     const isViewerStaff = app.account?.isStaff ?? false;
+    const isSelf = app.account?.id === user.id;
+    const cannotDm = user.viewerCanDm === false;
+
+    useEffect(() => {
+      if (isSelf) return;
+      void app.users.resolve(user.id);
+    }, [app.users, isSelf, user.id]);
 
     const {
       isFriend,
@@ -67,6 +75,13 @@ export const UserActionSheet = observer(
         ? app.channels.getDMChannel(app.account.id, user.id)
         : null;
     const readState = dmChannel ? app.readStates.get(dmChannel.id) : null;
+
+    const voiceState = app.voiceStates.get(user.id);
+    const inSameVoiceChannel =
+      Boolean(voiceState?.channelId) &&
+      voiceState?.channelId === app.voice.currentChannelId;
+    const userVoiceVolume = app.voice.getUserVoiceVolume(user.id);
+    const userVoiceMuted = app.voice.isUserVoiceMuted(user.id);
 
     const leaveTo = (action: () => void) => {
       onClose();
@@ -172,6 +187,21 @@ export const UserActionSheet = observer(
                   </Button>
                 )}
 
+                {readState && (
+                  <Button
+                    fullWidth
+                    padding={12}
+                    onPress={() => {
+                      void readState.setMuted(!readState.isMuted);
+                      onClose();
+                    }}
+                  >
+                    {readState.isMuted
+                      ? t("contextMenu.unmuteNotifications")
+                      : t("contextMenu.muteNotifications")}
+                  </Button>
+                )}
+
                 <Button
                   fullWidth
                   padding={12}
@@ -189,7 +219,7 @@ export const UserActionSheet = observer(
                       startDecorator={
                         <ChatCircleIcon size={20} weight="fill" />
                       }
-                      disabled={openingDm || iBlockedThem}
+                      disabled={openingDm || iBlockedThem || cannotDm}
                       onPress={() => openDm()}
                     >
                       {t("contextMenu.message")}
@@ -207,6 +237,58 @@ export const UserActionSheet = observer(
                       {t("contextMenu.closeDm")}
                     </Button>
                   ))}
+
+                {!hideMessage && inSameVoiceChannel && (
+                  <>
+                    <Divider lineColor="muted" />
+                    <Box style={{ gap: 8, paddingHorizontal: 4 }}>
+                      <Box
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <Typography level="body-sm">
+                          {t("voice.controls.muteUser")}
+                        </Typography>
+                        <Switch
+                          checked={userVoiceMuted}
+                          onChange={() =>
+                            app.voice.toggleUserVoiceMuted(user.id)
+                          }
+                        />
+                      </Box>
+                      <Box style={{ gap: 6 }}>
+                        <Box
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <Typography level="body-sm">
+                            {t("voice.controls.userVolume")}
+                          </Typography>
+                          <Typography level="body-xs" textColor="muted">
+                            {userVoiceVolume}%
+                          </Typography>
+                        </Box>
+                        <Slider
+                          min={0}
+                          max={200}
+                          value={userVoiceVolume}
+                          disabled={userVoiceMuted}
+                          onChange={(value) =>
+                            app.voice.setUserVoiceVolume(
+                              user.id,
+                              Array.isArray(value) ? (value[0] ?? 0) : value,
+                            )
+                          }
+                        />
+                      </Box>
+                    </Box>
+                  </>
+                )}
 
                 {!isFriend && !isIncomingRequest && !isOutgoingRequest && (
                   <Button

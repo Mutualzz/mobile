@@ -6,7 +6,7 @@ import { Stack, Typography, useTheme } from "@mutualzz/ui-native";
 import {
   formatActivityPrimary,
   formatActivitySecondary,
-} from "@utils/activityDisplay";
+} from "@mutualzz/client";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";

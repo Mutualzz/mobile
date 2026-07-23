@@ -9,7 +9,9 @@ import type {
 import { QueryClient } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { secureStorageAdapter } from "@utils/secureStorageAdapter";
-import { makeAutoObservable } from "mobx";
+import { applyChatFontScale } from "@utils/chatFontScale";
+import { applyUiDensity } from "@mutualzz/ui-core";
+import { makeAutoObservable, reaction } from "mobx";
 import { makePersistable } from "mobx-persist-store";
 import { AccountStore } from "./Account.store";
 import { AccountSettingsStore } from "./AccountSettings.store";
@@ -39,6 +41,7 @@ import { SoundStore } from "@stores/Sound.store";
 import type { User } from "@stores/objects/User";
 import { initRemoteGameCatalog } from "@presence/remoteGameCatalog";
 import { BridgeChatStore } from "@stores/BridgeChat.store";
+import { SpaceNotificationSettingsStore } from "@stores/SpaceNotificationSettings.store";
 import { startWidgetSnapshotSync } from "@stores/WidgetSnapshot.sync";
 
 export class AppStore {
@@ -66,6 +69,7 @@ export class AppStore {
   users = new UserStore(this);
   expressions = new ExpressionsStore(this);
   readStates = new ReadStateStore(this);
+  spaceNotifications = new SpaceNotificationSettingsStore(this);
   relationships = new RelationshipStore(this);
   posts = new PostStore(this);
   profiles = new ProfileStore(this);
@@ -114,6 +118,18 @@ export class AppStore {
       properties: ["memberListVisible", "dontShowLinkWarning"],
       storage: AsyncStorage,
     });
+
+    reaction(
+      () => this.settings?.extendedSettings.chatFontScale ?? 1,
+      (scale) => applyChatFontScale(scale),
+      { fireImmediately: true },
+    );
+
+    reaction(
+      () => this.settings?.extendedSettings.uiDensity ?? "default",
+      (uiDensity) => applyUiDensity(uiDensity),
+      { fireImmediately: true },
+    );
 
     void initRemoteGameCatalog();
     startWidgetSnapshotSync(this);
@@ -167,6 +183,10 @@ export class AppStore {
     this.memberListVisible = !this.memberListVisible;
   }
 
+  setMemberListVisible(visible: boolean) {
+    this.memberListVisible = visible;
+  }
+
   setMode(mode: AppMode) {
     this.mode = mode;
   }
@@ -215,11 +235,16 @@ export class AppStore {
       this.account = new AccountStore(user);
     }
     if (settings) {
+      const isInitialSettings = !this.settings;
       const pending = this.settings?.getPendingOverrides();
       this.settings?.dispose();
       const next = new AccountSettingsStore(this, settings);
       if (pending) next.applyLocalOverrides(pending);
       this.settings = next;
+      this.replyMention = next.extendedSettings.replyWithMention;
+      if (isInitialSettings) {
+        this.memberListVisible = next.extendedSettings.defaultMemberListVisible;
+      }
     }
   }
 
@@ -269,10 +294,15 @@ export class AppStore {
     this.account = null;
     if (this.settings) this.settings.dispose();
     this.settings = null;
+
+    applyChatFontScale(1);
+    applyUiDensity("default");
+
     this.rest.setToken(null);
     this.themes.reset();
     this.expressions.clear();
     this.readStates.clear();
+    this.spaceNotifications.clear();
     this.relationships.clear();
     this.presence.clear();
     this.customStatus.clear();

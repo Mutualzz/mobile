@@ -23,7 +23,7 @@ import {
   applyReactionRemoveEmoji,
   reactionEmojiToBody,
   reactionEmojisMatch,
-} from "@utils/reactions";
+} from "@mutualzz/client";
 
 export type MessageLike = Message | QueuedMessage;
 export type MessageLikeData = APIMessage | QueuedMessageData;

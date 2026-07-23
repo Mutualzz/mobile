@@ -1,5 +1,6 @@
 import type { APIRole } from "@mutualzz/types";
-import { Box, Divider, Input, Switch, Typography } from "@mutualzz/ui-native";
+import { SettingsToggleRow } from "@components/UserSettings/SettingsField";
+import { Box, Divider, Input, Typography } from "@mutualzz/ui-native";
 import { useTranslation } from "react-i18next";
 
 export type RoleEditable = Pick<
@@ -52,50 +53,24 @@ export const SpaceRoleEditDisplay = ({ changes, setChanges }: Props) => {
 
             <Divider lineColor="muted" style={{ opacity: 0.35 }} />
 
-            <Box
-                style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 12,
-                }}
-            >
-                <Typography level="body-sm" style={{ flex: 1 }}>
-                    {t("roles.display.hoist")}
-                </Typography>
-                <Switch
-                    checked={!!changes.hoist}
-                    onChange={(hoist) =>
-                        setChanges((prev) => ({ ...prev, hoist }))
-                    }
-                />
-            </Box>
+            <SettingsToggleRow
+                title={t("roles.display.hoist")}
+                checked={!!changes.hoist}
+                onChange={(hoist) =>
+                    setChanges((prev) => ({ ...prev, hoist }))
+                }
+            />
 
             <Divider lineColor="muted" style={{ opacity: 0.35 }} />
 
-            <Box
-                style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 12,
-                }}
-            >
-                <Box style={{ flex: 1, gap: 4 }}>
-                    <Typography level="body-sm">
-                        {t("roles.display.mentionable")}
-                    </Typography>
-                    <Typography level="body-xs" textColor="muted">
-                        {t("roles.display.mentionableHintShort")}
-                    </Typography>
-                </Box>
-                <Switch
-                    checked={!!changes.mentionable}
-                    onChange={(mentionable) =>
-                        setChanges((prev) => ({ ...prev, mentionable }))
-                    }
-                />
-            </Box>
+            <SettingsToggleRow
+                title={t("roles.display.mentionable")}
+                description={t("roles.display.mentionableHintShort")}
+                checked={!!changes.mentionable}
+                onChange={(mentionable) =>
+                    setChanges((prev) => ({ ...prev, mentionable }))
+                }
+            />
         </Box>
     );
 };

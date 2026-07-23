@@ -12,7 +12,7 @@ import {
   formatActivityElapsedClock,
   formatActivityPrimary,
   formatActivitySecondary,
-} from "@utils/activityDisplay";
+} from "@mutualzz/client";
 
 function activityKey(activities: PresenceActivity[]) {
   return activities.map((a) => `${a.type}:${a.name}`).join("|");

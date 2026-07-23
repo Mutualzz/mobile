@@ -444,41 +444,43 @@ export class Channel {
           content: string;
           nonce: string;
           expressionIds?: string[];
+          repliedToId?: string;
+          mentionReply?: boolean;
           sharedPostId?: string;
           codedLinks?: Array<{ type: 0 | 1; code: string }>;
         }
       | FormData,
     msg?: QueuedMessage,
   ) {
-    if (data instanceof FormData)
-      return this.app.rest
-        .postFormData<APIMessage>(
-          `/channels/${this.id}/messages`,
-          data,
-          undefined,
-          undefined,
-          msg,
-        )
-        .catch((err) => {
-          this.logger.error(err);
-          throw err;
-        });
+    try {
+      const result =
+        data instanceof FormData
+          ? await this.app.rest.postFormData<APIMessage>(
+              `/channels/${this.id}/messages`,
+              data,
+              undefined,
+              undefined,
+              msg,
+            )
+          : await this.app.rest.post<
+              APIMessage,
+              {
+                content: string;
+                nonce: string;
+                expressionIds?: string[];
+                repliedToId?: string;
+                mentionReply?: boolean;
+                sharedPostId?: string;
+                codedLinks?: Array<{ type: 0 | 1; code: string }>;
+              }
+            >(`/channels/${this.id}/messages`, data);
 
-    return this.app.rest
-      .post<
-        APIMessage,
-        {
-          content: string;
-          nonce: string;
-          expressionIds?: string[];
-          sharedPostId?: string;
-          codedLinks?: Array<{ type: 0 | 1; code: string }>;
-        }
-      >(`/channels/${this.id}/messages`, data)
-      .catch((err) => {
-        this.logger.error(err);
-        throw err;
-      });
+      this.app.queue.commitSentMessage(result);
+      return result;
+    } catch (err) {
+      this.logger.error(err);
+      throw err;
+    }
   }
 
   delete(parentOnly: boolean) {

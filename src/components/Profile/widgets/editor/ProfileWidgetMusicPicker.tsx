@@ -21,7 +21,6 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   onSelect: (track: APIProfileMusicSearchTrack) => void;
-  /** Use overlay when already inside another modal/sheet. */
   presentation?: "modal" | "overlay";
 }
 
@@ -204,7 +203,6 @@ export function ProfileWidgetMusicPicker({
           </Typography>
           <IconButton
             variant="plain"
-            color="neutral"
             padding={4}
             accessibilityLabel={tCommon("close")}
             onPress={onClose}
@@ -252,7 +250,6 @@ export function ProfileWidgetMusicPicker({
       headerRight={
         <IconButton
           variant="plain"
-          color="neutral"
           padding={4}
           accessibilityLabel={tCommon("close")}
           onPress={onClose}

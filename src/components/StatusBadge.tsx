@@ -9,6 +9,7 @@ interface StatusBadgeProps {
   showInvisible?: boolean;
   inPicker?: boolean;
   elevation?: number;
+  typing?: boolean;
 }
 
 function roundPx(value: number) {
@@ -24,6 +25,8 @@ interface BadgeVisualProps {
   drawOuterRing: boolean;
   hollow: boolean;
   hollowRingColor: string;
+  typing?: boolean;
+  pillWidth?: number;
 }
 
 const BadgeVisual = observer(
@@ -36,6 +39,8 @@ const BadgeVisual = observer(
     drawOuterRing,
     hollow,
     hollowRingColor,
+    typing = false,
+    pillWidth,
   }: BadgeVisualProps) => {
     const geometryInset = drawOuterRing ? ringThickness : 0;
     const innerDiameter = Math.max(1, diameter - geometryInset * 2);
@@ -47,11 +52,14 @@ const BadgeVisual = observer(
     const idleCutoutOffset = roundPx(innerDiameter * 0.18);
 
     const invisibleRingThickness = Math.max(2, roundPx(innerDiameter * 0.18));
+    const dotSize = Math.max(3, roundPx(innerDiameter * 0.28));
+    const dotGap = Math.max(2, roundPx(innerDiameter * 0.2));
+    const width = typing && pillWidth ? pillWidth : diameter;
 
     return (
       <Box
         style={{
-          width: diameter,
+          width,
           height: diameter,
           borderRadius: 9999,
           backgroundColor: fillColor,
@@ -60,45 +68,63 @@ const BadgeVisual = observer(
             : null),
           alignItems: "center",
           justifyContent: "center",
+          flexDirection: "row",
+          gap: dotGap,
         }}
       >
-        {status === "dnd" && (
-          <Box
-            style={{
-              width: dndBarWidth,
-              height: dndBarHeight,
-              borderRadius: 9999,
-              backgroundColor: cutColor,
-            }}
-          />
-        )}
+        {typing ? (
+          [0, 1, 2].map((index) => (
+            <Box
+              key={index}
+              style={{
+                width: dotSize,
+                height: dotSize,
+                borderRadius: 9999,
+                backgroundColor: "#ffffff",
+              }}
+            />
+          ))
+        ) : (
+          <>
+            {status === "dnd" && (
+              <Box
+                style={{
+                  width: dndBarWidth,
+                  height: dndBarHeight,
+                  borderRadius: 9999,
+                  backgroundColor: cutColor,
+                }}
+              />
+            )}
 
-        {status === "idle" && (
-          <Box
-            style={{
-              width: idleCutoutDiameter,
-              height: idleCutoutDiameter,
-              borderRadius: 9999,
-              backgroundColor: cutColor,
-              transform: [
-                { translateX: -idleCutoutOffset },
-                { translateY: -idleCutoutOffset },
-              ],
-            }}
-          />
-        )}
+            {status === "idle" && (
+              <Box
+                style={{
+                  width: idleCutoutDiameter,
+                  height: idleCutoutDiameter,
+                  borderRadius: 9999,
+                  backgroundColor: cutColor,
+                  transform: [
+                    { translateX: -idleCutoutOffset },
+                    { translateY: -idleCutoutOffset },
+                  ],
+                }}
+              />
+            )}
 
-        {hollow && (
-          <Box
-            style={{
-              width: innerDiameter,
-              height: innerDiameter,
-              borderRadius: 9999,
-              borderWidth: invisibleRingThickness,
-              borderColor: hollowRingColor,
-              backgroundColor: "transparent",
-            }}
-          />
+            {hollow && (
+              <Box
+                style={{
+                  width: innerDiameter,
+                  height: innerDiameter,
+                  borderRadius: 9999,
+                  borderWidth: invisibleRingThickness,
+                  borderColor: hollowRingColor,
+                  backgroundColor: "transparent",
+                }}
+              />
+            )}
+          </>
         )}
       </Box>
     );
@@ -112,6 +138,7 @@ export const StatusBadge = observer(
     showInvisible = false,
     inPicker = false,
     elevation = 1,
+    typing = false,
   }: StatusBadgeProps) => {
     const { theme } = useTheme();
 
@@ -168,7 +195,8 @@ export const StatusBadge = observer(
 
     const diameter = roundPx(size * 0.3);
     const ringThickness = roundPx(diameter * 0.16);
-    const xNudge = roundPx(diameter * 0.65);
+    const pillWidth = roundPx(diameter * 2.1);
+    const xNudge = roundPx((typing ? pillWidth : diameter) * 0.65);
     const yNudge = roundPx(diameter * 0.45);
 
     return (
@@ -178,7 +206,7 @@ export const StatusBadge = observer(
           bottom: 0,
           right: 0,
           transform: [
-            { translateX: diameter / 2 - xNudge },
+            { translateX: (typing ? pillWidth : diameter) / 2 - xNudge },
             { translateY: diameter / 2 - yNudge },
           ],
         }}
@@ -192,6 +220,8 @@ export const StatusBadge = observer(
           drawOuterRing={true}
           hollow={hollow}
           hollowRingColor={hollowRingColor}
+          typing={typing}
+          pillWidth={pillWidth}
         />
       </Box>
     );

@@ -4,12 +4,18 @@ import type {
     Snowflake,
 } from "@mutualzz/types";
 import { HttpStatusCode } from "@mutualzz/types";
-import { makeAutoObservable, observable, type ObservableMap } from "mobx";
+import {
+    makeAutoObservable,
+    observable,
+    type ObservableMap,
+    type ObservableSet,
+} from "mobx";
 import type { AppStore } from "./App.store";
 import { UserProfile } from "./objects/UserProfile";
 
 export class ProfileStore {
     readonly profiles: ObservableMap<string, UserProfile>;
+    private readonly restrictedUserIds: ObservableSet<string> = observable.set();
     private readonly pending = new Map<string, Promise<UserProfile | undefined>>();
 
     constructor(private readonly app: AppStore) {
@@ -21,6 +27,13 @@ export class ProfileStore {
         return this.profiles.get(userId);
     }
 
+    isProfileRestricted(userId: Snowflake) {
+        const me = this.app.account?.id;
+        if (!me || userId === me) return false;
+        if (this.app.relationships.isBlocked(userId)) return true;
+        return this.restrictedUserIds.has(userId);
+    }
+
     add(profile: APIUserProfile) {
         const existing = this.profiles.get(profile.userId);
         if (existing) {
@@ -28,6 +41,7 @@ export class ProfileStore {
             return existing;
         }
 
+        this.restrictedUserIds.delete(profile.userId);
         const created = new UserProfile(profile);
         this.profiles.set(profile.userId, created);
         return created;
@@ -62,6 +76,7 @@ export class ProfileStore {
 
                 if (isNotFound) {
                     this.profiles.delete(userId);
+                    this.restrictedUserIds.add(userId);
                 }
 
                 return undefined;
@@ -122,5 +137,6 @@ export class ProfileStore {
     clear() {
         this.profiles.clear();
         this.pending.clear();
+        this.restrictedUserIds.clear();
     }
 }

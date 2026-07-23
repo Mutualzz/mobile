@@ -1,10 +1,14 @@
+import {
+  SettingsScroll,
+  SettingsSection,
+} from "@components/UserSettings/SettingsField";
 import { UserEmojisTab } from "@components/UserSettings/UserEmojisTab";
 import { UserStickersTab } from "@components/UserSettings/UserStickersTab";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, ScrollView } from "react-native";
+import { Pressable } from "react-native";
 
 type Tab = "emojis" | "stickers";
 
@@ -16,15 +20,7 @@ export const UserExpressionsSettings = observer(() => {
   const [currentTab, setCurrentTab] = useState<Tab>("emojis");
 
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{
-        padding: 16,
-        paddingBottom: 32,
-        gap: 16,
-      }}
-      keyboardShouldPersistTaps="handled"
-    >
+    <SettingsScroll>
       <Box style={{ flexDirection: "row", gap: 16 }}>
         {tabs.map((tab) => {
           const selected = currentTab === tab;
@@ -55,6 +51,6 @@ export const UserExpressionsSettings = observer(() => {
       </Box>
 
       {currentTab === "emojis" ? <UserEmojisTab /> : <UserStickersTab />}
-    </ScrollView>
+    </SettingsScroll>
   );
 });

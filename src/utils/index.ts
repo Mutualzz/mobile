@@ -1,9 +1,7 @@
-import { AppMode, type APIMessage, MessageType } from "@mutualzz/types";
 import { AppStore } from "@stores/App.store";
 import { Channel } from "@stores/objects/Channel";
 import { Theme } from "@stores/objects/Theme";
-import Snowflake from "@utils/Snowflake";
-import { useRouter } from "expo-router";
+import { createSystemMessage as createSystemMessageBase } from "@mutualzz/client";
 
 export const sortThemes = (themes: Theme[]): Theme[] => {
     const priorityOrder: string[] = ["baseDark", "baseLight"];
@@ -28,62 +26,13 @@ export const compareChannels = (a: Channel, b: Channel): number => {
     return (a.position ?? -1) - (b.position ?? -1);
 };
 
-const modeToPath = (mode: AppMode) => `/${mode}` as const;
-
-export const switchMode = (
-    app: AppStore,
-    router?: ReturnType<typeof useRouter>,
-    targetMode?: AppMode | null,
-) => {
-    if (!router) return;
-
-    const target =
-        targetMode != null
-            ? modeToPath(targetMode)
-            : app.mode === "feed"
-              ? "/spaces"
-              : app.mode === "spaces"
-                ? "/feed"
-                : app.account
-                  ? modeToPath(
-                        app.settings?.preferredMode === "feed"
-                            ? "feed"
-                            : "spaces",
-                    )
-                  : null;
-
-    if (!target) return;
-
-    router.replace(target);
-};
-
-export const createSystemMessage = async (
+export const createSystemMessage = (
     app: AppStore,
     channelId: string,
     content: string,
     flags?: bigint,
-): Promise<APIMessage | null> => {
-    const systemUser = await app.users.resolveSystem();
-    if (!systemUser) return null;
-
-    return {
-        author: systemUser.toJSON(),
-        authorId: systemUser.id,
-        channelId,
-        embeds: [],
-        content,
-        edited: false,
-        id: Snowflake.generate(),
-        nonce: null,
-        spaceId: null,
-        type: MessageType.System,
-        flags: flags || 0n,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    };
-};
+) => createSystemMessageBase(app.users as Parameters<typeof createSystemMessageBase>[0], channelId, content, flags);
 
 export * from "./emojis";
-export * from "./i18n";
-export * from "./ObservableOrderedSet";
+export { calendarStrings, ObservableOrderedSet } from "@mutualzz/client";
 export * from "./navigation";

@@ -12,7 +12,7 @@ import { observer } from "mobx-react-lite";
 import { PulseIcon } from "phosphor-react-native";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
-import { getCustomActivity, getNonCustomActivities } from "@utils/customStatus";
+import { getCustomActivity, getNonCustomActivities } from "@mutualzz/client";
 
 interface Props {
   block: MobileProfileActivityBlock;

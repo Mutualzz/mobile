@@ -17,22 +17,3 @@ export interface PermissionGroupDef {
 export { spacePermissionGroups };
 
 export type { SharedPermissionGroupDef };
-
-export function filterPermissionGroups(
-  groups: PermissionGroupDef[],
-  query: string,
-) {
-  const q = query.trim().toLowerCase();
-  if (!q) return groups;
-
-  return groups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => {
-        if (item.label.toLowerCase().includes(q)) return true;
-        if (item.description?.toLowerCase().includes(q)) return true;
-        return false;
-      }),
-    }))
-    .filter((group) => group.items.length > 0);
-}

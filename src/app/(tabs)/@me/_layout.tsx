@@ -1,10 +1,11 @@
-import { BridgeChatView } from "@components/Bridge/BridgeChatView";
 import { DMContentPane } from "@components/DMChannel/DMContentPane";
 import { MeDrawerContent } from "@components/DMChannel/MeDrawerContent";
 import { SwipeableDrawer } from "@components/Navigation/SwipeableDrawer";
+import { SpacesSidebar } from "@components/Space/SpacesSidebar";
 import { useAppNavigation } from "@hooks/useAppNavigation";
+import { useBridgeListSync } from "@hooks/useBridgeListSync";
 import { useAppStore } from "@hooks/useStores";
-import { hasOpenSheets } from "@mutualzz/ui-native";
+import { Box, hasOpenSheets } from "@mutualzz/ui-native";
 import { useFocusEffect, useLocalSearchParams, usePathname } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef } from "react";
@@ -16,17 +17,16 @@ const MeLayout = () => {
   const app = useAppStore();
   const { navigate } = useAppNavigation();
   const pathname = usePathname();
-  const { channelId, bridgeId } = useLocalSearchParams<{
+  const bridgesQuery = useBridgeListSync();
+  const { channelId } = useLocalSearchParams<{
     channelId?: string;
-    bridgeId?: string;
   }>();
   const lastSyncedChannelIdRef = useRef<string | undefined>(undefined);
   const resolvingChannelIdRef = useRef<string | undefined>(undefined);
   const prevDrawerOpenRef = useRef(app.dmDrawerOpen);
   const channelFromRoute = channelId ? app.channels.get(channelId) : undefined;
-  const onBridgeRoute =
-    pathname.includes("/bridges/") || Boolean(bridgeId);
-  const onDetailRoute = Boolean(channelId) || onBridgeRoute;
+  const onBridgeRoute = pathname.includes("/@me/bridges/");
+  const onDetailRoute = Boolean(channelId);
 
   useEffect(() => {
     return () => {
@@ -34,16 +34,32 @@ const MeLayout = () => {
     };
   }, [app]);
 
-  const syncDM = useCallback(() => {
-    if (app.mode !== "@me") app.setMode("@me");
+  useEffect(() => {
+    if (!onBridgeRoute) return;
 
-    if (onBridgeRoute) {
-      lastSyncedChannelIdRef.current = undefined;
-      resolvingChannelIdRef.current = undefined;
-      app.spaces.unsetActive();
-      if (!app.dmDrawerOpen) app.setDMDrawerOpen(false);
+    const bridgeId = pathname.match(/\/@me\/bridges\/([^/]+)/)?.[1];
+    if (!bridgeId) {
+      const space = app.spaces.mostRecentSpace ?? app.spaces.all[0];
+      if (space) {
+        app.spaces.setSidebarTab(space.id, "bridges");
+        navigate(`/spaces/${space.id}`, { replace: true });
+      }
       return;
     }
+
+    const spaceId =
+      app.bridgeChat.spaceIdByBridge.get(bridgeId) ??
+      bridgesQuery.data?.find((bridge) => bridge.id === bridgeId)?.spaceId;
+
+    if (!spaceId) return;
+
+    app.spaces.setSidebarTab(spaceId, "bridges");
+    navigate(`/spaces/bridges/${bridgeId}`, { replace: true });
+  }, [onBridgeRoute, pathname, app, navigate, bridgesQuery.data]);
+
+  const syncDM = useCallback(() => {
+    if (onBridgeRoute) return;
+    if (app.mode !== "@me") app.setMode("@me");
 
     if (channelId) {
       if (lastSyncedChannelIdRef.current === channelId) return;
@@ -97,7 +113,7 @@ const MeLayout = () => {
   }, [app.dmDrawerOpen, onDetailRoute, navigate]);
 
   useEffect(() => {
-    if (channelId || onBridgeRoute) {
+    if (channelId) {
       app.setDMDrawerOpen(false);
     }
   }, []);
@@ -129,13 +145,21 @@ const MeLayout = () => {
     <SwipeableDrawer
       open={app.dmDrawerOpen}
       onOpenChange={(open) => app.setDMDrawerOpen(open)}
-      drawerContent={<MeDrawerContent />}
+      drawerContent={
+        <Box
+          style={{
+            flex: 1,
+            flexDirection: "row",
+          }}
+        >
+          <SpacesSidebar />
+          <Box style={{ flex: 1, minWidth: 0 }}>
+            <MeDrawerContent />
+          </Box>
+        </Box>
+      }
     >
-      {bridgeId ? (
-        <BridgeChatView bridgeId={bridgeId} />
-      ) : (
-        <DMContentPane />
-      )}
+      <DMContentPane />
     </SwipeableDrawer>
   );
 };

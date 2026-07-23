@@ -64,7 +64,6 @@ export function ProfileWidgetGifPicker({
           </Typography>
           <IconButton
             variant="plain"
-            color="neutral"
             padding={4}
             accessibilityLabel={tCommon("close")}
             onPress={onClose}
@@ -90,7 +89,6 @@ export function ProfileWidgetGifPicker({
       headerRight={
         <IconButton
           variant="plain"
-          color="neutral"
           padding={4}
           accessibilityLabel={tCommon("close")}
           onPress={onClose}

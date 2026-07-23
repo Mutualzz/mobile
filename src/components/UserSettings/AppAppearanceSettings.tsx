@@ -1,4 +1,18 @@
 import { ThemeCreatorSheet } from "@components/UserSettings/ThemeCreatorSheet";
+import { AppAppearanceExtrasSettings } from "@components/UserSettings/AppAppearanceExtrasSettings";
+import { AdaptiveIconSwatch } from "@components/UserSettings/AdaptiveIconSwatch";
+import {
+  SectionHeader,
+  ThemeGrid,
+  ThemeSwatch,
+} from "@components/Theme/ThemePicker";
+import {
+  SettingsScroll,
+  SettingsSection,
+  SettingsSelectRow,
+  SettingsToggleRow,
+} from "@components/UserSettings/SettingsField";
+import { useSettingsOptionSheet } from "@hooks/useSettingsOptionSheet";
 import { Paper } from "@components/Paper";
 import { IconButton } from "@components/IconButton";
 import { useSheet } from "@hooks/useSheet";
@@ -9,14 +23,13 @@ import {
   supportedLocales,
 } from "@mutualzz/i18n";
 import {
-  CaretRightIcon,
   CheckIcon,
   PaletteIcon,
   RepeatIcon,
   TrashIcon,
 } from "phosphor-react-native";
-import { baseDarkTheme, baseLightTheme } from "@mutualzz/ui-core";
-import { Box, Divider, Switch, Typography, useTheme } from "@mutualzz/ui-native";
+import { baseDarkTheme, baseLightTheme, type ColorLike } from "@mutualzz/ui-core";
+import { Box, Divider, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Theme as StoreTheme } from "@stores/objects/Theme";
 import { Theme } from "@stores/objects/Theme";
 import { getPreferredLocale, setPreferredLocale } from "../../i18n";
@@ -29,108 +42,10 @@ import { FULL_SHEET_PROPS } from "@utils/sheet";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  useColorScheme,
-  Image,
-  Pressable,
-  ScrollView,
-  View,
-} from "react-native";
+import { useColorScheme, Pressable, View } from "react-native";
 
-const SWATCH_SIZE = 64;
 const LANGUAGE_PICKER_SHEET_ID = "language-picker";
-
-const adaptiveIconMark = require("../../../assets/adaptive-icon.png");
-
-function LocalePickerContent({
-  preferredLocale,
-  onSelect,
-}: {
-  preferredLocale: AppLocale | "system";
-  onSelect: (locale: AppLocale | "system") => void;
-}) {
-  const { t: tCommon } = useTranslation("common");
-  const { theme } = useTheme();
-  const app = useAppStore();
-  const { closeSheet } = useSheet();
-
-  const options: { value: AppLocale | "system"; label: string }[] = [
-    { value: "system", label: tCommon("language.systemDefault") },
-    ...supportedLocales.map((locale) => ({
-      value: locale,
-      label: localeNativeNames[locale],
-    })),
-  ];
-
-  return (
-    <Paper
-      elevation={app.settings?.preferEmbossed ? 4 : 2}
-      style={{
-        width: "100%",
-        alignSelf: "stretch",
-        borderRadius: 16,
-        padding: 8,
-        gap: 2,
-      }}
-    >
-      <Typography
-        level="body-md"
-        weight={700}
-        style={{ paddingHorizontal: 12, paddingVertical: 8 }}
-      >
-        {tCommon("language.title")}
-      </Typography>
-
-      <ScrollView
-        style={{ maxHeight: 420 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        {options.map((option) => {
-          const active = preferredLocale === option.value;
-
-          return (
-            <Pressable
-              key={option.value}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              onPress={() => {
-                onSelect(option.value);
-                closeSheet(LANGUAGE_PICKER_SHEET_ID);
-              }}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                paddingVertical: 10,
-                paddingHorizontal: 12,
-                borderRadius: 8,
-                backgroundColor: active
-                  ? `${theme.colors.primary}18`
-                  : undefined,
-              }}
-            >
-              <Typography
-                level="body-sm"
-                weight={active ? 600 : undefined}
-                style={{ flex: 1 }}
-                truncate="single"
-              >
-                {option.label}
-              </Typography>
-              {active ? (
-                <CheckIcon
-                  size={16}
-                  weight="bold"
-                  color={theme.colors.success}
-                />
-              ) : null}
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-    </Paper>
-  );
-}
+const SWATCH_SIZE = 64;
 
 const SelectionBadge = ({
   badgeIcon = "check",
@@ -165,129 +80,6 @@ const SelectionBadge = ({
   );
 };
 
-const ThemeSwatchFill = ({ stops }: { stops: ThemeSwatchStop[] }) => (
-  <View
-    style={{
-      flex: 1,
-      flexDirection: "row",
-      width: "100%",
-      height: "100%",
-    }}
-  >
-    {stops.map((stop, index) => (
-      <View
-        key={`${stop.color}-${index}`}
-        style={{
-          flex: stop.widthPercent,
-          backgroundColor: stop.color,
-        }}
-      />
-    ))}
-  </View>
-);
-
-export const ThemeSwatch = ({
-  stops,
-  selected,
-  onPress,
-  badgeIcon = "check",
-  alwaysShowBadge = false,
-  onDelete,
-  deleting = false,
-}: {
-  stops: ThemeSwatchStop[];
-  selected: boolean;
-  onPress: () => void;
-  badgeIcon?: "check" | "sync";
-  alwaysShowBadge?: boolean;
-  onDelete?: () => void;
-  deleting?: boolean;
-}) => {
-  const { theme } = useTheme();
-  const swatchSize = useScaledThemeSwatchSize(SWATCH_SIZE);
-  const showBadge = alwaysShowBadge || selected;
-  const outline = 3;
-
-  return (
-    <Pressable onPress={onPress} style={{ paddingVertical: 4 }}>
-      <View
-        style={{
-          position: "relative",
-          width: swatchSize,
-          height: swatchSize,
-        }}
-      >
-        {selected && (
-          <View
-            style={{
-              position: "absolute",
-              top: -outline,
-              left: -outline,
-              width: swatchSize + outline * 2,
-              height: swatchSize + outline * 2,
-              borderRadius: (swatchSize + outline * 2) / 2,
-              borderWidth: outline,
-              borderColor: theme.colors.primary,
-            }}
-          />
-        )}
-        {onDelete && selected && (
-          <IconButton
-            padding={4}
-            size={12}
-            color="danger"
-            disabled={deleting}
-            onPress={onDelete}
-            style={{
-              position: "absolute",
-              bottom: -2,
-              right: -2,
-              zIndex: 2,
-            }}
-          >
-            <TrashIcon size={12} weight="fill" />
-          </IconButton>
-        )}
-        <View
-          style={{
-            width: swatchSize,
-            height: swatchSize,
-            borderRadius: swatchSize / 2,
-            overflow: "hidden",
-            borderWidth: outline,
-            borderColor: theme.colors.primary,
-          }}
-        >
-          <ThemeSwatchFill stops={stops} />
-        </View>
-        {showBadge && <SelectionBadge badgeIcon={badgeIcon} />}
-      </View>
-    </Pressable>
-  );
-};
-
-const AdaptiveIconSwatch = ({ primaryColor }: { primaryColor: string }) => {
-  const swatchSize = useScaledThemeSwatchSize(SWATCH_SIZE);
-
-  return (
-    <View
-      style={{
-        width: swatchSize,
-        height: swatchSize,
-        borderRadius: swatchSize / 2,
-        overflow: "hidden",
-        backgroundColor: primaryColor,
-      }}
-    >
-      <Image
-        source={adaptiveIconMark}
-        style={{ width: swatchSize, height: swatchSize }}
-        resizeMode="cover"
-      />
-    </View>
-  );
-};
-
 const IconSwatch = ({
   primaryColor,
   selected,
@@ -295,7 +87,7 @@ const IconSwatch = ({
   badgeIcon = "check",
   alwaysShowBadge = false,
 }: {
-  primaryColor: string;
+  primaryColor: ColorLike;
   selected: boolean;
   onPress: () => void;
   badgeIcon?: "check" | "sync";
@@ -336,51 +128,6 @@ const IconSwatch = ({
   );
 };
 
-export const ThemeGrid = ({
-  themes,
-  isSelected,
-  onSelect,
-  onDelete,
-  deletingId,
-}: {
-  themes: StoreTheme[];
-  isSelected: (theme: StoreTheme) => boolean;
-  onSelect: (theme: StoreTheme) => void;
-  onDelete?: (theme: StoreTheme) => void;
-  deletingId?: string | null;
-}) => (
-  <Box
-    style={{
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 10,
-      paddingVertical: 8,
-    }}
-  >
-    {themes.map((theme) => (
-      <ThemeSwatch
-        key={theme.id}
-        stops={getThemeSwatchStops(
-          theme.colors.background,
-          theme.colors.primary,
-        )}
-        selected={isSelected(theme)}
-        onPress={() => onSelect(theme)}
-        onDelete={onDelete ? () => onDelete(theme) : undefined}
-        deleting={deletingId === theme.id}
-      />
-    ))}
-  </Box>
-);
-
-export const SectionHeader = ({ title }: { title: string }) => (
-  <Divider lineColor="muted" style={{ marginTop: 8, marginBottom: 4 }}>
-    <Typography level="body-sm" weight={700}>
-      {title}
-    </Typography>
-  </Divider>
-);
-
 export const AppAppearanceSettings = observer(() => {
   const { t } = useTranslation("settings");
   const { t: tCommon } = useTranslation("common");
@@ -389,6 +136,7 @@ export const AppAppearanceSettings = observer(() => {
   const { theme: currentTheme, changeTheme, type: currentType } = useTheme();
   const prefersDark = useColorScheme() === "dark";
   const { openSheet, closeSheet } = useSheet();
+  const openPicker = useSettingsOptionSheet();
   const [deletingThemeId, setDeletingThemeId] = useState<string | null>(null);
   const [preferredLocale, setPreferredLocaleState] = useState<
     AppLocale | "system"
@@ -410,14 +158,23 @@ export const AppAppearanceSettings = observer(() => {
       ? tCommon("language.systemDefault")
       : localeNativeNames[preferredLocale];
 
+  const languageOptions: { value: string; label: string }[] = [
+    { value: "system", label: tCommon("language.systemDefault") },
+    ...supportedLocales.map((locale) => ({
+      value: locale,
+      label: localeNativeNames[locale],
+    })),
+  ];
+
   const openLanguagePicker = () => {
-    openSheet(
+    openPicker(
       LANGUAGE_PICKER_SHEET_ID,
-      <LocalePickerContent
-        preferredLocale={preferredLocale}
-        onSelect={selectLocale}
-      />,
+      tCommon("language.title"),
+      languageOptions,
+      preferredLocale,
+      (value) => selectLocale(value as AppLocale | "system"),
       { layout: "center", showCloseButton: false },
+      true,
     );
   };
 
@@ -515,55 +272,17 @@ export const AppAppearanceSettings = observer(() => {
   );
 
   return (
-    <>
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{
-          padding: 16,
-          paddingBottom: 32,
-          gap: 16,
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Paper
-          style={{
-            padding: 16,
-            borderRadius: 12,
-            gap: 12,
-            minWidth: 0,
-          }}
-          elevation={app.settings?.preferEmbossed ? 2 : 0}
+    <SettingsScroll>
+        <SettingsSection
+          title={tCommon("language.title")}
+          description={tCommon("language.description")}
         >
-          <Typography level="body-md" weight={700}>
-            {tCommon("language.title")}
-          </Typography>
-          <Typography level="body-xs" textColor="muted">
-            {tCommon("language.description")}
-          </Typography>
-          <Pressable
-            accessibilityRole="button"
+          <SettingsSelectRow
+            title={tCommon("language.title")}
+            value={selectedLocaleLabel}
             onPress={openLanguagePicker}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-              paddingVertical: 10,
-              paddingHorizontal: 12,
-              borderRadius: 10,
-              backgroundColor: "rgba(127,127,127,0.12)",
-            }}
-          >
-            <Typography level="body-sm" style={{ flex: 1 }} truncate="single">
-              {selectedLocaleLabel}
-            </Typography>
-            <CaretRightIcon
-              size={16}
-              color={currentTheme.typography.colors.muted}
-              weight="bold"
-            />
-          </Pressable>
-        </Paper>
+          />
+        </SettingsSection>
 
         <Paper
           style={{
@@ -599,7 +318,6 @@ export const AppAppearanceSettings = observer(() => {
                 padding={6}
                 size={16}
                 variant="soft"
-                color="neutral"
                 onPress={openThemeCreator}
               >
                 <PaletteIcon weight="fill" />
@@ -607,28 +325,13 @@ export const AppAppearanceSettings = observer(() => {
             </Box>
           </Box>
 
-          <Pressable
-            accessibilityRole="switch"
-            accessibilityState={{ checked: settings.preferEmbossed }}
-            onPress={() => {
+          <SettingsToggleRow
+            title={t("appearance.preferEmbossedShort")}
+            checked={settings.preferEmbossed}
+            onChange={() => {
               settings.togglePreferEmbossed();
             }}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-              minWidth: 0,
-            }}
-          >
-            <Typography level="body-xs" textColor="muted" style={{ flex: 1 }}>
-              {t("appearance.preferEmbossedShort")}
-            </Typography>
-            <Switch
-              checked={settings.preferEmbossed}
-              pointerEvents="none"
-            />
-          </Pressable>
+          />
 
           <SectionHeader title={t("appearance.defaultThemes")} />
           <Box
@@ -758,7 +461,54 @@ export const AppAppearanceSettings = observer(() => {
             </>
           )}
         </Paper>
-      </ScrollView>
-    </>
+
+        <SettingsSection
+          title={t("appearance.startupMode")}
+          description={t("appearance.startupModeDescription")}
+        >
+          <SettingsSelectRow
+            title={t("appearance.startupMode")}
+            value={
+              settings.preferredMode === "feed"
+                ? t("appearance.startupModeFeed")
+                : t("appearance.startupModeSpaces")
+            }
+            onPress={() =>
+              openPicker(
+                "appearance-startup-mode",
+                t("appearance.startupMode"),
+                [
+                  {
+                    value: "spaces",
+                    label: t("appearance.startupModeSpaces"),
+                  },
+                  {
+                    value: "feed",
+                    label: t("appearance.startupModeFeed"),
+                  },
+                ],
+                settings.preferredMode === "feed" ? "feed" : "spaces",
+                (value) => {
+                  settings.setPreferredMode(value as "spaces" | "feed");
+                  void settings.sync();
+                },
+              )
+            }
+          />
+        </SettingsSection>
+
+        <SettingsSection title={t("appearance.convertEmoticons")}>
+          <SettingsToggleRow
+            title={t("appearance.convertEmoticons")}
+            description={t("appearance.convertEmoticonsDescription")}
+            checked={settings.extendedSettings.convertEmoticons}
+            onChange={(checked) => {
+              settings.patchExtendedSettings({ convertEmoticons: checked });
+              void settings.sync();
+            }}
+          />
+        </SettingsSection>
+        <AppAppearanceExtrasSettings />
+    </SettingsScroll>
   );
 });

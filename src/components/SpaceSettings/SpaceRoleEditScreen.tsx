@@ -15,7 +15,7 @@ import type { APIRole } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Role } from "@stores/objects/Role";
 import type { Space } from "@stores/objects/Space";
-import { normalizeJSON } from "@utils/JSON";
+import { normalizeJSON } from "@mutualzz/client";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";

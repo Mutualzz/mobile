@@ -1,17 +1,23 @@
+import { UnicodeEmoji } from "@components/emojis/UnicodeEmoji";
 import { useAppStore } from "@hooks/useStores";
 import type { PresenceActivityEmoji } from "@mutualzz/types";
-import { getEmoji } from "@utils/emojis";
-import { TWEMOJI_URL } from "@utils/urls";
 import { observer } from "mobx-react-lite";
-import { Image, Text } from "react-native";
+import { useEffect } from "react";
+import { Image } from "react-native";
 
 interface Props {
   emoji: PresenceActivityEmoji;
   size?: number;
 }
 
-export const CustomStatusEmoji = observer(({ emoji, size = 18 }: Props) => {
+export const CustomStatusEmoji = observer(({ emoji, size = 22 }: Props) => {
   const app = useAppStore();
+
+  useEffect(() => {
+    if (emoji.id && !app.expressions.get(emoji.id)) {
+      void app.expressions.resolve(emoji.id);
+    }
+  }, [app.expressions, emoji.id]);
 
   if (emoji.id) {
     const expression = app.expressions.get(emoji.id);
@@ -20,28 +26,13 @@ export const CustomStatusEmoji = observer(({ emoji, size = 18 }: Props) => {
     return (
       <Image
         source={{ uri: expression.url }}
-        style={{ width: size, height: size, flexShrink: 0 }}
+        style={{ width: size, height: size }}
         resizeMode="contain"
       />
     );
   }
 
-  const standard = getEmoji(emoji.name);
-  if (standard?.hexcode) {
-    return (
-      <Image
-        source={{
-          uri: `${TWEMOJI_URL}/${standard.hexcode.toLowerCase()}.svg`,
-        }}
-        style={{ width: size, height: size, flexShrink: 0 }}
-        resizeMode="contain"
-      />
-    );
-  }
+  if (!emoji.name?.trim()) return null;
 
-  return (
-    <Text style={{ fontSize: size, lineHeight: size, flexShrink: 0 }}>
-      {emoji.name}
-    </Text>
-  );
+  return <UnicodeEmoji value={emoji.name} size={size} />;
 });

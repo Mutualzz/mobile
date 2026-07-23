@@ -63,7 +63,6 @@ export function ProfileWidgetStickerPicker({
           </Typography>
           <IconButton
             variant="plain"
-            color="neutral"
             padding={4}
             accessibilityLabel={tCommon("close")}
             onPress={onClose}
@@ -93,7 +92,6 @@ export function ProfileWidgetStickerPicker({
       headerRight={
         <IconButton
           variant="plain"
-          color="neutral"
           padding={4}
           accessibilityLabel={tCommon("close")}
           onPress={onClose}

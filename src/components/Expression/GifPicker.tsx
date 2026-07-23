@@ -352,7 +352,6 @@ export const GifPickerContent = observer(
           {(search || viewingFavorites) && (
             <IconButton
               padding={6}
-              color="neutral"
               onPress={() => {
                 setSearch("");
                 setViewingFavorites(false);
@@ -377,7 +376,6 @@ export const GifPickerContent = observer(
                 search ? (
                   <IconButton
                     padding={4}
-                    color="neutral"
                     onPress={() => setSearch("")}
                   >
                     <XIcon size={14} />

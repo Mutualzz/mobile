@@ -252,16 +252,34 @@ export class Post {
     }
   }
 
-  async getComments(force = false) {
-    if (this.hasFetchedComments && !force) return this.comments.all;
+  async getComments(options?: {
+    force?: boolean;
+    before?: string;
+    limit?: number;
+  }) {
+    const force = options?.force ?? false;
+    const before = options?.before;
+    const limit = options?.limit ?? 50;
+
+    if (this.hasFetchedComments && !force && !before) {
+      return this.comments.all;
+    }
+
+    const query = before
+      ? `?before=${before}&limit=${limit}`
+      : `?limit=${limit}`;
 
     const data = await this.app.rest.get<APIPostComment[]>(
-      `/posts/${this.id}/comments`,
+      `/posts/${this.id}/comments${query}`,
     );
 
     this.comments.addAll(data);
-    this.hasFetchedComments = true;
+    if (!before) this.hasFetchedComments = true;
     return this.comments.all;
+  }
+
+  async loadMoreComments(before: string, limit = 50) {
+    return this.getComments({ before, limit });
   }
 
   async addComment(

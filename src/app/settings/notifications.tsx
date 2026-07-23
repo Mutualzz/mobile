@@ -3,13 +3,11 @@ import { AppNotificationsSettings } from "@components/UserSettings/AppNotificati
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
-const NotificationsSettings = () => {
+export default observer(function NotificationsSettings() {
   const { t } = useTranslation("settings");
   return (
-    <SettingsScreen title={t("pages.notifications")}>
+    <SettingsScreen title={t("pages.notifications")} contentStyle={{ flex: 1 }}>
       <AppNotificationsSettings />
     </SettingsScreen>
   );
-};
-
-export default observer(NotificationsSettings);
+});

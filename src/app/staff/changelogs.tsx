@@ -47,7 +47,7 @@ function buildPreviewChangelog(partial: {
     imageUrl: partial.imageUrl?.trim() || null,
     authorId: "0",
     desktopVersion: partial.desktopVersion?.trim() || null,
-    mobileVersion: partial.mobileVersion?.trim() || "3.12.0",
+    mobileVersion: partial.mobileVersion?.trim() || "3.13.0",
     publishedAt: partial.publishedAt ?? now,
     createdAt: now,
     updatedAt: now,

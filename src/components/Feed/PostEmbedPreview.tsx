@@ -6,7 +6,7 @@ import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import type { APIAttachment, APIMessageEmbed } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
-import { calendarStrings } from "@utils/i18n";
+import { calendarStrings } from "@mutualzz/client";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import type { Href } from "expo-router";

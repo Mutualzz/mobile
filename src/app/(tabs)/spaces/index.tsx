@@ -8,11 +8,12 @@ const SpacesIndex = () => {
     const router = useRouter();
 
     useEffect(() => {
+        app.setSpacesDrawerOpen(true);
         const recentSpace = app.spaces.setPreferredActive();
         if (!recentSpace) return;
 
         router.replace(`/spaces/${recentSpace.id}`);
-    }, [app.spaces, router]);
+    }, [app, app.spaces, router]);
 
     return null;
 };

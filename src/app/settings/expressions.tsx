@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 const ExpressionsSettings = () => {
   const { t } = useTranslation("settings");
   return (
-    <SettingsScreen title={t("pages.expressions")}>
+    <SettingsScreen title={t("pages.expressions")} contentStyle={{ flex: 1 }}>
       <UserExpressionsSettings />
     </SettingsScreen>
   );

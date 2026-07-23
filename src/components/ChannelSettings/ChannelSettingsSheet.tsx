@@ -3,11 +3,18 @@ import { MarkdownInput } from "@components/Markdown/MarkdownInput/MarkdownInput"
 import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
+import { type PermissionFlag } from "@mutualzz/bitfield";
 import {
-  BitField,
-  permissionFlags,
-  type PermissionFlag,
-} from "@mutualzz/bitfield";
+  buildOverwriteDraftMap,
+  getDirtyOverwriteKeys,
+  getOverwriteState,
+  makeOverwriteKey,
+  overwriteKey,
+  parseOverwriteKey,
+  toggleOverwriteState,
+  type OverwriteDraft,
+  type OverwriteState,
+} from "@mutualzz/client";
 import {
   channelPermissionGroups,
   type PermissionChannelKind,
@@ -46,63 +53,12 @@ interface Props {
   channel: Channel;
 }
 
-type OverwriteState = "allow" | "deny" | "neutral";
-
-interface OverwriteDraft {
-  allow: bigint;
-  deny: bigint;
-}
-
 interface TargetEntry {
   key: string;
   id: string;
   kind: "role" | "member";
   label: string;
   color?: string;
-}
-
-function overwriteKey(ow: ChannelPermissionOverwrite): string {
-  if (ow.roleId) return `r:${ow.roleId}`;
-  if (ow.userId) return `u:${ow.userId}`;
-  return "x";
-}
-
-function makeKey(id: string, kind: "role" | "member") {
-  return kind === "role" ? `r:${id}` : `u:${id}`;
-}
-
-function parseKey(key: string): { id: string; kind: "role" | "member" } {
-  const [prefix, id] = key.split(":");
-  return { id, kind: prefix === "r" ? "role" : "member" };
-}
-
-function draftsEqual(a: OverwriteDraft, b: OverwriteDraft) {
-  return a.allow === b.allow && a.deny === b.deny;
-}
-
-function getOverwriteState(
-  draft: OverwriteDraft,
-  flag: PermissionFlag,
-): OverwriteState {
-  const allow = BitField.fromString(permissionFlags, draft.allow.toString());
-  const deny = BitField.fromString(permissionFlags, draft.deny.toString());
-  if (allow.has(flag)) return "allow";
-  if (deny.has(flag)) return "deny";
-  return "neutral";
-}
-
-function applyOverwriteState(
-  draft: OverwriteDraft,
-  flag: PermissionFlag,
-  next: OverwriteState,
-): OverwriteDraft {
-  let allow = BitField.fromString(permissionFlags, draft.allow.toString());
-  let deny = BitField.fromString(permissionFlags, draft.deny.toString());
-  allow = allow.remove(flag);
-  deny = deny.remove(flag);
-  if (next === "allow") allow = allow.add(flag);
-  if (next === "deny") deny = deny.add(flag);
-  return { allow: allow.bits, deny: deny.bits };
 }
 
 function getChannelPermissionGroups(
@@ -145,16 +101,7 @@ export const ChannelSettingsSheet = observer(
     const me = space?.members.me;
     const canManagePermissions = !!me?.hasPermission("ManageRoles", channel);
 
-    const buildDrafts = () => {
-      const map = new Map<string, OverwriteDraft>();
-      for (const ow of channel.overwrites) {
-        map.set(overwriteKey(ow), {
-          allow: ow.allow.bits,
-          deny: ow.deny.bits,
-        });
-      }
-      return map;
-    };
+    const buildDrafts = () => buildOverwriteDraftMap(channel.overwrites);
 
     const [drafts, setDrafts] =
       useState<Map<string, OverwriteDraft>>(buildDrafts);
@@ -173,17 +120,13 @@ export const ChannelSettingsSheet = observer(
       setSelectedKey(first ? overwriteKey(first) : null);
     }, [channel.id, channel.updatedAt, channel.overwrites.length]);
 
-    const dirtyKeys = useMemo(() => {
-      const set = new Set<string>();
-      for (const [key, draft] of drafts.entries()) {
-        const base = bases.get(key);
-        if (!base || !draftsEqual(draft, base)) set.add(key);
-      }
-      return set;
-    }, [bases, drafts]);
+    const dirtyKeys = useMemo(
+      () => getDirtyOverwriteKeys(drafts, bases),
+      [bases, drafts],
+    );
 
     const targetEntries: TargetEntry[] = [...drafts.keys()].map((key) => {
-      const { id, kind } = parseKey(key);
+      const { id, kind } = parseOverwriteKey(key);
       if (kind === "role") {
         const role = space?.roles.get(id);
         return {
@@ -274,7 +217,7 @@ export const ChannelSettingsSheet = observer(
         if (!selectedKey) return null;
         const draft = drafts.get(selectedKey);
         if (!draft) return null;
-        const { id, kind } = parseKey(selectedKey);
+        const { id, kind } = parseOverwriteKey(selectedKey);
         return app.rest.put<APIChannel>(
           `/channels/${channel.id}/permissions/${id}?type=${kind}`,
           {
@@ -302,7 +245,7 @@ export const ChannelSettingsSheet = observer(
         mutationKey: ["delete-channel-overwrite", channel.id],
         mutationFn: async (key: string) => {
           if (!bases.has(key)) return null;
-          const { id, kind } = parseKey(key);
+          const { id, kind } = parseOverwriteKey(key);
           return app.rest.delete<APIChannel>(
             `/channels/${channel.id}/permissions/${id}?type=${kind}`,
           );
@@ -339,7 +282,7 @@ export const ChannelSettingsSheet = observer(
     };
 
     const addOverwrite = (id: string, kind: "role" | "member") => {
-      const key = makeKey(id, kind);
+      const key = makeOverwriteKey(id, kind);
       setDrafts((prev) => {
         if (prev.has(key)) return prev;
         const map = new Map(prev);
@@ -549,10 +492,10 @@ export const ChannelSettingsSheet = observer(
                                     ) => {
                                       updateDraft(
                                         selectedKey,
-                                        applyOverwriteState(
+                                        toggleOverwriteState(
                                           selectedDraft,
                                           item.flag,
-                                          current === next ? "neutral" : next,
+                                          next,
                                         ),
                                       );
                                     };

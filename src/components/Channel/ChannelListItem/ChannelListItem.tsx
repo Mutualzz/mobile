@@ -1,7 +1,7 @@
 import { IconButton } from "@components/IconButton";
 import { ChannelIcon } from "@components/Channel/ChannelIcon";
 import { Paper } from "@components/Paper";
-import { CaretRightIcon, PlusIcon } from "phosphor-react-native";
+import { CaretRightIcon, PlusIcon, BellSlashIcon } from "phosphor-react-native";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
@@ -48,7 +48,8 @@ export const ChannelListItem = observer(
 
     const readState = app.readStates.get(channel.id);
     const isUnread = readState?.isUnread ?? false;
-    const mentionCount = readState?.mentionCount ?? 0;
+    const mentionCount = readState?.displayMentionCount ?? 0;
+    const isNotificationMuted = readState?.isNotificationMuted ?? false;
 
     const handlePress = () => {
       if (isCategory && onToggleCollapse) {
@@ -164,6 +165,13 @@ export const ChannelListItem = observer(
                 justifyContent: "flex-end",
               }}
             >
+              {isNotificationMuted && (
+                <BellSlashIcon
+                  size={14}
+                  weight="fill"
+                  color={theme.typography.colors.muted}
+                />
+              )}
               {mentionCount > 0 && (
                 <Box
                   style={{
@@ -201,7 +209,6 @@ export const ChannelListItem = observer(
             <IconButton
               size={14}
               variant="plain"
-              color="neutral"
               accessibilityLabel={t("a11y.createChannelInCategory")}
               style={{
                 borderRadius: 9999,

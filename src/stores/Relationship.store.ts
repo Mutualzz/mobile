@@ -98,6 +98,10 @@ export class RelationshipStore {
         return [...this.getIncoming(), ...this.getOutgoing()];
     }
 
+    get blocked() {
+        return this.all.filter((r) => r.isBlocked);
+    }
+
     getBlocked() {
         return this.all.filter((r) => r.isBlocked);
     }

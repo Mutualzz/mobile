@@ -1,8 +1,7 @@
 import { Button } from "@components/Button";
-import {
-  filterPermissionGroups,
-  spacePermissionGroups,
-} from "@components/SpaceSettings/permissionGroups";
+import { SettingsToggleRow } from "@components/UserSettings/SettingsField";
+import { filterPermissionGroups } from "@mutualzz/client";
+import { spacePermissionGroups } from "@components/SpaceSettings/permissionGroups";
 import type {
   RoleEditable,
   SetRoleEditable,
@@ -13,11 +12,10 @@ import {
   type PermissionFlag,
   type PermissionFlags,
 } from "@mutualzz/bitfield";
-import { Box, Divider, Input, Switch, Typography } from "@mutualzz/ui-native";
+import { Box, Divider, Input, Typography } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable } from "react-native";
 
 interface Props {
   changes: RoleEditable;
@@ -103,29 +101,12 @@ export const SpaceRoleEditPermissions = observer(
               </Typography>
               {group.items.map((item, itemIndex) => (
                 <Box key={item.flag} style={{ gap: 12 }}>
-                  <Pressable onPress={() => togglePermission(item.flag)}>
-                    <Box
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 12,
-                      }}
-                    >
-                      <Box style={{ flex: 1, gap: 4 }}>
-                        <Typography level="body-sm">{item.label}</Typography>
-                        {item.description && (
-                          <Typography level="body-xs" textColor="muted">
-                            {item.description}
-                          </Typography>
-                        )}
-                      </Box>
-                      <Switch
-                        checked={permissions.has(item.flag)}
-                        onChange={() => togglePermission(item.flag)}
-                      />
-                    </Box>
-                  </Pressable>
+                  <SettingsToggleRow
+                    title={item.label}
+                    description={item.description}
+                    checked={permissions.has(item.flag)}
+                    onChange={() => togglePermission(item.flag)}
+                  />
                   {itemIndex < group.items.length - 1 && (
                     <Divider lineColor="muted" style={{ opacity: 0.25 }} />
                   )}

@@ -4,6 +4,11 @@ import { Box } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { Message } from "./Message";
 import { SystemMessage } from "./SystemMessage";
+import { useAppStore } from "@hooks/useStores";
+import {
+    getMessageLayoutStyles,
+    shouldShowMessageAvatar,
+} from "@utils/messageLayout";
 
 interface Props {
     group: MessageGroupType;
@@ -12,17 +17,37 @@ interface Props {
 
 export const MessageGroup = observer(
     ({ group, highlightedMessageId }: Props) => {
+        const app = useAppStore();
         const { messages } = group;
+        const extended = app.settings?.extendedSettings;
+        const messageDisplay = extended?.messageDisplay ?? "default";
+        const uiDensity = extended?.uiDensity ?? "default";
+        const compact = messageDisplay === "compact";
+        const layoutStyles = getMessageLayoutStyles(messageDisplay, uiDensity);
 
         return (
-            <Box style={{ flexDirection: "column-reverse" }}>
+            <Box
+                style={{
+                    flexDirection: "column-reverse",
+                    marginBottom: layoutStyles.groupGapNative,
+                }}
+            >
                 {messages.map((message, index) => {
+                    const isGroupStart = index === messages.length - 1;
+
                     if (message.type === MessageType.Default) {
+                        const showAvatar = shouldShowMessageAvatar(
+                            messageDisplay,
+                            isGroupStart,
+                        );
+
                         return (
                             <Message
                                 key={message.id}
                                 message={message}
-                                header={index === messages.length - 1}
+                                header={isGroupStart}
+                                showAvatar={showAvatar}
+                                compact={compact}
                                 highlighted={
                                     highlightedMessageId === message.id
                                 }
@@ -36,6 +61,11 @@ export const MessageGroup = observer(
                                 key={message.id}
                                 message={message}
                                 header
+                                showAvatar={shouldShowMessageAvatar(
+                                    messageDisplay,
+                                    true,
+                                )}
+                                compact={compact}
                                 highlighted={
                                     highlightedMessageId === message.id
                                 }

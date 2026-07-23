@@ -1,11 +1,12 @@
 import { Button } from "@components/Button";
 import { IconButton } from "@components/IconButton";
 import { Paper } from "@components/Paper";
+import { SettingsSection } from "@components/UserSettings/SettingsField";
 import { ExpressionUploadSheet } from "@components/UserSettings/ExpressionUploadSheet";
 import { useAppStore } from "@hooks/useStores";
 import { useSheet } from "@hooks/useSheet";
 import { ExpressionType } from "@mutualzz/types";
-import { Box, Divider, Typography } from "@mutualzz/ui-native";
+import { Box, Typography } from "@mutualzz/ui-native";
 import type { Expression } from "@stores/objects/Expression";
 import { BOTTOM_SHEET_PROPS } from "@utils/sheet";
 import { useExpressionThumbnailStyle } from "@utils/accessibilityLayout";
@@ -67,24 +68,13 @@ const StickerSection = ({
   if (expressions.length === 0) return null;
 
   return (
-    <Paper
-      style={{
-        padding: 12,
-        borderRadius: 12,
-        gap: 8,
-        minWidth: 0,
-      }}
-    >
-      <Typography level="body-md" weight={700}>
-        {title}
-      </Typography>
-      <Divider lineColor="muted" />
+    <SettingsSection title={title}>
       <Box style={{ gap: 8 }}>
         {expressions.map((expression) => (
           <StickerRow key={expression.id} expression={expression} />
         ))}
       </Box>
-    </Paper>
+    </SettingsSection>
   );
 };
 
@@ -136,17 +126,15 @@ export const UserStickersTab = observer(() => {
 
   return (
     <Box style={{ gap: 16, minWidth: 0 }}>
-      <Box style={{ gap: 12 }}>
-        <Box style={{ gap: 4 }}>
-          <Typography level="body-sm" color="warning" variant="plain">
-            {t("expressions.stickerLimitMobile", { limit: STICKER_LIMIT })}
-          </Typography>
-          <Typography level="body-sm" textColor="muted">
-            {t("expressions.slotsAvailable", {
-              count: STICKER_LIMIT - stickers.length,
-            })}
-          </Typography>
-        </Box>
+      <SettingsSection>
+        <Typography level="body-sm" color="warning" variant="plain">
+          {t("expressions.stickerLimitMobile", { limit: STICKER_LIMIT })}
+        </Typography>
+        <Typography level="body-sm" textColor="muted">
+          {t("expressions.slotsAvailable", {
+            count: STICKER_LIMIT - stickers.length,
+          })}
+        </Typography>
         <Button
           color="success"
           disabled={stickers.length >= STICKER_LIMIT}
@@ -155,7 +143,7 @@ export const UserStickersTab = observer(() => {
         >
           {t("expressions.uploadSticker")}
         </Button>
-      </Box>
+      </SettingsSection>
 
       <StickerSection
         title={t("expressions.stickers")}

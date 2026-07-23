@@ -8,7 +8,7 @@ import { Box, Sheet, Typography, useTheme } from "@mutualzz/ui-native";
 import { FULL_SHEET_PROPS } from "@utils/sheet";
 import { Theme } from "@stores/objects/Theme";
 import { applyAdaptiveThemeValues } from "@utils/adaptation";
-import Snowflake from "@utils/Snowflake";
+import { Snowflake } from "@mutualzz/client";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";

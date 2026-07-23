@@ -80,7 +80,7 @@ export const MarkdownInput = observer(
     entities: controlledEntities,
     onChangeEntities: controlledOnChangeEntities,
     channelId,
-    enableEmoticons = false,
+    enableEmoticons: enableEmoticonsProp,
     enableMentions = true,
     enableEmojiAutocomplete = true,
     placeholder,
@@ -96,6 +96,8 @@ export const MarkdownInput = observer(
     ...props
   }: Props) => {
     const app = useAppStore();
+    const enableEmoticons =
+      enableEmoticonsProp ?? app.settings?.extended.convertEmoticons ?? true;
     const { theme } = useTheme();
     const fontScale = useFontScale();
     const inputRef = useRef<TextInput>(null);
