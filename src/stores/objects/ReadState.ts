@@ -1,5 +1,6 @@
 import {
   type APIReadState,
+  isNotificationMuteActive,
   NotificationLevel,
   ReadStateType,
   type Snowflake,
@@ -89,6 +90,11 @@ export class ReadState {
 
   get isNotificationMuted(): boolean {
     return this.effectiveNotificationLevel === NotificationLevel.Nothing;
+  }
+
+  get isChannelNotificationMuted(): boolean {
+    if (isNotificationMuteActive(this.mutedUntil)) return true;
+    return this.notificationLevel === NotificationLevel.Nothing;
   }
 
   get displayMentionCount(): number {

@@ -187,7 +187,7 @@ const StaffAppealsScreen = () => {
                 />
                 <Box style={{ flexDirection: "row", gap: 8 }}>
                   <Button
-                    style={{ flex: 1 }}
+                    expand
                     color="success"
                     disabled={reviewing}
                     onPress={() =>
@@ -201,7 +201,7 @@ const StaffAppealsScreen = () => {
                     {t("appeals.accept")}
                   </Button>
                   <Button
-                    style={{ flex: 1 }}
+                    expand
                     color="danger"
                     disabled={reviewing}
                     onPress={() =>

@@ -79,14 +79,14 @@ export const DeleteAccountSheet = observer(({ onClose }: Props) => {
         </Typography>
       )}
       <Box style={{ flexDirection: "row", gap: 8 }}>
-        <Button variant="soft" onPress={onClose} style={{ flex: 1 }}>
+        <Button variant="soft" onPress={onClose} expand>
           {tCommon("cancel")}
         </Button>
         <Button
           color="danger"
           disabled={!canDelete || isPending}
           onPress={() => mutate()}
-          style={{ flex: 1 }}
+          expand
         >
           {isPending
             ? t("account.deleting")

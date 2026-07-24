@@ -7,7 +7,13 @@ import {
   ChannelType,
   type HttpException,
 } from "@mutualzz/types";
-import { Box, ButtonGroup, InputDefault, Sheet, Typography } from "@mutualzz/ui-native";
+import {
+  Box,
+  ButtonGroup,
+  InputDefault,
+  Sheet,
+  Typography,
+} from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import type { Space } from "@stores/objects/Space";
 import { useMutation } from "@tanstack/react-query";
@@ -62,52 +68,52 @@ export const ChannelCreateSheet = observer(
         open={visible}
         onClose={onClose}
         showCloseButton={false}
-      enableDynamicSizing
+        enableDynamicSizing
       >
         <View style={{ width: "100%", padding: 16, gap: 12 }}>
-            <Typography level="body-lg" weight="bold">
-              {t("channels.create.title")}
-            </Typography>
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <Box style={{ gap: 12 }}>
-                <InputDefault
-                  fullWidth
-                  placeholder={t("channels.create.namePlaceholder")}
-                  value={name}
-                  onChangeText={setName}
-                  autoFocus
-                />
-                <ButtonGroup orientation="vertical" spacing={8}>
-                  {[ChannelType.Text, ChannelType.Voice].map((channelType) => (
-                    <Button
-                      key={channelType}
-                      variant={type === channelType ? "soft" : "plain"}
-                      onPress={() => setType(channelType)}
-                      startDecorator={<ChannelIcon type={channelType} />}
-                    >
-                      {channelType === ChannelType.Text
-                        ? t("channels.create.text")
-                        : t("channels.create.voice")}
-                    </Button>
-                  ))}
-                </ButtonGroup>
-                {error && (
-                  <Typography color="danger" level="body-sm">
-                    {error}
-                  </Typography>
-                )}
-              </Box>
-            </ScrollView>
-            <Box>
-              <Button
-                expand
-                color="success"
-                disabled={isPending || !name.trim()}
-                onPress={() => createChannel()}
-              >
-                {tCommon("create")}
-              </Button>
+          <Typography level="body-lg" weight="bold">
+            {t("channels.create.title")}
+          </Typography>
+          <ScrollView keyboardShouldPersistTaps="handled">
+            <Box style={{ gap: 12 }}>
+              <InputDefault
+                fullWidth
+                placeholder={t("channels.create.namePlaceholder")}
+                value={name}
+                onChangeText={setName}
+                autoFocus
+              />
+              <ButtonGroup orientation="horizontal" spacing={8}>
+                {[ChannelType.Text, ChannelType.Voice].map((channelType) => (
+                  <Button
+                    key={channelType}
+                    variant={type === channelType ? "soft" : "plain"}
+                    onPress={() => setType(channelType)}
+                    startDecorator={<ChannelIcon type={channelType} />}
+                  >
+                    {channelType === ChannelType.Text
+                      ? t("channels.create.text")
+                      : t("channels.create.voice")}
+                  </Button>
+                ))}
+              </ButtonGroup>
+              {error && (
+                <Typography color="danger" level="body-sm">
+                  {error}
+                </Typography>
+              )}
             </Box>
+          </ScrollView>
+          <Box>
+            <Button
+              expand
+              color="success"
+              disabled={isPending || !name.trim()}
+              onPress={() => createChannel()}
+            >
+              {tCommon("create")}
+            </Button>
+          </Box>
         </View>
       </Sheet>
     );

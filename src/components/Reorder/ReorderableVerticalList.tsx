@@ -33,6 +33,11 @@ interface Props<T extends ReorderableItem> {
   dragTarget?: DragTarget;
   isItemDraggable?: (item: T, index: number) => boolean;
   activateAfterLongPressMs?: number;
+  onItemLongPress?: (item: T, index: number) => void;
+  itemLongPressMs?: number;
+  childHandlesLongPress?: boolean;
+  centerRows?: boolean;
+  compactHandle?: boolean;
   scrollable?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
   style?: StyleProp<ViewStyle>;
@@ -80,6 +85,8 @@ function computeTargetIndex(
 }
 
 const LONG_PRESS_DRAG_MS = 250;
+const LONG_PRESS_MENU_MS = 400;
+const LONG_PRESS_DRAG_WITH_MENU_MS = 450;
 
 export function ReorderableVerticalList<T extends ReorderableItem>({
   items,
@@ -91,6 +98,11 @@ export function ReorderableVerticalList<T extends ReorderableItem>({
   dragTarget = "handle",
   isItemDraggable,
   activateAfterLongPressMs = LONG_PRESS_DRAG_MS,
+  onItemLongPress,
+  itemLongPressMs = LONG_PRESS_MENU_MS,
+  childHandlesLongPress = false,
+  centerRows = false,
+  compactHandle = false,
   scrollable = false,
   contentContainerStyle,
   style,
@@ -103,10 +115,18 @@ export function ReorderableVerticalList<T extends ReorderableItem>({
 
   const onReorderRef = useRef(onReorder);
   const rowGapRef = useRef(rowGap);
+  const onItemLongPressRef = useRef(onItemLongPress);
+  const itemsRef = useRef(items);
 
   useEffect(() => {
     onReorderRef.current = onReorder;
   }, [onReorder]);
+
+  useEffect(() => {
+    onItemLongPressRef.current = onItemLongPress;
+  }, [onItemLongPress]);
+
+  itemsRef.current = items;
 
   rowGapRef.current = rowGap;
 
@@ -145,6 +165,13 @@ export function ReorderableVerticalList<T extends ReorderableItem>({
     setDragOffset(0);
   }, []);
 
+  const invokeItemLongPress = useCallback((index: number) => {
+    const handler = onItemLongPressRef.current;
+    const item = itemsRef.current[index];
+    if (!handler || !item) return;
+    handler(item, index);
+  }, []);
+
   const handleColor = theme.typography.colors.muted;
 
   const rows = items.map((item, index) => {
@@ -153,6 +180,8 @@ export function ReorderableVerticalList<T extends ReorderableItem>({
     const isDragging = draggingId === itemId;
     const isLast = index === items.length - 1;
     const canDrag = enabled && (isItemDraggable?.(item, index) ?? true);
+    const useRowGesture =
+      canDrag && dragTarget === "row" && !childHandlesLongPress;
 
     const panGesture = (() => {
       let gesture = Gesture.Pan()
@@ -168,13 +197,34 @@ export function ReorderableVerticalList<T extends ReorderableItem>({
         });
 
       if (dragTarget === "row") {
-        gesture = gesture.activateAfterLongPress(activateAfterLongPressMs);
+        if (onItemLongPress) {
+          gesture = gesture
+            .activateAfterLongPress(LONG_PRESS_DRAG_WITH_MENU_MS)
+            .activeOffsetY([-10, 10]);
+        } else {
+          gesture = gesture.activateAfterLongPress(activateAfterLongPressMs);
+        }
       } else {
         gesture = gesture.activeOffsetY([-4, 4]).failOffsetX([-12, 12]);
       }
 
       return gesture;
     })();
+
+    const menuLongPressGesture =
+      canDrag && dragTarget === "row" && onItemLongPress
+        ? Gesture.LongPress()
+            .minDuration(itemLongPressMs)
+            .maxDistance(10)
+            .onStart(() => {
+              scheduleOnRN(invokeItemLongPress, rowIndex);
+            })
+        : null;
+
+    const rowGesture =
+      menuLongPressGesture != null
+        ? Gesture.Simultaneous(menuLongPressGesture, panGesture)
+        : panGesture;
 
     const handle =
       canDrag && dragTarget === "handle" ? (
@@ -185,7 +235,7 @@ export function ReorderableVerticalList<T extends ReorderableItem>({
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={{
               justifyContent: "center",
-              paddingRight: 8,
+              paddingRight: compactHandle ? 4 : 8,
               flexShrink: 0,
             }}
           >
@@ -199,11 +249,18 @@ export function ReorderableVerticalList<T extends ReorderableItem>({
         style={{
           flexDirection: dragTarget === "handle" ? "row" : undefined,
           alignItems: dragTarget === "handle" ? "center" : undefined,
+          justifyContent: centerRows ? "center" : undefined,
           minWidth: 0,
         }}
       >
         {handle}
-        <View style={{ flex: dragTarget === "handle" ? 1 : undefined, minWidth: 0 }}>
+        <View
+          style={{
+            flex: dragTarget === "handle" && !centerRows ? 1 : undefined,
+            minWidth: 0,
+            alignItems: centerRows ? "center" : undefined,
+          }}
+        >
           {renderItem(item, index, { isDragging })}
         </View>
       </View>
@@ -221,8 +278,8 @@ export function ReorderableVerticalList<T extends ReorderableItem>({
           opacity: isDragging ? 0.92 : 1,
         }}
       >
-        {canDrag && dragTarget === "row" ? (
-          <GestureDetector gesture={panGesture}>{rowInner}</GestureDetector>
+        {useRowGesture ? (
+          <GestureDetector gesture={rowGesture}>{rowInner}</GestureDetector>
         ) : (
           rowInner
         )}

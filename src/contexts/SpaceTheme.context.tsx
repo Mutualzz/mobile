@@ -1,7 +1,4 @@
-import {
-  Theme as EmotionTheme,
-  ThemeProvider as EmotionThemeProvider,
-} from "@emotion/react";
+import { ThemeProvider as EmotionThemeProvider } from "@emotion/react";
 import { useAppStore } from "@hooks/useStores";
 import {
   resolveWallpaperDimOverlay,
@@ -34,9 +31,7 @@ export const SpaceThemeProvider = observer(
 
     const source =
       space?.theme ??
-      (space?.themeId
-        ? (app.themes.themes.get(space.themeId) ?? null)
-        : null);
+      (space?.themeId ? (app.themes.themes.get(space.themeId) ?? null) : null);
 
     if (!source && !previewingSpaceTheme) return children;
 
@@ -85,7 +80,7 @@ export const SpaceThemeProvider = observer(
           type: emotionTheme.type,
         }}
       >
-        <EmotionThemeProvider theme={emotionTheme as EmotionTheme}>
+        <EmotionThemeProvider theme={emotionTheme}>
           {content}
         </EmotionThemeProvider>
       </ThemeContext.Provider>

@@ -7,73 +7,32 @@ import {
   SidebarRailSlot,
   SIDEBAR_RAIL_ITEM_SIZE,
 } from "@components/SidebarPill";
-import { SpaceIcon } from "@components/Space/SpaceIcon";
+import { SidebarSpace } from "@components/Space/SidebarSpace";
 import { SpaceInviteSheet } from "@components/Space/SpaceInviteSheet";
-import { PlusIcon } from "phosphor-react-native";
+import {
+  CheckIcon,
+  DotsSixVerticalIcon,
+  PlusIcon,
+} from "phosphor-react-native";
 import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { useBridgeListSync } from "@hooks/useBridgeListSync";
 import { useNavigateToModeHub } from "@hooks/useNavigateToModeHub";
 import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
-import type { Space } from "@stores/objects/Space";
 import { usePathname } from "expo-router";
 import { observer } from "mobx-react-lite";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable } from "react-native";
-
-const SidebarSpace = observer(
-  ({
-    space,
-    active,
-    onSelect,
-  }: {
-    space: Space;
-    active: boolean;
-    onSelect: (spaceId: string) => void;
-  }) => {
-    const { t } = useTranslation("chat");
-    const app = useAppStore();
-
-    const pillType: PillType = (() => {
-      if (active) return "active";
-      if (space.channels.some((ch) => app.readStates.get(ch.id)?.isUnread))
-        return "unread";
-      if (app.bridgeChat.hasUnreadForSpace(space.id)) return "unread";
-      return "none";
-    })();
-
-    return (
-      <SidebarRailSlot type={pillType}>
-        <Pressable
-          onPress={() => {
-            if (active) return;
-            onSelect(space.id);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={`${space.name}${
-            pillType === "unread" ? `, ${t("a11y.unread")}` : ""
-          }`}
-          accessibilityState={{ selected: active }}
-        >
-          <SpaceIcon
-            selected={active}
-            space={space}
-            size={SIDEBAR_RAIL_ITEM_SIZE}
-          />
-        </Pressable>
-      </SidebarRailSlot>
-    );
-  },
-);
 
 export const SpacesSidebar = observer(() => {
   const app = useAppStore();
+  const { t } = useTranslation("space");
   useBridgeListSync();
   const { navigateToModeHub, navigateToSpaceHub } = useNavigateToModeHub();
   const { openSheet } = useSheet();
   const pathname = usePathname();
   const tabBarInset = useKeyboardChromeInset();
+  const [isReordering, setIsReordering] = useState(false);
 
   const onDms = pathname.startsWith("/@me") || app.mode === "@me";
 
@@ -119,7 +78,7 @@ export const SpacesSidebar = observer(() => {
           size={SIDEBAR_RAIL_ITEM_SIZE}
           selected={onDms}
           onPress={() => {
-            if (onDms) return;
+            if (onDms || isReordering) return;
             navigateToModeHub("@me");
           }}
         />
@@ -128,8 +87,11 @@ export const SpacesSidebar = observer(() => {
       <ReorderableVerticalList
         items={spaces}
         onReorder={handleReorderSpaces}
-        enabled={canReorderSpaces}
-        dragTarget="row"
+        enabled={isReordering && canReorderSpaces}
+        dragTarget="handle"
+        centerRows
+        compactHandle
+        childHandlesLongPress
         rowGap={12}
         estimatedRowHeight={SIDEBAR_RAIL_ITEM_SIZE + 12}
         style={{ width: "100%" }}
@@ -140,11 +102,13 @@ export const SpacesSidebar = observer(() => {
               app.mode === "spaces" &&
               space.id === app.spaces.activeId
             }
+            reordering={isReordering}
             space={space}
             onSelect={navigateToSpaceHub}
           />
         )}
       />
+
       <IconButton
         shape="circle"
         color="success"
@@ -152,12 +116,37 @@ export const SpacesSidebar = observer(() => {
         padding={10}
         style={{
           alignSelf: "center",
+          opacity: isReordering ? 0.35 : 1,
         }}
         size="md"
+        disabled={isReordering}
         onPress={() => openSheet("space-invite", <SpaceInviteSheet />)}
       >
         <PlusIcon weight="bold" />
       </IconButton>
+
+      {canReorderSpaces ? (
+        <IconButton
+          shape="circle"
+          color={isReordering ? "success" : "neutral"}
+          variant={isReordering ? "solid" : "outlined"}
+          padding={10}
+          style={{ alignSelf: "center" }}
+          size="md"
+          accessibilityLabel={
+            isReordering
+              ? t("sidebar.doneReorderingA11y")
+              : t("sidebar.reorderA11y")
+          }
+          onPress={() => setIsReordering((value) => !value)}
+        >
+          {isReordering ? (
+            <CheckIcon weight="bold" />
+          ) : (
+            <DotsSixVerticalIcon weight="bold" />
+          )}
+        </IconButton>
+      ) : null}
     </Screen>
   );
 });

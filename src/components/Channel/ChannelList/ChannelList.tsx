@@ -1,7 +1,7 @@
 import { BridgeChannelList } from "@components/Bridge/BridgeChannelList";
 import { Button } from "@components/Button";
 import { ChannelActionSheet } from "@components/Channel/ChannelActionSheet";
-import { SpaceMenuSheet } from "@components/Space/SpaceMenuSheet";
+import { useOpenSpaceActionSheet } from "@components/Space/sheet";
 import { ChannelCreateSheet } from "@components/Channel/ChannelCreateSheet";
 import { CategoryCreateSheet } from "@components/Channel/CategoryCreateSheet";
 import { CategoryDeleteSheet } from "@components/Channel/CategoryDeleteSheet";
@@ -21,7 +21,13 @@ import {
 import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
-import { Box, ButtonGroup, Sheet, Typography, useTheme } from "@mutualzz/ui-native";
+import {
+  Box,
+  ButtonGroup,
+  Sheet,
+  Typography,
+  useTheme,
+} from "@mutualzz/ui-native";
 import { type Channel } from "@stores/objects/Channel";
 import type { SpaceSidebarTab } from "@stores/Space.store";
 import { flattenChannels } from "@utils/channelReorder";
@@ -57,7 +63,7 @@ export const ChannelList = observer(() => {
   const [actionChannel, setActionChannel] = useState<Channel | null>(null);
   const [createParent, setCreateParent] = useState<Channel | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [spaceMenuOpen, setSpaceMenuOpen] = useState(false);
+  const openSpaceActionSheet = useOpenSpaceActionSheet();
 
   const space = app.spaces.active;
   const spaceId = space?.id;
@@ -193,7 +199,9 @@ export const ChannelList = observer(() => {
       >
         <Pressable
           style={{ flex: 1, minWidth: 0 }}
-          onPress={() => setSpaceMenuOpen(true)}
+          onPress={() =>
+            openSpaceActionSheet(space, { channel: activeChannel })
+          }
         >
           <Typography level="body-lg" truncate="single">
             {space.name}
@@ -206,31 +214,17 @@ export const ChannelList = observer(() => {
             justifyContent: "flex-end",
           }}
         >
-          <ButtonGroup size={12} spacing={4} variant="plain">
-            <IconButton
-              accessibilityLabel={t("chrome.createInviteA11y")}
-              onPress={() => setInviteOpen(true)}
-              hitSlop={4}
-            >
-              <UserPlusIcon weight="fill" />
-            </IconButton>
-            {canManageChannels && (
-              <IconButton
-                accessibilityLabel={t("chrome.createCategoryA11y")}
-                onPress={() => setCreateCategoryOpen(true)}
-                hitSlop={4}
-              >
-                <PlusIcon weight="bold" />
-              </IconButton>
-            )}
-            <IconButton
-              accessibilityLabel={t("chrome.spaceMenuA11y")}
-              onPress={() => setSpaceMenuOpen(true)}
-              hitSlop={4}
-            >
-              <CaretDownIcon weight="bold" />
-            </IconButton>
-          </ButtonGroup>
+          <IconButton
+            accessibilityLabel={t("chrome.spaceMenuA11y")}
+            onPress={() =>
+              openSpaceActionSheet(space, { channel: activeChannel })
+            }
+            hitSlop={4}
+            size={12}
+            variant="plain"
+          >
+            <CaretDownIcon weight="bold" />
+          </IconButton>
         </Box>
       </ScreenHeader>
       <Paper
@@ -359,12 +353,6 @@ export const ChannelList = observer(() => {
           }
         />
       )}
-
-      <SpaceMenuSheet
-        space={space}
-        visible={spaceMenuOpen}
-        onClose={() => setSpaceMenuOpen(false)}
-      />
 
       <Sheet
         open={inviteOpen}
