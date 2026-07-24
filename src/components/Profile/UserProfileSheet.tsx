@@ -1,5 +1,4 @@
 import { Button } from "@components/Button";
-import { MarkdownInput } from "@components/Markdown/MarkdownInput/MarkdownInput";
 import { ProfileMarkdownContent } from "@components/Profile/shared/ProfileMarkdownContent";
 import { ProfileScrim } from "@components/Profile/shared/ProfileScrim";
 import { RecentActivitiesSection } from "@components/Profile/shared/RecentActivitiesSection";
@@ -9,7 +8,8 @@ import { ProfileWidgetsEmptyViewer } from "@components/Profile/widgets/ProfileWi
 import { CustomStatusDisplay } from "@components/CustomStatus/CustomStatusDisplay";
 import { ChangeOnlineStatusSheet } from "@components/User/ChangeOnlineStatusSheet";
 import { CustomStatusSheet } from "@components/User/CustomStatusSheet";
-import { UserActionSheet } from "@components/User/UserActionSheet";
+import { ActionMenu } from "@components/ActionMenu/ActionMenu";
+import { UserActionMenu } from "@components/User/UserActionMenu";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useUserRelationshipActions } from "@hooks/useUserRelationshipActions";
@@ -21,28 +21,26 @@ import type { SpaceMember } from "@stores/objects/SpaceMember";
 import type { User } from "@stores/objects/User";
 import type { ProfileHeaderBlock } from "@mutualzz/types";
 import { IconButton } from "@components/IconButton";
-import {
-  Box,
-  Divider,
-  Typography,
-  useTheme,
-} from "@mutualzz/ui-native";
+import { Box, Divider, Typography, useTheme } from "@mutualzz/ui-native";
 import { useScaledProfileMetrics } from "@utils/accessibilityLayout";
-import { getNonCustomActivities, hasCustomStatusContent } from "@mutualzz/client";
+import {
+  getNonCustomActivities,
+  hasCustomStatusContent,
+} from "@mutualzz/client";
 import { formatRestError } from "@mutualzz/client";
-import { Snowflake } from "@mutualzz/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-  DotsThreeVerticalIcon,
+  ChatCircleIcon,
+  DotsThreeIcon,
   GearIcon,
-  PaperPlaneTiltIcon,
+  PhoneIcon,
   PencilSimpleIcon,
   XIcon,
 } from "phosphor-react-native";
 import { ProfileBackgroundLayer } from "@components/Profile/shared/ProfileBackgroundLayer";
 import { ProfileBlockImage } from "@components/Profile/shared/ProfileBlockImage";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Pressable, ScrollView, View } from "react-native";
 
@@ -67,8 +65,6 @@ export const UserProfileSheet = observer(
     const { closeSheet } = useSheet();
     const { openBottomSheet, closeBottomSheet } = useOpenBottomSheet();
     const { navigate } = useAppNavigation();
-    const [content, setContent] = useState("");
-    const [selection, setSelection] = useState({ start: 0, end: 0 });
 
     const openOnlineStatusSheet = () => {
       openBottomSheet(
@@ -93,8 +89,7 @@ export const UserProfileSheet = observer(
     };
 
     const isSelf =
-      app.account?.id != null &&
-      String(app.account.id) === String(user.id);
+      app.account?.id != null && String(app.account.id) === String(user.id);
     const showAccountMenu = accountMenu && isSelf;
 
     const { data: fetchedProfile, isFetched: profileFetchDone } = useQuery({
@@ -144,34 +139,10 @@ export const UserProfileSheet = observer(
       closeSheet(sheetId);
     };
 
-    const openActionSheet = () => {
-      const id = `user-actions-${user.id}`;
-      openBottomSheet(
-        id,
-        <UserActionSheet
-          user={user as User}
-          embedded
-          onClose={() => closeBottomSheet(id)}
-          hideMessage
-          onNavigate={close}
-        />,
-      );
-    };
-
-    const { mutate: sendMessage, isPending: sending } = useMutation({
-      mutationKey: ["profile-sheet-dm", user.id],
-      mutationFn: async (messageContent: string) => {
-        if (theyBlockedMe) throw new Error(tChat("cannotMessagePerson"));
-        const channel = await app.channels.openDM(user.id);
-        await channel.sendMessage({
-          content: messageContent,
-          nonce: Snowflake.generate(),
-        });
-        return channel;
-      },
+    const { mutate: openMessage, isPending: openingMessage } = useMutation({
+      mutationKey: ["profile-sheet-message", user.id],
+      mutationFn: () => app.relationships.openDMWith(user.id),
       onSuccess: (channel) => {
-        setContent("");
-        setSelection({ start: 0, end: 0 });
         close();
         app.setDMDrawerOpen(false);
         navigate(`/@me/${channel.id}`);
@@ -180,6 +151,27 @@ export const UserProfileSheet = observer(
         Alert.alert(
           tChat("cannotMessagePerson"),
           formatRestError(err, tChat("cannotMessagePerson")),
+        );
+      },
+    });
+
+    const { mutate: startUserCall, isPending: startingCall } = useMutation({
+      mutationKey: ["profile-sheet-call", user.id],
+      mutationFn: async () => {
+        if (theyBlockedMe) throw new Error(tChat("cannotMessagePerson"));
+        const channel = await app.channels.openDM(user.id);
+        await app.calls.startCall(channel.id, { silent: false });
+        return channel;
+      },
+      onSuccess: (channel) => {
+        close();
+        app.setDMDrawerOpen(false);
+        navigate(`/@me/${channel.id}`);
+      },
+      onError: (err) => {
+        Alert.alert(
+          tChat("call.start"),
+          formatRestError(err, tChat("call.start")),
         );
       },
     });
@@ -257,12 +249,8 @@ export const UserProfileSheet = observer(
       navigate(href);
     };
 
-    const canSubmit = !!content.trim() && !denyMessaging && !sending;
-
-    const handleSubmit = () => {
-      if (!canSubmit) return;
-      sendMessage(content.trim());
-    };
+    const messageDisabled = denyMessaging || openingMessage || startingCall;
+    const callDisabled = denyMessaging || openingMessage || startingCall;
 
     return (
       <View
@@ -369,7 +357,11 @@ export const UserProfileSheet = observer(
                           emojiSize={16}
                         />
                       ) : (
-                        <Typography level="body-sm" textColor="muted" truncate="double">
+                        <Typography
+                          level="body-sm"
+                          textColor="muted"
+                          truncate="double"
+                        >
                           {t("customStatus.setShort")}
                         </Typography>
                       )}
@@ -417,7 +409,8 @@ export const UserProfileSheet = observer(
                   >
                     @{user.username}
                   </Typography>
-                  {profileRestricted ? null : presenceLabel && !showAccountMenu ? (
+                  {profileRestricted ? null : presenceLabel &&
+                    !showAccountMenu ? (
                     <Typography level="body-sm" textColor="accent">
                       {presenceLabel}
                     </Typography>
@@ -459,42 +452,25 @@ export const UserProfileSheet = observer(
               )}
 
               {!isSelf && (
-                <Box
-                  style={{
-                    flexDirection: "row",
-                    gap: 8,
-                    alignItems: "flex-end",
-                  }}
-                >
-                  <Box style={{ flex: 1 }}>
-                    <MarkdownInput
-                      value={content}
-                      onChange={setContent}
-                      selection={selection}
-                      onChangeSelection={setSelection}
-                      enableMentions={false}
-                      editable={!denyMessaging && !sending}
-                      placeholder={
-                        denyMessaging
-                          ? tChat("composer.placeholder.blocked")
-                          : tChat("composer.placeholder.dm", {
-                              name: displayName,
-                            })
-                      }
-                      style={{ minHeight: 44 }}
-                    />
-                  </Box>
-                  <IconButton
-                    variant="plain"
+                <Box style={{ flexDirection: "row", gap: 8 }}>
+                  <Button
                     color="primary"
-                    padding={8}
-                    disabled={!canSubmit}
-                    onPress={handleSubmit}
-                    style={{ borderRadius: 999 }}
-                    accessibilityLabel={tChat("contextMenu.message")}
+                    disabled={messageDisabled}
+                    onPress={() => openMessage()}
+                    startDecorator={<ChatCircleIcon size={18} weight="fill" />}
+                    expand
                   >
-                    <PaperPlaneTiltIcon size={20} weight="fill" />
-                  </IconButton>
+                    {tChat("contextMenu.message")}
+                  </Button>
+                  <Button
+                    color="neutral"
+                    disabled={callDisabled}
+                    onPress={() => startUserCall()}
+                    startDecorator={<PhoneIcon size={18} weight="fill" />}
+                    expand
+                  >
+                    {tChat("call.start")}
+                  </Button>
                 </Box>
               )}
 
@@ -549,19 +525,33 @@ export const UserProfileSheet = observer(
               <GearIcon weight="fill" size={18} />
             </IconButton>
           ) : !isSelf ? (
-            <IconButton
-              variant="solid"
-              color="neutral"
-              padding={4}
-              accessibilityLabel={t("a11y.moreOptions", {
-                defaultValue: "More options",
-              })}
-              onPress={openActionSheet}
-              style={{ borderRadius: 9999 }}
-              size="sm"
+            <ActionMenu
+              align="end"
+              renderTrigger={(open) => (
+                <IconButton
+                  variant="solid"
+                  color="neutral"
+                  padding={4}
+                  accessibilityLabel={t("a11y.moreOptions", {
+                    defaultValue: "More options",
+                  })}
+                  onPress={open}
+                  style={{ borderRadius: 9999 }}
+                  size="sm"
+                >
+                  <DotsThreeIcon size={18} weight="bold" />
+                </IconButton>
+              )}
             >
-              <DotsThreeVerticalIcon size={18} weight="bold" />
-            </IconButton>
+              {(closeMenu) => (
+                <UserActionMenu
+                  user={user as User}
+                  hideMessage
+                  onNavigate={close}
+                  onClose={closeMenu}
+                />
+              )}
+            </ActionMenu>
           ) : null}
         </View>
       </View>

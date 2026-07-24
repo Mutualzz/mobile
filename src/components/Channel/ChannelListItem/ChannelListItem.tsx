@@ -1,7 +1,7 @@
 import { IconButton } from "@components/IconButton";
 import { ChannelIcon } from "@components/Channel/ChannelIcon";
 import { Paper } from "@components/Paper";
-import { CaretRightIcon, PlusIcon, BellSlashIcon } from "phosphor-react-native";
+import { CaretRightIcon, PlusIcon } from "phosphor-react-native";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
@@ -49,7 +49,8 @@ export const ChannelListItem = observer(
     const readState = app.readStates.get(channel.id);
     const isUnread = readState?.isUnread ?? false;
     const mentionCount = readState?.displayMentionCount ?? 0;
-    const isNotificationMuted = readState?.isNotificationMuted ?? false;
+    const isChannelNotificationMuted =
+      readState?.isChannelNotificationMuted ?? false;
 
     const handlePress = () => {
       if (isCategory && onToggleCollapse) {
@@ -80,6 +81,8 @@ export const ChannelListItem = observer(
             : isUnread
               ? `, ${tChat("a11y.unread")}`
               : ""
+        }${
+          isChannelNotificationMuted ? `, ${tChat("voice.controls.muted")}` : ""
         }`;
 
     return (
@@ -103,6 +106,8 @@ export const ChannelListItem = observer(
             justifyContent: "space-between",
             flexDirection: "row",
             minHeight: isCategory ? 32 : 34,
+            opacity:
+              !isCategory && isChannelNotificationMuted && !active ? 0.4 : 1,
           }}
           key={channel.id}
           color={props.color}
@@ -165,13 +170,6 @@ export const ChannelListItem = observer(
                 justifyContent: "flex-end",
               }}
             >
-              {isNotificationMuted && (
-                <BellSlashIcon
-                  size={14}
-                  weight="fill"
-                  color={theme.typography.colors.muted}
-                />
-              )}
               {mentionCount > 0 && (
                 <Box
                   style={{

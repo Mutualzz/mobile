@@ -29,15 +29,19 @@ import { Stack, type ErrorBoundaryProps } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
-import { View } from "react-native";
+import { useEffect, useState, Fragment } from "react";
+import { Platform, View } from "react-native";
 import { KeyboardProvider } from "react-native-keyboard-controller";
+import { PortalHost } from "@rn-primitives/portal";
+import { FullWindowOverlay } from "react-native-screens";
 
 dayjs.extend(relativeTime);
 dayjs.extend(calendar, calendarStrings);
 dayjs.extend(duration);
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+const WindowOverlay = Platform.OS === "ios" ? FullWindowOverlay : Fragment;
 
 const errorLogger = new Logger({ tag: "ErrorBoundary" });
 
@@ -161,6 +165,9 @@ const Root = () => {
                             }}
                           />
                         </Stack>
+                        <WindowOverlay>
+                          <PortalHost />
+                        </WindowOverlay>
                       </BottomSheetModalProvider>
                     </SheetProvider>
                   </NativeBaseline>
