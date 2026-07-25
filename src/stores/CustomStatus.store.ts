@@ -10,6 +10,8 @@ import { makePersistable } from "mobx-persist-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export class CustomStatusStore {
+    private static readonly LOCAL_CLEAR_GUARD_MS = 5000;
+
     text: string = "";
     emoji: PresenceActivityEmoji | null = null;
     enabled: boolean = false;
@@ -17,6 +19,7 @@ export class CustomStatusStore {
     onScheduledCustomStatusExpire?: (schedule: CustomStatusSchedule) => void;
 
     private scheduledTimer: ReturnType<typeof setTimeout> | null = null;
+    private localClearAt: number | null = null;
 
     constructor() {
         makeAutoObservable(this);
@@ -57,12 +60,14 @@ export class CustomStatusStore {
     }
 
     set(text: string, emoji?: PresenceActivityEmoji | null) {
+        this.localClearAt = null;
         this.text = text.trim();
         if (emoji !== undefined) this.emoji = emoji;
         this.enabled = hasCustomStatusContent(this.text, this.emoji);
     }
 
     setSnapshot(snapshot: CustomStatusSnapshot) {
+        this.localClearAt = null;
         this.text = snapshot.text?.trim() ?? "";
         this.emoji = snapshot.emoji ?? null;
         this.enabled = hasCustomStatusContent(this.text, this.emoji);
@@ -73,6 +78,7 @@ export class CustomStatusStore {
         this.emoji = null;
         this.enabled = false;
         this.scheduledCustomStatus = null;
+        this.localClearAt = Date.now();
 
         if (this.scheduledTimer) {
             clearTimeout(this.scheduledTimer);
@@ -81,9 +87,15 @@ export class CustomStatusStore {
     }
 
     setScheduledCustomStatus(schedule: CustomStatusSchedule | null) {
-        const previous = this.scheduledCustomStatus;
-
         if (schedule && schedule.until > Date.now()) {
+            if (
+                this.localClearAt &&
+                Date.now() - this.localClearAt <
+                    CustomStatusStore.LOCAL_CLEAR_GUARD_MS
+            ) {
+                return;
+            }
+
             this.scheduledCustomStatus = schedule;
             this.text = schedule.text;
             this.emoji = schedule.emoji;
@@ -97,16 +109,6 @@ export class CustomStatusStore {
             clearTimeout(this.scheduledTimer);
             this.scheduledTimer = null;
         }
-
-        if (previous) {
-            const revertTo = previous.revertTo;
-            if (revertTo) this.setSnapshot(revertTo);
-            else {
-                this.text = "";
-                this.emoji = null;
-                this.enabled = false;
-            }
-        }
     }
 
     syncFromPresenceActivity(activity: PresenceActivity | null) {
@@ -116,7 +118,22 @@ export class CustomStatusStore {
         )
             return;
 
-        if (!activity || activity.type !== "custom") {
+        const hasIncomingCustom =
+            activity?.type === "custom" &&
+            hasCustomStatusContent(
+                activity.state?.trim() || activity.name?.trim() || "",
+                activity.emoji ?? null
+            );
+
+        if (
+            this.localClearAt &&
+            Date.now() - this.localClearAt < CustomStatusStore.LOCAL_CLEAR_GUARD_MS
+        ) {
+            if (hasIncomingCustom) return;
+            this.localClearAt = null;
+        }
+
+        if (!hasIncomingCustom) {
             this.text = "";
             this.emoji = null;
             this.enabled = false;
@@ -124,8 +141,8 @@ export class CustomStatusStore {
         }
 
         this.setSnapshot({
-            text: activity.state?.trim() || activity.name?.trim() || null,
-            emoji: activity.emoji ?? null,
+            text: activity!.state?.trim() || activity!.name?.trim() || null,
+            emoji: activity!.emoji ?? null,
         });
     }
 

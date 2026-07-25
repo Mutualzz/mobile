@@ -648,7 +648,8 @@ export class GatewayStore {
 
   clearCustomStatus() {
     this.app.customStatus.clear();
-    this.pushCustomStatusPresenceUpdate();
+    this.clearScheduledCustomStatus();
+    this.pushCustomStatusPresenceUpdate({ persist: true });
   }
 
   scheduleCustomStatus(opts: {
@@ -2253,7 +2254,6 @@ export class GatewayStore {
     if (!selfId || !userId || String(userId) !== String(selfId)) return;
     this.app.customStatus.setScheduledCustomStatus(schedule);
     this.lastPresenceHash = null;
-    if (!schedule) this.pushCustomStatusPresenceUpdate();
   };
 
   private handleScheduledCustomStatusExpired = (

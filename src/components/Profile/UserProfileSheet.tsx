@@ -532,9 +532,7 @@ export const UserProfileSheet = observer(
                   variant="solid"
                   color="neutral"
                   padding={4}
-                  accessibilityLabel={t("a11y.moreOptions", {
-                    defaultValue: "More options",
-                  })}
+                  accessibilityLabel={t("a11y.moreOptions")}
                   onPress={open}
                   style={{ borderRadius: 9999 }}
                   size="sm"

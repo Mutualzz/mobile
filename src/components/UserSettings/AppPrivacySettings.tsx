@@ -133,7 +133,7 @@ export const AppPrivacySettings = observer(() => {
                     size="sm"
                     onPress={() => void app.relationships.unblockUser(userId)}
                   >
-                    {t("chat:contextMenu.unblock", { ns: "chat" })}
+                    {t("chat:contextMenu.unblock")}
                   </Button>
                 </Box>
               </Box>

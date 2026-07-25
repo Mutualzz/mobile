@@ -82,7 +82,7 @@ export const DMChannelItem = observer(({ channel }: Props) => {
         app.voice.connectionStatus !== "idle";
       preview = inThisCall ? t("call.inCall") : t("call.active");
     } else if (lastMessage && !("status" in lastMessage)) {
-      preview = formatDmMessagePreview(lastMessage, t);
+      preview = formatDmMessagePreview(lastMessage);
     }
 
     if (!preview) {
@@ -99,7 +99,7 @@ export const DMChannelItem = observer(({ channel }: Props) => {
     }
   } catch {
     if (lastMessage && !("status" in lastMessage)) {
-      preview = formatDmMessagePreview(lastMessage, t);
+      preview = formatDmMessagePreview(lastMessage);
     }
     if (!preview && channel.isGroupDM) {
       preview = `${recipients.length} ${t("groupDm.manage.members")}`;

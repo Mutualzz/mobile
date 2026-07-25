@@ -1,6 +1,7 @@
 import { MessageType } from "@mutualzz/types";
 import { isCallNoticeMessage } from "@mutualzz/client";
 import { isSystemMessageType, isSystemUser } from "@mutualzz/client";
+import i18n from "../i18n";
 
 interface PreviewMessage {
   type?: MessageType | number | string;
@@ -14,17 +15,16 @@ interface PreviewMessage {
   expressions?: unknown[] | null;
 }
 
-type Translate = (key: string, options?: Record<string, unknown>) => string;
-
 export function formatDmMessagePreview(
   message: PreviewMessage,
-  t: Translate,
 ): string | null {
   if (isCallNoticeMessage(message)) {
     const content = message.content?.trim();
     if (content) return content;
     const type = Number(message.type);
-    return type === MessageType.CallEnded ? t("call.ended") : t("call.missed");
+    return type === MessageType.CallEnded
+      ? i18n.t("call.ended", { ns: "chat" })
+      : i18n.t("call.missed", { ns: "chat" });
   }
 
   const type = Number(message.type);
@@ -44,13 +44,16 @@ export function formatDmMessagePreview(
 
   const attachmentCount = message.attachments?.length ?? 0;
   if (attachmentCount > 0) {
-    const label = t("feed.embed.attachments", { count: attachmentCount });
+    const label = i18n.t("feed.embed.attachments", {
+      ns: "chat",
+      count: attachmentCount
+    });
     return authorName ? `${authorName}: ${label}` : label;
   }
 
   const expressionCount = message.expressions?.length ?? 0;
   if (expressionCount > 0) {
-    const label = t("stickers.sticker");
+    const label = i18n.t("stickers.sticker", { ns: "chat" });
     return authorName ? `${authorName}: ${label}` : label;
   }
 
