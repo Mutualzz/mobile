@@ -103,7 +103,6 @@ export const CustomStatusEditor = observer(
     };
 
     const clearStatus = () => {
-      app.gateway.clearScheduledCustomStatus();
       app.gateway.clearCustomStatus();
       setText("");
       setEmoji(null);

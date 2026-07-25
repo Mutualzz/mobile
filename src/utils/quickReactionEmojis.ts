@@ -26,9 +26,11 @@ export type QuickReactionItem =
       };
 
 const resolveFavoriteKey = (
-    key: string,
+    key: string | null | undefined,
     app: AppStore,
 ): QuickReactionItem | null => {
+    if (typeof key !== "string" || !key) return null;
+
     if (key.startsWith("custom:")) {
         const id = key.slice(7);
         const expression = app.expressions.get(id);
@@ -107,6 +109,7 @@ export const getQuickReactionItems = (
 
     for (const key of app.settings?.extendedSettings.quickReactionEmojis ?? []) {
         if (items.length >= limit) break;
+        if (typeof key !== "string" || !key) continue;
 
         const item = resolveFavoriteKey(key, app);
         if (!item || seen.has(item.key)) continue;
@@ -117,6 +120,7 @@ export const getQuickReactionItems = (
 
     for (const key of app.settings?.favoriteEmojis ?? []) {
         if (items.length >= limit) break;
+        if (typeof key !== "string" || !key) continue;
 
         const item = resolveFavoriteKey(key, app);
         if (!item || seen.has(item.key)) continue;
