@@ -24,7 +24,7 @@ export function ensureDmReplyNotificationCategory() {
         },
       },
     ],
-  ).then(() => undefined);
+  ).then(() => null);
 
   return categoryReady;
 }

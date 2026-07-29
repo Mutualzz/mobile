@@ -110,7 +110,9 @@ export class SpeakingDetector {
           if (level != null) {
             peak = peak == null ? level : Math.max(peak, level);
           }
-        } catch {}
+        } catch {
+    // ignore
+}
       }
 
       const above = peak != null && peak > threshold;

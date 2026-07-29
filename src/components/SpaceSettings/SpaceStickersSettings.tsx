@@ -158,7 +158,7 @@ export const SpaceStickersSettings = observer(({ space }: Props) => {
           }, 300);
         });
       })
-      .catch(() => undefined);
+      .catch(() => { return; });
   };
 
   return (

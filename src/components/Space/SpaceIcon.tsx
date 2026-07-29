@@ -49,7 +49,6 @@ export const SpaceIcon = observer(({ space, selected, size = 36, ...props }: Pro
         width: resolvedSize,
         height: resolvedSize,
       }}
-      transparency={25}
     >
       <Avatar
         size={resolvedSize}

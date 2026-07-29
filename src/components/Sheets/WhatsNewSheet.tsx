@@ -14,7 +14,7 @@ export const WHATS_NEW_SHEET_ID = "whats-new";
 
 interface WhatsNewSheetProps {
   changelog: APIChangelog;
-  onAck: () => Promise<void> | void;
+  onAck?: () => Promise<void> | void;
 }
 
 export const WhatsNewSheet = observer(
@@ -24,7 +24,7 @@ export const WhatsNewSheet = observer(
     const { closeSheet } = useSheet();
 
     const handleAck = async () => {
-      await onAck();
+      await onAck?.();
       closeSheet(WHATS_NEW_SHEET_ID);
     };
 

@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
 const NativeBaseline = observer(({ children }: NativeBaselineProps) => {
   const app = useAppStore();
   const { theme } = useTheme();
-  const highContrast = app.settings?.extendedSettings.highContrast ?? false;
+  const highContrast = app.settings?.highContrast ?? false;
   const { width, height } = useWindowDimensions();
   const backgroundImageUrl = theme.backgroundImageUrl;
   const settings = useMemo(

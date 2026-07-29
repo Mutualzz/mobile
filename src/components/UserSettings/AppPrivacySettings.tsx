@@ -7,7 +7,7 @@ import {
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useSettingsOptionSheet } from "@hooks/useSettingsOptionSheet";
 import { useAppStore } from "@hooks/useStores";
-import { privacyLabelKey } from "@mutualzz/client";
+import { privacyLabelKey, type AccountSettingsPatch } from "@mutualzz/client";
 import {
   DM_PRIVACY_OPTIONS,
   PROFILE_VISIBILITY_OPTIONS,
@@ -39,10 +39,9 @@ export const AppPrivacySettings = observer(() => {
 
   if (!settings) return null;
 
-  const extended = settings.extendedSettings;
 
-  const patch = (next: Partial<typeof extended>) => {
-    settings.patchExtendedSettings(next);
+  const patch = (next: Partial<AccountSettingsPatch>) => {
+    settings.patchSettings(next);
   };
 
   const privacyLabel = (value: DmPrivacy | ProfileVisibility) =>
@@ -60,13 +59,13 @@ export const AppPrivacySettings = observer(() => {
         <SettingsSelectRow
           title={t("privacy.whoCanDm")}
           description={t("privacy.whoCanDmDescription")}
-          value={privacyLabel(extended.whoCanDm)}
+          value={privacyLabel(settings.whoCanDm)}
           onPress={() =>
             openPrivacyPicker(
               "privacy-who-can-dm",
               t("privacy.whoCanDm"),
               privacyOptions(DM_PRIVACY_OPTIONS),
-              extended.whoCanDm,
+              settings.whoCanDm,
               (value) => patch({ whoCanDm: value as DmPrivacy }),
             )
           }
@@ -77,13 +76,13 @@ export const AppPrivacySettings = observer(() => {
         <SettingsSelectRow
           title={t("privacy.profileVisibility")}
           description={t("privacy.profileVisibilityDescription")}
-          value={privacyLabel(extended.profileVisibility)}
+          value={privacyLabel(settings.profileVisibility)}
           onPress={() =>
             openPrivacyPicker(
               "privacy-profile-visibility",
               t("privacy.profileVisibility"),
               privacyOptions(PROFILE_VISIBILITY_OPTIONS),
-              extended.profileVisibility,
+              settings.profileVisibility,
               (value) =>
                 patch({ profileVisibility: value as ProfileVisibility }),
             )

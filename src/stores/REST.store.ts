@@ -21,7 +21,18 @@ const DEFAULT_HEADERS = {
 };
 
 const XHR_TIMEOUT_MS = 120_000;
-const AUTH_EXEMPT_PATHS = ["/auth/login", "/auth/register", "auth/login", "auth/register"];
+const AUTH_EXEMPT_PATHS = [
+  "/auth/login",
+  "/auth/register",
+  "auth/login",
+  "auth/register",
+  "/auth/discord/url",
+  "auth/discord/url",
+  "/auth/discord/exchange",
+  "auth/discord/exchange",
+  "/auth/discord/complete",
+  "auth/discord/complete",
+];
 
 async function parseResponse<Data>(res: Response): Promise<Data> {
     const text = await res.text();

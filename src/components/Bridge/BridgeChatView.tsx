@@ -88,7 +88,7 @@ export const BridgeChatView = observer(({ bridgeId, returnToSpaceId }: Props) =>
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ["me", "bridges"] });
       })
-      .catch(() => undefined);
+      .catch(() => { return; });
   }, [bridgeId, entries.length, app, queryClient]);
 
   const sendMutation = useMutation({
@@ -138,7 +138,8 @@ export const BridgeChatView = observer(({ bridgeId, returnToSpaceId }: Props) =>
       );
       app.bridgeChat.prepend(bridgeId, older);
     } catch {
-    } finally {
+    // ignore
+} finally {
       loadingOlderRef.current = false;
     }
   }, [app, bridgeId, entries, historyQuery.isSuccess]);

@@ -76,7 +76,9 @@ export const SpaceThemeProvider = observer(
       <ThemeContext.Provider
         value={{
           theme: emotionTheme,
-          changeTheme: () => undefined,
+          changeTheme() {
+            return;
+          },
           type: emotionTheme.type,
         }}
       >

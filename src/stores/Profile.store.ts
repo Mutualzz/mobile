@@ -48,7 +48,9 @@ export class ProfileStore {
     }
 
     update(profile: APIUserProfile) {
-        this.profiles.get(profile.userId)?.update(profile) ?? this.add(profile);
+        const existing = this.profiles.get(profile.userId);
+        if (existing) existing.update(profile);
+        else this.add(profile);
     }
 
     async resolve(userId: Snowflake, force = false) {

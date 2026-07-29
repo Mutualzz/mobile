@@ -2,6 +2,8 @@ import { makePersistable } from "mobx-persist-store";
 import { type IObservableArray, makeAutoObservable, observable } from "mobx";
 import type { AppStore } from "./App.store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { isResumeRoutePath } from "@mutualzz/client";
+import { normalizeRoutePath } from "@utils/navigation";
 
 interface Entry {
     href: string;
@@ -13,6 +15,7 @@ type Navigate = (opts: { to: string; replace?: boolean }) => void;
 export class NavigationStore {
     entries: IObservableArray<Entry> = observable.array([]);
     index = -1;
+    lastRoute: string | null = null;
     readonly max = 15;
 
     constructor(private readonly app: AppStore) {
@@ -20,9 +23,18 @@ export class NavigationStore {
 
         makePersistable(this, {
             name: "NavigationStore",
-            properties: ["entries", "index"],
+            properties: ["entries", "index", "lastRoute"],
             storage: AsyncStorage,
         });
+    }
+
+    trackRoute(pathname: string) {
+        if (!this.app.account) return;
+
+        const normalized = normalizeRoutePath(pathname);
+        if (!isResumeRoutePath(normalized)) return;
+
+        this.lastRoute = normalized;
     }
 
     record(href: string) {
@@ -76,5 +88,6 @@ export class NavigationStore {
     clear() {
         this.entries.clear();
         this.index = -1;
+        this.lastRoute = null;
     }
 }

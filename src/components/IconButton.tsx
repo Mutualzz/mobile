@@ -1,6 +1,6 @@
 import { IconButton as MzIconButton, type IconButtonProps, useTheme } from "@mutualzz/ui-native";
 import { forwardRef } from "react";
-import { View } from "react-native";
+import { type View } from "react-native";
 
 export const IconButton = forwardRef<View, IconButtonProps>(
     ({ color, variant, ...props }, ref) => {

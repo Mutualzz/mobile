@@ -34,7 +34,11 @@ type NativeModule = {
   appGroupPath?: string;
 };
 
-const noopSubscription: EventSubscription = { remove() {} };
+export const noopSubscription: EventSubscription = {
+  remove() {
+    return;
+  },
+};
 
 function loadNativeModule(): NativeModule | null {
   if (Platform.OS !== "ios") return null;

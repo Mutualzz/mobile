@@ -2,7 +2,7 @@ import type { PatchSpaceNotificationSettings } from "@mutualzz/validators";
 
 type MuteDuration = NonNullable<PatchSpaceNotificationSettings["muteDuration"]>;
 
-export const SPACE_MUTE_DURATIONS: ReadonlyArray<{
+export const SPACE_MUTE_DURATIONS: readonly {
   duration: Exclude<MuteDuration, "off">;
   labelKey:
     | "contextMenu.muteDuration1h"
@@ -10,7 +10,7 @@ export const SPACE_MUTE_DURATIONS: ReadonlyArray<{
     | "contextMenu.muteDuration24h"
     | "contextMenu.muteDuration1w"
     | "contextMenu.muteUntilTurnBackOn";
-}> = [
+}[] = [
   { duration: "1h", labelKey: "contextMenu.muteDuration1h" },
   { duration: "8h", labelKey: "contextMenu.muteDuration8h" },
   { duration: "24h", labelKey: "contextMenu.muteDuration24h" },

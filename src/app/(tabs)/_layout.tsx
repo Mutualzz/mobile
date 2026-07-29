@@ -1,6 +1,7 @@
 import { SheetHostBootstrap } from "@components/SheetHost/SheetHostBootstrap";
 import TabBar from "@components/Tabs/TabBar";
 import { UserBar } from "@components/User/UserBar";
+import { useTrackLastRoute } from "@hooks/useTrackLastRoute";
 import { useKeyboardOpen } from "@hooks/useKeyboardOffset";
 import { useAppStore } from "@hooks/useStores";
 import { Box } from "@mutualzz/ui-native";
@@ -14,6 +15,7 @@ const AppLayout = () => {
   const hideTabBar = useIsTabBarHidden();
   const keyboardOpen = useKeyboardOpen();
   const hideChrome = hideTabBar || keyboardOpen;
+  useTrackLastRoute();
 
   if (!app.token) return <Redirect href="/login" />;
 

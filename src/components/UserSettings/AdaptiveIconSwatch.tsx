@@ -3,7 +3,7 @@ import { useScaledThemeSwatchSize } from "@utils/accessibilityLayout";
 import { Image, View } from "react-native";
 
 const DEFAULT_SIZE = 64;
-const adaptiveIconMark = require("../../../assets/adaptive-icon.png");
+import adaptiveIconMark from "../../../assets/adaptive-icon.png";
 
 interface Props {
   primaryColor: ColorLike;

@@ -104,7 +104,7 @@ export const UserProfileSettings = observer(() => {
           void ImagePicker.clean();
         }
       })
-      .catch(() => undefined)
+      .catch(() => { return; })
       .finally(() => {
         void ImagePicker.clean();
       });

@@ -117,7 +117,6 @@ export const ChannelListItem = observer(
           }
           {...props}
           elevation={0}
-          transparency={0}
         >
           <Box
             style={{

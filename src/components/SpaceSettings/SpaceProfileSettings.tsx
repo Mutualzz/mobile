@@ -103,7 +103,7 @@ export const SpaceProfileSettings = observer(({ space }: Props) => {
         setRemoveIcon(false);
         setError(null);
       })
-      .catch(() => undefined);
+      .catch(() => { return; });
   };
 
   const clearImage = () => {

@@ -31,7 +31,7 @@ interface Props {
   autoplay?: boolean;
 }
 
-type NaturalSize = { width: number; height: number };
+interface NaturalSize { width: number; height: number }
 
 const naturalSizeCache = new Map<string, NaturalSize>();
 
@@ -140,7 +140,7 @@ export function MessageGifEmbed({
         if (cancelled) return;
         lockSize(width, height);
       },
-      () => undefined,
+      () => null,
     );
     return () => {
       cancelled = true;

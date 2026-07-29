@@ -1,6 +1,6 @@
-import { APISpaceBan, Snowflake } from "@mutualzz/types";
-import { AppStore } from "@stores/App.store";
-import { User } from "@stores/objects/User";
+import { type APISpaceBan, type Snowflake } from "@mutualzz/types";
+import { type AppStore } from "@stores/App.store";
+import { type User } from "@stores/objects/User";
 
 export class SpaceBan {
   spaceId: Snowflake;

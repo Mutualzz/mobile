@@ -20,7 +20,8 @@ export type UserSettingsSidebarPage =
     | "text_and_chat"
     | "accessibility"
     | "layout"
-    | "composer";
+    | "composer"
+    | "discord-import";
 export type UserSettingsSidebarCategories = "user-settings" | "app-settings";
 
 interface UserSettingsSidebarContextProps {

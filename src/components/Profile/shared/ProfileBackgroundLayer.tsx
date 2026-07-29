@@ -103,7 +103,7 @@ export function ProfileBackgroundLayer({
               <SkiaLinearGradient
                 start={vec(gradientPoints.start.x, gradientPoints.start.y)}
                 end={vec(gradientPoints.end.x, gradientPoints.end.y)}
-                colors={gradient.colors as string[]}
+                colors={gradient.colors}
                 positions={gradientPositions ?? undefined}
               />
             </Rect>

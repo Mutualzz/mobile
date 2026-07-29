@@ -16,7 +16,7 @@ export const BootSplash = observer(({ hideNativeSplash = true }: Props) => {
   useEffect(() => {
     if (!hideNativeSplash || hiddenRef.current) return;
     hiddenRef.current = true;
-    void SplashScreen.hideAsync().catch(() => undefined);
+    void SplashScreen.hideAsync().catch(() => { return; });
   }, [hideNativeSplash]);
 
   return (

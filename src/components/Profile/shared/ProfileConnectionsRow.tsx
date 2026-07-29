@@ -59,11 +59,11 @@ export const ProfileConnectionsRow = ({
     queryFn: async () => {
       try {
         return await app.rest.get<{
-          connections: Array<{
+          connections: {
             provider: string;
             displayName: string | null;
             externalUrl: string | null;
-          }>;
+          }[];
         }>(`/users/${userId}/connections`);
       } catch {
         return { connections: [] };

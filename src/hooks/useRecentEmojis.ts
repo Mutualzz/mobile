@@ -29,14 +29,16 @@ async function saveRecent(recents: RecentEmoji[]) {
     try {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(recents));
     } catch {
-    }
+    // ignore
+}
 }
 
 export async function clearRecentEmojisStorage() {
     try {
         await AsyncStorage.removeItem(STORAGE_KEY);
     } catch {
-    }
+    // ignore
+}
 }
 
 export function useRecentEmojis() {

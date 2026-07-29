@@ -121,7 +121,7 @@ export const UserEmojisTab = observer(() => {
           }, 300);
         });
       })
-      .catch(() => undefined);
+      .catch(() => { return; });
   };
 
   return (

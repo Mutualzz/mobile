@@ -12,6 +12,7 @@ import { clearRecentEmojisStorage } from "@hooks/useRecentEmojis";
 import {
   messageDisplayLabelKey,
   timestampFormatLabelKey,
+  type AccountSettingsPatch,
 } from "@mutualzz/client";
 import {
   CHAT_FONT_SCALE_MAX,
@@ -36,10 +37,9 @@ export const AppMessagesSettings = observer(() => {
 
   if (!settings) return null;
 
-  const extended = settings.extendedSettings;
 
-  const patch = (next: Partial<typeof extended>) => {
-    settings.patchExtendedSettings(next);
+  const patch = (next: Partial<AccountSettingsPatch>) => {
+    settings.patchSettings(next);
     void settings.sync();
   };
 
@@ -61,7 +61,7 @@ export const AppMessagesSettings = observer(() => {
         <SettingsSelectRow
           title={t("textAndChat.messageDisplay")}
           description={t("textAndChat.messageDisplayDescription")}
-          value={messageDisplayLabel(extended.messageDisplay)}
+          value={messageDisplayLabel(settings.messageDisplay)}
           onPress={() =>
             openPicker(
               "messages-display",
@@ -70,7 +70,7 @@ export const AppMessagesSettings = observer(() => {
                 value,
                 label: messageDisplayLabel(value),
               })),
-              extended.messageDisplay,
+              settings.messageDisplay,
               (value) => patch({ messageDisplay: value as MessageDisplay }),
             )
           }
@@ -84,7 +84,7 @@ export const AppMessagesSettings = observer(() => {
           min={CHAT_FONT_SCALE_MIN}
           max={CHAT_FONT_SCALE_MAX}
           step={CHAT_FONT_SCALE_STEP}
-          value={extended.chatFontScale}
+          value={settings.chatFontScale}
           formatValueLabel={(value) => `${Math.round(value * 100)}%`}
           onPreviewChange={applyChatFontScale}
           onChange={(scale) => {
@@ -98,7 +98,7 @@ export const AppMessagesSettings = observer(() => {
         <SettingsSelectRow
           title={t("textAndChat.timestampFormat")}
           description={t("textAndChat.timestampFormatDescription")}
-          value={timestampLabel(extended.timestampFormat)}
+          value={timestampLabel(settings.timestampFormat)}
           onPress={() =>
             openPicker(
               "messages-timestamp",
@@ -107,7 +107,7 @@ export const AppMessagesSettings = observer(() => {
                 value,
                 label: timestampLabel(value),
               })),
-              extended.timestampFormat,
+              settings.timestampFormat,
               (value) => patch({ timestampFormat: value as TimestampFormat }),
             )
           }
@@ -115,10 +115,21 @@ export const AppMessagesSettings = observer(() => {
 
         <Divider />
 
+        <Divider />
+
+        <SettingsToggleRow
+          title={t("textAndChat.showRoleColorsInMessages")}
+          description={t("textAndChat.showRoleColorsInMessagesDescription")}
+          checked={settings.showRoleColorsInMessages}
+          onChange={(checked) => patch({ showRoleColorsInMessages: checked })}
+        />
+
+        <Divider />
+
         <SettingsToggleRow
           title={t("textAndChat.showLinkEmbeds")}
           description={t("textAndChat.showLinkEmbedsDescription")}
-          checked={extended.showLinkEmbeds}
+          checked={settings.showLinkEmbeds}
           onChange={(checked) => patch({ showLinkEmbeds: checked })}
         />
 
@@ -127,7 +138,7 @@ export const AppMessagesSettings = observer(() => {
         <SettingsToggleRow
           title={t("textAndChat.gifAutoplay")}
           description={t("textAndChat.gifAutoplayDescription")}
-          checked={extended.gifAutoplay}
+          checked={settings.gifAutoplay}
           onChange={(checked) => patch({ gifAutoplay: checked })}
         />
 
@@ -136,7 +147,7 @@ export const AppMessagesSettings = observer(() => {
         <SettingsToggleRow
           title={t("textAndChat.revealAllSpoilers")}
           description={t("textAndChat.revealAllSpoilersDescription")}
-          checked={extended.revealAllSpoilers}
+          checked={settings.revealAllSpoilers}
           onChange={(checked) => patch({ revealAllSpoilers: checked })}
         />
 
@@ -145,7 +156,7 @@ export const AppMessagesSettings = observer(() => {
         <SettingsToggleRow
           title={t("textAndChat.showTypingIndicators")}
           description={t("textAndChat.showTypingIndicatorsDescription")}
-          checked={extended.showTypingIndicators}
+          checked={settings.showTypingIndicators}
           onChange={(checked) => patch({ showTypingIndicators: checked })}
         />
 
@@ -154,7 +165,7 @@ export const AppMessagesSettings = observer(() => {
         <SettingsToggleRow
           title={t("textAndChat.sendTypingIndicators")}
           description={t("textAndChat.sendTypingIndicatorsDescription")}
-          checked={extended.sendTypingIndicators}
+          checked={settings.sendTypingIndicators}
           onChange={(checked) => patch({ sendTypingIndicators: checked })}
         />
       </SettingsSection>
@@ -172,7 +183,7 @@ export const AppMessagesSettings = observer(() => {
         <SettingsToggleRow
           title={t("composer.showEmojiPicker")}
           description={t("composer.showEmojiPickerDescription")}
-          checked={extended.showEmojiPicker}
+          checked={settings.showEmojiPicker}
           onChange={(checked) => patch({ showEmojiPicker: checked })}
         />
 
@@ -181,7 +192,7 @@ export const AppMessagesSettings = observer(() => {
         <SettingsToggleRow
           title={t("composer.showGifPicker")}
           description={t("composer.showGifPickerDescription")}
-          checked={extended.showGifPicker}
+          checked={settings.showGifPicker}
           onChange={(checked) => patch({ showGifPicker: checked })}
         />
 
@@ -190,7 +201,7 @@ export const AppMessagesSettings = observer(() => {
         <SettingsToggleRow
           title={t("composer.showStickerPicker")}
           description={t("composer.showStickerPickerDescription")}
-          checked={extended.showStickerPicker}
+          checked={settings.showStickerPicker}
           onChange={(checked) => patch({ showStickerPicker: checked })}
         />
 
@@ -199,7 +210,7 @@ export const AppMessagesSettings = observer(() => {
         <SettingsToggleRow
           title={t("composer.replyWithMention")}
           description={t("composer.replyWithMentionDescription")}
-          checked={extended.replyWithMention}
+          checked={settings.replyWithMention}
           onChange={(checked) => patch({ replyWithMention: checked })}
         />
       </SettingsSection>

@@ -6,7 +6,7 @@ import {
 } from "@components/UserSettings/SettingsField";
 import { useSettingsOptionSheet } from "@hooks/useSettingsOptionSheet";
 import { useAppStore } from "@hooks/useStores";
-import { uiDensityLabelKey } from "@mutualzz/client";
+import { uiDensityLabelKey, type AccountSettingsPatch } from "@mutualzz/client";
 import {
   UI_DENSITY_OPTIONS,
   type UiDensity,
@@ -24,10 +24,9 @@ export const AppAppearanceExtrasSettings = observer(() => {
 
   if (!settings) return null;
 
-  const extended = settings.extendedSettings;
 
-  const patch = (next: Partial<typeof extended>) => {
-    settings.patchExtendedSettings(next);
+  const patch = (next: Partial<AccountSettingsPatch>) => {
+    settings.patchSettings(next);
     void settings.sync();
   };
 
@@ -44,13 +43,13 @@ export const AppAppearanceExtrasSettings = observer(() => {
         <SettingsSelectRow
           title={t("appearance.uiDensity")}
           description={t("appearance.uiDensityDescription")}
-          value={uiDensityLabel(extended.uiDensity)}
+          value={uiDensityLabel(settings.uiDensity)}
           onPress={() =>
             openPicker(
               "appearance-ui-density",
               t("appearance.uiDensity"),
               densityOptions,
-              extended.uiDensity,
+              settings.uiDensity,
               (value) => {
                 const uiDensity = value as UiDensity;
                 applyUiDensity(uiDensity);
@@ -65,7 +64,7 @@ export const AppAppearanceExtrasSettings = observer(() => {
         <SettingsToggleRow
           title={t("layout.defaultMemberListVisible")}
           description={t("layout.defaultMemberListVisibleDescription")}
-          checked={extended.defaultMemberListVisible}
+          checked={settings.defaultMemberListVisible}
           onChange={(checked) => {
             patch({ defaultMemberListVisible: checked });
             app.setMemberListVisible(checked);
@@ -95,7 +94,7 @@ export const AppAppearanceExtrasSettings = observer(() => {
         <SettingsToggleRow
           title={t("accessibility.reducedMotion")}
           description={t("accessibility.reducedMotionDescription")}
-          checked={extended.reducedMotion}
+          checked={settings.reducedMotion}
           onChange={(checked) => patch({ reducedMotion: checked })}
         />
 
@@ -104,7 +103,7 @@ export const AppAppearanceExtrasSettings = observer(() => {
         <SettingsToggleRow
           title={t("accessibility.highContrast")}
           description={t("accessibility.highContrastDescription")}
-          checked={extended.highContrast}
+          checked={settings.highContrast}
           onChange={(checked) => patch({ highContrast: checked })}
         />
 

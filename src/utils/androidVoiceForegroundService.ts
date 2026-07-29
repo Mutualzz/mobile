@@ -27,7 +27,9 @@ export function registerAndroidVoiceForegroundService() {
   if (Platform.OS !== "android" || foregroundServiceRegistered) return;
 
   notifee.registerForegroundService(() => {
-    return new Promise(() => {});
+    return new Promise<void>(() => {
+      return;
+    });
   });
   foregroundServiceRegistered = true;
   bindAndroidNotificationEvents();
@@ -128,10 +130,12 @@ export async function stopAndroidVoiceForegroundService() {
   try {
     await notifee.stopForegroundService();
   } catch {
-  }
+    // ignore
+}
 
   try {
     await notifee.cancelNotification(ANDROID_VOICE_NOTIFICATION_ID);
   } catch {
-  }
+    // ignore
+}
 }

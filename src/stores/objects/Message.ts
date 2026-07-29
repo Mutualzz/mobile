@@ -39,6 +39,7 @@ export class Message extends MessageBase {
   reactions: APIMessageReaction[] = [];
 
   edited: boolean;
+  pinned: boolean;
 
   editing = false;
 
@@ -52,6 +53,7 @@ export class Message extends MessageBase {
     this.updatedAt = data.updatedAt ? new Date(data.updatedAt) : null;
     this.nonce = data.nonce;
     this.edited = data.edited ?? false;
+    this.pinned = data.pinned ?? false;
     this.embeds = data.embeds ?? [];
     this.codedLinks = data.codedLinks ?? [];
     this.attachments = data.attachments ?? [];
@@ -70,6 +72,7 @@ export class Message extends MessageBase {
       expressions: observable,
       reactions: observable.shallow,
       edited: observable,
+      pinned: observable,
       editing: observable,
       update: action.bound,
       setEditing: action.bound,
@@ -113,6 +116,7 @@ export class Message extends MessageBase {
     this.updatedAt = message.updatedAt ? new Date(message.updatedAt) : null;
 
     this.edited = message.edited ?? this.edited;
+    this.pinned = message.pinned ?? this.pinned;
     this.type = message.type;
     this.repliedToId = message.repliedToId ?? null;
     if (isLoadedRelation(message.repliedTo)) {

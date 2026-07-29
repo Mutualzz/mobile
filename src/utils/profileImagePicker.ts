@@ -6,17 +6,17 @@ import ImagePicker, {
 import { cacheDirectory, downloadAsync } from "expo-file-system/legacy";
 import type { ProfileImageCrop } from "@mutualzz/types";
 
-export type PickedProfileImage = {
+export interface PickedProfileImage {
   path: string;
   mime: string;
   name: string;
-};
+}
 
-export type ProfileImageCropOptions = {
+export interface ProfileImageCropOptions {
   cropWidth?: number;
   cropHeight?: number;
   freeStyle?: boolean;
-};
+}
 
 function isPickerCancelled(error: unknown) {
   return (

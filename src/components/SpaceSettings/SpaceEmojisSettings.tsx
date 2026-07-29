@@ -158,7 +158,7 @@ export const SpaceEmojisSettings = observer(({ space }: Props) => {
           }, 300);
         });
       })
-      .catch(() => undefined);
+      .catch(() => { return; });
   };
 
   return (

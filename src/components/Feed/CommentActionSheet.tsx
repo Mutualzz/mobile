@@ -46,7 +46,8 @@ export const CommentActionSheet = observer(
       try {
         await Clipboard.setStringAsync(plainText);
       } catch {
-      }
+    // ignore
+}
       onClose();
     };
 

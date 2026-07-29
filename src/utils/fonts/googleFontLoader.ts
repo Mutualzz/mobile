@@ -27,7 +27,7 @@ export async function ensureGoogleFont(family: string | null | undefined) {
   if (inflight) return inflight;
 
   const request = (async () => {
-    const weight = font.weights.includes(400) ? 400 : font.weights[0]!;
+    const weight = font.weights.includes(400) ? 400 : font.weights[0];
     await Font.loadAsync({
       [font.family]: bunnyFileUrl(font.family, weight),
     });

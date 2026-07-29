@@ -174,8 +174,8 @@ export class MediasoupSession {
   private withProduceLock<T>(fn: () => Promise<T>): Promise<T> {
     const run = this.produceChain.then(fn, fn);
     this.produceChain = run.then(
-      () => undefined,
-      () => undefined,
+      () => null,
+      () => null,
     );
     return run;
   }
@@ -242,7 +242,9 @@ export class MediasoupSession {
       try {
         if (shouldTransmit) this.micProducer.resume();
         else this.micProducer.pause();
-      } catch {}
+      } catch {
+    // ignore
+}
     }
   }
 
@@ -315,7 +317,7 @@ export class MediasoupSession {
     const authData = await this.rpc(VoiceOpcodes.VoiceAuthenticate, { token });
     if (signal.aborted) return;
 
-    let rtpCapabilities: mediasoupClient.types.RtpCapabilities | null = null;
+    let rtpCapabilities: mediasoupClient.types.RtpCapabilities | null;
     try {
       rtpCapabilities = parseRtpCapabilitiesResponse(authData);
     } catch {
@@ -465,7 +467,9 @@ export class MediasoupSession {
       stream.getTracks().forEach((track) => {
         try {
           track.stop();
-        } catch {}
+        } catch {
+    // ignore
+}
       });
       this.micTrack = null;
       throw error;
@@ -533,7 +537,9 @@ export class MediasoupSession {
       stream.getTracks().forEach((track) => {
         try {
           track.stop();
-        } catch {}
+        } catch {
+    // ignore
+}
       });
       this.cameraTrack = null;
       throw error;
@@ -545,13 +551,17 @@ export class MediasoupSession {
 
     try {
       this.cameraProducer?.close();
-    } catch {}
+    } catch {
+    // ignore
+}
     this.cameraProducer = null;
 
     if (this.cameraTrack) {
       try {
         this.cameraTrack.stop();
-      } catch {}
+      } catch {
+    // ignore
+}
       this.cameraTrack = null;
       this.localCameraStream = null;
     }
@@ -559,14 +569,16 @@ export class MediasoupSession {
     if (producerId) {
       try {
         await this.rpc(VoiceOpcodes.VoiceCloseProducer, { producerId });
-      } catch {}
+      } catch {
+    // ignore
+}
     }
   }
 
   async restartMic(signal: AbortSignal) {
     await this.produceChain.then(
-      () => undefined,
-      () => undefined,
+      () => null,
+      () => null,
     );
     if (signal.aborted) return;
 
@@ -582,19 +594,25 @@ export class MediasoupSession {
 
     try {
       this.micProducer?.close();
-    } catch {}
+    } catch {
+    // ignore
+}
     this.micProducer = null;
 
     if (producerId && this.socket) {
       try {
         await this.rpc(VoiceOpcodes.VoiceCloseProducer, { producerId });
-      } catch {}
+      } catch {
+    // ignore
+}
     }
 
     if (this.micTrack) {
       try {
         this.micTrack.stop();
-      } catch {}
+      } catch {
+    // ignore
+}
       this.micTrack = null;
     }
 
@@ -628,10 +646,14 @@ export class MediasoupSession {
 
     try {
       this.sendTransport?.close();
-    } catch {}
+    } catch {
+    // ignore
+}
     try {
       this.receiverTransport?.close();
-    } catch {}
+    } catch {
+    // ignore
+}
     this.sendTransport = null;
     this.receiverTransport = null;
     this.produceChain = Promise.resolve();
@@ -641,29 +663,39 @@ export class MediasoupSession {
       this.socket.onmessage = null;
       try {
         this.socket.close(1000, "teardown");
-      } catch {}
+      } catch {
+    // ignore
+}
       this.socket = null;
     }
 
     try {
       this.micProducer?.close();
-    } catch {}
+    } catch {
+    // ignore
+}
     this.micProducer = null;
     if (this.micTrack) {
       try {
         this.micTrack.stop();
-      } catch {}
+      } catch {
+    // ignore
+}
       this.micTrack = null;
     }
 
     try {
       this.cameraProducer?.close();
-    } catch {}
+    } catch {
+    // ignore
+}
     this.cameraProducer = null;
     if (this.cameraTrack) {
       try {
         this.cameraTrack.stop();
-      } catch {}
+      } catch {
+    // ignore
+}
       this.cameraTrack = null;
       this.localCameraStream = null;
     }
@@ -671,7 +703,9 @@ export class MediasoupSession {
     for (const [, consumer] of this.consumersByProducerId) {
       try {
         consumer.close();
-      } catch {}
+      } catch {
+    // ignore
+}
     }
     this.consumersByProducerId.clear();
 
@@ -679,7 +713,9 @@ export class MediasoupSession {
       stream.getTracks().forEach((track) => {
         try {
           track.stop();
-        } catch {}
+        } catch {
+    // ignore
+}
       });
     }
     this.remoteStreams.clear();
@@ -749,7 +785,9 @@ export class MediasoupSession {
     if (signal.aborted) {
       try {
         consumer.close();
-      } catch {}
+      } catch {
+    // ignore
+}
       return;
     }
 
@@ -831,7 +869,9 @@ export class MediasoupSession {
     if (consumer) {
       try {
         consumer.close();
-      } catch {}
+      } catch {
+    // ignore
+}
       this.consumersByProducerId.delete(producerId);
     }
 
@@ -840,7 +880,9 @@ export class MediasoupSession {
       stream.getTracks().forEach((track) => {
         try {
           track.stop();
-        } catch {}
+        } catch {
+    // ignore
+}
       });
       this.remoteStreams.delete(producerId);
     }
@@ -877,7 +919,9 @@ export class MediasoupSession {
           const reason = event.reason || "Voice connection closed";
           try {
             this.callbacks.onSocketClosed(reason);
-          } catch {}
+          } catch {
+    // ignore
+}
         };
         resolve(ws);
       };
@@ -889,7 +933,9 @@ export class MediasoupSession {
           ws.onerror = null;
           try {
             ws.close(1000, "superseded");
-          } catch {}
+          } catch {
+    // ignore
+}
           reject(new Error("Voice disconnected"));
         },
         { once: true },

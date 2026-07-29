@@ -46,8 +46,8 @@ export function startWidgetSnapshotSync(app: AppStore) {
           app.settings?.currentTheme ?? app.themes?.currentTheme ?? null,
         voiceConnected: app.voice.connectionStatus === "connected",
         voiceChannelId: app.voice.currentChannelId ?? "",
-        voiceMuted: app.voice.effectiveSelfMute === true,
-        voiceDeafened: app.voice.effectiveSelfDeaf === true,
+        voiceMuted: app.voice.effectiveSelfMute,
+        voiceDeafened: app.voice.effectiveSelfDeaf,
       };
     },
     ({ ready }) => {

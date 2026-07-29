@@ -32,7 +32,7 @@ import { Alert, Linking, Pressable, ScrollView } from "react-native";
 
 type BridgeTab = "bridges" | "discord" | "voice" | "link";
 
-type BridgeMemberRow = {
+interface BridgeMemberRow {
   userId: string;
   role: "admin" | "member";
   username: string;
@@ -42,7 +42,7 @@ type BridgeMemberRow = {
   online: boolean;
   minecraftUuid: string | null;
   minecraftName: string | null;
-};
+}
 const tabs: BridgeTab[] = ["bridges", "discord", "voice", "link"];
 
 const ChecklistItem = ({
@@ -106,7 +106,7 @@ export const MinecraftBridgeSettings = observer(({ spaceId }: { spaceId: string 
     queryFn: async () => {
       try {
         const detail = await app.rest.get<BridgeDetail>(spaceBridgePath);
-        return [detail as BridgeSummary];
+        return [detail];
       } catch {
         return [] as BridgeSummary[];
       }
@@ -138,9 +138,9 @@ export const MinecraftBridgeSettings = observer(({ spaceId }: { spaceId: string 
     queryFn: () => app.rest.get<MinecraftLink | null>("/@me/bridges/link"),
   });
 
-  type DiscordStatus = {
+  interface DiscordStatus {
     botInviteUrl: string | null;
-  };
+  }
 
   const discordStatusQuery = useQuery({
     queryKey: ["me", "bridges", "discord", "status"],

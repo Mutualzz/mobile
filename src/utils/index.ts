@@ -1,6 +1,6 @@
-import { AppStore } from "@stores/App.store";
-import { Channel } from "@stores/objects/Channel";
-import { Theme } from "@stores/objects/Theme";
+import { type AppStore } from "@stores/App.store";
+import { type Channel } from "@stores/objects/Channel";
+import { type Theme } from "@stores/objects/Theme";
 import { createSystemMessage as createSystemMessageBase } from "@mutualzz/client";
 
 export const sortThemes = (themes: Theme[]): Theme[] => {

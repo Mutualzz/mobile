@@ -96,7 +96,9 @@ export const AppVoiceVideoSettings = observer(() => {
           nextStream.getTracks().forEach((track) => {
             try {
               track.stop();
-            } catch {}
+            } catch {
+    // ignore
+}
           });
           return;
         }
@@ -116,7 +118,9 @@ export const AppVoiceVideoSettings = observer(() => {
         stream.getTracks().forEach((track) => {
           try {
             track.stop();
-          } catch {}
+          } catch {
+    // ignore
+}
         });
       }
       setTestStream(null);

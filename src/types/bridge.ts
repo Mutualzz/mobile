@@ -1,4 +1,4 @@
-export type BridgeSummary = {
+export interface BridgeSummary {
   id: string;
   name: string;
   spaceId?: string;
@@ -10,13 +10,13 @@ export type BridgeSummary = {
   unread?: boolean;
   lastMessageId?: string | null;
   lastAckedId?: string | null;
-};
+}
 
-export type PluginConfig = {
+export interface PluginConfig {
   hubUrl: string;
   token: string;
   serverId: string;
-};
+}
 
 export type BridgeDetail = BridgeSummary & {
   spaceId?: string;
@@ -64,18 +64,18 @@ export type BridgeDetail = BridgeSummary & {
   }[];
 };
 
-export type MinecraftLink = {
+export interface MinecraftLink {
   minecraftUuid: string;
   minecraftName: string;
   discordId: string | null;
   createdAt: string;
-};
+}
 
-export type CreatedBridgeResult = {
+export interface CreatedBridgeResult {
   id: string;
   name: string;
   pluginConfig: PluginConfig;
-};
+}
 
 export const sanitizeServerId = (value: string) =>
   value.toLowerCase().replace(/[^a-z0-9_-]/g, "");

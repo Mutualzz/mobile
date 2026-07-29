@@ -1,7 +1,7 @@
 import { Button } from "@components/Button";
 import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
-import { HttpException } from "@mutualzz/types";
+import { type HttpException } from "@mutualzz/types";
 import type { APIPrivateUser } from "@mutualzz/types";
 import { InputDefault, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";

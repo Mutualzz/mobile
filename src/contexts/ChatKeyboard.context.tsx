@@ -3,10 +3,10 @@ import type { SharedValue } from "react-native-reanimated";
 
 export const CHAT_COMPOSER_NATIVE_ID = "mutualzz-chat-composer";
 
-export type ChatKeyboardContextValue = {
+export interface ChatKeyboardContextValue {
   extraContentPadding: SharedValue<number>;
   composerHeight: SharedValue<number>;
-};
+}
 
 const ChatKeyboardContext = createContext<ChatKeyboardContextValue | null>(
   null,

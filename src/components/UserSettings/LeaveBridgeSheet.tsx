@@ -24,7 +24,7 @@ export const LeaveBridgeSheet = observer(
       mutationFn: () =>
         app.rest.delete(`/@me/bridges/${bridgeId}/members/@me`),
       onSuccess: () => {
-        queryClient.setQueryData<Array<{ id: string }>>(
+        queryClient.setQueryData<{ id: string }[]>(
           ["me", "bridges"],
           (prev) => (prev ?? []).filter((b) => b.id !== bridgeId),
         );

@@ -1,12 +1,12 @@
 import { ChannelType } from "@mutualzz/types";
 import { Linking, Platform } from "react-native";
 import type { AppStore } from "@stores/App.store";
-import { addWidgetActionListener } from "voice-live-activity";
+import { addWidgetActionListener, noopSubscription } from "voice-live-activity";
 import { publishWidgetSnapshot } from "@utils/widgetSnapshot";
 
 export function bindWidgetActionHandlers(app: AppStore) {
   if (Platform.OS !== "ios") {
-    return { remove() {} };
+    return noopSubscription;
   }
 
   try {
@@ -49,6 +49,6 @@ export function bindWidgetActionHandlers(app: AppStore) {
       }
     });
   } catch {
-    return { remove() {} };
+    return noopSubscription;
   }
 }

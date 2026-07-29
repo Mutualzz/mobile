@@ -6,7 +6,6 @@ import {
   resolveActiveModeKey,
   shouldClearPendingMode,
   shouldIgnoreSpacesHubTap,
-  shouldPersistPreferredMode,
 } from "@mutualzz/client";
 import { formatColor } from "@mutualzz/ui-core";
 import type { ModeKey } from "@mutualzz/types";
@@ -109,9 +108,6 @@ export const HubModeSwitcher = observer(() => {
                 return;
               }
               setPending(mode.key);
-              if (shouldPersistPreferredMode(mode.key)) {
-                app.settings?.setPreferredMode(mode.key);
-              }
               requestAnimationFrame(() => {
                 navigateToModeHub(modeKeyToAppMode(mode.key));
               });

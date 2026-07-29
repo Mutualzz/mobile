@@ -25,6 +25,7 @@ export class AccountStore {
   email?: string | null = null;
   accentColor: string;
   flags: BitField<UserFlags>;
+  discordId?: string | null = null;
   createdAt: Date;
   raw: APIPrivateUser;
   private readonly logger = new Logger({
@@ -44,6 +45,7 @@ export class AccountStore {
     this.createdAt = new Date(user.createdAt);
 
     this.flags = BitField.fromString(userFlags, user.flags.toString());
+    this.discordId = user.discordId ?? null;
 
     this.raw = user;
 

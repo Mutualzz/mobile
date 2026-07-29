@@ -107,7 +107,7 @@ export const getQuickReactionItems = (
     const items: QuickReactionItem[] = [];
     const seen = new Set<string>();
 
-    for (const key of app.settings?.extendedSettings.quickReactionEmojis ?? []) {
+    for (const key of app.settings?.quickReactionEmojis ?? []) {
         if (items.length >= limit) break;
         if (typeof key !== "string" || !key) continue;
 

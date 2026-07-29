@@ -1,7 +1,7 @@
-import { Snowflake } from "@mutualzz/types";
+import { type Snowflake } from "@mutualzz/types";
 import { action, makeAutoObservable, observable } from "mobx";
 import type { AppStore } from "@stores/App.store";
-import { User } from "@stores/objects/User";
+import { type User } from "@stores/objects/User";
 
 interface TypingEntry {
     userId: Snowflake;

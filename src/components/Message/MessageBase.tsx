@@ -22,10 +22,9 @@ export const MessageBase = observer(function MessageBase({
   ...props
 }: Props) {
   const app = useAppStore();
-  const extended = app.settings?.extendedSettings;
   const layoutStyles = getMessageLayoutStyles(
-    extended?.messageDisplay ?? "default",
-    extended?.uiDensity ?? "default",
+    app.settings?.messageDisplay ?? "default",
+    app.settings?.uiDensity ?? "default",
   );
 
   return (
@@ -187,7 +186,7 @@ export const MessageDetails = observer(
     const { t } = useTranslation("common");
     const isEdited = message instanceof Message && message.edited;
     const timestampFormat =
-      app.settings?.extendedSettings.timestampFormat ?? "relative";
+      app.settings?.timestampFormat ?? "relative";
 
     return (
       <DetailsBase style={{ opacity: 0.6 }}>

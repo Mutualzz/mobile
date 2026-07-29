@@ -86,7 +86,7 @@ export const MessageEmbed = observer(
             return <PostEmbedPreview post={embed.post} />;
         }
 
-        const gifAutoplay = app.settings?.extendedSettings.gifAutoplay ?? true;
+        const gifAutoplay = app.settings?.gifAutoplay ?? true;
 
         if (embed.type === "gifv") {
             const mediaUrl = embed.media || embed.image || embed.url || "";

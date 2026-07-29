@@ -89,6 +89,7 @@ export class AppStore {
   replyMention = true;
   jumpToMessage: { channelId: string; messageId: string } | null = null;
   highlightedMessageId: string | null = null;
+  onboardingCompleted = false;
 
   private readonly logger = new Logger({
     tag: "AppStore",
@@ -115,18 +116,18 @@ export class AppStore {
 
     makePersistable(this, {
       name: "AppStore",
-      properties: ["memberListVisible", "dontShowLinkWarning"],
+      properties: ["memberListVisible", "dontShowLinkWarning", "onboardingCompleted"],
       storage: AsyncStorage,
     });
 
     reaction(
-      () => this.settings?.extendedSettings.chatFontScale ?? 1,
+      () => this.settings?.chatFontScale ?? 1,
       (scale) => applyChatFontScale(scale),
       { fireImmediately: true },
     );
 
     reaction(
-      () => this.settings?.extendedSettings.uiDensity ?? "default",
+      () => this.settings?.uiDensity ?? "default",
       (uiDensity) => applyUiDensity(uiDensity),
       { fireImmediately: true },
     );
@@ -139,6 +140,18 @@ export class AppStore {
     if (this.isAppLoading) return false;
     if (!this.token) return true;
     return this.hasBootstrapped || this.isGatewayReady;
+  }
+
+  get needsOnboarding() {
+    if (!this.isGatewayReady || !this.account) return false;
+    if (this.onboardingCompleted) return false;
+    if (this.spaces.all.length > 0) return false;
+    if (this.relationships.friends.length > 0) return false;
+    return true;
+  }
+
+  completeOnboarding() {
+    this.onboardingCompleted = true;
   }
 
   getSuggestedGroupDMRecipients(): User[] {
@@ -241,9 +254,9 @@ export class AppStore {
       const next = new AccountSettingsStore(this, settings);
       if (pending) next.applyLocalOverrides(pending);
       this.settings = next;
-      this.replyMention = next.extendedSettings.replyWithMention;
+      this.replyMention = next.replyWithMention;
       if (isInitialSettings) {
-        this.memberListVisible = next.extendedSettings.defaultMemberListVisible;
+        this.memberListVisible = next.defaultMemberListVisible;
       }
     }
   }
@@ -276,14 +289,16 @@ export class AppStore {
     try {
       await this.rest.post("auth/logout");
     } catch {
-    }
+    // ignore
+}
 
-    void clearRegisteredPushTokens(this.rest).catch(() => undefined);
+    void clearRegisteredPushTokens(this.rest).catch(() => { return; });
 
     try {
       await this.voice.leave();
     } catch {
-    }
+    // ignore
+}
 
     void this.gateway.disconnect();
 

@@ -186,7 +186,7 @@ const StaffReportDetailScreen = () => {
 
   const reasonKey =
     report &&
-    reportReasonKeys[report.reason as keyof typeof reportReasonKeys];
+    reportReasonKeys[report.reason];
 
   return (
     <Screen style={{ flexDirection: "column" }}>

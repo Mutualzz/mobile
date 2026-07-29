@@ -15,6 +15,7 @@ import {
   ChatTextIcon,
   DevicesIcon,
   LifebuoyIcon,
+  DiscordLogoIcon,
   LinkSimpleIcon,
   MicrophoneIcon,
   PaletteIcon,
@@ -30,7 +31,7 @@ import {
   settingsCategoryTitleKeys,
   settingsPageTitleKeys,
 } from "@mutualzz/i18n";
-import { Box, ButtonGroup, Divider, Typography } from "@mutualzz/ui-native";
+import { Box, ButtonGroup } from "@mutualzz/ui-native";
 import { type Href } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { type ComponentType } from "react";
@@ -51,6 +52,7 @@ const settingsPages: SettingsPages = {
     { label: "profile", Icon: PaintBrushIcon },
     { label: "expressions", Icon: SmileyIcon },
     { label: "connections", Icon: LinkSimpleIcon },
+    { label: "discord-import", Icon: DiscordLogoIcon },
   ],
   "app-settings": [
     { label: "appearance", Icon: PaletteIcon },
@@ -93,7 +95,7 @@ const SettingsIndex = () => {
       }}
     >
       <SettingsHeader title={t("title")} />
-      {categories.map(([category, pages], index) => (
+      {categories.map(([category, pages]) => (
         <Box key={category}>
           <SettingsNavSection
             title={t(
@@ -124,22 +126,13 @@ const SettingsIndex = () => {
               ))}
             </ButtonGroup>
           </SettingsNavSection>
-          {index < categories.length - 1 && (
-            <Divider
-              style={{
-                paddingInline: 16,
-                filter: "opacity(0.5)",
-              }}
-              lineColor="muted"
-            />
-          )}
         </Box>
       ))}
 
       <SettingsNavButton
         label={t("helpAndSupport")}
         icon={<LifebuoyIcon weight="fill" size={20} color={navIconColor} />}
-        onPress={() => navigate("/settings/support" as Href)}
+        onPress={() => navigate("/settings/support")}
       />
 
       {app.account?.isStaff ? (

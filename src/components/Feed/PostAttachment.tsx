@@ -66,7 +66,7 @@ export function PostAttachment({
   }
 
   return (
-    <Pressable onPress={() => Linking.openURL(attachment.url).catch(() => {})}>
+    <Pressable onPress={() => Linking.openURL(attachment.url).catch(() => { return; })}>
       <Paper
         style={{
           flexDirection: "row",
