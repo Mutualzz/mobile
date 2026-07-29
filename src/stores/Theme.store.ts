@@ -5,7 +5,7 @@ import type { AppStore } from "./App.store";
 import { Theme } from "./objects/Theme";
 
 import { baseDarkTheme } from "@mutualzz/ui-core";
-import { themes as baseThemes } from "@themes/index";
+import { buildBuiltInThemes } from "@mutualzz/themes";
 
 export class ThemeStore {
   readonly themes: ObservableMap<string, Theme>;
@@ -17,7 +17,7 @@ export class ThemeStore {
 
   constructor(private readonly app: AppStore) {
     this.themes = observable.map(
-      baseThemes.map((t) => [t.id, new Theme(this.app, t)]),
+      buildBuiltInThemes("mobile").map((t) => [t.id, new Theme(this.app, t)]),
     );
     makeAutoObservable(this);
   }
