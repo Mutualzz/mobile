@@ -19,7 +19,7 @@ interface Props {
 
 export const ChannelSearchSheet = observer(({ channel, visible, onClose }: Props) => {
   const app = useAppStore();
-  const theme = useTheme();
+  const { theme } = useTheme();
   const { t } = useTranslation("chat");
   const [draft, setDraft] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");

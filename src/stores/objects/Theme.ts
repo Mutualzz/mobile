@@ -69,7 +69,7 @@ export class Theme implements Partial<MzTheme> {
 
   constructor(
     private readonly app: AppStore,
-    theme: APITheme
+    theme: APITheme | MzTheme,
   ) {
     this.id = theme.id;
     this.name = theme.name;
@@ -94,11 +94,11 @@ export class Theme implements Partial<MzTheme> {
     this.backgroundImage = theme.backgroundImage ?? null;
     this.wallpaper = theme.wallpaper ?? null;
 
-    this.raw = theme;
+    this.raw = theme as APITheme;
 
-    this.authorId = theme.authorId;
-    this.spaceId = theme.spaceId ?? null;
-    if (theme.author) this._author = this.app.users.add(theme.author);
+    this.authorId = "authorId" in theme ? theme.authorId : undefined;
+    this.spaceId = "spaceId" in theme ? (theme.spaceId ?? null) : null;
+    if ("author" in theme && theme.author) this._author = this.app.users.add(theme.author);
 
     makeAutoObservable(this, {}, { autoBind: true });
   }
