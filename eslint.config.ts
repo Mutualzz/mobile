@@ -1,8 +1,18 @@
 import { react } from "@mutualzz/eslint-config";
 
 export default [
+    {
+        ignores: [
+            ".expo/**",
+            "android/**",
+            "ios/**",
+            "node_modules/**",
+            "eslint.config.ts",
+        ],
+    },
     ...react,
     {
+        files: ["src/**/*.{ts,tsx}"],
         languageOptions: {
             parserOptions: {
                 projectService: true,
@@ -14,6 +24,5 @@ export default [
             "@typescript-eslint/no-this-alias": "off",
             "react/no-children-prop": "off",
         },
-        ignores: ["*", "!src"],
     },
 ];

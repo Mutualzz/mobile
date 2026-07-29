@@ -15,7 +15,7 @@ import { Redirect, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { forwardRef, useRef, useState } from "react";
 import type { TextInput } from "react-native";
-import { Pressable } from "react-native";
+import { Pressable, Linking } from "react-native";
 import { useTranslation } from "react-i18next";
 
 interface ApiErrors {
@@ -83,6 +83,7 @@ InputWithLabel.displayName = "InputWithLabel";
 
 const Register = () => {
   const { t } = useTranslation("auth");
+  const { t: ts } = useTranslation("settings");
   const app = useAppStore();
   const router = useRouter();
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -320,6 +321,17 @@ const Register = () => {
                 </Button>
               )}
             />
+            <Button
+              fullWidth
+              variant="soft"
+              onPress={() => {
+                void app.rest
+                  .get<{ url: string }>("auth/discord/url?client=mobile")
+                  .then(({ url }) => Linking.openURL(url));
+              }}
+            >
+              {ts("discord.continueWithDiscord")}
+            </Button>
           </Box>
           <Pressable onPress={() => router.replace("/login")}>
             <Typography>

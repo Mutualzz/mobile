@@ -46,7 +46,7 @@ export const CreateBridgeSheet = observer(({ spaceId, onClose, onCreated }: Prop
     <BottomSheet
       embedded
       open
-      onClose={onClose ?? (() => {})}
+      onClose={() => onClose?.()}
       title={t("minecraftBridge.createTitle")}
       elevation={app.settings?.preferEmbossed ? 4 : 2}
     >

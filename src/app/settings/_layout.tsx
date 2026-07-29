@@ -25,6 +25,7 @@ const SettingsLayout = () => {
             <Stack.Screen name="notifications" />
             <Stack.Screen name="voice_and_video" />
             <Stack.Screen name="connections" />
+            <Stack.Screen name="discord-import" />
             <Stack.Screen name="expressions" />
             <Stack.Screen name="support" />
             <Stack.Screen name="avatar-editor" />

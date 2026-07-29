@@ -11,7 +11,7 @@ const looseShortcodeRegex = /:([a-z0-9_+\-\s]{2,}):/gi;
 const unicodePattern = new RegExp(unicodeEmojiRegex.source, "g");
 
 const UNICODE_EMOJI_BETWEEN_COLONS =
-    /:([\p{Extended_Pictographic}\u200d\ufe0f]+):/gu;
+    /:((?:\p{Extended_Pictographic}|\u200d|\uFE0F)+):/gu;
 
 const normalizeUnicodeEmojiColons = (content: string) =>
     content.replace(UNICODE_EMOJI_BETWEEN_COLONS, "$1");

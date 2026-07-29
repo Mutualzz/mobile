@@ -54,7 +54,7 @@ const SupportTicketScreen = () => {
   return (
     <SettingsScreen
       title={ticket?.subject ?? t("support.myTickets")}
-      onBack={() => navigate("/settings/support" as Href)}
+      onBack={() => navigate("/settings/support")}
     >
       <Box style={{ padding: 16, gap: 12 }}>
         {isLoading && (

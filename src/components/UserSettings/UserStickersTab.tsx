@@ -121,7 +121,7 @@ export const UserStickersTab = observer(() => {
           }, 300);
         });
       })
-      .catch(() => undefined);
+      .catch(() => { return; });
   };
 
   return (

@@ -22,12 +22,12 @@ const inlineRowStyle = {
   alignItems: "center" as const,
 };
 
-type BlockStackFrame = {
+interface BlockStackFrame {
   token: any;
   children: ReactNode[];
   inlineLevel?: TypographyLevel;
   inlineWeight?: 700;
-};
+}
 
 const headingTypographyLevel = (tag: string): TypographyLevel => {
   switch (tag) {
@@ -48,14 +48,14 @@ const headingTypographyLevel = (tag: string): TypographyLevel => {
 
 type RunSegment = string | ReactElement;
 
-type FormatFrame = {
+interface FormatFrame {
   segments: RunSegment[];
   textProps: {
     weight?: "bold" | 700;
     textColor?: TypographyColor | ColorLike | "inherit";
     style?: TextStyle;
   };
-};
+}
 
 const isTypographyElement = (node: ReactNode) =>
   isValidElement(node) && node.type === Typography;

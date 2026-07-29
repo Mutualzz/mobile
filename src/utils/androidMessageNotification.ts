@@ -93,7 +93,8 @@ export async function dismissCallNotification(channelId: string) {
   try {
     await notifee.cancelNotification(channelId, channelId);
   } catch {
-  }
+    // ignore
+}
 
   try {
     const presented = await Notifications.getPresentedNotificationsAsync();
@@ -102,7 +103,7 @@ export async function dismissCallNotification(channelId: string) {
         .filter((notification) => {
           const data = notification.request.content.data;
           if (!data || typeof data !== "object") return false;
-          const payload = data as Record<string, unknown>;
+          const payload = data;
           return (
             payload.channelId === channelId &&
             (payload.pushType === "call" || payload.pushType === "call_end")
@@ -113,7 +114,8 @@ export async function dismissCallNotification(channelId: string) {
         ),
     );
   } catch {
-  }
+    // ignore
+}
 }
 
 export async function displayAndroidMessageNotification(

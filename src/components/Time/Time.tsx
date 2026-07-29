@@ -1,5 +1,5 @@
 import { toShortRelative } from "@components/Time/Time.helpers";
-import { TimeDisplayMode, TimeProps } from "@components/Time/Time.types";
+import { type TimeDisplayMode, type TimeProps } from "@components/Time/Time.types";
 import { Typography } from "@mutualzz/ui-native";
 import { calendarStrings } from "@mutualzz/client";
 import dayjs from "dayjs";

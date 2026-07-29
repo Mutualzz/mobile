@@ -1,8 +1,9 @@
 import { UserProfileTrigger } from "@components/Profile/UserProfileTrigger";
-import { Box, Typography } from "@mutualzz/ui-native";
+import { useAppStore } from "@hooks/useStores";
+import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { MessageLike } from "@stores/objects/Message";
 import type { Space } from "@stores/objects/Space";
-import { isSystemMessageType, isSystemUser } from "@mutualzz/client";
+import { getMessageAuthorColor, isSystemMessageType, isSystemUser } from "@mutualzz/client";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
@@ -13,6 +14,8 @@ interface Props {
 
 export const MessageAuthor = observer(({ message, space }: Props) => {
   const { t } = useTranslation("chat");
+  const app = useAppStore();
+  const { theme } = useTheme();
   const author = message.author;
   if (!author) {
     return <Typography>{t("unknown")}</Typography>;
@@ -24,6 +27,13 @@ export const MessageAuthor = observer(({ message, space }: Props) => {
 
   const member =
     space && author.id ? space.members.get(author.id) : undefined;
+  const primaryTextColor = theme.typography.colors.primary;
+  const nameColor = getMessageAuthorColor({
+    showRoleColors: app.settings?.showRoleColorsInMessages ?? false,
+    primaryTextColor,
+    roleColor: member?.highestRole?.color,
+    accentColor: app.users.get(author.id)?.accentColor ?? author.accentColor,
+  });
   const displayName = member?.displayName ?? author.displayName;
   const pronouns = author.pronouns;
 
@@ -38,7 +48,7 @@ export const MessageAuthor = observer(({ message, space }: Props) => {
           minWidth: 0,
         }}
       >
-        <Typography truncate="single" style={{ flexShrink: 1 }}>
+        <Typography truncate="single" style={{ flexShrink: 1, color: nameColor }}>
           {displayName}
         </Typography>
         {pronouns ? (

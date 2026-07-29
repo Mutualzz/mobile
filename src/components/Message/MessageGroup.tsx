@@ -19,9 +19,8 @@ export const MessageGroup = observer(
     ({ group, highlightedMessageId }: Props) => {
         const app = useAppStore();
         const { messages } = group;
-        const extended = app.settings?.extendedSettings;
-        const messageDisplay = extended?.messageDisplay ?? "default";
-        const uiDensity = extended?.uiDensity ?? "default";
+        const messageDisplay = app.settings?.messageDisplay ?? "default";
+        const uiDensity = app.settings?.uiDensity ?? "default";
         const compact = messageDisplay === "compact";
         const layoutStyles = getMessageLayoutStyles(messageDisplay, uiDensity);
 

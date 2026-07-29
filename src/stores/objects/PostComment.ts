@@ -4,7 +4,7 @@ import type {
   Snowflake,
 } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
-import { Expression } from "@stores/objects/Expression";
+import { type Expression } from "@stores/objects/Expression";
 import type { User } from "@stores/objects/User";
 import { action, computed, makeObservable, observable } from "mobx";
 

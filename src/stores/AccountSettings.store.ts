@@ -1,19 +1,11 @@
-import type {
-  APIUserSettings,
-  AppMode,
-  Snowflake,
-  UserExtendedSettings,
-} from "@mutualzz/types";
-import {
-  applyExtendedSettingsInPlace,
-  mergeExtendedSettings,
-} from "@mutualzz/types";
+import type { APIUserSettings, Snowflake } from "@mutualzz/types";
+import { DEFAULT_CLIENT_PREFERENCES } from "@mutualzz/types";
 import {
   AccountSettingsSyncEngine,
   buildAccountSettingsPatch,
   isFavoriteEmoji,
   isFavoriteGif,
-  mergeRemoteExtendedSettings,
+  mergeRemoteSettings,
   moveSpaceOrder,
   ObservableOrderedSet,
   resetSpaceOrder as buildDefaultSpaceOrder,
@@ -31,8 +23,7 @@ const SYNC_DEBOUNCE_MS = 2_000;
 export class AccountSettingsStore {
   currentTheme?: string | null = "baseDark";
   currentIcon?: string | null;
-  preferredMode: AppMode;
-  preferEmbossed: boolean;
+  preferEmbossed = true;
   preferredSelfMute = false;
   preferredSelfDeaf = false;
   pushEnabled = true;
@@ -44,7 +35,30 @@ export class AccountSettingsStore {
   favoriteEmojis = observable.array<string>([]);
   favoriteGifs = observable.array<string>([]);
   favoriteStickers = observable.array<string>([]);
-  extendedSettings: UserExtendedSettings;
+  whoCanDm: APIUserSettings["whoCanDm"] = "everyone";
+  profileVisibility: APIUserSettings["profileVisibility"] = "everyone";
+  convertEmoticons = DEFAULT_CLIENT_PREFERENCES.convertEmoticons;
+  uiDensity = DEFAULT_CLIENT_PREFERENCES.uiDensity;
+  messageDisplay = DEFAULT_CLIENT_PREFERENCES.messageDisplay;
+  chatFontScale = DEFAULT_CLIENT_PREFERENCES.chatFontScale;
+  timestampFormat = DEFAULT_CLIENT_PREFERENCES.timestampFormat;
+  showLinkEmbeds = DEFAULT_CLIENT_PREFERENCES.showLinkEmbeds;
+  gifAutoplay = DEFAULT_CLIENT_PREFERENCES.gifAutoplay;
+  revealAllSpoilers = DEFAULT_CLIENT_PREFERENCES.revealAllSpoilers;
+  showTypingIndicators = DEFAULT_CLIENT_PREFERENCES.showTypingIndicators;
+  sendTypingIndicators = DEFAULT_CLIENT_PREFERENCES.sendTypingIndicators;
+  replyWithMention = DEFAULT_CLIENT_PREFERENCES.replyWithMention;
+  quickReactionEmojis = observable.array<string>(
+    DEFAULT_CLIENT_PREFERENCES.quickReactionEmojis,
+  );
+  showEmojiPicker = DEFAULT_CLIENT_PREFERENCES.showEmojiPicker;
+  showGifPicker = DEFAULT_CLIENT_PREFERENCES.showGifPicker;
+  showStickerPicker = DEFAULT_CLIENT_PREFERENCES.showStickerPicker;
+  showMarkdownToolbar = DEFAULT_CLIENT_PREFERENCES.showMarkdownToolbar;
+  reducedMotion = DEFAULT_CLIENT_PREFERENCES.reducedMotion;
+  highContrast = DEFAULT_CLIENT_PREFERENCES.highContrast;
+  defaultMemberListVisible = DEFAULT_CLIENT_PREFERENCES.defaultMemberListVisible;
+  showRoleColorsInMessages = DEFAULT_CLIENT_PREFERENCES.showRoleColorsInMessages;
   updatedAt: Date;
 
   private syncEngine: AccountSettingsSyncEngine;
@@ -57,26 +71,10 @@ export class AccountSettingsStore {
     private readonly app: AppStore,
     settings: APIUserSettings,
   ) {
-    this.preferEmbossed = settings.preferEmbossed ?? true;
-    this.currentTheme = settings.currentTheme ?? "baseDark";
-    this.currentIcon = settings.currentIcon;
-    this.preferredMode = settings.preferredMode;
     this.spacePositions = new ObservableOrderedSet(
       settings.spacePositions.map(String),
     );
-    this.preferredSelfMute = settings.preferredSelfMute ?? false;
-    this.preferredSelfDeaf = settings.preferredSelfDeaf ?? false;
-    this.pushEnabled = settings.pushEnabled ?? true;
-    this.pushDirectMessages = settings.pushDirectMessages ?? true;
-    this.pushMentions = settings.pushMentions ?? true;
-    this.shareActivity = settings.shareActivity ?? true;
-    this.shareRecentActivity = settings.shareRecentActivity ?? true;
-    this.favoriteEmojis = observable.array(settings.favoriteEmojis ?? []);
-    this.favoriteGifs = observable.array(settings.favoriteGifs ?? []);
-    this.favoriteStickers = observable.array(settings.favoriteStickers ?? []);
-    this.extendedSettings = observable.object(
-      mergeExtendedSettings(settings.extendedSettings),
-    );
+    this.applySyncedSettings(settings);
     this.updatedAt = new Date(settings.updatedAt);
 
     this.syncEngine = new AccountSettingsSyncEngine(
@@ -95,6 +93,44 @@ export class AccountSettingsStore {
       "change",
       (nextState) => this.handleAppStateChange(nextState),
     );
+  }
+
+  private applySyncedSettings(settings: APIUserSettings) {
+    this.preferEmbossed = settings.preferEmbossed ?? true;
+    this.currentTheme = settings.currentTheme ?? "baseDark";
+    this.currentIcon = settings.currentIcon;
+    this.preferredSelfMute = settings.preferredSelfMute ?? false;
+    this.preferredSelfDeaf = settings.preferredSelfDeaf ?? false;
+    this.pushEnabled = settings.pushEnabled ?? true;
+    this.pushDirectMessages = settings.pushDirectMessages ?? true;
+    this.pushMentions = settings.pushMentions ?? true;
+    this.shareActivity = settings.shareActivity ?? true;
+    this.shareRecentActivity = settings.shareRecentActivity ?? true;
+    this.favoriteEmojis.replace(settings.favoriteEmojis ?? []);
+    this.favoriteGifs.replace(settings.favoriteGifs ?? []);
+    this.favoriteStickers.replace(settings.favoriteStickers ?? []);
+    this.whoCanDm = settings.whoCanDm;
+    this.profileVisibility = settings.profileVisibility;
+    this.convertEmoticons = settings.convertEmoticons;
+    this.uiDensity = settings.uiDensity;
+    this.messageDisplay = settings.messageDisplay;
+    this.chatFontScale = settings.chatFontScale;
+    this.timestampFormat = settings.timestampFormat;
+    this.showLinkEmbeds = settings.showLinkEmbeds;
+    this.gifAutoplay = settings.gifAutoplay;
+    this.revealAllSpoilers = settings.revealAllSpoilers;
+    this.showTypingIndicators = settings.showTypingIndicators;
+    this.sendTypingIndicators = settings.sendTypingIndicators;
+    this.replyWithMention = settings.replyWithMention;
+    this.quickReactionEmojis.replace(settings.quickReactionEmojis ?? []);
+    this.showEmojiPicker = settings.showEmojiPicker;
+    this.showGifPicker = settings.showGifPicker;
+    this.showStickerPicker = settings.showStickerPicker;
+    this.showMarkdownToolbar = settings.showMarkdownToolbar;
+    this.reducedMotion = settings.reducedMotion;
+    this.highContrast = settings.highContrast;
+    this.defaultMemberListVisible = settings.defaultMemberListVisible;
+    this.showRoleColorsInMessages = settings.showRoleColorsInMessages;
   }
 
   private scheduleSync() {
@@ -142,28 +178,45 @@ export class AccountSettingsStore {
     this.flush();
   }
 
-  setPreferredMode(mode: AppMode) {
-    this.preferredMode = mode;
-  }
-
-  patchExtendedSettings(
-    patch: Partial<UserExtendedSettings>,
+  patchSettings(
+    patch: Partial<AccountSettingsPatch>,
     options?: { sync?: "debounced" | "immediate" },
   ) {
-    applyExtendedSettingsInPlace(this.extendedSettings, patch);
-    if (patch.replyWithMention != undefined) {
-      this.app.replyMention = patch.replyWithMention;
+    if (patch.favoriteEmojis != undefined) {
+      this.favoriteEmojis.replace(patch.favoriteEmojis);
     }
-    if (patch.defaultMemberListVisible != undefined) {
-      this.app.memberListVisible = patch.defaultMemberListVisible;
+    if (patch.favoriteGifs != undefined) {
+      this.favoriteGifs.replace(patch.favoriteGifs);
     }
+    if (patch.favoriteStickers != undefined) {
+      this.favoriteStickers.replace(patch.favoriteStickers);
+    }
+    if (patch.quickReactionEmojis != undefined) {
+      this.quickReactionEmojis.replace(patch.quickReactionEmojis);
+    }
+
+    const {
+      favoriteEmojis: _favoriteEmojis,
+      favoriteGifs: _favoriteGifs,
+      favoriteStickers: _favoriteStickers,
+      quickReactionEmojis: _quickReactionEmojis,
+      spacePositions: _spacePositions,
+      ...scalarPatch
+    } = patch;
+
+    Object.assign(this, scalarPatch);
+    this.applySettingsSideEffects(patch);
+
     if (options?.sync === "immediate") {
       this.flush();
     }
   }
 
-  get extended() {
-    return this.extendedSettings;
+  patchExtendedSettings(
+    patch: Partial<AccountSettingsPatch>,
+    options?: { sync?: "debounced" | "immediate" },
+  ) {
+    this.patchSettings(patch, options);
   }
 
   setCurrentIcon(icon?: string | null) {
@@ -232,47 +285,26 @@ export class AccountSettingsStore {
 
   applyLocalOverrides(payload: AccountSettingsPatch) {
     this.spacePositions.replace(payload.spacePositions.map(String));
-    this.currentTheme = payload.currentTheme;
-    this.currentIcon = payload.currentIcon;
-    this.preferredMode = payload.preferredMode;
-    this.preferEmbossed = payload.preferEmbossed;
-    this.preferredSelfMute = payload.preferredSelfMute ?? false;
-    this.preferredSelfDeaf = payload.preferredSelfDeaf ?? false;
-    this.pushEnabled = payload.pushEnabled ?? true;
-    this.pushDirectMessages = payload.pushDirectMessages ?? true;
-    this.pushMentions = payload.pushMentions ?? true;
-    this.shareActivity = payload.shareActivity ?? true;
-    this.shareRecentActivity = payload.shareRecentActivity ?? true;
-    this.favoriteEmojis = observable.array(payload.favoriteEmojis ?? []);
-    this.favoriteGifs = observable.array(payload.favoriteGifs ?? []);
-    this.favoriteStickers = observable.array(payload.favoriteStickers ?? []);
-    applyExtendedSettingsInPlace(
-      this.extendedSettings,
-      payload.extendedSettings ?? {},
-    );
+    this.applySyncedSettings(payload as APIUserSettings);
   }
 
-  private mergeRemoteExtendedSettings(remote: Partial<UserExtendedSettings>) {
-    const patch = mergeRemoteExtendedSettings(
-      this.extendedSettings,
-      this.syncEngine.syncedSnapshot.extendedSettings,
+  private mergeRemoteSettings(remote: Partial<AccountSettingsPatch>) {
+    const patch = mergeRemoteSettings(
+      this.getSyncPayload(),
+      this.syncEngine.syncedSnapshot,
       remote,
     );
     if (!patch) return;
 
-    applyExtendedSettingsInPlace(this.extendedSettings, patch);
-    this.applyExtendedSettingsSideEffects(patch, this.extendedSettings);
+    this.patchSettings(patch);
   }
 
-  private applyExtendedSettingsSideEffects(
-    patch: Partial<UserExtendedSettings>,
-    merged: UserExtendedSettings,
-  ) {
+  private applySettingsSideEffects(patch: Partial<AccountSettingsPatch>) {
     if (patch.replyWithMention != undefined) {
-      this.app.replyMention = merged.replyWithMention;
+      this.app.replyMention = this.replyWithMention;
     }
     if (patch.defaultMemberListVisible != undefined) {
-      this.app.memberListVisible = merged.defaultMemberListVisible;
+      this.app.memberListVisible = this.defaultMemberListVisible;
     }
   }
 
@@ -280,68 +312,15 @@ export class AccountSettingsStore {
     if (settings.spacePositions != undefined)
       this.spacePositions.replace(settings.spacePositions.map(String));
 
-    if (settings.currentTheme != undefined)
-      this.currentTheme = settings.currentTheme;
+    const { spacePositions: _spacePositions, updatedAt, ...rest } = settings;
 
-    if (settings.currentIcon != undefined)
-      this.currentIcon = settings.currentIcon;
-
-    if (settings.preferredMode != undefined)
-      this.preferredMode = settings.preferredMode;
-
-    if (settings.preferEmbossed != undefined)
-      this.preferEmbossed = settings.preferEmbossed;
-
-    if (settings.favoriteEmojis != undefined)
-      this.favoriteEmojis = observable.array(settings.favoriteEmojis);
-
-    if (settings.favoriteGifs != undefined)
-      this.favoriteGifs = observable.array(settings.favoriteGifs);
-
-    if (settings.favoriteStickers != undefined)
-      this.favoriteStickers = observable.array(settings.favoriteStickers);
-
-    if (settings.preferredSelfMute != undefined)
-      this.preferredSelfMute = settings.preferredSelfMute;
-
-    if (settings.preferredSelfDeaf != undefined)
-      this.preferredSelfDeaf = settings.preferredSelfDeaf;
-
-    if (settings.pushEnabled != undefined)
-      this.pushEnabled = settings.pushEnabled;
-
-    if (settings.pushDirectMessages != undefined)
-      this.pushDirectMessages = settings.pushDirectMessages;
-
-    if (settings.pushMentions != undefined)
-      this.pushMentions = settings.pushMentions;
-
-    if (settings.shareActivity != undefined) {
-      const changed = this.shareActivity !== settings.shareActivity;
-      this.shareActivity = settings.shareActivity;
-      if (changed) this.app.gateway?.refreshPresenceActivities?.();
+    if (this.isDirty) {
+      this.mergeRemoteSettings(rest);
+    } else if (Object.keys(rest).length > 0) {
+      this.patchSettings(rest);
     }
 
-    if (settings.shareRecentActivity != undefined)
-      this.shareRecentActivity = settings.shareRecentActivity;
-
-    if (settings.extendedSettings != undefined) {
-      if (this.isDirty) {
-        this.mergeRemoteExtendedSettings(settings.extendedSettings);
-      } else {
-        applyExtendedSettingsInPlace(
-          this.extendedSettings,
-          settings.extendedSettings,
-        );
-        this.applyExtendedSettingsSideEffects(
-          settings.extendedSettings,
-          this.extendedSettings,
-        );
-      }
-    }
-
-    if (settings.updatedAt != undefined)
-      this.updatedAt = new Date(settings.updatedAt);
+    if (updatedAt != undefined) this.updatedAt = new Date(updatedAt);
 
     this.syncEngine.markSynced(this.getSyncPayload());
   }

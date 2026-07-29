@@ -2,7 +2,7 @@ import {
   type APIReadState,
   isNotificationMuteActive,
   NotificationLevel,
-  ReadStateType,
+  type ReadStateType,
   type Snowflake,
 } from "@mutualzz/types";
 import { BitField, readStateFlags, type ReadStateFlags } from "@mutualzz/bitfield";

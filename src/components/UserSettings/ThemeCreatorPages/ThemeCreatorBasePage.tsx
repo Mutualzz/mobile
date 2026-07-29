@@ -69,7 +69,7 @@ export const ThemeCreatorBasePage = observer(() => {
         });
         setValues({ wallpaper: null });
       })
-      .catch(() => undefined)
+      .catch(() => { return; })
       .finally(() => {
         void ImagePicker.clean();
       });

@@ -598,9 +598,13 @@ export class VoiceStore {
             tmp.getTracks().forEach((track) => {
               try {
                 track.stop();
-              } catch {}
+              } catch {
+    // ignore
+}
             });
-          } catch {}
+          } catch {
+    // ignore
+}
         }
       }
 
@@ -919,7 +923,9 @@ export class VoiceStore {
     if (selfState?.client === "minecraft" && selfState.channelId) {
       try {
         this.abortAndTeardown();
-      } catch {}
+      } catch {
+    // ignore
+}
       this.stopKeepAlive();
       this.clearJoinTimeout();
       void this.teardownVoicePresenceUi();
@@ -1067,7 +1073,9 @@ export class VoiceStore {
         try {
           this.abortAndTeardown();
           this.stopKeepAlive();
-        } catch {}
+        } catch {
+    // ignore
+}
         runInAction(() => {
           this.connectionStatus = "idle";
           this.connectionError = null;
@@ -1513,8 +1521,8 @@ export class VoiceStore {
       return {
         channelName: i18n.t("voice.title", { ns: "chat" }),
         spaceName: "",
-        muted: this.effectiveSelfMute === true,
-        deafened: this.effectiveSelfDeaf === true,
+        muted: this.effectiveSelfMute,
+        deafened: this.effectiveSelfDeaf,
         spaceIconFileName: "",
         ...participants,
         ...getVoiceLiveActivityThemeColors(this.app),
@@ -1558,8 +1566,8 @@ export class VoiceStore {
         return {
           channelName: callSubtitle,
           spaceName,
-          muted: this.effectiveSelfMute === true,
-          deafened: this.effectiveSelfDeaf === true,
+          muted: this.effectiveSelfMute,
+          deafened: this.effectiveSelfDeaf,
           spaceIconFileName: spaceIconFileName || "",
           ...participants,
           ...getVoiceLiveActivityThemeColors(this.app),
@@ -1582,8 +1590,8 @@ export class VoiceStore {
       return {
         channelName: callSubtitle,
         spaceName,
-        muted: this.effectiveSelfMute === true,
-        deafened: this.effectiveSelfDeaf === true,
+        muted: this.effectiveSelfMute,
+        deafened: this.effectiveSelfDeaf,
         spaceIconFileName: spaceIconFileName || "",
         ...participants,
         ...getVoiceLiveActivityThemeColors(this.app),
@@ -1612,8 +1620,8 @@ export class VoiceStore {
     return {
       channelName,
       spaceName,
-      muted: this.effectiveSelfMute === true,
-      deafened: this.effectiveSelfDeaf === true,
+      muted: this.effectiveSelfMute,
+      deafened: this.effectiveSelfDeaf,
       spaceIconFileName: spaceIconFileName || "",
       ...participants,
       ...getVoiceLiveActivityThemeColors(this.app),

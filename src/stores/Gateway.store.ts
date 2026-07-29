@@ -312,7 +312,9 @@ export class GatewayStore {
       this.logger.debug(`[Disconnect] ${this.url}`);
       try {
         this.socket.close(code, reason);
-      } catch {}
+      } catch {
+    // ignore
+}
     }
 
     this.teardownSocket();
@@ -418,7 +420,9 @@ export class GatewayStore {
       ) {
         socket.close(4000, "reconnect");
       }
-    } catch {}
+    } catch {
+    // ignore
+}
 
     this.socket = null;
     this.readyState = GatewayStatus.CLOSED;

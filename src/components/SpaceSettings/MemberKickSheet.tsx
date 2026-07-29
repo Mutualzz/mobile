@@ -1,6 +1,6 @@
 import { Button } from "@components/Button";
 import { useAppStore } from "@hooks/useStores";
-import { HttpException } from "@mutualzz/types";
+import { type HttpException } from "@mutualzz/types";
 import { Box, InputDefault, Sheet, Typography } from "@mutualzz/ui-native";
 import type { SpaceMember } from "@stores/objects/SpaceMember";
 import type { Space } from "@stores/objects/Space";

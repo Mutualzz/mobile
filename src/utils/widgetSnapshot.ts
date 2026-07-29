@@ -3,7 +3,7 @@ import type { AppStore } from "@stores/App.store";
 import { getVoiceLiveActivityThemeColors } from "@utils/voiceLiveActivityTheme";
 import * as VoiceLiveActivity from "voice-live-activity";
 
-export type WidgetSnapshotPayload = {
+export interface WidgetSnapshotPayload {
   updatedAt: number;
   unread: {
     channelCount: number;
@@ -13,25 +13,25 @@ export type WidgetSnapshotPayload = {
     topDeepLink: string;
     topIsDm: boolean;
   };
-  friends: Array<{
+  friends: {
     id: string;
     displayName: string;
     status: string;
-  }>;
-  spaces: Array<{
+  }[];
+  spaces: {
     id: string;
     name: string;
     unreadCount: number;
     mentionCount: number;
     deepLink: string;
-  }>;
-  dms: Array<{
+  }[];
+  dms: {
     id: string;
     name: string;
     unread: boolean;
     mentionCount: number;
     deepLink: string;
-  }>;
+  }[];
   voice: {
     connected: boolean;
     muted: boolean;
@@ -40,12 +40,12 @@ export type WidgetSnapshotPayload = {
     channelName: string;
     spaceName: string;
     deepLink: string;
-    members: Array<{
+    members: {
       id: string;
       displayName: string;
       muted: boolean;
       deafened: boolean;
-    }>;
+    }[];
   };
   theme: {
     accentColor: string;
@@ -54,7 +54,7 @@ export type WidgetSnapshotPayload = {
     dangerColor: string;
     backgroundColor: string;
   };
-};
+}
 
 function channelTitle(app: AppStore, channelId: string): string {
   const channel = app.channels.get(channelId);
@@ -92,12 +92,12 @@ function deepLinkForChannel(app: AppStore, channelId: string): string {
 }
 
 export function buildWidgetSnapshot(app: AppStore): WidgetSnapshotPayload {
-  const unreadChannels: Array<{
+  const unreadChannels: {
     id: string;
     mentionCount: number;
     isDm: boolean;
     lastMessageId: string;
-  }> = [];
+  }[] = [];
 
   let mentionCount = 0;
 
@@ -208,8 +208,8 @@ export function buildWidgetSnapshot(app: AppStore): WidgetSnapshotPayload {
         return {
           id: state.userId,
           displayName: user?.displayName ?? state.userId,
-          muted: state.selfMute === true || state.spaceMute === true,
-          deafened: state.selfDeaf === true || state.spaceDeaf === true,
+          muted: state.selfMute || state.spaceMute,
+          deafened: state.selfDeaf || state.spaceDeaf,
         };
       })
     : [];
@@ -231,8 +231,8 @@ export function buildWidgetSnapshot(app: AppStore): WidgetSnapshotPayload {
     dms,
     voice: {
       connected: app.voice.connectionStatus === "connected",
-      muted: app.voice.effectiveSelfMute === true,
-      deafened: app.voice.effectiveSelfDeaf === true,
+      muted: app.voice.effectiveSelfMute,
+      deafened: app.voice.effectiveSelfDeaf,
       channelId: voiceChannelId ?? "",
       channelName: voiceChannel?.name?.trim() || "Voice",
       spaceName: voiceChannel?.space?.name?.trim() || "",

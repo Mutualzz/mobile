@@ -22,7 +22,7 @@ export const MessageEmbedSpoiler = ({
   style,
 }: Props) => {
   const app = useAppStore();
-  const revealAll = app.settings?.extendedSettings.revealAllSpoilers ?? false;
+  const revealAll = app.settings?.revealAllSpoilers ?? false;
   const [revealed, setRevealed] = useState(revealAll);
 
   if (!spoiler) return <>{children}</>;

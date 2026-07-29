@@ -1,9 +1,11 @@
 import { ChatComposerPane } from "@components/Message/ChatComposerPane";
 import { VoiceChannelView } from "@components/Views/VoiceChannelView";
 import { ChannelIcon } from "@components/Channel/ChannelIcon";
+import { ChannelPinnedSheet } from "@components/Channel/ChannelPinnedSheet";
+import { ChannelSearchSheet } from "@components/Channel/ChannelSearchSheet";
 import { MemberListSheet } from "@components/MemberList/MemberListSheet";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
-import { ArrowLeftIcon, HashIcon, UsersIcon } from "phosphor-react-native";
+import { ArrowLeftIcon, HashIcon, MagnifyingGlassIcon, PushPinIcon, UsersIcon } from "phosphor-react-native";
 import { useScreenComposer } from "@hooks/useScreenComposer";
 import { useAppStore } from "@hooks/useStores";
 import { ChannelType } from "@mutualzz/types";
@@ -42,6 +44,8 @@ export const ChannelContentPane = observer(() => {
   const { theme } = useTheme();
   const composerVisible = useScreenComposer();
   const [memberListOpen, setMemberListOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [pinsOpen, setPinsOpen] = useState(false);
   const channel = app.channels.active;
 
   useEffect(() => {
@@ -90,6 +94,12 @@ export const ChannelContentPane = observer(() => {
         </Pressable>
         <ChannelIcon type={channel.type} />
         <Typography style={{ flex: 1 }}>{channel.name}</Typography>
+        <Pressable hitSlop={8} onPress={() => setSearchOpen(true)}>
+          <MagnifyingGlassIcon color={theme.typography.colors.primary} />
+        </Pressable>
+        <Pressable hitSlop={8} onPress={() => setPinsOpen(true)}>
+          <PushPinIcon color={theme.typography.colors.primary} />
+        </Pressable>
         <Pressable hitSlop={8} onPress={() => setMemberListOpen(true)}>
           <UsersIcon color={theme.typography.colors.primary} weight="fill" />
         </Pressable>
@@ -100,6 +110,16 @@ export const ChannelContentPane = observer(() => {
         channel={channel}
         visible={memberListOpen}
         onClose={() => setMemberListOpen(false)}
+      />
+      <ChannelSearchSheet
+        channel={channel}
+        visible={searchOpen}
+        onClose={() => setSearchOpen(false)}
+      />
+      <ChannelPinnedSheet
+        channel={channel}
+        visible={pinsOpen}
+        onClose={() => setPinsOpen(false)}
       />
     </Screen>
   );

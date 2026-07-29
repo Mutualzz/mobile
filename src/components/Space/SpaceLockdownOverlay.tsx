@@ -44,7 +44,6 @@ export const SpaceLockdownOverlay = observer(
             alignItems: "center",
             justifyContent: "center",
           }}
-          onPress={() => undefined}
         >
           {showMessage && (
             <Box

@@ -12,10 +12,10 @@ import {
 import { useMemo, useState } from "react";
 import { Image, View } from "react-native";
 
-type GameIconResponse = {
+interface GameIconResponse {
   iconImageId: string;
   iconUrl: string;
-};
+}
 
 function ActivityTypeIcon({
   type,

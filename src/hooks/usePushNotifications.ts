@@ -31,7 +31,7 @@ Notifications.setNotificationHandler({
     const data = notification.request.content.data;
 
     if (data && typeof data === "object") {
-      const payload = data as Record<string, unknown>;
+      const payload = data;
       if (
         payload.pushType === "call_end" &&
         typeof payload.channelId === "string"
@@ -51,7 +51,7 @@ Notifications.setNotificationHandler({
       Platform.OS === "android" &&
       data &&
       typeof data === "object" &&
-      parseMessagePushData(data as Record<string, unknown>)
+      parseMessagePushData(data)
     ) {
       return {
         shouldShowAlert: false,
@@ -92,7 +92,8 @@ async function navigateToNotificationTarget(
     try {
       await app.channels.resolve(channelId);
     } catch {
-    }
+    // ignore
+}
   }
 
   if (!app.isReady) {
@@ -271,7 +272,7 @@ export function usePushNotifications(enabled: boolean) {
         const data = notification.request.content.data;
         if (!data || typeof data !== "object") return;
 
-        const payload = data as Record<string, unknown>;
+        const payload = data;
         if (
           payload.pushType === "call_end" &&
           typeof payload.channelId === "string"
@@ -309,7 +310,7 @@ export function usePushNotifications(enabled: boolean) {
       pushTokenRef.current = null;
       if (!token) return;
 
-      void unregisterPushToken(app.rest, token).catch(() => undefined);
+      void unregisterPushToken(app.rest, token).catch(() => { return; });
     };
   }, [app.rest, app.token, enabled]);
 }

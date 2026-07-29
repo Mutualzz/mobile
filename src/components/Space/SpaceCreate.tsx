@@ -84,7 +84,7 @@ export const SpaceCreate = observer(({ setCreating }: Props) => {
         setIconMime(image.mime ?? "image/jpeg");
         setError(null);
       })
-      .catch(() => undefined);
+      .catch(() => { return; });
   };
 
   const onClear = () => {

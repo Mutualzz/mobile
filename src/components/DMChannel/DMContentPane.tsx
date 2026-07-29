@@ -1,18 +1,19 @@
 import { ChatComposerPane } from "@components/Message/ChatComposerPane";
 import { DMChannelHeader } from "@components/DMChannel/DMChannelHeader";
 import { DMCallView } from "@components/DMChannel/DMCallView";
+import { ChannelSearchSheet } from "@components/Channel/ChannelSearchSheet";
 import { GroupDMAddRecipientSheet } from "@components/DMChannel/GroupDMAddRecipientSheet";
 import { GroupDMManageSheet } from "@components/DMChannel/GroupDMManageSheet";
 import { Screen } from "@components/Screen/Screen";
 import { UserActionSheet } from "@components/User/UserActionSheet";
-import { ChatCircleIcon } from "phosphor-react-native";
+import { ChatCircleIcon, MagnifyingGlassIcon } from "phosphor-react-native";
 import { useScreenComposer } from "@hooks/useScreenComposer";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Keyboard } from "react-native";
+import { Keyboard, Pressable } from "react-native";
 
 const EmptyDMState = () => {
   const { theme } = useTheme();
@@ -45,6 +46,7 @@ export const DMContentPane = observer(() => {
   const [addRecipientOpen, setAddRecipientOpen] = useState(false);
   const [manageGroupOpen, setManageGroupOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const channel = app.channels.active;
 
   useEffect(() => {
@@ -71,6 +73,7 @@ export const DMContentPane = observer(() => {
       <DMChannelHeader
         channel={channel}
         onBack={() => app.setDMDrawerOpen(true)}
+        onOpenSearch={() => setSearchOpen(true)}
         onOpenAddRecipient={
           channel.isGroupDM ? () => setAddRecipientOpen(true) : undefined
         }
@@ -85,6 +88,12 @@ export const DMContentPane = observer(() => {
       />
       <DMCallView channel={channel} />
       <ChatComposerPane channel={channel} composerVisible={composerVisible} />
+
+      <ChannelSearchSheet
+        channel={channel}
+        visible={searchOpen}
+        onClose={() => setSearchOpen(false)}
+      />
 
       {channel.isGroupDM ? (
         <>

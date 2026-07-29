@@ -97,7 +97,7 @@ export const MarkdownInput = observer(
   }: Props) => {
     const app = useAppStore();
     const enableEmoticons =
-      enableEmoticonsProp ?? app.settings?.extended.convertEmoticons ?? true;
+      enableEmoticonsProp ?? app.settings?.convertEmoticons ?? true;
     const { theme } = useTheme();
     const fontScale = useFontScale();
     const inputRef = useRef<TextInput>(null);

@@ -1,7 +1,7 @@
 import { BottomSheet } from "@components/Keyboard";
 import { Button } from "@components/Button";
 import { useAppStore } from "@hooks/useStores";
-import { HttpException } from "@mutualzz/types";
+import { type HttpException } from "@mutualzz/types";
 import { Box, InputDefault, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";

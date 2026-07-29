@@ -133,7 +133,9 @@ export const StickerPickerContent = observer(
         <VirtualizedEmojiList
           items={items}
           skinTone={null}
-          onSelectEmoji={() => undefined}
+          onSelectEmoji={() => {
+            return;
+          }}
           onSelectCustomEmoji={onSelectSticker}
           ListEmptyComponent={emptyLabel}
           cellSize={STICKER_CELL_SIZE}

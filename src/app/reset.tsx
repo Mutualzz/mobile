@@ -2,7 +2,7 @@ import { KeyboardForm } from "@components/Keyboard";
 import { Button } from "@components/Button";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
-import { HttpException } from "@mutualzz/types";
+import { type HttpException } from "@mutualzz/types";
 import { Box, InputPassword, Typography } from "@mutualzz/ui-native";
 import { useMutation } from "@tanstack/react-query";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";

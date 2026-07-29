@@ -1,7 +1,7 @@
-import { AppStore } from "@stores/App.store";
-import { APIRelationship, RelationshipType, Snowflake } from "@mutualzz/types";
+import { type AppStore } from "@stores/App.store";
+import { type APIRelationship, RelationshipType, type Snowflake } from "@mutualzz/types";
 import { makeAutoObservable } from "mobx";
-import { User } from "@stores/objects/User";
+import { type User } from "@stores/objects/User";
 
 export class Relationship {
   id: Snowflake;

@@ -22,11 +22,11 @@ export type ThemeCreatorLoadedType = "default" | "draft" | "custom";
 
 export type ThemeCreatorFilter = ThemeType | ThemeStyle | "adaptive";
 
-export type PendingBackgroundFile = {
+export interface PendingBackgroundFile {
   uri: string;
   name: string;
   type: string;
-};
+}
 
 export class ThemeCreatorStore {
   currentCategory: ThemeCreatorCategory = "general";
@@ -259,7 +259,7 @@ export class ThemeCreatorStore {
       fontFamily,
       ownerUserId ?? this.values.authorId,
     )
-      .catch(() => undefined)
+      .catch(() => { return; })
       .finally(() => {
         this.applyPreview();
       });

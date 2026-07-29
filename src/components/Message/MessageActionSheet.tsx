@@ -1,13 +1,7 @@
 import { Button } from "@components/Button";
 import { ReactionEmojiPicker } from "@components/Expression/ReactionEmojiPicker";
 import { ReportContentSheet } from "@components/Report/ReportContentSheet";
-import {
-  ArrowBendUpLeftIcon,
-  CopyIcon,
-  FlagIcon,
-  PencilSimpleIcon,
-  SmileyIcon,
-  TrashIcon } from "phosphor-react-native";
+import { ArrowBendUpLeftIcon, CopyIcon, FlagIcon, PencilSimpleIcon, PushPinIcon, PushPinSlashIcon, SmileyIcon, TrashIcon } from "phosphor-react-native";
 import { useRecentEmojis } from "@hooks/useRecentEmojis";
 import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
@@ -22,10 +16,13 @@ import type { SkinTone } from "@utils/emojis/emojiPickerData";
 import type { PickerEmoji } from "@utils/emojis/emojiPickerData";
 import {
   expressionToReactionEmoji,
-  pickerEmojiToReactionEmoji } from "@mutualzz/client";
+  pickerEmojiToReactionEmoji,
+  isChannelPinnedMessage,
+} from "@mutualzz/client";
 import {
   useScaledSquareSize,
   useScaledTouchTarget } from "@utils/accessibilityLayout";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
@@ -83,6 +80,7 @@ export const MessageActionSheet = observer(
     const app = useAppStore();
     const { t } = useTranslation("chat");
     const { theme } = useTheme();
+    const queryClient = useQueryClient();
     const minHeight = useScaledTouchTarget(48);
     const { recents, addRecentStandard, addRecentCustom } = useRecentEmojis();
     const quickItems = getQuickReactionItems(app, recents, 3);
@@ -100,10 +98,37 @@ export const MessageActionSheet = observer(
     const canCopy = !!message.content?.trim();
     const canReply = true;
     const canReport = message.author?.id !== app.account?.id;
+    const canPin =
+      !message.space ||
+      !!me?.hasPermission("PinMessages", message.channel);
     const canReact = !message.space
       ? true
       : !!me?.hasPermission("AddReactions", message.channel);
-    const hasActions = canReply || canCopy || canEdit || canDelete || canReport;
+    const hasActions = canReply || canCopy || canEdit || canDelete || canReport || canPin;
+    const isPinnedNotice = isChannelPinnedMessage(message);
+
+    const handlePin = async () => {
+      onClose();
+      await app.rest.put(
+        `channels/${message.channelId}/messages/${message.id}/pin`,
+        {},
+      );
+      message.pinned = true;
+      await queryClient.invalidateQueries({
+        queryKey: ["channel-pins", message.channelId],
+      });
+    };
+
+    const handleUnpin = async () => {
+      onClose();
+      await app.rest.delete(
+        `channels/${message.channelId}/messages/${message.id}/pin`,
+      );
+      message.pinned = false;
+      await queryClient.invalidateQueries({
+        queryKey: ["channel-pins", message.channelId],
+      });
+    };
 
     const handleQuickReaction = (item: QuickReactionItem) => {
       if (item.kind === "standard") {
@@ -127,7 +152,8 @@ export const MessageActionSheet = observer(
       try {
         await Clipboard.setStringAsync(message.content);
       } catch {
-      }
+    // ignore
+}
       onClose();
     };
 
@@ -244,7 +270,7 @@ export const MessageActionSheet = observer(
                       horizontalAlign="left"
                       spacing={0.5}
                     >
-                      {canReply && (
+                      {!isPinnedNotice && canReply && (
                         <Button
                           fullWidth
                           padding={12}
@@ -256,7 +282,7 @@ export const MessageActionSheet = observer(
                           {t("actions.reply")}
                         </Button>
                       )}
-                      {canCopy && (
+                      {!isPinnedNotice && canCopy && (
                         <Button
                           fullWidth
                           padding={12}
@@ -266,7 +292,7 @@ export const MessageActionSheet = observer(
                           {t("actions.copyText")}
                         </Button>
                       )}
-                      {canEdit && (
+                      {!isPinnedNotice && canEdit && (
                         <Button
                           fullWidth
                           padding={12}
@@ -289,7 +315,25 @@ export const MessageActionSheet = observer(
                           {t("actions.deleteMessage")}
                         </Button>
                       )}
-                      {canReport && (
+                      {!isPinnedNotice && canPin && (
+                        <Button
+                          fullWidth
+                          padding={12}
+                          startDecorator={
+                            message.pinned ? (
+                              <PushPinSlashIcon size={20} weight="fill" />
+                            ) : (
+                              <PushPinIcon size={20} weight="fill" />
+                            )
+                          }
+                          onPress={() => void (message.pinned ? handleUnpin() : handlePin())}
+                        >
+                          {message.pinned
+                            ? t("actions.unpinMessage")
+                            : t("actions.pinMessage")}
+                        </Button>
+                      )}
+                      {!isPinnedNotice && canReport && (
                         <Button
                           fullWidth
                           padding={12}

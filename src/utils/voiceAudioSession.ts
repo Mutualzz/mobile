@@ -15,7 +15,8 @@ export async function activateVoiceAudioSession() {
         shouldRouteThroughEarpiece: false,
       });
     } catch {
-    }
+    // ignore
+}
   }
 
   voiceSessionActive = true;
@@ -35,7 +36,8 @@ export async function deactivateVoiceAudioSession() {
         shouldRouteThroughEarpiece: false,
       });
     } catch {
-    }
+    // ignore
+}
   }
 
   voiceSessionActive = false;

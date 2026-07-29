@@ -145,9 +145,9 @@ export const MessageInput = observer(({ channel }: Props) => {
   const showExpressionPicker =
     !editingMessage &&
     !denySendingMessages &&
-    ((app.settings?.extendedSettings.showEmojiPicker ?? true) ||
-      (app.settings?.extendedSettings.showGifPicker ?? true) ||
-      (app.settings?.extendedSettings.showStickerPicker ?? true));
+    ((app.settings?.showEmojiPicker ?? true) ||
+      (app.settings?.showGifPicker ?? true) ||
+      (app.settings?.showStickerPicker ?? true));
 
   useEffect(() => {
     app.setReplyingTo(null);
@@ -207,7 +207,7 @@ export const MessageInput = observer(({ channel }: Props) => {
 
   const triggerTyping = () => {
     if (editingMessage || denySendingMessages) return;
-    if (app.settings?.extendedSettings.sendTypingIndicators === false) return;
+    if (app.settings?.sendTypingIndicators === false) return;
 
     if (!typingCooldownRef.current) {
       void app.rest.post(`/channels/${channel.id}/typing`);
@@ -330,7 +330,8 @@ export const MessageInput = observer(({ channel }: Props) => {
       setSelection({ start: 0, end: 0 });
       setStickers([]);
     } catch {
-    } finally {
+    // ignore
+} finally {
       setSaving(false);
     }
   };
@@ -526,7 +527,6 @@ export const MessageInput = observer(({ channel }: Props) => {
     <Paper
       surfaceRole={hasWallpaper ? "composer" : undefined}
       elevation={hasWallpaper ? 0 : composerElevation}
-      transparency={0}
       style={{
         flexShrink: 0,
         flexGrow: 0,
@@ -832,7 +832,7 @@ export const MessageInput = observer(({ channel }: Props) => {
           entities={entities}
           onChangeEntities={setEntities}
           channelId={channel.id}
-          enableEmoticons={app.settings?.extended.convertEmoticons ?? true}
+          enableEmoticons={app.settings?.convertEmoticons ?? true}
           placeholder={placeholder}
           editable={!denySendingMessages}
           nativeID={CHAT_COMPOSER_NATIVE_ID}
@@ -883,9 +883,9 @@ export const MessageInput = observer(({ channel }: Props) => {
         visible={pickerOpen}
         onClose={() => setPickerOpen(false)}
         channel={channel}
-        showEmoji={app.settings?.extendedSettings.showEmojiPicker ?? true}
-        showGifs={app.settings?.extendedSettings.showGifPicker ?? true}
-        showStickers={app.settings?.extendedSettings.showStickerPicker ?? true}
+        showEmoji={app.settings?.showEmojiPicker ?? true}
+        showGifs={app.settings?.showGifPicker ?? true}
+        showStickers={app.settings?.showStickerPicker ?? true}
         onSelectEmoji={handleSelectEmoji}
         onSelectCustomEmoji={handleSelectCustomEmoji}
         onSelectGif={handleSelectGif}

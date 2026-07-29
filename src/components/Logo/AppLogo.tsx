@@ -4,7 +4,7 @@ import { Theme } from "@stores/objects/Theme";
 import { observer } from "mobx-react-lite";
 import { Image, Pressable, View, type ImageProps } from "react-native";
 
-const mark = require("../../../assets/adaptive-icon.png");
+import adaptiveIconMark from "../../../assets/adaptive-icon.png";
 
 interface Props {
   size?: number;
@@ -38,7 +38,7 @@ export const AppLogo = observer(
       ]}
     >
       <Image
-        source={mark}
+        source={adaptiveIconMark}
         style={{ width: size, height: size }}
         resizeMode="cover"
       />

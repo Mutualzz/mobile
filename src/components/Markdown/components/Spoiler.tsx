@@ -32,7 +32,7 @@ const isTextOnly = (children: ReactNode) =>
 
 export const Spoiler = observer(({ children }: PropsWithChildren) => {
     const app = useAppStore();
-    const revealAll = app.settings?.extendedSettings.revealAllSpoilers ?? false;
+    const revealAll = app.settings?.revealAllSpoilers ?? false;
     const [revealed, setRevealed] = useState(revealAll);
 
     return (

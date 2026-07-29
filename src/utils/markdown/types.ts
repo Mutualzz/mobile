@@ -1,1 +1,1 @@
-export type Selection = { start: number; end: number };
+export interface Selection { start: number; end: number }

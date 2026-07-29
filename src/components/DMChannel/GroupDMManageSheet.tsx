@@ -62,7 +62,7 @@ export const GroupDMManageSheet = observer(
           setRemoveIcon(false);
           setError(null);
         })
-        .catch(() => undefined)
+        .catch(() => { return; })
         .finally(() => {
           void ImagePicker.clean();
         });

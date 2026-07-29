@@ -101,7 +101,6 @@ export const UserAvatar = observer(
               : "elevation"
         }
         elevation={hasAvatar ? 0 : DEFAULT_AVATAR_ELEVATION}
-        transparency={0}
         style={{
           width: size,
           height: size,

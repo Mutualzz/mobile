@@ -22,13 +22,13 @@ const ICON_HOLD = 1.5;
 const ICON_MOVE = 0.55;
 const CYCLE = ICON_HOLD + ICON_MOVE;
 
-const anarchy = require("../../assets/brand-logo/anarchy.png");
-const cathedral = require("../../assets/brand-logo/cathedral.png");
-const sceneHair = require("../../assets/brand-logo/scene_hair.png");
-const guitar = require("../../assets/brand-logo/guitar.png");
-const microphone = require("../../assets/brand-logo/microphone.png");
-const emoHair = require("../../assets/brand-logo/emo_hair.png");
-const pentagram = require("../../assets/brand-logo/pentagram_overlay.png");
+import anarchy from "../../assets/brand-logo/anarchy.png";
+import cathedral from "../../assets/brand-logo/cathedral.png";
+import sceneHair from "../../assets/brand-logo/scene_hair.png";
+import guitar from "../../assets/brand-logo/guitar.png";
+import microphone from "../../assets/brand-logo/microphone.png";
+import emoHair from "../../assets/brand-logo/emo_hair.png";
+import pentagram from "../../assets/brand-logo/pentagram_overlay.png";
 
 const ORBIT_ICONS = [cathedral, sceneHair, guitar, microphone, emoHair] as const;
 

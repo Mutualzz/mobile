@@ -47,6 +47,7 @@ void i18n.use(initReactI18next).init({
   resources,
   lng: resolveLocale(deviceTag),
   fallbackLng: "en",
+  returnEmptyString: false,
   defaultNS: "common",
   interpolation: { escapeValue: false },
   supportedLngs: Object.keys(resources),

@@ -81,7 +81,7 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
   const status = useAudioPlayerStatus(player);
 
   useEffect(() => {
-    setAudioModeAsync({ playsInSilentMode: true }).catch(() => undefined);
+    setAudioModeAsync({ playsInSilentMode: true }).catch(() => { return; });
   }, []);
 
   useEffect(() => {

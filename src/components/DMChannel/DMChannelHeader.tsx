@@ -9,6 +9,7 @@ import { useAppStore } from "@hooks/useStores";
 import {
   ArrowLeftIcon,
   DotsThreeOutlineVerticalIcon,
+  MagnifyingGlassIcon,
   PhoneIcon,
   UserPlusIcon,
 } from "phosphor-react-native";
@@ -19,6 +20,7 @@ import { observer } from "mobx-react-lite";
 interface Props {
   channel: Channel;
   onBack: () => void;
+  onOpenSearch?: () => void;
   onOpenAddRecipient?: () => void;
   onOpenManage?: () => void;
   onOpenUserMenu?: () => void;
@@ -27,6 +29,7 @@ interface Props {
 export const DMChannelHeader = observer(function DMChannelHeader({
   channel,
   onBack,
+  onOpenSearch,
   onOpenAddRecipient,
   onOpenManage,
   onOpenUserMenu,
@@ -144,6 +147,15 @@ export const DMChannelHeader = observer(function DMChannelHeader({
       </Box>
 
       <Box style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+        {onOpenSearch ? (
+          <IconButton
+            padding={6}
+            onPress={onOpenSearch}
+            accessibilityLabel={t("header.search")}
+          >
+            <MagnifyingGlassIcon size={20} weight="bold" />
+          </IconButton>
+        ) : null}
         <IconButton
           padding={6}
           color={callActive || inThisCall ? "success" : undefined}

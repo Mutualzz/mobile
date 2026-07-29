@@ -39,7 +39,7 @@ dayjs.extend(relativeTime);
 dayjs.extend(calendar, calendarStrings);
 dayjs.extend(duration);
 
-SplashScreen.preventAutoHideAsync().catch(() => undefined);
+SplashScreen.preventAutoHideAsync().catch(() => { return; });
 
 const WindowOverlay = Platform.OS === "ios" ? FullWindowOverlay : Fragment;
 
@@ -70,7 +70,7 @@ const Root = () => {
     tag: "App",
   });
   const [showBootSplash, setShowBootSplash] = useState(true);
-  const reducedMotion = app.settings?.extendedSettings.reducedMotion ?? false;
+  const reducedMotion = app.settings?.reducedMotion ?? false;
   const modalAnimation = reducedMotion ? "none" : "slide_from_bottom";
 
   usePushNotifications(!!app.token);
@@ -150,6 +150,9 @@ const Root = () => {
                         <IncomingCallOverlay />
                         <Stack screenOptions={{ headerShown: false }}>
                           <Stack.Screen name="(tabs)" />
+                          <Stack.Screen name="onboarding" />
+                          <Stack.Screen name="auth/discord" />
+                          <Stack.Screen name="register/discord" />
                           <Stack.Screen
                             name="settings"
                             options={{

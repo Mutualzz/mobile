@@ -17,7 +17,7 @@ import { Animated, Pressable, View } from "react-native";
 
 dayjs.extend(relativeTime);
 
-type RecentActivityDto = {
+interface RecentActivityDto {
   type: "playing" | "listening";
   name: string;
   applicationId?: string;
@@ -27,7 +27,7 @@ type RecentActivityDto = {
   assets?: PresenceActivityAssets;
   startedAt: number | null;
   endedAt: number;
-};
+}
 
 function toPresenceActivity(row: RecentActivityDto): PresenceActivity {
   return {

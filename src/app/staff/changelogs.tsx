@@ -73,13 +73,13 @@ const StaffChangelogsScreen = () => {
   const previewChangelog = (changelog: APIChangelog) => {
     openSheet(
       WHATS_NEW_SHEET_ID,
-      <WhatsNewSheet changelog={changelog} onAck={() => {}} />,
+      <WhatsNewSheet changelog={changelog} />,
     );
   };
 
   useEffect(() => {
     if (isStaff && !isDeveloper) {
-      router.replace("/staff" as Href);
+      router.replace("/staff");
     }
   }, [isStaff, isDeveloper, router]);
 
@@ -148,7 +148,7 @@ const StaffChangelogsScreen = () => {
       <StaffHeader
         title={t("pages.changelogs")}
         showBack
-        backHref={"/staff" as Href}
+        backHref={"/staff"}
       />
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16 }}

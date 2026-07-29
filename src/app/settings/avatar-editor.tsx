@@ -65,7 +65,7 @@ export default observer(function AvatarEditorScreen() {
       height: 512,
     })
       .then((image) => uploadAvatarFile(image.path, image.mime ?? "image/jpeg"))
-      .catch(() => undefined)
+      .catch(() => { return; })
       .finally(() => {
         void ImagePicker.clean();
       });

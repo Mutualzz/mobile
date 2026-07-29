@@ -12,6 +12,22 @@ import {
   type AudioPlayer,
 } from "expo-audio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import callConnectSound from "../../assets/sounds/call_connect.wav";
+import callDeclineSound from "../../assets/sounds/call_decline.wav";
+import callDisconnectSound from "../../assets/sounds/call_disconnect.wav";
+import callIncomingSound from "../../assets/sounds/call_incoming.wav";
+import callOutgoingSound from "../../assets/sounds/call_outgoing.wav";
+import deafenOffSound from "../../assets/sounds/deafen_off.wav";
+import deafenOnSound from "../../assets/sounds/deafen_on.wav";
+import messageSound from "../../assets/sounds/message.wav";
+import muteOffSound from "../../assets/sounds/mute_off.wav";
+import muteOnSound from "../../assets/sounds/mute_on.wav";
+import pttStartSound from "../../assets/sounds/ptt_start.wav";
+import pttStopSound from "../../assets/sounds/ptt_stop.wav";
+import streamStartSound from "../../assets/sounds/stream_start.wav";
+import streamStopSound from "../../assets/sounds/stream_stop.wav";
+import userJoinSound from "../../assets/sounds/user_join.wav";
+import userLeaveSound from "../../assets/sounds/user_leave.wav";
 import { makeAutoObservable, observable, reaction } from "mobx";
 import { makePersistable } from "mobx-persist-store";
 
@@ -19,22 +35,22 @@ export type { AppSound, SoundToggleId } from "@stores/soundToggles";
 export { SOUND_TOGGLE_IDS } from "@stores/soundToggles";
 
 const SOURCES: Record<AppSound, number> = {
-  message: require("../../assets/sounds/message.wav"),
-  user_join: require("../../assets/sounds/user_join.wav"),
-  user_leave: require("../../assets/sounds/user_leave.wav"),
-  call_connect: require("../../assets/sounds/call_connect.wav"),
-  call_disconnect: require("../../assets/sounds/call_disconnect.wav"),
-  call_incoming: require("../../assets/sounds/call_incoming.wav"),
-  call_outgoing: require("../../assets/sounds/call_outgoing.wav"),
-  call_decline: require("../../assets/sounds/call_decline.wav"),
-  mute_on: require("../../assets/sounds/mute_on.wav"),
-  mute_off: require("../../assets/sounds/mute_off.wav"),
-  deafen_on: require("../../assets/sounds/deafen_on.wav"),
-  deafen_off: require("../../assets/sounds/deafen_off.wav"),
-  ptt_start: require("../../assets/sounds/ptt_start.wav"),
-  ptt_stop: require("../../assets/sounds/ptt_stop.wav"),
-  stream_start: require("../../assets/sounds/stream_start.wav"),
-  stream_stop: require("../../assets/sounds/stream_stop.wav"),
+  message: messageSound,
+  user_join: userJoinSound,
+  user_leave: userLeaveSound,
+  call_connect: callConnectSound,
+  call_disconnect: callDisconnectSound,
+  call_incoming: callIncomingSound,
+  call_outgoing: callOutgoingSound,
+  call_decline: callDeclineSound,
+  mute_on: muteOnSound,
+  mute_off: muteOffSound,
+  deafen_on: deafenOnSound,
+  deafen_off: deafenOffSound,
+  ptt_start: pttStartSound,
+  ptt_stop: pttStopSound,
+  stream_start: streamStartSound,
+  stream_stop: streamStopSound,
 };
 
 const DEFAULT_VOLUME = 0.45;

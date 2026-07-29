@@ -462,48 +462,13 @@ export const AppAppearanceSettings = observer(() => {
           )}
         </Paper>
 
-        <SettingsSection
-          title={t("appearance.startupMode")}
-          description={t("appearance.startupModeDescription")}
-        >
-          <SettingsSelectRow
-            title={t("appearance.startupMode")}
-            value={
-              settings.preferredMode === "feed"
-                ? t("appearance.startupModeFeed")
-                : t("appearance.startupModeSpaces")
-            }
-            onPress={() =>
-              openPicker(
-                "appearance-startup-mode",
-                t("appearance.startupMode"),
-                [
-                  {
-                    value: "spaces",
-                    label: t("appearance.startupModeSpaces"),
-                  },
-                  {
-                    value: "feed",
-                    label: t("appearance.startupModeFeed"),
-                  },
-                ],
-                settings.preferredMode === "feed" ? "feed" : "spaces",
-                (value) => {
-                  settings.setPreferredMode(value as "spaces" | "feed");
-                  void settings.sync();
-                },
-              )
-            }
-          />
-        </SettingsSection>
-
         <SettingsSection title={t("appearance.convertEmoticons")}>
           <SettingsToggleRow
             title={t("appearance.convertEmoticons")}
             description={t("appearance.convertEmoticonsDescription")}
-            checked={settings.extendedSettings.convertEmoticons}
+            checked={settings.convertEmoticons}
             onChange={(checked) => {
-              settings.patchExtendedSettings({ convertEmoticons: checked });
+              settings.patchSettings({ convertEmoticons: checked });
               void settings.sync();
             }}
           />

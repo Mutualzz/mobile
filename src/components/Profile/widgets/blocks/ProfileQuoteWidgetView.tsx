@@ -92,7 +92,7 @@ export function ProfileQuoteWidgetView({ block, size }: Props) {
         borderColor: styles.border as string,
         backgroundColor: hasCustomBackground
           ? "transparent"
-          : (styles.background as string),
+          : (styles.background),
         overflow: "hidden",
       }}
     >

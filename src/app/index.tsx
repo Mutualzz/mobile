@@ -1,9 +1,10 @@
 import { Button } from "@components/Button";
 import { useAppStore } from "@hooks/useStores";
 import { Box } from "@mutualzz/ui-native";
+import { resolveResumePath } from "@mutualzz/client";
 import { peekPendingNavigation } from "@utils/pendingNavigation";
 import { splashBackgroundForScheme } from "@utils/splash";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Linking, useColorScheme, View } from "react-native";
@@ -21,8 +22,18 @@ const IndexRoute = () => {
     if (!app.isReady || !app.settings || !app.token) return;
     if (peekPendingNavigation()) return;
 
-    router.replace(app.settings.preferredMode === "feed" ? "/feed" : "/spaces");
-  }, [app.isReady, app.settings, app.token, router]);
+    if (app.isGatewayReady && app.needsOnboarding) {
+      router.replace("/onboarding");
+      return;
+    }
+
+    router.replace(
+      resolveResumePath(
+        app as Parameters<typeof resolveResumePath>[0],
+        app.navigation.lastRoute,
+      ) as Href,
+    );
+  }, [app.isReady, app.settings, app.token, app.isGatewayReady, app.needsOnboarding, router]);
 
   if (app.token) {
     return (

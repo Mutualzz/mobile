@@ -10,11 +10,11 @@ import {
   type VoiceLiveActivityProps,
 } from "voice-live-activity";
 
-type VoiceLiveActivityHandlers = {
+interface VoiceLiveActivityHandlers {
   toggleMute: () => void;
   toggleDeaf: () => void;
   disconnect: () => void;
-};
+}
 
 const logger = new Logger({ tag: "VoiceLiveActivity" });
 

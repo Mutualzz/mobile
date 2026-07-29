@@ -7,7 +7,7 @@ import { type View } from "react-native";
 const DEFAULT_ELEVATION = { embossed: 4, flat: 0 };
 
 const PaperComponent = forwardRef<View, PaperProps>(
-  ({ color, elevation, variant, transparency, ...props }, ref) => {
+  ({ color, elevation, variant, ...props }, ref) => {
     const app = useAppStore();
     const embossed = app.settings?.preferEmbossed;
 
@@ -21,15 +21,11 @@ const PaperComponent = forwardRef<View, PaperProps>(
       variant ??
       (!app.token ? "elevation" : embossed ? "elevation" : "outlined");
 
-    const resolvedTransparency =
-      transparency ?? (embossed ? 90 : 0);
-
     return (
       <MPaper
         color={color}
         {...props}
         variant={resolvedVariant}
-        transparency={resolvedTransparency}
         elevation={resolvedElevation}
         ref={ref}
       />
