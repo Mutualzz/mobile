@@ -148,7 +148,7 @@ export class ExpressionsStore {
 
                 return this.add(expression);
             })
-            .catch(() => { return; })
+            .catch(() => undefined)
             .finally(() => {
                 this.pendingResolves.delete(id);
             });

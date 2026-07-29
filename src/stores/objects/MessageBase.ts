@@ -1,4 +1,4 @@
-import type { MessageType, Snowflake } from "@mutualzz/types";
+import type { APIMessage, MessageType, Snowflake } from "@mutualzz/types";
 import type { AppStore } from "@stores/App.store";
 import type { MessageLikeData } from "./Message";
 import type { User } from "./User";
@@ -79,7 +79,7 @@ export class MessageBase {
 
         if ("repliedTo" in data && isLoadedRelation(data.repliedTo)) {
             this._repliedTo =
-                this.channel?.messages.add(data.repliedTo) ?? null;
+                this.channel?.messages.add(data.repliedTo as APIMessage) ?? null;
         }
     }
 

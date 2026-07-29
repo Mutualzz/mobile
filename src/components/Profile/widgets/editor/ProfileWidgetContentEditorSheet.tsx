@@ -367,7 +367,7 @@ function ProfileBlockBackgroundColorFields({
       </Typography>
       <Input
         type="color"
-        value={(block.backgroundColor || "#1a1a2e")}
+        value={(block.backgroundColor || "#1a1a2e") as ColorLike}
         onChange={(color: ColorLike) =>
           update({ backgroundColor: String(color) })
         }
