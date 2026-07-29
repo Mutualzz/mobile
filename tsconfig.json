@@ -10,8 +10,6 @@
             "@setup/*": ["./src/setup/*"],
             "@utils/*": ["./src/utils/*"],
             "@widgets/*": ["./src/widgets/*"],
-            "@themes/*": ["./src/themes/*"],
-            "@themes": ["./src/themes/index.ts"],
             "@stores/*": ["./src/stores/*"],
             "@presence/*": ["./src/presence/*"],
             "@app-types/*": ["./src/types/*"],
