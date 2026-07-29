@@ -345,7 +345,7 @@ export const ProfileEditorScreen = observer(() => {
             ) : null}
             <Input
               type="color"
-              value={(backgroundColor || "#1a1a2e")}
+              value={(backgroundColor || "#1a1a2e") as ColorLike}
               onChange={(color: ColorLike) => setBackgroundColor(String(color))}
               allowGradient
               showRandom
