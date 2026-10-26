@@ -4,7 +4,6 @@ import { ChannelList } from "@components/Channel/ChannelList/ChannelList";
 import { SwipeableDrawer } from "@components/Navigation/SwipeableDrawer";
 import { SpaceLockdownOverlay } from "@components/Space/SpaceLockdownOverlay";
 import { SpacesSidebar } from "@components/Space/SpacesSidebar";
-import { SpaceThemeProvider } from "@contexts/SpaceTheme.context";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
 import { Box, hasOpenSheets } from "@mutualzz/ui-native";
@@ -168,38 +167,34 @@ const SpacesDrawerLayout = () => {
           }}
         >
           <SpacesSidebar />
-          <SpaceThemeProvider>
-            <Box style={{ flex: 1, position: "relative" }}>
-              <ChannelList />
-              {activeSpace && (
-                <SpaceLockdownOverlay
-                  space={activeSpace}
-                  showMessage={false}
-                  headerClearance={56}
-                />
-              )}
-            </Box>
-          </SpaceThemeProvider>
+          <Box style={{ flex: 1, position: "relative" }}>
+            <ChannelList />
+            {activeSpace && (
+              <SpaceLockdownOverlay
+                space={activeSpace}
+                showMessage={false}
+                headerClearance={56}
+              />
+            )}
+          </Box>
         </Box>
       }
     >
-      <SpaceThemeProvider>
-        <Box style={{ flex: 1, position: "relative" }}>
-          {bridgeId ? (
-            <BridgeChatView
-              bridgeId={bridgeId}
-              returnToSpaceId={
-                spaceId ??
-                app.bridgeChat.spaceIdByBridge.get(bridgeId) ??
-                activeSpace?.id
-              }
-            />
-          ) : (
-            <ChannelContentPane />
-          )}
-          {activeSpace && <SpaceLockdownOverlay space={activeSpace} />}
-        </Box>
-      </SpaceThemeProvider>
+      <Box style={{ flex: 1, position: "relative" }}>
+        {bridgeId ? (
+          <BridgeChatView
+            bridgeId={bridgeId}
+            returnToSpaceId={
+              spaceId ??
+              app.bridgeChat.spaceIdByBridge.get(bridgeId) ??
+              activeSpace?.id
+            }
+          />
+        ) : (
+          <ChannelContentPane />
+        )}
+        {activeSpace && <SpaceLockdownOverlay space={activeSpace} />}
+      </Box>
     </SwipeableDrawer>
   );
 };

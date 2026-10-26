@@ -8,59 +8,54 @@ import { useEffect, useRef, type PropsWithChildren } from "react";
 import { useColorScheme } from "react-native";
 
 export const AppTheme = observer(({ children }: PropsWithChildren) => {
-    const app = useAppStore();
-    const themeProviderRef = useRef<ThemeProviderRef>(null);
-    const prefersDark = useColorScheme() === "dark";
-    const isUpdatingFromServer = useRef(false);
+  const app = useAppStore();
+  const themeProviderRef = useRef<ThemeProviderRef>(null);
+  const prefersDark = useColorScheme() === "dark";
 
-    useEffect(() => {
-        const dispose = reaction(
-            () => ({
-                userThemeRemote: app.settings?.currentTheme,
-                userIconRemote: app.settings?.currentIcon,
-            }),
-            ({ userThemeRemote, userIconRemote }) => {
-                const themes = app.themes.all;
+  useEffect(() => {
+    const dispose = reaction(
+      () => ({
+        userTheme: app.settings?.currentTheme,
+        userIcon: app.settings?.currentIcon,
+        spaceThemeId: app.spaces.active?.themeId,
+      }),
+      ({ userTheme, userIcon, spaceThemeId }) => {
+        const themes = app.themes.all;
 
-                if (userIconRemote !== app.themes.currentIcon) {
-                    app.themes.setCurrentIcon(userIconRemote ?? null);
-                }
+        if (userIcon !== app.themes.currentIcon)
+          app.themes.setCurrentIcon(userIcon ?? null);
 
-                const pick = (id?: string | null) => {
-                    const pickenTheme = themes.find((t) => t.id === id);
-                    if (!pickenTheme) return undefined;
-                    return Theme.toEmotion(pickenTheme);
-                };
+        const pick = (id?: string | null) => {
+          const pickenTheme = themes.find((t) => t.id === id);
+          if (!pickenTheme) return undefined;
+          return Theme.toEmotion(pickenTheme);
+        };
 
-                const selectedTheme =
-                    pick(userThemeRemote) || pick(app.themes.currentTheme);
+        const selectedTheme = spaceThemeId
+          ? pick(spaceThemeId) || pick(userTheme)
+          : pick(userTheme);
 
-                if (!selectedTheme) {
-                    if (themeProviderRef.current?.type !== null) {
-                        isUpdatingFromServer.current = true;
-                        themeProviderRef.current?.changeTheme(null);
-                        isUpdatingFromServer.current = false;
-                    }
-                    return;
-                }
+        if (!selectedTheme) {
+          if (themeProviderRef.current?.type !== null) {
+            themeProviderRef.current?.changeTheme(null);
+          }
+          return;
+        }
 
-                if (selectedTheme.id === themeProviderRef.current?.theme?.id)
-                    return;
+        if (selectedTheme.id === themeProviderRef.current?.theme?.id) return;
 
-                isUpdatingFromServer.current = true;
-                themeProviderRef.current?.changeTheme(selectedTheme);
-                isUpdatingFromServer.current = false;
-            },
-            { fireImmediately: true },
-        );
-
-        return dispose;
-    }, [prefersDark]);
-
-    return (
-        <ThemeProvider ref={themeProviderRef}>
-            <AdaptiveAppIcon />
-            {children}
-        </ThemeProvider>
+        themeProviderRef.current?.changeTheme(selectedTheme);
+      },
+      { fireImmediately: true },
     );
+
+    return dispose;
+  }, [prefersDark]);
+
+  return (
+    <ThemeProvider ref={themeProviderRef}>
+      <AdaptiveAppIcon />
+      {children}
+    </ThemeProvider>
+  );
 });
