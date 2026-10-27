@@ -1,54 +1,51 @@
 {
   "expo": {
-    "name": "Mutualzz",
-    "slug": "mutualzz",
-    "version": "3.14.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "scheme": ["com.mutualzz.app", "mutualzz"],
-    "userInterfaceStyle": "automatic",
-    "ios": {
-      "bundleIdentifier": "com.mutualzz.app",
-      "config": {
-        "usesNonExemptEncryption": false
-      },
-      "icon": "./assets/ios.icon",
-      "appleTeamId": "HQ5FZ3HQC5",
-      "infoPlist": {
-        "NSUserActivityTypes": [
-          "INSendMessageIntent"
-        ],
-        "UIBackgroundModes": [
-          "audio"
-        ],
-        "NSSupportsLiveActivities": true
-      },
-      "entitlements": {
-        "com.apple.developer.usernotifications.communication": true,
-        "com.apple.security.application-groups": [
-          "group.com.mutualzz.app"
-        ]
-      }
-    },
     "android": {
-      "package": "com.mutualzz.app",
-      "softwareKeyboardLayoutMode": "pan",
-      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/android-icon.png",
-        "backgroundColor": "#88449a"
+        "backgroundColor": "#88449a",
+        "foregroundImage": "./assets/android-icon.png"
       },
+      "googleServicesFile": "./google-services.json",
+      "package": "com.mutualzz.app",
       "permissions": [
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MICROPHONE",
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.WAKE_LOCK"
-      ]
+      ],
+      "softwareKeyboardLayoutMode": "pan"
     },
     "experiments": {
-      "typedRoutes": true,
-      "autolinkingModuleResolution": true
+      "autolinkingModuleResolution": true,
+      "typedRoutes": true
     },
+    "extra": {
+      "eas": {
+        "projectId": "eaaf0533-e2e0-469c-98e2-ad69ac469129"
+      },
+      "router": {}
+    },
+    "icon": "./assets/icon.png",
+    "ios": {
+      "appleTeamId": "HQ5FZ3HQC5",
+      "bundleIdentifier": "com.mutualzz.app",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "com.apple.developer.usernotifications.communication": true,
+        "com.apple.security.application-groups": ["group.com.mutualzz.app"]
+      },
+      "icon": "./assets/ios.icon",
+      "infoPlist": {
+        "NSSupportsLiveActivities": true,
+        "NSUserActivityTypes": ["INSendMessageIntent"],
+        "UIBackgroundModes": ["audio"]
+      }
+    },
+    "name": "Mutualzz",
+    "orientation": "portrait",
+    "owner": "mutualzz",
     "plugins": [
       "expo-dev-client",
       "@bacons/apple-targets",
@@ -57,8 +54,8 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
-          "color": "#5865f2"
+          "color": "#5865f2",
+          "icon": "./assets/icon.png"
         }
       ],
       [
@@ -72,11 +69,11 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#FBF7FB",
-          "image": "./assets/splash-icon.png",
           "dark": {
             "backgroundColor": "#0D0710",
             "image": "./assets/splash-icon.png"
-          }
+          },
+          "image": "./assets/splash-icon.png"
         }
       ],
       "expo-asset",
@@ -87,9 +84,9 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice channels.",
           "enableBackgroundPlayback": true,
-          "enableBackgroundRecording": true
+          "enableBackgroundRecording": true,
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice channels."
         }
       ],
       [
@@ -106,80 +103,77 @@
         "expo-alternate-app-icons",
         [
           {
-            "name": "Crimson",
+            "android": {
+              "backgroundColor": "#E1556B",
+              "foregroundImage": "./assets/app-icons/foreground.png"
+            },
             "ios": "./assets/app-icons/ios/crimson.png",
-            "android": {
-              "foregroundImage": "./assets/app-icons/foreground.png",
-              "backgroundColor": "#E1556B"
-            }
+            "name": "Crimson"
           },
           {
-            "name": "Rose",
+            "android": {
+              "backgroundColor": "#A23A4F",
+              "foregroundImage": "./assets/app-icons/foreground.png"
+            },
             "ios": "./assets/app-icons/ios/rose.png",
-            "android": {
-              "foregroundImage": "./assets/app-icons/foreground.png",
-              "backgroundColor": "#A23A4F"
-            }
+            "name": "Rose"
           },
           {
-            "name": "Ocean",
+            "android": {
+              "backgroundColor": "#63A9C8",
+              "foregroundImage": "./assets/app-icons/foreground.png"
+            },
             "ios": "./assets/app-icons/ios/ocean.png",
-            "android": {
-              "foregroundImage": "./assets/app-icons/foreground.png",
-              "backgroundColor": "#63A9C8"
-            }
+            "name": "Ocean"
           },
           {
-            "name": "Teal",
+            "android": {
+              "backgroundColor": "#2AA8A3",
+              "foregroundImage": "./assets/app-icons/foreground.png"
+            },
             "ios": "./assets/app-icons/ios/teal.png",
-            "android": {
-              "foregroundImage": "./assets/app-icons/foreground.png",
-              "backgroundColor": "#2AA8A3"
-            }
+            "name": "Teal"
           },
           {
-            "name": "Rust",
+            "android": {
+              "backgroundColor": "#D09663",
+              "foregroundImage": "./assets/app-icons/foreground.png"
+            },
             "ios": "./assets/app-icons/ios/rust.png",
-            "android": {
-              "foregroundImage": "./assets/app-icons/foreground.png",
-              "backgroundColor": "#D09663"
-            }
+            "name": "Rust"
           },
           {
-            "name": "Violet",
+            "android": {
+              "backgroundColor": "#9F6CDA",
+              "foregroundImage": "./assets/app-icons/foreground.png"
+            },
             "ios": "./assets/app-icons/ios/violet.png",
-            "android": {
-              "foregroundImage": "./assets/app-icons/foreground.png",
-              "backgroundColor": "#9F6CDA"
-            }
+            "name": "Violet"
           },
           {
-            "name": "Steel",
+            "android": {
+              "backgroundColor": "#98A0D6",
+              "foregroundImage": "./assets/app-icons/foreground.png"
+            },
             "ios": "./assets/app-icons/ios/steel.png",
-            "android": {
-              "foregroundImage": "./assets/app-icons/foreground.png",
-              "backgroundColor": "#98A0D6"
-            }
+            "name": "Steel"
           },
           {
-            "name": "Gold",
-            "ios": "./assets/app-icons/ios/gold.png",
             "android": {
-              "foregroundImage": "./assets/app-icons/foreground.png",
-              "backgroundColor": "#C08A2A"
-            }
+              "backgroundColor": "#C08A2A",
+              "foregroundImage": "./assets/app-icons/foreground.png"
+            },
+            "ios": "./assets/app-icons/ios/gold.png",
+            "name": "Gold"
           }
         ]
       ],
       "expo-localization",
       "./plugins/withFrequentLiveActivityUpdates.js"
     ],
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "eaaf0533-e2e0-469c-98e2-ad69ac469129"
-      }
-    },
-    "owner": "mutualzz"
+    "scheme": ["com.mutualzz.app", "mutualzz"],
+    "slug": "mutualzz",
+    "userInterfaceStyle": "automatic",
+    "version": "3.14.1"
   }
 }
