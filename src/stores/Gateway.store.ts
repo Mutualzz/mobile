@@ -1243,7 +1243,10 @@ export class GatewayStore {
     this.app.setGatewayReady(false);
     this.app.voice.onGatewayDisconnected();
 
-    if (code === GatewayCloseCodes.ForceLogout) {
+    if (
+      code === GatewayCloseCodes.ForceLogout ||
+      code === GatewayCloseCodes.AuthenticationFailed
+    ) {
       this.reset();
       void this.app.logout();
       return;
