@@ -8,7 +8,7 @@ import { useScaledSquareSize } from "@utils/accessibilityLayout";
 import { openExternalLink } from "@utils/openExternalLink";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
-import { Image, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Image, Platform, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import WebView from "react-native-webview";
 import { MessageEmbedSpoiler } from "./MessageEmbedSpoiler";
 import { MessageGifEmbed } from "./MessageGifEmbed";
@@ -89,7 +89,12 @@ export const MessageEmbed = observer(
         const gifAutoplay = app.settings?.gifAutoplay ?? true;
 
         if (embed.type === "gifv") {
-            const mediaUrl = embed.media || embed.image || embed.url || "";
+            const mediaUrl =
+                (Platform.OS === "android" && embed.mediaSmall) ||
+                embed.media ||
+                embed.image ||
+                embed.url ||
+                "";
             const gifUrl = embed.url ?? "";
             const isFavorited =
                 app.settings?.favoriteGifs?.some((f) =>

@@ -4,6 +4,10 @@ import {
   useFeedPosts,
   type FeedVariant,
 } from "@components/Feed/useFeedPosts";
+import {
+  GifViewportContext,
+  notifyGifViewportChanged,
+} from "@hooks/useGifOnScreen";
 import { Box, Typography } from "@mutualzz/ui-native";
 import type { Post } from "@stores/objects/Post";
 import { FEED_COLUMN_MAX_WIDTH } from "@utils/feedLayout";
@@ -48,51 +52,55 @@ export const PostList = observer(({ variant }: Props) => {
   }).current;
 
   return (
-    <FlashList
-      data={posts}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={{
-        paddingHorizontal: 12,
-        paddingBottom: 24,
-        paddingTop: 4,
-      }}
-      ItemSeparatorComponent={() => <Box style={{ height: 10 }} />}
-      onViewableItemsChanged={onViewableItemsChanged}
-      viewabilityConfig={viewabilityConfig}
-      ListEmptyComponent={
-        !isFetchingNextPage ? (
-          <Box style={{ padding: 32, alignItems: "center" }}>
-            <Typography textColor="muted">{emptyLabel}</Typography>
+    <GifViewportContext.Provider value>
+      <FlashList
+        data={posts}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{
+          paddingHorizontal: 12,
+          paddingBottom: 24,
+          paddingTop: 4,
+        }}
+        ItemSeparatorComponent={() => <Box style={{ height: 10 }} />}
+        onScroll={notifyGifViewportChanged}
+        scrollEventThrottle={16}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        ListEmptyComponent={
+          !isFetchingNextPage ? (
+            <Box style={{ padding: 32, alignItems: "center" }}>
+              <Typography textColor="muted">{emptyLabel}</Typography>
+            </Box>
+          ) : null
+        }
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <Box style={{ padding: 16, alignItems: "center" }}>
+              <ActivityIndicator />
+            </Box>
+          ) : null
+        }
+        onEndReached={fetchMore}
+        onEndReachedThreshold={0.4}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={() => refetch()}
+          />
+        }
+        renderItem={({ item: post }: { item: Post }) => (
+          <Box style={{ width: "100%", maxWidth: FEED_COLUMN_MAX_WIDTH, alignSelf: "center" }}>
+            {post.attachments.length > 0 ? (
+              <MediaPostCard
+                post={post}
+                isActive={post.id === activePostId}
+              />
+            ) : (
+              <PostCard post={post} />
+            )}
           </Box>
-        ) : null
-      }
-      ListFooterComponent={
-        isFetchingNextPage ? (
-          <Box style={{ padding: 16, alignItems: "center" }}>
-            <ActivityIndicator />
-          </Box>
-        ) : null
-      }
-      onEndReached={fetchMore}
-      onEndReachedThreshold={0.4}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefetching}
-          onRefresh={() => refetch()}
-        />
-      }
-      renderItem={({ item: post }: { item: Post }) => (
-        <Box style={{ width: "100%", maxWidth: FEED_COLUMN_MAX_WIDTH, alignSelf: "center" }}>
-          {post.attachments.length > 0 ? (
-            <MediaPostCard
-              post={post}
-              isActive={post.id === activePostId}
-            />
-          ) : (
-            <PostCard post={post} />
-          )}
-        </Box>
-      )}
-    />
+        )}
+      />
+    </GifViewportContext.Provider>
   );
 });

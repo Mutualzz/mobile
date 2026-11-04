@@ -14,12 +14,13 @@ import {
 import type { GifResult, GifsResponse, GifTagsResponse } from "@utils/gifs";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { FlashList } from "@shopify/flash-list";
+import { Image } from "expo-image";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
-  Image,
+  Platform,
   Pressable,
   View,
   useWindowDimensions,
@@ -32,6 +33,7 @@ interface GifPickerContentProps {
 
 const LIST_HORIZONTAL_PADDING = 8;
 const TILE_GAP = 4;
+const ANIMATE_COVERS = Platform.OS !== "android";
 
 const GifTile = ({
   gif,
@@ -76,7 +78,8 @@ const GifTile = ({
           <Image
             source={{ uri: preview }}
             style={{ width: "100%", height: "100%" }}
-            resizeMode="cover"
+            contentFit="cover"
+            recyclingKey={preview}
           />
         </Pressable>
 
@@ -237,7 +240,8 @@ export const GifPickerContent = observer(
                       width: "100%",
                       height: "100%",
                     }}
-                    resizeMode="cover"
+                    contentFit="cover"
+                    autoplay={ANIMATE_COVERS}
                   />
                 )}
                 <View
@@ -276,7 +280,8 @@ export const GifPickerContent = observer(
                     width: "100%",
                     height: "100%",
                   }}
-                  resizeMode="cover"
+                  contentFit="cover"
+                  autoplay={ANIMATE_COVERS}
                 />
                 <View
                   style={{
@@ -374,10 +379,7 @@ export const GifPickerContent = observer(
               }
               endDecorator={
                 search ? (
-                  <IconButton
-                    padding={4}
-                    onPress={() => setSearch("")}
-                  >
+                  <IconButton padding={4} onPress={() => setSearch("")}>
                     <XIcon size={14} />
                   </IconButton>
                 ) : undefined

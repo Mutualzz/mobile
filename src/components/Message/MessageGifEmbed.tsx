@@ -1,4 +1,5 @@
 import { IconButton } from "@components/IconButton";
+import { useGifOnScreen } from "@hooks/useGifOnScreen";
 import { useTheme } from "@mutualzz/ui-native";
 import {
   computeContainedSize,
@@ -33,6 +34,8 @@ interface Props {
 
 interface NaturalSize { width: number; height: number }
 
+const VIDEO_URL_PATTERN = /\.(mp4|webm)(\?|$)/i;
+
 const naturalSizeCache = new Map<string, NaturalSize>();
 
 function cacheKeyFor(mediaUrl: string, imageUrl?: string | null) {
@@ -43,48 +46,35 @@ function GifVideoPlayer({
   uri,
   width,
   height,
-  autoplay = true,
+  playing,
 }: {
   uri: string;
   width: number;
   height: number;
-  autoplay?: boolean;
+  playing: boolean;
 }) {
-  const player = useVideoPlayer(uri, (instance) => {
+  const player = useVideoPlayer({ uri, useCaching: true }, (instance) => {
     instance.loop = true;
     instance.muted = true;
   });
-  const [hovering, setHovering] = useState(false);
 
   useEffect(() => {
-    if (autoplay || hovering) {
+    if (playing) {
       player.play();
       return;
     }
 
     player.pause();
-  }, [player, uri, autoplay, hovering]);
-
-  const handlePress = () => {
-    if (autoplay) return;
-    player.play();
-  };
+  }, [player, uri, playing]);
 
   return (
-    <Pressable
-      onPress={handlePress}
-      onHoverIn={() => setHovering(true)}
-      onHoverOut={() => setHovering(false)}
+    <VideoView
+      player={player}
       style={{ width, height }}
-    >
-      <VideoView
-        player={player}
-        style={{ width, height }}
-        contentFit="contain"
-        nativeControls={false}
-        allowsPictureInPicture={false}
-      />
-    </Pressable>
+      contentFit="contain"
+      nativeControls={false}
+      allowsPictureInPicture={false}
+    />
   );
 }
 
@@ -105,9 +95,15 @@ export function MessageGifEmbed({
     : getMessageGifMaxWidth(windowWidth);
   const maxHeight = compact ? 220 : MESSAGE_GIF_MAX_HEIGHT;
 
-  const isVideo = /\.(mp4|webm)(\?|$)/i.test(mediaUrl);
+  const isVideo = VIDEO_URL_PATTERN.test(mediaUrl);
+  const posterUri = imageUrl && !VIDEO_URL_PATTERN.test(imageUrl) ? imageUrl : null;
   const sizingUri = imageUrl || (!isVideo ? mediaUrl : null);
   const cacheKey = cacheKeyFor(mediaUrl, imageUrl);
+
+  const { ref, onLayout, onScreen } = useGifOnScreen(cacheKey);
+  const [activated, setActivated] = useState(false);
+  const [hovering, setHovering] = useState(false);
+  const playing = autoplay || activated || hovering;
 
   const lockedRef = useRef(naturalSizeCache.has(cacheKey));
   const [naturalSize, setNaturalSize] = useState<NaturalSize | null>(
@@ -128,6 +124,7 @@ export function MessageGifEmbed({
   useEffect(() => {
     lockedRef.current = naturalSizeCache.has(cacheKey);
     setNaturalSize(naturalSizeCache.get(cacheKey) ?? null);
+    setActivated(false);
   }, [cacheKey]);
 
   useEffect(() => {
@@ -165,6 +162,9 @@ export function MessageGifEmbed({
 
   return (
     <View
+      ref={ref}
+      collapsable={false}
+      onLayout={onLayout}
       style={[
         styles.wrap,
         {
@@ -183,12 +183,30 @@ export function MessageGifEmbed({
         ]}
       >
         {isVideo ? (
-          <GifVideoPlayer
-            uri={mediaUrl}
-            width={displaySize.width}
-            height={displaySize.height}
-            autoplay={autoplay}
-          />
+          <Pressable
+            onPress={() => setActivated(true)}
+            onHoverIn={() => setHovering(true)}
+            onHoverOut={() => setHovering(false)}
+            style={styles.media}
+          >
+            {posterUri && (
+              <ExpoImage
+                source={{ uri: posterUri }}
+                style={StyleSheet.absoluteFill}
+                contentFit="contain"
+                recyclingKey={cacheKey}
+                autoplay={false}
+              />
+            )}
+            {onScreen && (playing || !posterUri) && (
+              <GifVideoPlayer
+                uri={mediaUrl}
+                width={displaySize.width}
+                height={displaySize.height}
+                playing={playing}
+              />
+            )}
+          </Pressable>
         ) : (
           <Pressable
             onPress={openPage}
@@ -200,6 +218,7 @@ export function MessageGifEmbed({
               style={styles.media}
               contentFit="contain"
               recyclingKey={cacheKey}
+              autoplay={autoplay && onScreen}
             />
           </Pressable>
         )}

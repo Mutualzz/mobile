@@ -20,6 +20,10 @@ import {
 import { MessageGroup } from "./MessageGroup";
 import { Logger } from "@mutualzz/logger";
 import { ChatListScrollView } from "@components/Keyboard/ChatListScrollView";
+import {
+  GifViewportContext,
+  notifyGifViewportChanged,
+} from "@hooks/useGifOnScreen";
 import { Paper } from "@components/Paper";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { IconButton } from "@components/IconButton";
@@ -425,6 +429,7 @@ export const MessageList = observer(({ channel }: Props) => {
       const atBottom = distanceFromBottom <= SCROLL_BOTTOM_THRESHOLD;
       isAtBottomRef.current = atBottom;
       setShowScrollToBottom(!atBottom);
+      notifyGifViewportChanged();
     },
     [],
   );
@@ -486,34 +491,37 @@ export const MessageList = observer(({ channel }: Props) => {
         transformOrigin: "top",
       }}
     >
-      <FlashList
-        ref={listRef}
-        key={channel?.id}
-        data={listData}
-        renderItem={renderGroup}
-        keyExtractor={keyExtractor}
-        extraData={app.highlightedMessageId}
-        maintainVisibleContentPosition={{ startRenderingFromBottom: true }}
-        drawDistance={CHAT_DRAW_DISTANCE}
-        onContentSizeChange={() => {
-          if (!isAtBottomRef.current) return;
-          scheduleScrollToBottom(false);
-        }}
-        onStartReached={fetchMore}
-        onStartReachedThreshold={0.2}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        renderScrollComponent={ChatListScrollView}
-        ListHeaderComponent={listHeader}
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: "flex-end",
-          paddingHorizontal: 8,
-          paddingTop: 8,
-          paddingBottom: 8,
-        }}
-        style={{ flex: 1 }}
-      />
+      <GifViewportContext.Provider value>
+        <FlashList
+          ref={listRef}
+          key={channel?.id}
+          data={listData}
+          renderItem={renderGroup}
+          keyExtractor={keyExtractor}
+          extraData={app.highlightedMessageId}
+          maintainVisibleContentPosition={{ startRenderingFromBottom: true }}
+          drawDistance={CHAT_DRAW_DISTANCE}
+          onContentSizeChange={() => {
+            notifyGifViewportChanged();
+            if (!isAtBottomRef.current) return;
+            scheduleScrollToBottom(false);
+          }}
+          onStartReached={fetchMore}
+          onStartReachedThreshold={0.2}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          renderScrollComponent={ChatListScrollView}
+          ListHeaderComponent={listHeader}
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "flex-end",
+            paddingHorizontal: 8,
+            paddingTop: 8,
+            paddingBottom: 8,
+          }}
+          style={{ flex: 1 }}
+        />
+      </GifViewportContext.Provider>
 
       <ScrollToBottomFab
         visible={showScrollToBottom}
