@@ -9,6 +9,7 @@ import {
   setAlternateAppIcon,
   supportsAlternateIcons,
 } from "expo-alternate-app-icons";
+import { Platform } from "react-native";
 
 /** Default Mutualzz brand purple */
 export const DEFAULT_APP_ICON_COLOR = "#88449a";
@@ -88,7 +89,9 @@ export async function syncAppIcon(primaryColor: ColorLike): Promise<void> {
 
   const next = resolveAppIconName(primaryColor);
 
-  if (lastAppliedIcon === undefined) lastAppliedIcon = getAppIconName();
+  if (lastAppliedIcon === undefined && Platform.OS === "ios") {
+    lastAppliedIcon = getAppIconName();
+  }
   if (lastAppliedIcon === next) return;
 
   try {

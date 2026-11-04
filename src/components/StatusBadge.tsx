@@ -1,5 +1,5 @@
 import type { PresenceStatus } from "@mutualzz/types";
-import { dynamicElevation } from "@mutualzz/ui-core";
+import { dynamicElevation, extractColors } from "@mutualzz/ui-core";
 import { Box, useTheme } from "@mutualzz/ui-native";
 import { observer } from "mobx-react-lite";
 
@@ -146,7 +146,9 @@ export const StatusBadge = observer(
     if (status === "offline") return null;
 
     const hollow = status === "invisible";
-    const cutColor = dynamicElevation(theme.colors.surface, elevation);
+    const surface =
+      extractColors(theme.colors.surface)?.[0] ?? theme.colors.surface;
+    const cutColor = dynamicElevation(surface, elevation);
     const hollowRingColor = theme.colors.neutral;
 
     const fillColor = (() => {
