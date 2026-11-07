@@ -162,10 +162,12 @@ const EventText = observer(
     label,
     name,
     accentColor,
+    trailing,
   }: {
     label: string;
     name: string;
     accentColor: string;
+    trailing?: string;
   }) => {
     const { theme } = useTheme();
     const nameIndex = name ? label.indexOf(name) : -1;
@@ -203,14 +205,24 @@ const EventText = observer(
             part
           ),
         )}
+        {trailing && <InlineMuted text={trailing} />}
       </Typography>
     );
   },
 );
 
+const InlineMuted = ({ text }: { text: string }) => (
+  <Typography level="body-xs" textColor="muted">
+    {"  "}
+    {text}
+  </Typography>
+);
+
+const shortTime = (at: string) => dayjs(at).format("h:mm A");
+
 const ShortTime = ({ at }: { at: string }) => (
   <Typography level="body-xs" textColor="muted" style={{ flexShrink: 0 }}>
-    {dayjs(at).format("h:mm A")}
+    {shortTime(at)}
   </Typography>
 );
 
@@ -263,8 +275,12 @@ const EventRow = observer(({ entry }: { entry: BridgeFeedEntry }) => {
         {entry.uuid && (
           <MinecraftAvatar uuid={entry.uuid} name={entry.name} size={20} />
         )}
-        <EventText label={label} name={entry.name} accentColor={accentColor} />
-        <ShortTime at={entry.at} />
+        <EventText
+          label={label}
+          name={entry.name}
+          accentColor={accentColor}
+          trailing={shortTime(entry.at)}
+        />
       </Box>
     </MessageBase>
   );
@@ -323,8 +339,8 @@ const AdvancementCard = observer(
                 {entry.name}
               </Typography>{" "}
               {t(ADVANCEMENT_LABEL_KEYS[details.frame])}
+              <InlineMuted text={shortTime(entry.at)} />
             </Typography>
-            <ShortTime at={entry.at} />
           </Box>
           <Box
             style={{
@@ -480,7 +496,7 @@ export const BridgeActivityGroup = observer(
               <Typography
                 level="body-sm"
                 textColor="secondary"
-                style={{ flexShrink: 1 }}
+                style={{ flex: 1, minWidth: 0 }}
               >
                 <Typography
                   level="body-sm"
@@ -493,13 +509,7 @@ export const BridgeActivityGroup = observer(
                   {hiddenCount > 0 && ` +${hiddenCount}`}
                 </Typography>{" "}
                 {t(summaryKey, { count: entries.length })}
-              </Typography>
-              <Typography
-                level="body-xs"
-                textColor="muted"
-                style={{ flexShrink: 0 }}
-              >
-                {firstAt} – {lastAt}
+                <InlineMuted text={`${firstAt} – ${lastAt}`} />
               </Typography>
               <Box
                 style={{

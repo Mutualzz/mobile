@@ -417,7 +417,7 @@ export const BridgeChatView = observer(
             }}
           >
             <InputDefault
-              style={{ flex: 1, minWidth: 0 }}
+              style={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }}
               value={message}
               onChangeText={setMessage}
               placeholder={
