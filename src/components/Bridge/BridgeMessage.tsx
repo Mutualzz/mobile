@@ -70,14 +70,15 @@ const BridgeAvatar = observer(({ entry }: { entry: BridgeFeedEntry }) => {
         backgroundColor: "rgba(128,128,128,0.25)",
       }}
     >
-      <CubeIcon
-        weight="fill"
-        size={18}
-        color={theme.typography.colors.muted}
-      />
+      <CubeIcon weight="fill" size={18} color={theme.typography.colors.muted} />
     </Box>
   );
 });
+
+const GAME_EVENT_EMOJI = {
+  death: "💀",
+  advancement: "🏆",
+} as const;
 
 interface Props {
   entry: BridgeFeedEntry;
@@ -96,24 +97,33 @@ export const BridgeMessage = observer(({ entry, header }: Props) => {
         : t("minecraftBridge.liveSourceApp");
 
   if (entry.kind !== "chat") {
-    const label =
-      entry.kind === "join"
-        ? t("minecraftBridge.liveJoined", { name: entry.name })
-        : entry.kind === "leave"
-          ? t("minecraftBridge.liveLeft", { name: entry.name })
-          : entry.kind === "voice_join"
-            ? t("minecraftBridge.liveVoiceJoined", {
-                name: entry.name,
-                channel: entry.content
-                  ? `#${entry.content}`
-                  : t("minecraftBridge.liveVoiceFallback"),
-              })
-            : t("minecraftBridge.liveVoiceLeft", {
-                name: entry.name,
-                channel: entry.content
-                  ? `#${entry.content}`
-                  : t("minecraftBridge.liveVoiceFallback"),
-              });
+    const voiceChannel = entry.content
+      ? `#${entry.content}`
+      : t("minecraftBridge.liveVoiceFallback");
+
+    const eventLabel = () => {
+      switch (entry.kind) {
+        case "death":
+        case "advancement":
+          return `${GAME_EVENT_EMOJI[entry.kind]} ${entry.content ?? entry.name}`;
+        case "join":
+          return t("minecraftBridge.liveJoined", { name: entry.name });
+        case "leave":
+          return t("minecraftBridge.liveLeft", { name: entry.name });
+        case "voice_join":
+          return t("minecraftBridge.liveVoiceJoined", {
+            name: entry.name,
+            channel: voiceChannel,
+          });
+        case "voice_leave":
+          return t("minecraftBridge.liveVoiceLeft", {
+            name: entry.name,
+            channel: voiceChannel,
+          });
+      }
+    };
+
+    const label = eventLabel();
 
     return (
       <MessageBase header system style={{ overflow: "hidden", minWidth: 0 }}>
@@ -156,7 +166,11 @@ export const BridgeMessage = observer(({ entry, header }: Props) => {
     <MessageBase header={header} style={{ overflow: "hidden", minWidth: 0 }}>
       <MessageRow header={header}>
         <MessageInfo>
-          {header ? <BridgeAvatar entry={entry} /> : <Box style={{ width: 40 }} />}
+          {header ? (
+            <BridgeAvatar entry={entry} />
+          ) : (
+            <Box style={{ width: 40 }} />
+          )}
         </MessageInfo>
         <MessageContent>
           {header && (

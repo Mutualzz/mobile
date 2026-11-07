@@ -14,7 +14,14 @@ export interface BridgeFeedEntry {
   bridgeId: string;
   serverId: string;
   source: BridgeFeedSource;
-  kind: "chat" | "join" | "leave" | "voice_join" | "voice_leave";
+  kind:
+    | "chat"
+    | "join"
+    | "leave"
+    | "voice_join"
+    | "voice_leave"
+    | "death"
+    | "advancement";
   name: string;
   content?: string;
   uuid?: string;
@@ -282,7 +289,9 @@ export class BridgeChatStore {
     this.hasMoreByBridge.delete(bridgeId);
     this.unreadByBridge.delete(bridgeId);
     this.spaceIdByBridge.delete(bridgeId);
-    this.sendQueue = this.sendQueue.filter((item) => item.bridgeId !== bridgeId);
+    this.sendQueue = this.sendQueue.filter(
+      (item) => item.bridgeId !== bridgeId,
+    );
   });
 
   clearAll = action(() => {

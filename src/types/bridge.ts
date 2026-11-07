@@ -1,3 +1,5 @@
+import type { BridgeServerStatus } from "@mutualzz/client";
+
 export interface BridgeSummary {
   id: string;
   name: string;
@@ -51,6 +53,8 @@ export type BridgeDetail = BridgeSummary & {
     lastUsedAt: string | null;
     createdAt: string;
   }[];
+  serverStatuses?: BridgeServerStatus[];
+  moderationServers?: string[];
   onlinePlayers?: {
     uuid: string;
     name: string;

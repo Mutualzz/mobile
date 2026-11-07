@@ -44,6 +44,19 @@ import {
   type Compressor,
   createCompressor,
 } from "@mutualzz/client";
+import {
+  applyEditUpdates,
+  type BridgeInventory,
+  type BridgeServerStatus,
+  EMPTY_EDITS,
+  type InventoryEdit,
+  type InventoryEditAck,
+  inventoryEditsQueryKey,
+  type InventoryEditsState,
+  inventoryQueryKey,
+} from "@mutualzz/client";
+import type { InventoryEditOp } from "@mutualzz/validators";
+import { notifyManager } from "@tanstack/react-query";
 import { makeAutoObservable } from "mobx";
 import type { NativeEventSubscription } from "react-native";
 import { AppState, Alert, type AppStateStatus } from "react-native";
@@ -116,6 +129,11 @@ export class GatewayStore {
     Promise<Channel | undefined>
   >();
   private subscribedUserIds = new Set<string>();
+  private inventorySubscriptionCounts = new Map<string, number>();
+  private inventoryEditAcks = new Map<
+    string,
+    { resolve: (ack: InventoryEditAck) => void; timer: Timer }
+  >();
   private presenceLoopInterval: Timer | null = null;
   private lastPresenceHash: string | null = null;
   private backgroundedAt: number | null = null;
@@ -569,6 +587,105 @@ export class GatewayStore {
     }
   }
 
+  subscribeInventory(bridgeId: string, minecraftUuid: string) {
+    const key = `${bridgeId}:${minecraftUuid.toLowerCase()}`;
+    const next = (this.inventorySubscriptionCounts.get(key) ?? 0) + 1;
+    this.inventorySubscriptionCounts.set(key, next);
+    if (next > 1) return;
+    if (this.readyState !== GatewayStatus.OPEN) return;
+
+    this.send({
+      op: GatewayOpcodes.InventorySubscribe,
+      d: { bridgeId, minecraftUuid },
+    });
+  }
+
+  unsubscribeInventory(bridgeId: string, minecraftUuid: string) {
+    const key = `${bridgeId}:${minecraftUuid.toLowerCase()}`;
+    const current = this.inventorySubscriptionCounts.get(key) ?? 0;
+    if (current > 1) {
+      this.inventorySubscriptionCounts.set(key, current - 1);
+      return;
+    }
+
+    this.inventorySubscriptionCounts.delete(key);
+    if (this.readyState !== GatewayStatus.OPEN) return;
+    this.send({
+      op: GatewayOpcodes.InventoryUnsubscribe,
+      d: { bridgeId, minecraftUuid },
+    });
+  }
+
+  private resubscribeInventories() {
+    for (const key of this.inventorySubscriptionCounts.keys()) {
+      const [bridgeId, minecraftUuid] = key.split(":");
+      this.send({
+        op: GatewayOpcodes.InventorySubscribe,
+        d: { bridgeId, minecraftUuid },
+      });
+    }
+
+    void this.app.queryClient.invalidateQueries({
+      predicate: (query) =>
+        query.queryKey[0] === "bridges" && query.queryKey[2] === "inventories",
+    });
+  }
+
+  private requestInventoryEdit(opcode: number, data: Record<string, unknown>) {
+    return new Promise<InventoryEditAck>((resolve) => {
+      if (this.readyState !== GatewayStatus.OPEN) {
+        resolve({ ok: false, message: "Not connected" });
+        return;
+      }
+      const nonce = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+      const timer = setTimeout(() => {
+        this.inventoryEditAcks.delete(nonce);
+        resolve({ ok: false, message: "No response from the server" });
+      }, 10_000);
+      this.inventoryEditAcks.set(nonce, { resolve, timer });
+      void this.send({ op: opcode, d: { ...data, nonce } });
+    });
+  }
+
+  private updateInventoryEdits(
+    bridgeId: string,
+    minecraftUuid: string,
+    update: (state: InventoryEditsState) => InventoryEditsState,
+  ) {
+    this.app.queryClient.setQueryData<InventoryEditsState>(
+      inventoryEditsQueryKey(bridgeId, minecraftUuid),
+      (previous) => update(previous ?? EMPTY_EDITS),
+    );
+  }
+
+  async editInventory(
+    bridgeId: string,
+    minecraftUuid: string,
+    serverId: string,
+    op: InventoryEditOp,
+  ) {
+    const ack = await this.requestInventoryEdit(GatewayOpcodes.InventoryEdit, {
+      bridgeId,
+      minecraftUuid,
+      serverId,
+      op,
+    });
+    if (ack.ok && ack.edit) {
+      const { edit } = ack;
+      this.updateInventoryEdits(bridgeId, minecraftUuid, (previous) =>
+        applyEditUpdates(previous, [edit]),
+      );
+    }
+    return ack;
+  }
+
+  cancelInventoryEdit(bridgeId: string, editId: string) {
+    return this.requestInventoryEdit(GatewayOpcodes.InventoryEditCancel, {
+      bridgeId,
+      editId,
+    });
+  }
+
   sendPresenceUpdate(
     presence: PresenceUpdateDraft,
     opts?: { persist?: boolean },
@@ -918,6 +1035,34 @@ export class GatewayStore {
     this.dispatchHandlers.set(
       GatewayDispatchEvents.BridgeVoiceLeave,
       this.onBridgeVoiceLeave,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.BridgeGameEvent,
+      this.onBridgeGameEvent,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.BridgeServerStatus,
+      this.onBridgeServerStatus,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.BridgeUpdate,
+      this.onBridgeUpdate,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.BridgeInventoryUpdate,
+      this.onBridgeInventoryUpdate,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.BridgeInventoryEditAck,
+      this.onBridgeInventoryEditAck,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.BridgeInventoryEdits,
+      this.onBridgeInventoryEdits,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.BridgeInventoryEditUpdate,
+      this.onBridgeInventoryEditUpdate,
     );
     this.dispatchHandlers.set(
       GatewayDispatchEvents.BridgePresence,
@@ -1413,6 +1558,7 @@ export class GatewayStore {
     }
 
     this.resubscribeUsers();
+    this.resubscribeInventories();
     this.app.setGatewayReady(true);
     this.startPresenceLoop();
     this.app.voice.onGatewayReconnected();
@@ -1480,6 +1626,7 @@ export class GatewayStore {
 
     this.reconnectTimeout = 0;
     this.resubscribeUsers();
+    this.resubscribeInventories();
     this.app.setGatewayReady(true);
     this.startPresenceLoop();
 
@@ -2145,11 +2292,130 @@ export class GatewayStore {
     });
   };
 
+  private onBridgeGameEvent = (payload: {
+    id: string;
+    bridgeId: string;
+    serverId: string;
+    source: "minecraft" | "discord" | "app";
+    name: string;
+    uuid?: string;
+    userId?: string;
+    kind: "death" | "advancement";
+    content: string;
+    at: string;
+  }) => {
+    this.app.bridgeChat.add(payload);
+  };
+
   private onBridgePresence = (payload: {
     bridgeId: string;
     players: { uuid: string; name: string; serverId: string }[];
   }) => {
     this.app.bridgeChat.setPlayers(payload.bridgeId, payload.players);
+  };
+
+  private onBridgeServerStatus = (payload: {
+    bridgeId: string;
+    serverId: string;
+    status: BridgeServerStatus | null;
+  }) => {
+    this.app.queryClient.setQueryData(
+      ["me", "bridges", payload.bridgeId],
+      (previous: { serverStatuses?: BridgeServerStatus[] } | undefined) => {
+        if (!previous) return previous;
+        const others = (previous.serverStatuses ?? []).filter(
+          (status) => status.serverId !== payload.serverId,
+        );
+        return {
+          ...previous,
+          serverStatuses: payload.status ? [...others, payload.status] : others,
+        };
+      },
+    );
+  };
+
+  private onBridgeUpdate = (payload: {
+    id: string;
+    name: string;
+    status: number;
+  }) => {
+    const apply = <T extends { id: string }>(bridge: T) =>
+      bridge.id === payload.id
+        ? { ...bridge, name: payload.name, status: payload.status }
+        : bridge;
+
+    this.app.queryClient.setQueryData(
+      ["me", "bridges"],
+      (previous: { id: string }[] | undefined) => previous?.map(apply),
+    );
+    this.app.queryClient.setQueryData(
+      ["me", "bridges", payload.id],
+      (previous: { id: string } | undefined) =>
+        previous ? apply(previous) : previous,
+    );
+  };
+
+  private onBridgeInventoryUpdate = (
+    payload: BridgeInventory & { bridgeId: string },
+  ) => {
+    const { bridgeId, ...inventory } = payload;
+    this.app.queryClient.setQueryData<BridgeInventory[]>(
+      inventoryQueryKey(bridgeId, inventory.minecraftUuid),
+      (previous) => [
+        ...(previous ?? []).filter(
+          (entry) => entry.serverId !== inventory.serverId,
+        ),
+        inventory,
+      ],
+    );
+  };
+
+  private onBridgeInventoryEditAck = (
+    payload: InventoryEditAck & { nonce: string },
+  ) => {
+    const entry = this.inventoryEditAcks.get(payload.nonce);
+    if (!entry) return;
+    clearTimeout(entry.timer);
+    this.inventoryEditAcks.delete(payload.nonce);
+    entry.resolve(payload);
+  };
+
+  private onBridgeInventoryEdits = (payload: {
+    bridgeId: string;
+    minecraftUuid: string;
+    edits: InventoryEdit[];
+    editableServers: string[];
+  }) => {
+    this.updateInventoryEdits(
+      payload.bridgeId,
+      payload.minecraftUuid,
+      (previous) => ({
+        ...previous,
+        edits: payload.edits ?? [],
+        editableServers: payload.editableServers ?? [],
+      }),
+    );
+  };
+
+  private onBridgeInventoryEditUpdate = ({
+    bridgeId,
+    minecraftUuid,
+    edits,
+    inventory,
+  }: {
+    bridgeId: string;
+    minecraftUuid: string;
+    edits: InventoryEdit[];
+    inventory?: BridgeInventory & { bridgeId: string };
+  }) => {
+    notifyManager.batch(() => {
+      if (inventory) this.onBridgeInventoryUpdate(inventory);
+      if (edits.length > 0) {
+        this.updateInventoryEdits(bridgeId, minecraftUuid, (previous) =>
+          applyEditUpdates(previous, edits),
+        );
+      }
+    });
   };
 
   private onChannelRecipientAdd = (payload: {
