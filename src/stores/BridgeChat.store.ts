@@ -2,6 +2,13 @@ import { action, makeAutoObservable, observable } from "mobx";
 
 export type BridgeFeedSource = "minecraft" | "discord" | "app";
 
+export interface BridgeAdvancementDetails {
+  title: string;
+  description: string;
+  frame: "task" | "goal" | "challenge";
+  icon?: string;
+}
+
 export interface BridgeLinkedUser {
   id: string;
   username: string;
@@ -27,6 +34,7 @@ export interface BridgeFeedEntry {
   uuid?: string;
   userId?: string;
   avatarUrl?: string;
+  advancement?: BridgeAdvancementDetails;
   linkedUser?: BridgeLinkedUser | null;
   at: string;
   pending?: boolean;

@@ -1,4 +1,6 @@
 import {
+  type ActivityFamily,
+  BridgeActivityGroup,
   BridgeMessage,
   shouldStartBridgeGroup,
 } from "@components/Bridge/BridgeMessage";
@@ -39,6 +41,73 @@ interface Props {
   returnToSpaceId?: string;
 }
 
+type FeedRow =
+  | {
+      type: "message";
+      key: string;
+      entry: BridgeFeedEntry;
+      header: boolean;
+      showDate: boolean;
+    }
+  | {
+      type: "activity";
+      key: string;
+      family: ActivityFamily;
+      entries: BridgeFeedEntry[];
+      showDate: boolean;
+    };
+
+const activityFamilyOf = (entry: BridgeFeedEntry): ActivityFamily | null => {
+  if (entry.kind === "join" || entry.kind === "leave") return "server";
+  if (entry.kind === "voice_join" || entry.kind === "voice_leave")
+    return "voice";
+  return null;
+};
+
+const buildFeedRows = (entries: BridgeFeedEntry[]): FeedRow[] => {
+  const rows: FeedRow[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    const prev = entries[i - 1];
+    const showDate =
+      !prev ||
+      new Date(prev.at).toDateString() !== new Date(entry.at).toDateString();
+
+    const family = activityFamilyOf(entry);
+    if (family) {
+      const lastRow = rows[rows.length - 1];
+      if (
+        lastRow?.type === "activity" &&
+        lastRow.family === family &&
+        !showDate
+      ) {
+        lastRow.entries.push(entry);
+      } else {
+        rows.push({
+          type: "activity",
+          key: `activity:${entry.id}`,
+          family,
+          entries: [entry],
+          showDate,
+        });
+      }
+      continue;
+    }
+
+    rows.push({
+      type: "message",
+      key: entry.id,
+      entry,
+      header: shouldStartBridgeGroup(prev, entry),
+      showDate,
+    });
+  }
+  return rows;
+};
+
+const rowDate = (row: FeedRow) =>
+  new Date(row.type === "message" ? row.entry.at : row.entries[0].at);
+
 export const BridgeChatView = observer(
   ({ bridgeId, returnToSpaceId }: Props) => {
     const { t } = useTranslation("settings");
@@ -48,7 +117,18 @@ export const BridgeChatView = observer(
     const { openSheet } = useSheet();
     const tabBarInset = useKeyboardChromeInset();
     const [message, setMessage] = useState("");
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+      () => new Set(),
+    );
     const sendingRef = useRef(false);
+
+    const toggleGroup = (groupKey: string) =>
+      setExpandedGroups((current) => {
+        const next = new Set(current);
+        if (next.has(groupKey)) next.delete(groupKey);
+        else next.add(groupKey);
+        return next;
+      });
     const loadingOlderRef = useRef(false);
 
     const bridgesQuery = useQuery({
@@ -68,6 +148,7 @@ export const BridgeChatView = observer(
     const bridge = bridgesQuery.data;
     const hubConnected = bridge?.hubConnected === true;
     const entries = app.bridgeChat.entriesFor(bridgeId);
+    const feedRows = buildFeedRows(entries);
     const players = app.bridgeChat.playersFor(bridgeId);
 
     useEffect(() => {
@@ -281,8 +362,9 @@ export const BridgeChatView = observer(
         >
           <Box style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
             <FlatList
-              data={entries}
-              keyExtractor={(item) => item.id}
+              data={feedRows}
+              keyExtractor={(row) => row.key}
+              extraData={expandedGroups}
               style={{ flex: 1 }}
               contentContainerStyle={{
                 paddingVertical: 8,
@@ -304,23 +386,21 @@ export const BridgeChatView = observer(
                   </Typography>
                 </Box>
               }
-              renderItem={({ item, index }) => {
-                const prev = entries[index - 1];
-                const header = shouldStartBridgeGroup(prev, item);
-                const showDate =
-                  !prev ||
-                  new Date(prev.at).toDateString() !==
-                    new Date(item.at).toDateString();
-
-                return (
-                  <Fragment>
-                    {showDate && (
-                      <MessageDateSeparator date={new Date(item.at)} />
-                    )}
-                    <BridgeMessage entry={item} header={header} />
-                  </Fragment>
-                );
-              }}
+              renderItem={({ item: row }) => (
+                <Fragment>
+                  {row.showDate && <MessageDateSeparator date={rowDate(row)} />}
+                  {row.type === "activity" ? (
+                    <BridgeActivityGroup
+                      family={row.family}
+                      entries={row.entries}
+                      expanded={expandedGroups.has(row.key)}
+                      onToggle={() => toggleGroup(row.key)}
+                    />
+                  ) : (
+                    <BridgeMessage entry={row.entry} header={row.header} />
+                  )}
+                </Fragment>
+              )}
             />
           </Box>
 

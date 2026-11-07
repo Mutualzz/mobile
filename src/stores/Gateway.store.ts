@@ -63,6 +63,7 @@ import type { NativeEventSubscription } from "react-native";
 import { AppState, Alert, type AppStateStatus } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { AppStore } from "./App.store";
+import type { BridgeAdvancementDetails } from "./BridgeChat.store";
 import type { Channel } from "./objects/Channel";
 import { fixConnectionUrl } from "@utils/urls";
 import { openWebSocket } from "@utils/openWebSocket";
@@ -2342,6 +2343,7 @@ export class GatewayStore {
     userId?: string;
     kind: "death" | "advancement";
     content: string;
+    advancement?: BridgeAdvancementDetails;
     at: string;
   }) => {
     this.app.bridgeChat.add(payload);
