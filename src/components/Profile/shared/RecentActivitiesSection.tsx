@@ -4,9 +4,11 @@ import { useAppStore } from "@hooks/useStores";
 import type { PresenceActivity, PresenceActivityAssets } from "@mutualzz/types";
 import { Stack, Typography, useTheme } from "@mutualzz/ui-native";
 import {
+  formatActivityDuration,
   formatActivityPrimary,
   formatActivitySecondary,
 } from "@mutualzz/client";
+import { useProfileScrimStyle } from "@components/Profile/shared/ProfileScrim";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -59,16 +61,6 @@ function dedupeRecent(rows: RecentActivityDto[]) {
     out.push(row);
   }
   return out;
-}
-
-function formatDuration(startedAt: number | null, endedAt: number) {
-  if (startedAt == null || startedAt > endedAt) return null;
-  const totalSec = Math.max(0, Math.floor((endedAt - startedAt) / 1000));
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
 function SkeletonRow({
@@ -154,6 +146,7 @@ export const RecentActivitiesSection = ({
   const { t } = useTranslation("settings");
   const { t: tCommon } = useTranslation("common");
   const { theme } = useTheme();
+  const scrimStyle = useProfileScrimStyle();
   const app = useAppStore();
   const [expanded, setExpanded] = useState(false);
   const iconSize = isCompact ? 28 : 36;
@@ -205,10 +198,8 @@ export const RecentActivitiesSection = ({
     padding: 10,
     borderRadius: 8,
     gap: 8,
-    backgroundColor: `${theme.colors.surface}cc`,
-    borderWidth: 1,
-    borderColor: `${theme.colors.neutral}22`,
-  } as const;
+    ...scrimStyle,
+  };
 
   if (isPending) {
     if (isCompact) return null;
@@ -241,11 +232,9 @@ export const RecentActivitiesSection = ({
         {visible.map((row) => {
           const activity = toPresenceActivity(row);
           const typeKey =
-            row.type === "listening"
-              ? "activity.listened"
-              : "activity.played";
+            row.type === "listening" ? "activity.listened" : "activity.played";
           const secondary = formatActivitySecondary(activity);
-          const duration = formatDuration(row.startedAt, row.endedAt);
+          const duration = formatActivityDuration(row.startedAt, row.endedAt);
           const durationKey =
             row.type === "listening"
               ? "profile.blocks.listenedForEnded"

@@ -1,7 +1,7 @@
 import { Paper } from "@components/Paper";
 import { PresenceActivitiesList } from "@components/Presence/PresenceActivitiesList";
 import type { PresencePayload } from "@mutualzz/types";
-import { useTheme } from "@mutualzz/ui-native";
+import { useProfileScrimStyle } from "@components/Profile/shared/ProfileScrim";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import { getNonCustomActivities } from "@mutualzz/client";
@@ -13,7 +13,7 @@ interface Props {
 
 export const UserPresenceCard = observer(
   ({ presence, isCompact = false }: Props) => {
-    const { theme } = useTheme();
+    const scrimStyle = useProfileScrimStyle();
 
     const otherActivities = useMemo(
       () => getNonCustomActivities(presence),
@@ -35,14 +35,12 @@ export const UserPresenceCard = observer(
           padding: 10,
           borderRadius: 8,
           gap: 8,
-          backgroundColor: `${theme.colors.surface}cc`,
-          borderWidth: 1,
-          borderColor: `${theme.colors.neutral}22`,
+          ...scrimStyle,
         }}
       >
         <PresenceActivitiesList
           activities={otherActivities}
-          iconSize={isCompact ? 28 : 36}
+          iconSize={isCompact ? 28 : 48}
           fetchFallback
           isCompact={isCompact}
         />

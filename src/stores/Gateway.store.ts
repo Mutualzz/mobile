@@ -54,6 +54,7 @@ import {
   inventoryEditsQueryKey,
   type InventoryEditsState,
   inventoryQueryKey,
+  type LyricsResult,
 } from "@mutualzz/client";
 import type { InventoryEditOp } from "@mutualzz/validators";
 import { notifyManager } from "@tanstack/react-query";
@@ -133,6 +134,10 @@ export class GatewayStore {
   private inventoryEditAcks = new Map<
     string,
     { resolve: (ack: InventoryEditAck) => void; timer: Timer }
+  >();
+  private lyricsRequests = new Map<
+    string,
+    { resolve: (lyrics: LyricsResult | null) => void; timer: Timer }
   >();
   private presenceLoopInterval: Timer | null = null;
   private lastPresenceHash: string | null = null;
@@ -647,6 +652,37 @@ export class GatewayStore {
     });
   }
 
+  requestLyrics(trackName: string, artistName: string, durationMs: number) {
+    return new Promise<LyricsResult | null>((resolve) => {
+      if (this.readyState !== GatewayStatus.OPEN) {
+        resolve(null);
+        return;
+      }
+      const nonce = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+      const timer = setTimeout(() => {
+        this.lyricsRequests.delete(nonce);
+        resolve(null);
+      }, 10_000);
+      this.lyricsRequests.set(nonce, { resolve, timer });
+      void this.send({
+        op: GatewayOpcodes.LyricsRequest,
+        d: { nonce, trackName, artistName, durationMs },
+      });
+    });
+  }
+
+  private onLyricsResult = (payload: {
+    nonce: string;
+    ok: boolean;
+    lyrics?: LyricsResult | null;
+  }) => {
+    const entry = this.lyricsRequests.get(payload.nonce);
+    if (!entry) return;
+    clearTimeout(entry.timer);
+    this.lyricsRequests.delete(payload.nonce);
+    entry.resolve(payload.ok ? (payload.lyrics ?? null) : null);
+  };
+
   private updateInventoryEdits(
     bridgeId: string,
     minecraftUuid: string,
@@ -1055,6 +1091,10 @@ export class GatewayStore {
     this.dispatchHandlers.set(
       GatewayDispatchEvents.BridgeInventoryEditAck,
       this.onBridgeInventoryEditAck,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.LyricsResult,
+      this.onLyricsResult,
     );
     this.dispatchHandlers.set(
       GatewayDispatchEvents.BridgeInventoryEdits,

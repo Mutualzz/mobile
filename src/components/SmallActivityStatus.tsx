@@ -9,9 +9,12 @@ import {
   formatActivitySecondary,
 } from "@mutualzz/client";
 import {
+  findLyricsActivity,
   getCustomActivity,
   getNonCustomActivities,
 } from "@mutualzz/client";
+import { useLyricLine } from "@hooks/useLyricLine";
+import { MusicNotesIcon } from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
@@ -29,8 +32,35 @@ export const SmallActivityStatus = observer(
     const accent = theme.colors.success;
     const profileRestricted =
       userId != null && app.profiles.isProfileRestricted(userId);
+    const lyricLine = useLyricLine(
+      profileRestricted ? null : findLyricsActivity(presence),
+    );
 
     if (!presence) return null;
+
+    if (lyricLine && !hideCustomStatus) {
+      return (
+        <Box
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            minWidth: 0,
+            width: "100%",
+          }}
+        >
+          <MusicNotesIcon size={14} weight="fill" color={accent} />
+          <Typography
+            level="body-xs"
+            textColor="accent"
+            truncate="single"
+            style={{ flex: 1, minWidth: 0 }}
+          >
+            {lyricLine}
+          </Typography>
+        </Box>
+      );
+    }
 
     const customActivity = getCustomActivity(presence);
     const otherActivities = profileRestricted
@@ -59,7 +89,11 @@ export const SmallActivityStatus = observer(
             />
           </Box>
           {extraCount > 0 && (
-            <Typography level="body-xs" textColor="accent" style={{ opacity: 0.85 }}>
+            <Typography
+              level="body-xs"
+              textColor="accent"
+              style={{ opacity: 0.85 }}
+            >
               +{extraCount}
             </Typography>
           )}
@@ -102,7 +136,11 @@ export const SmallActivityStatus = observer(
           {line}
         </Typography>
         {extraCount > 0 && (
-          <Typography level="body-xs" textColor="accent" style={{ opacity: 0.85 }}>
+          <Typography
+            level="body-xs"
+            textColor="accent"
+            style={{ opacity: 0.85 }}
+          >
             +{extraCount}
           </Typography>
         )}

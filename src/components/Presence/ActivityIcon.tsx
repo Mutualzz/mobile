@@ -8,6 +8,11 @@ import {
   GameControllerIcon,
   HeadphonesIcon,
   NotepadIcon,
+  SpotifyLogoIcon,
+  AmazonLogoIcon,
+  AppleLogoIcon,
+  YoutubeLogoIcon,
+  type Icon,
 } from "phosphor-react-native";
 import { useMemo, useState } from "react";
 import { Image, View } from "react-native";
@@ -16,6 +21,13 @@ interface GameIconResponse {
   iconImageId: string;
   iconUrl: string;
 }
+
+const MEDIA_APP_ICONS: Record<string, { icon: Icon; color: string }> = {
+  spotify: { icon: SpotifyLogoIcon, color: "#1DB954" },
+  "apple-music": { icon: AppleLogoIcon, color: "#FA2D48" },
+  "amazon-music": { icon: AmazonLogoIcon, color: "#25D1DA" },
+  "youtube-music": { icon: YoutubeLogoIcon, color: "#FF0033" },
+};
 
 function ActivityTypeIcon({
   type,
@@ -103,8 +115,13 @@ export const ActivityIcon = observer(function ActivityIcon({
     return catalogUrl ?? data?.iconUrl ?? null;
   }, [activity.type, assetUrl, broken, catalogUrl, data?.iconUrl]);
 
+  const mediaApp =
+    activity.type === "listening" && activity.applicationId
+      ? MEDIA_APP_ICONS[activity.applicationId]
+      : undefined;
+
   if (url) {
-    return (
+    const image = (
       <Image
         source={{ uri: url }}
         style={{
@@ -115,6 +132,40 @@ export const ActivityIcon = observer(function ActivityIcon({
         onError={() => setBroken(true)}
       />
     );
+
+    if (!mediaApp || size < 32) return image;
+
+    const BadgeIcon = mediaApp.icon;
+    const badgeSize = Math.round(size * 0.36);
+    return (
+      <View>
+        {image}
+        <View
+          style={{
+            position: "absolute",
+            right: -3,
+            bottom: -3,
+            width: badgeSize,
+            height: badgeSize,
+            borderRadius: badgeSize / 2,
+            backgroundColor: "#000",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <BadgeIcon
+            size={Math.round(badgeSize * 0.9)}
+            weight="fill"
+            color={mediaApp.color}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  if (mediaApp) {
+    const BrandIcon = mediaApp.icon;
+    return <BrandIcon size={size} weight="fill" color={mediaApp.color} />;
   }
 
   return (

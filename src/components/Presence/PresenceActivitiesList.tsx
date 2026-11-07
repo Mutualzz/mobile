@@ -1,44 +1,80 @@
 import { ActivityIcon } from "@components/Presence/ActivityIcon";
 import { useNow } from "@hooks/useNow";
 import type { PresenceActivity } from "@mutualzz/types";
+import { formatColor } from "@mutualzz/ui-core";
 import { Stack, Typography, useTheme } from "@mutualzz/ui-native";
-import { CaretDownIcon, CaretUpIcon } from "phosphor-react-native";
+import {
+  ArrowSquareOutIcon,
+  CaretDownIcon,
+  CaretUpIcon,
+  MusicNotesIcon,
+} from "phosphor-react-native";
+import { useLyricLine } from "@hooks/useLyricLine";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView } from "react-native";
+import { Image, Linking, Pressable, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import {
+  activityLinkHost,
   activityTypeLabelKey,
   formatActivityElapsedClock,
   formatActivityPrimary,
-  formatActivitySecondary,
+  formatTrackClock,
+  getActivityProgress,
 } from "@mutualzz/client";
 
+type TranslateFn = (key: string, opts?: Record<string, unknown>) => string;
+
+const typeLabelStyle = {
+  textTransform: "uppercase" as const,
+  letterSpacing: 0.4,
+  fontWeight: "700" as const,
+  fontSize: 10,
+};
+
+const trackTimeStyle = {
+  fontSize: 10,
+  fontVariant: ["tabular-nums" as const],
+};
+
 function activityKey(activities: PresenceActivity[]) {
-  return activities.map((a) => `${a.type}:${a.name}`).join("|");
+  return activities
+    .map((activity) => `${activity.type}:${activity.name}`)
+    .join("|");
 }
 
-function ActivityRow({
+function useActivityCardStyle() {
+  const { theme } = useTheme();
+  return useMemo(
+    () => ({
+      gap: 8,
+      minWidth: 0,
+      padding: 10,
+      borderRadius: 10,
+      backgroundColor: formatColor(theme.typography.colors.primary, {
+        format: "hexa",
+        alpha: 6,
+      }),
+    }),
+    [theme.typography.colors.primary],
+  );
+}
+
+function CompactActivityRow({
   activity,
   accent,
-  now,
   iconSize,
   fetchFallback,
   t,
-  isCompact,
 }: {
   activity: PresenceActivity;
   accent: string;
-  now: number;
   iconSize: number;
   fetchFallback: boolean;
-  t: (key: string, opts?: Record<string, unknown>) => string;
-  isCompact: boolean;
+  t: TranslateFn;
 }) {
   const typeKey = activityTypeLabelKey(activity.type);
   const typeLabel = typeKey ? t(typeKey) : null;
-  const secondary = formatActivitySecondary(activity);
-  const elapsed = formatActivityElapsedClock(activity.timestamps?.start, now);
 
   return (
     <Stack direction="row" alignItems="center" style={{ gap: 8, minWidth: 0 }}>
@@ -49,53 +85,248 @@ function ActivityRow({
         fetchFallback={fetchFallback}
         borderRadius={8}
       />
-      <Stack direction="column" style={{ gap: 1, minWidth: 0, flex: 1 }}>
-        {typeLabel && !isCompact ? (
+      <Typography
+        level="body-xs"
+        textColor="accent"
+        weight="bold"
+        truncate="double"
+        style={{ flex: 1, minWidth: 0 }}
+      >
+        {typeLabel
+          ? `${typeLabel} ${formatActivityPrimary(activity)}`
+          : formatActivityPrimary(activity)}
+      </Typography>
+    </Stack>
+  );
+}
+
+function GameActivityCard({
+  activity,
+  accent,
+  now,
+  iconSize,
+  fetchFallback,
+  t,
+}: {
+  activity: PresenceActivity;
+  accent: string;
+  now: number;
+  iconSize: number;
+  fetchFallback: boolean;
+  t: TranslateFn;
+}) {
+  const cardStyle = useActivityCardStyle();
+  const typeKey = activityTypeLabelKey(activity.type);
+  const typeLabel = typeKey ? t(typeKey) : null;
+  const details = activity.details?.trim();
+  const state = activity.state?.trim();
+  const elapsed = formatActivityElapsedClock(activity.timestamps?.start, now);
+  const activityUrl = activity.url;
+  const linkHost = activityLinkHost(activityUrl);
+  const smallImageUrl = activity.assets?.smallImageUrl;
+  const badgeSize = Math.round(iconSize * 0.42);
+
+  return (
+    <Stack direction="column" style={cardStyle}>
+      {typeLabel ? (
+        <Typography level="body-xs" textColor="muted" style={typeLabelStyle}>
+          {typeLabel}
+        </Typography>
+      ) : null}
+      <Stack
+        direction="row"
+        alignItems="center"
+        style={{ gap: 10, minWidth: 0 }}
+      >
+        <View>
+          <ActivityIcon
+            activity={activity}
+            size={iconSize}
+            color={accent}
+            fetchFallback={fetchFallback}
+            borderRadius={8}
+          />
+          {smallImageUrl ? (
+            <Image
+              source={{ uri: smallImageUrl }}
+              style={{
+                position: "absolute",
+                right: -4,
+                bottom: -4,
+                width: badgeSize,
+                height: badgeSize,
+                borderRadius: badgeSize / 2,
+              }}
+            />
+          ) : null}
+        </View>
+        <Stack direction="column" style={{ gap: 3, minWidth: 0, flex: 1 }}>
           <Typography
-            level="body-xs"
-            textColor="muted"
+            level="body-sm"
+            textColor="accent"
+            weight="bold"
+            truncate="single"
+          >
+            {activity.name}
+          </Typography>
+          {details ? (
+            <Typography level="body-xs" truncate="single">
+              {details}
+            </Typography>
+          ) : null}
+          {state && state !== details ? (
+            <Typography level="body-xs" textColor="muted" truncate="single">
+              {state}
+            </Typography>
+          ) : null}
+          {elapsed ? (
+            <Typography
+              level="body-xs"
+              textColor="muted"
+              style={trackTimeStyle}
+            >
+              {t("activity.elapsed", { time: elapsed })}
+            </Typography>
+          ) : null}
+        </Stack>
+      </Stack>
+      {activityUrl && linkHost ? (
+        <Pressable
+          onPress={() =>
+            Linking.openURL(activityUrl).catch(() => {
+              return;
+            })
+          }
+          style={{ alignSelf: "flex-start" }}
+        >
+          <Stack direction="row" alignItems="center" style={{ gap: 4 }}>
+            <Typography
+              level="body-xs"
+              style={{ textDecorationLine: "underline", opacity: 0.85 }}
+            >
+              {linkHost}
+            </Typography>
+            <ArrowSquareOutIcon size={12} weight="bold" color={accent} />
+          </Stack>
+        </Pressable>
+      ) : null}
+    </Stack>
+  );
+}
+
+function ListeningActivityRow({
+  activity,
+  accent,
+  now,
+  iconSize,
+  t,
+}: {
+  activity: PresenceActivity;
+  accent: string;
+  now: number;
+  iconSize: number;
+  t: TranslateFn;
+}) {
+  const cardStyle = useActivityCardStyle();
+  const typeKey = activityTypeLabelKey(activity.type);
+  const typeLabel = typeKey ? t(typeKey) : null;
+  const title = activity.details?.trim() || activity.name;
+  const artist = activity.state?.trim();
+  const progress = getActivityProgress(activity, now);
+  const lyricLine = useLyricLine(activity);
+
+  return (
+    <Stack direction="column" style={cardStyle}>
+      <Typography level="body-xs" textColor="muted" style={typeLabelStyle}>
+        {typeLabel ? `${typeLabel} · ${activity.name}` : activity.name}
+      </Typography>
+      <Stack
+        direction="row"
+        alignItems="center"
+        style={{ gap: 10, minWidth: 0 }}
+      >
+        <ActivityIcon
+          activity={activity}
+          size={iconSize}
+          color={accent}
+          borderRadius={8}
+        />
+        <Stack direction="column" style={{ gap: 3, minWidth: 0, flex: 1 }}>
+          <Typography
+            level="body-sm"
+            textColor="accent"
+            weight="bold"
+            truncate="single"
+          >
+            {title}
+          </Typography>
+          {artist ? (
+            <Typography level="body-xs" textColor="muted" truncate="single">
+              {artist}
+            </Typography>
+          ) : null}
+          {lyricLine ? (
+            <Stack
+              direction="row"
+              alignItems="center"
+              style={{ gap: 4, minWidth: 0 }}
+            >
+              <MusicNotesIcon size={12} weight="fill" color={accent} />
+              <Typography
+                level="body-xs"
+                truncate="single"
+                style={{ fontStyle: "italic", flex: 1, minWidth: 0 }}
+              >
+                {lyricLine}
+              </Typography>
+            </Stack>
+          ) : null}
+        </Stack>
+      </Stack>
+      {progress ? (
+        <Stack direction="column" style={{ gap: 3 }}>
+          <View
             style={{
-              textTransform: "uppercase",
-              letterSpacing: 0.4,
-              fontWeight: "700",
-              fontSize: 10,
+              height: 4,
+              borderRadius: 2,
+              overflow: "hidden",
+              backgroundColor: `${accent}33`,
             }}
           >
-            {typeLabel}
-          </Typography>
-        ) : null}
-        <Typography
-          level="body-xs"
-          textColor="accent"
-          weight="bold"
-          truncate="double"
-        >
-          {isCompact && typeLabel
-            ? `${typeLabel} ${formatActivityPrimary(activity)}`
-            : formatActivityPrimary(activity)}
-        </Typography>
-        {!isCompact && secondary ? (
-          <Typography level="body-xs" textColor="muted" truncate="double">
-            {secondary}
-          </Typography>
-        ) : null}
-        {!isCompact && elapsed ? (
-          <Typography
-            level="body-xs"
-            textColor="muted"
-            style={{ fontVariant: ["tabular-nums"] }}
-          >
-            {t("activity.elapsed", { time: elapsed })}
-          </Typography>
-        ) : null}
-      </Stack>
+            <View
+              style={{
+                height: "100%",
+                width: `${progress.fraction * 100}%`,
+                borderRadius: 2,
+                backgroundColor: accent,
+              }}
+            />
+          </View>
+          <Stack direction="row" justifyContent="space-between">
+            <Typography
+              level="body-xs"
+              textColor="muted"
+              style={trackTimeStyle}
+            >
+              {formatTrackClock(progress.elapsedMs)}
+            </Typography>
+            <Typography
+              level="body-xs"
+              textColor="muted"
+              style={trackTimeStyle}
+            >
+              {formatTrackClock(progress.durationMs)}
+            </Typography>
+          </Stack>
+        </Stack>
+      ) : null}
     </Stack>
   );
 }
 
 export const PresenceActivitiesList = observer(function PresenceActivitiesList({
   activities,
-  iconSize = 36,
+  iconSize = 48,
   fetchFallback = false,
   collapsible = true,
   isCompact = false,
@@ -124,27 +355,63 @@ export const PresenceActivitiesList = observer(function PresenceActivitiesList({
 
   if (!activities.length) return null;
 
-  const canCollapse = collapsible && activities.length > 1;
+  const firstListening = activities.find(
+    (activity) => activity.type === "listening",
+  );
+  const collapsedActivities =
+    firstListening && firstListening !== activities[0]
+      ? [activities[0], firstListening]
+      : activities.slice(0, 1);
+  const canCollapse =
+    collapsible && activities.length > collapsedActivities.length;
   const visibleActivities =
-    canCollapse && !expanded ? activities.slice(0, 1) : activities;
-  const hiddenCount = activities.length - 1;
+    canCollapse && !expanded ? collapsedActivities : activities;
+  const hiddenCount = activities.length - collapsedActivities.length;
   const accent = theme.colors.success;
   const useScroll = scrollWhenExpanded && expanded && canCollapse;
 
   const toggle = () => setExpanded((open) => !open);
 
-  const activityRows = visibleActivities.map((activity, index) => (
-    <ActivityRow
-      key={`${activity.type}-${activity.name}-${index}`}
-      activity={activity}
-      accent={accent}
-      now={now}
-      iconSize={iconSize}
-      fetchFallback={fetchFallback}
-      t={t}
-      isCompact={isCompact}
-    />
-  ));
+  const rowGap = isCompact ? 6 : 10;
+
+  const activityRows = visibleActivities.map((activity, index) => {
+    const key = `${activity.type}-${activity.name}-${index}`;
+    if (isCompact) {
+      return (
+        <CompactActivityRow
+          key={key}
+          activity={activity}
+          accent={accent}
+          iconSize={iconSize}
+          fetchFallback={fetchFallback}
+          t={t}
+        />
+      );
+    }
+    if (activity.type === "listening") {
+      return (
+        <ListeningActivityRow
+          key={key}
+          activity={activity}
+          accent={accent}
+          now={now}
+          iconSize={iconSize}
+          t={t}
+        />
+      );
+    }
+    return (
+      <GameActivityCard
+        key={key}
+        activity={activity}
+        accent={accent}
+        now={now}
+        iconSize={iconSize}
+        fetchFallback={fetchFallback}
+        t={t}
+      />
+    );
+  });
 
   const collapseControl = canCollapse ? (
     <Pressable onPress={expanded ? toggle : undefined}>
@@ -172,21 +439,21 @@ export const PresenceActivitiesList = observer(function PresenceActivitiesList({
   const rowsContainer = useScroll ? (
     <ScrollView
       style={{ flex: 1, minHeight: 0 }}
-      contentContainerStyle={{ gap: isCompact ? 6 : 8 }}
+      contentContainerStyle={{ gap: rowGap }}
       nestedScrollEnabled
       showsVerticalScrollIndicator={false}
     >
       {activityRows}
     </ScrollView>
   ) : (
-    <Stack direction="column" style={{ gap: isCompact ? 6 : 8, minWidth: 0 }}>
+    <Stack direction="column" style={{ gap: rowGap, minWidth: 0 }}>
       {activityRows}
     </Stack>
   );
 
   if (!canCollapse) {
     return (
-      <Stack direction="column" style={{ gap: isCompact ? 6 : 8, minWidth: 0 }}>
+      <Stack direction="column" style={{ gap: rowGap, minWidth: 0 }}>
         {activityRows}
       </Stack>
     );
@@ -195,7 +462,7 @@ export const PresenceActivitiesList = observer(function PresenceActivitiesList({
   if (!expanded) {
     return (
       <Pressable onPress={toggle}>
-        <Stack direction="column" style={{ gap: isCompact ? 6 : 8, minWidth: 0 }}>
+        <Stack direction="column" style={{ gap: rowGap, minWidth: 0 }}>
           {activityRows}
           {collapseControl}
         </Stack>
@@ -207,7 +474,7 @@ export const PresenceActivitiesList = observer(function PresenceActivitiesList({
     <Stack
       direction="column"
       style={{
-        gap: isCompact ? 6 : 8,
+        gap: rowGap,
         minWidth: 0,
         flex: scrollWhenExpanded ? 1 : undefined,
         minHeight: scrollWhenExpanded ? 0 : undefined,

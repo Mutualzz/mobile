@@ -3,7 +3,6 @@ import { Typography, useTheme } from "@mutualzz/ui-native";
 import { useQuery } from "@tanstack/react-query";
 import {
   GithubLogoIcon,
-  SpotifyLogoIcon,
   SteamLogoIcon,
   TwitchLogoIcon,
 } from "phosphor-react-native";
@@ -16,14 +15,12 @@ const CONNECTION_NAME_KEYS = {
   github: "connections.github.name",
   twitch: "connections.twitch.name",
   steam: "connections.steam.name",
-  spotify: "connections.spotify.name",
 } as const;
 
 const PROVIDER_ICONS: Record<string, ComponentType<IconProps>> = {
   github: GithubLogoIcon,
   twitch: TwitchLogoIcon,
   steam: SteamLogoIcon,
-  spotify: SpotifyLogoIcon,
 };
 
 interface Props {
@@ -31,28 +28,10 @@ interface Props {
   showEmpty?: boolean;
 }
 
-export const ProfileConnectionsRow = ({
-  userId,
-  showEmpty = false,
-}: Props) => {
+export const ProfileConnectionsRow = ({ userId, showEmpty = false }: Props) => {
   const { t } = useTranslation("settings");
   const app = useAppStore();
   const { theme } = useTheme();
-
-  const { data: spotifyConnection, isPending: spotifyPending } = useQuery({
-    queryKey: ["user-spotify", userId],
-    queryFn: async () => {
-      try {
-        return await app.rest.get<{
-          displayName: string | null;
-          externalUrl: string | null;
-        }>(`/users/${userId}/spotify`);
-      } catch {
-        return null;
-      }
-    },
-    staleTime: 60_000,
-  });
 
   const { data: userConnections, isPending: connectionsPending } = useQuery({
     queryKey: ["user-connections-public", userId],
@@ -72,20 +51,11 @@ export const ProfileConnectionsRow = ({
     staleTime: 60_000,
   });
 
-  const items = [
-    ...(spotifyConnection?.externalUrl
-      ? [
-          {
-            provider: "spotify",
-            displayName: spotifyConnection.displayName,
-            externalUrl: spotifyConnection.externalUrl,
-          },
-        ]
-      : []),
-    ...(userConnections?.connections ?? []).filter((c) => c.externalUrl),
-  ];
+  const items = (userConnections?.connections ?? []).filter(
+    (connection) => connection.externalUrl,
+  );
 
-  if (spotifyPending || connectionsPending) {
+  if (connectionsPending) {
     return null;
   }
 
