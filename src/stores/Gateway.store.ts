@@ -10,6 +10,12 @@ import type {
   GatewayReadyPayload,
   APICall,
   VoiceState as APIVoiceState,
+  APIMessageBookmark,
+  APIMessageBookmarkWithMessage,
+  APIMessageReminder,
+  APIMessageReminderWithMessage,
+  APIScheduledMessage,
+  APINotification,
 } from "@mutualzz/types";
 import {
   type APIChannel,
@@ -38,7 +44,12 @@ import {
   type PresenceSchedule,
   type PresencePayload,
 } from "@mutualzz/types";
-import { type Codec, createCodec, type Encoding } from "@mutualzz/client";
+import {
+  type Codec,
+  createCodec,
+  type Encoding,
+  type GatewayAck,
+} from "@mutualzz/client";
 import {
   type Compression,
   type Compressor,
@@ -132,13 +143,9 @@ export class GatewayStore {
   >();
   private subscribedUserIds = new Set<string>();
   private inventorySubscriptionCounts = new Map<string, number>();
-  private inventoryEditAcks = new Map<
+  private pendingRequests = new Map<
     string,
-    { resolve: (ack: InventoryEditAck) => void; timer: Timer }
-  >();
-  private lyricsRequests = new Map<
-    string,
-    { resolve: (lyrics: LyricsResult | null) => void; timer: Timer }
+    { resolve: (ack: GatewayAck) => void; timer: Timer }
   >();
   private presenceLoopInterval: Timer | null = null;
   private lastPresenceHash: string | null = null;
@@ -637,52 +644,152 @@ export class GatewayStore {
     });
   }
 
-  private requestInventoryEdit(opcode: number, data: Record<string, unknown>) {
-    return new Promise<InventoryEditAck>((resolve) => {
+  private request<Data = object>(
+    opcode: number,
+    data: Record<string, unknown>,
+    timeoutMs = 10_000,
+  ) {
+    return new Promise<GatewayAck<Data>>((resolve) => {
       if (this.readyState !== GatewayStatus.OPEN) {
         resolve({ ok: false, message: "Not connected" });
         return;
       }
       const nonce = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
       const timer = setTimeout(() => {
-        this.inventoryEditAcks.delete(nonce);
+        this.pendingRequests.delete(nonce);
         resolve({ ok: false, message: "No response from the server" });
-      }, 10_000);
-      this.inventoryEditAcks.set(nonce, { resolve, timer });
+      }, timeoutMs);
+      this.pendingRequests.set(nonce, {
+        resolve: resolve as (ack: GatewayAck) => void,
+        timer,
+      });
       void this.send({ op: opcode, d: { ...data, nonce } });
     });
   }
 
-  requestLyrics(trackName: string, artistName: string, durationMs: number) {
-    return new Promise<LyricsResult | null>((resolve) => {
-      if (this.readyState !== GatewayStatus.OPEN) {
-        resolve(null);
-        return;
-      }
-      const nonce = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-      const timer = setTimeout(() => {
-        this.lyricsRequests.delete(nonce);
-        resolve(null);
-      }, 10_000);
-      this.lyricsRequests.set(nonce, { resolve, timer });
-      void this.send({
-        op: GatewayOpcodes.LyricsRequest,
-        d: { nonce, trackName, artistName, durationMs },
-      });
-    });
-  }
-
-  private onLyricsResult = (payload: {
-    nonce: string;
-    ok: boolean;
-    lyrics?: LyricsResult | null;
-  }) => {
-    const entry = this.lyricsRequests.get(payload.nonce);
+  private resolveRequest = (payload: { nonce: string } & GatewayAck) => {
+    const entry = this.pendingRequests.get(payload.nonce);
     if (!entry) return;
     clearTimeout(entry.timer);
-    this.lyricsRequests.delete(payload.nonce);
-    entry.resolve(payload.ok ? (payload.lyrics ?? null) : null);
+    this.pendingRequests.delete(payload.nonce);
+    const { nonce: _nonce, ...ack } = payload;
+    entry.resolve(ack);
   };
+
+  private requestInventoryEdit(opcode: number, data: Record<string, unknown>) {
+    return this.request(opcode, data) as Promise<InventoryEditAck>;
+  }
+
+  async requestLyrics(
+    trackName: string,
+    artistName: string,
+    durationMs: number,
+  ) {
+    const ack = await this.request<{ lyrics?: LyricsResult | null }>(
+      GatewayOpcodes.LyricsRequest,
+      { trackName, artistName, durationMs },
+    );
+    return ack.ok ? (ack.lyrics ?? null) : null;
+  }
+
+  sendBookmark(action: "add" | "remove", messageId: string) {
+    return this.request(
+      action === "add"
+        ? GatewayOpcodes.BookmarkAdd
+        : GatewayOpcodes.BookmarkRemove,
+      { messageId },
+    );
+  }
+
+  async listBookmarks() {
+    const ack = await this.request<{
+      bookmarks: APIMessageBookmarkWithMessage[];
+    }>(GatewayOpcodes.BookmarkList, {});
+    if (!ack.ok) throw new Error(ack.message ?? "Failed to load bookmarks");
+    return ack.bookmarks;
+  }
+
+  setReminder(messageId: string, remindAt: string) {
+    return this.request<{ reminder: APIMessageReminder }>(
+      GatewayOpcodes.ReminderSet,
+      { messageId, remindAt },
+    );
+  }
+
+  deleteReminder(messageId: string) {
+    return this.request(GatewayOpcodes.ReminderDelete, { messageId });
+  }
+
+  async listReminders() {
+    const ack = await this.request<{
+      reminders: APIMessageReminderWithMessage[];
+    }>(GatewayOpcodes.ReminderList, {});
+    if (!ack.ok) throw new Error(ack.message ?? "Failed to load reminders");
+    return ack.reminders;
+  }
+
+  editScheduledMessage(
+    id: string,
+    changes: { content?: string; scheduledFor?: string },
+  ) {
+    return this.request<{ scheduledMessage: APIScheduledMessage }>(
+      GatewayOpcodes.ScheduledMessageEdit,
+      { id, ...changes },
+    );
+  }
+
+  deleteScheduledMessage(id: string) {
+    return this.request(GatewayOpcodes.ScheduledMessageDelete, { id });
+  }
+
+  async listNotifications(before?: string) {
+    const ack = await this.request<{
+      notifications: APINotification[];
+      hasMore: boolean;
+    }>(GatewayOpcodes.NotificationList, before ? { before } : {});
+    return ack.ok
+      ? { notifications: ack.notifications, hasMore: ack.hasMore }
+      : null;
+  }
+
+  markNotificationsRead(ids?: string[]) {
+    return this.request(
+      GatewayOpcodes.NotificationMarkRead,
+      ids ? { ids } : { all: true },
+    );
+  }
+
+  deleteNotification(id: string) {
+    return this.request(GatewayOpcodes.NotificationDelete, { id });
+  }
+
+  async listMentions(filters: {
+    before?: string;
+    includeEveryone: boolean;
+    includeRoles: boolean;
+    spaceId?: string;
+  }) {
+    const ack = await this.request<{
+      messages: APIMessage[];
+      hasMore: boolean;
+      nextBefore: string | null;
+    }>(
+      GatewayOpcodes.MentionList,
+      Object.fromEntries(
+        Object.entries(filters).filter(([, value]) => value !== undefined),
+      ),
+    );
+    if (!ack.ok) throw new Error(ack.message ?? "Failed to load mentions");
+    return {
+      messages: ack.messages,
+      hasMore: ack.hasMore,
+      nextBefore: ack.nextBefore,
+    };
+  }
+
+  dismissMention(messageId: string) {
+    return this.request(GatewayOpcodes.MentionDismiss, { messageId });
+  }
 
   private updateInventoryEdits(
     bridgeId: string,
@@ -1089,13 +1196,57 @@ export class GatewayStore {
       GatewayDispatchEvents.BridgeInventoryUpdate,
       this.onBridgeInventoryUpdate,
     );
-    this.dispatchHandlers.set(
+    for (const ackEvent of [
       GatewayDispatchEvents.BridgeInventoryEditAck,
-      this.onBridgeInventoryEditAck,
+      GatewayDispatchEvents.LyricsResult,
+      GatewayDispatchEvents.ActivityArtResult,
+      GatewayDispatchEvents.MessageBookmarkAck,
+      GatewayDispatchEvents.MessageReminderAck,
+      GatewayDispatchEvents.ScheduledMessageAck,
+      GatewayDispatchEvents.NotificationAck,
+      GatewayDispatchEvents.MentionAck,
+    ]) {
+      this.dispatchHandlers.set(ackEvent, this.resolveRequest);
+    }
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.MessageBookmarkCreate,
+      this.onMessageBookmarkCreate,
     );
     this.dispatchHandlers.set(
-      GatewayDispatchEvents.LyricsResult,
-      this.onLyricsResult,
+      GatewayDispatchEvents.MessageBookmarkDelete,
+      this.onMessageBookmarkDelete,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.MessageReminderUpdate,
+      this.onMessageReminderUpdate,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.MessageReminderDelete,
+      this.onMessageReminderDelete,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.ScheduledMessageUpdate,
+      this.onScheduledMessageUpdate,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.ScheduledMessageDelete,
+      this.onScheduledMessageDelete,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.NotificationCreate,
+      this.onNotificationCreate,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.NotificationRead,
+      this.onNotificationRead,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.NotificationDelete,
+      this.onNotificationDelete,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.MentionDismiss,
+      this.onMentionDismiss,
     );
     this.dispatchHandlers.set(
       GatewayDispatchEvents.BridgeInventoryEdits,
@@ -1628,6 +1779,10 @@ export class GatewayStore {
       voiceStates,
       users,
       minecraftLink,
+      bookmarkedMessageIds,
+      reminders,
+      scheduledMessages,
+      unreadNotificationCount,
     } = payload;
 
     this.sessionId = sessionId;
@@ -1640,6 +1795,10 @@ export class GatewayStore {
     this.app.spaces.addAll(spaces);
     this.app.channels.addAll(channels ?? []);
     this.app.relationships.addAll(relationships ?? []);
+    this.app.bookmarks.replaceAll(bookmarkedMessageIds ?? []);
+    this.app.reminders.replaceAll(reminders ?? []);
+    this.app.scheduledMessages.replaceAll(scheduledMessages ?? []);
+    this.app.notifications.resetFromReady(unreadNotificationCount ?? 0);
     this.app.expressions.addAll(expressions);
     this.app.readStates.addAll(readStates);
     if (spaceNotificationSettings?.length) {
@@ -2412,14 +2571,54 @@ export class GatewayStore {
     );
   };
 
-  private onBridgeInventoryEditAck = (
-    payload: InventoryEditAck & { nonce: string },
-  ) => {
-    const entry = this.inventoryEditAcks.get(payload.nonce);
-    if (!entry) return;
-    clearTimeout(entry.timer);
-    this.inventoryEditAcks.delete(payload.nonce);
-    entry.resolve(payload);
+  private onMessageBookmarkCreate = (payload: APIMessageBookmark) => {
+    this.app.bookmarks.markAdded(payload.messageId);
+    void this.app.queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
+  };
+
+  private onMessageBookmarkDelete = (payload: { messageId: string }) => {
+    this.app.bookmarks.markRemoved(payload.messageId);
+  };
+
+  private onMessageReminderUpdate = (payload: APIMessageReminder) => {
+    const previous = this.app.reminders.get(payload.messageId);
+    const justFired = payload.firedAt !== null && !previous?.firedAt;
+    this.app.reminders.upsert(payload);
+    if (justFired) {
+      const myStatus = this.app.account
+        ? (this.app.presence.get(this.app.account.id)?.status ?? "online")
+        : "online";
+      if (myStatus !== "dnd") this.app.sounds.play("message");
+    }
+    void this.app.queryClient.invalidateQueries({ queryKey: ["reminders"] });
+  };
+
+  private onMessageReminderDelete = (payload: { messageId: string }) => {
+    this.app.reminders.remove(payload.messageId);
+  };
+
+  private onScheduledMessageUpdate = (payload: APIScheduledMessage) => {
+    this.app.scheduledMessages.upsert(payload);
+  };
+
+  private onScheduledMessageDelete = (payload: { id: string }) => {
+    this.app.scheduledMessages.remove(payload.id);
+  };
+
+  private onNotificationCreate = (payload: APINotification) => {
+    this.app.notifications.handleCreate(payload);
+  };
+
+  private onNotificationRead = (payload: { ids: string[]; readAt: string }) => {
+    this.app.notifications.handleRead(payload.ids, payload.readAt);
+  };
+
+  private onNotificationDelete = (payload: { id: string }) => {
+    this.app.notifications.handleDelete(payload.id);
+  };
+
+  private onMentionDismiss = () => {
+    void this.app.queryClient.invalidateQueries({ queryKey: ["mentions"] });
   };
 
   private onBridgeInventoryEdits = (payload: {

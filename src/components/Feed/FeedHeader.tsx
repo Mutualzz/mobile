@@ -17,7 +17,6 @@ const TABS = [
   { labelKey: "feed.tabs.forYou", href: "/(tabs)/feed" as Href },
   { labelKey: "feed.tabs.friends", href: "/(tabs)/feed/friends" as Href },
   { labelKey: "feed.tabs.saved", href: "/(tabs)/feed/saved" as Href },
-  { labelKey: "feed.tabs.scheduled", href: "/(tabs)/feed/scheduled" as Href },
 ] as const;
 
 export const FeedHeader = observer(() => {
@@ -29,9 +28,6 @@ export const FeedHeader = observer(() => {
   const pathname = usePathname();
   const username = app.account?.username;
   const [composeOpen, setComposeOpen] = useState(false);
-  const isScheduled =
-    pathname === "/feed/scheduled" || pathname.endsWith("/feed/scheduled");
-  const canCompose = !isScheduled;
 
   const isActive = (suffix: string) => {
     if (suffix === "/feed") {
@@ -99,15 +95,13 @@ export const FeedHeader = observer(() => {
 
         {username && (
           <Box style={{ flexDirection: "row", gap: 4, flexShrink: 0 }}>
-            {canCompose && (
-              <IconButton
-                padding={6}
-                accessibilityLabel={t("feed.header.createPost")}
-                onPress={() => setComposeOpen(true)}
-              >
-                <PlusIcon size={20} weight="bold" />
-              </IconButton>
-            )}
+            <IconButton
+              padding={6}
+              accessibilityLabel={t("feed.header.createPost")}
+              onPress={() => setComposeOpen(true)}
+            >
+              <PlusIcon size={20} weight="bold" />
+            </IconButton>
             <IconButton
               padding={6}
               accessibilityLabel={t("feed.header.myProfile")}

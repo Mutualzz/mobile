@@ -41,6 +41,14 @@ import { SoundStore } from "@stores/Sound.store";
 import type { User } from "@stores/objects/User";
 import { initRemoteGameCatalog } from "@presence/remoteGameCatalog";
 import { BridgeChatStore } from "@stores/BridgeChat.store";
+import {
+  BookmarkStore,
+  type InboxStoreDeps,
+  NotificationStore,
+  ReminderStore,
+  ScheduledMessageStore,
+} from "@mutualzz/client";
+import { Alert } from "react-native";
 import { SpaceNotificationSettingsStore } from "@stores/SpaceNotificationSettings.store";
 import { startWidgetSnapshotSync } from "@stores/WidgetSnapshot.sync";
 
@@ -75,6 +83,14 @@ export class AppStore {
   profiles = new ProfileStore(this);
   typing = new TypingStore(this);
   bridgeChat = new BridgeChatStore();
+  private readonly inboxDeps: InboxStoreDeps = {
+    gateway: () => this.gateway,
+    showError: (message) => Alert.alert(message),
+  };
+  bookmarks = new BookmarkStore(this.inboxDeps);
+  reminders = new ReminderStore(this.inboxDeps);
+  scheduledMessages = new ScheduledMessageStore(this.inboxDeps);
+  notifications = new NotificationStore(this.inboxDeps);
   settings: AccountSettingsStore | null = null;
   version: string | null = null;
   mode: AppMode | null = null;
@@ -116,7 +132,11 @@ export class AppStore {
 
     makePersistable(this, {
       name: "AppStore",
-      properties: ["memberListVisible", "dontShowLinkWarning", "onboardingCompleted"],
+      properties: [
+        "memberListVisible",
+        "dontShowLinkWarning",
+        "onboardingCompleted",
+      ],
       storage: AsyncStorage,
     });
 
@@ -289,16 +309,18 @@ export class AppStore {
     try {
       await this.rest.post("auth/logout");
     } catch {
-    // ignore
-}
+      // ignore
+    }
 
-    void clearRegisteredPushTokens(this.rest).catch(() => { return; });
+    void clearRegisteredPushTokens(this.rest).catch(() => {
+      return;
+    });
 
     try {
       await this.voice.leave();
     } catch {
-    // ignore
-}
+      // ignore
+    }
 
     void this.gateway.disconnect();
 
@@ -331,6 +353,10 @@ export class AppStore {
     this.navigation.clear();
     this.profiles.clear();
     this.posts.clear();
+    this.bookmarks.clear();
+    this.reminders.clear();
+    this.scheduledMessages.clear();
+    this.notifications.clear();
     this.drafts.clear();
     this.bridgeChat.clearAll();
     this.replyingTo = null;

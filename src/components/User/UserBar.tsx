@@ -15,6 +15,7 @@ import { observer } from "mobx-react-lite";
 import { Pressable } from "react-native";
 import { HeadphonesOffIcon } from "@components/icons/HeadphonesOffIcon";
 import {
+  BellIcon,
   HeadphonesIcon,
   MicrophoneIcon,
   MicrophoneSlashIcon,
@@ -25,6 +26,7 @@ import {
 } from "phosphor-react-native";
 import { useTranslation } from "react-i18next";
 import { useNoiseSuppressionSheet } from "@components/User/NoiseSuppressionSheet";
+import { CountBadge, useInboxCount } from "@components/Inbox/InboxParts";
 
 export const UserBar = observer(() => {
   const app = useAppStore();
@@ -34,6 +36,8 @@ export const UserBar = observer(() => {
   const account = app.account;
   const openProfile = useOpenUserProfile();
   const { t } = useTranslation("chat");
+  const { t: tCommon } = useTranslation("common");
+  const inboxCount = useInboxCount();
   const openNoiseSuppression = useNoiseSuppressionSheet();
 
   const selfVoiceState = account ? app.voiceStates.get(account.id) : undefined;
@@ -195,17 +199,13 @@ export const UserBar = observer(() => {
               </Box>
             </Pressable>
 
-            <Box
-              style={{ flexDirection: "row", alignItems: "center", gap: 2 }}
-            >
+            <Box style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
               {voiceStatus === "connected" && (
                 <IconButton
                   variant="plain"
                   padding={4}
                   onPress={openNoiseSuppression}
-                  accessibilityLabel={t(
-                    "voice.controls.noiseSuppressionA11y",
-                  )}
+                  accessibilityLabel={t("voice.controls.noiseSuppressionA11y")}
                   accessibilityState={{
                     selected: app.voice.noiseSuppression,
                   }}
@@ -262,9 +262,7 @@ export const UserBar = observer(() => {
                   size={18}
                   weight="fill"
                   color={
-                    pushToTalkActive
-                      ? "#fff"
-                      : theme.typography.colors.primary
+                    pushToTalkActive ? "#fff" : theme.typography.colors.primary
                   }
                 />
                 <Typography
@@ -384,6 +382,23 @@ export const UserBar = observer(() => {
         </Pressable>
 
         <Box style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+          <Box>
+            <IconButton
+              variant="plain"
+              padding={4}
+              onPress={() => navigate("/inbox")}
+              accessibilityLabel={tCommon("notifications.inbox")}
+            >
+              <BellIcon
+                size={18}
+                weight={inboxCount > 0 ? "fill" : "regular"}
+              />
+            </IconButton>
+            <CountBadge
+              count={inboxCount}
+              style={{ position: "absolute", top: -2, right: -2 }}
+            />
+          </Box>
           <IconButton
             variant="plain"
             padding={4}

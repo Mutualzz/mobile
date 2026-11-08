@@ -7,8 +7,10 @@ import {
   CheckIcon,
   EyeSlashIcon,
   FileIcon,
-  PaperclipIcon,
+  CalendarPlusIcon,
+  FileArrowUpIcon,
   PaperPlaneTiltIcon,
+  PlusIcon,
   PencilSimpleIcon,
   PlayIcon,
   SmileyIcon,
@@ -16,7 +18,13 @@ import {
 } from "phosphor-react-native";
 import { useAppStore } from "@hooks/useStores";
 import { useComposerSafePadding } from "@hooks/useKeyboardOffset";
-import { Box, scaledLayoutSize, Typography, useFontScale, useTheme } from "@mutualzz/ui-native";
+import {
+  Box,
+  scaledLayoutSize,
+  Typography,
+  useFontScale,
+  useTheme,
+} from "@mutualzz/ui-native";
 import {
   useScaledComposerPanelMaxHeight,
   useScaledFeedPreviewSizes,
@@ -54,7 +62,19 @@ import {
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Image, Pressable } from "react-native";
+import { Alert, Image, Pressable, View } from "react-native";
+import { Button } from "@components/Button";
+import {
+  PickTimeSheet,
+  schedulePresetLabel,
+} from "@components/Inbox/PickTimeSheet";
+import { useSheet } from "@hooks/useSheet";
+import {
+  MESSAGE_SCHEDULE_PRESETS,
+  resolveMessageSchedulePreset,
+} from "@mutualzz/client";
+import { createScheduledMessage } from "@utils/createScheduledMessage";
+import dayjs from "dayjs";
 import * as ImagePicker from "expo-image-picker";
 
 const MAX_STICKERS = 3;
@@ -110,6 +130,14 @@ export const MessageInput = observer(({ channel }: Props) => {
   const [attachments, setAttachments] = useState<PickedAttachment[]>([]);
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pendingScheduleTime, setPendingScheduleTime] = useState<Date | null>(
+    null,
+  );
+  const { openSheet, closeSheet } = useSheet();
+
+  useEffect(() => {
+    setPendingScheduleTime(null);
+  }, [channel.id]);
   const typingCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const editingMessage =
@@ -276,8 +304,7 @@ export const MessageInput = observer(({ channel }: Props) => {
       .filter((a) => (a.fileSize ?? 0) <= MAX_ATTACHMENT_SIZE)
       .map((a) => {
         const isVideo = a.type === "video";
-        const type =
-          a.mimeType ?? (isVideo ? "video/mp4" : "image/jpeg");
+        const type = a.mimeType ?? (isVideo ? "video/mp4" : "image/jpeg");
         const name = resolvePickedAttachmentName(a.fileName, type, isVideo);
         return {
           uri: a.uri,
@@ -330,8 +357,8 @@ export const MessageInput = observer(({ channel }: Props) => {
       setSelection({ start: 0, end: 0 });
       setStickers([]);
     } catch {
-    // ignore
-} finally {
+      // ignore
+    } finally {
       setSaving(false);
     }
   };
@@ -425,6 +452,102 @@ export const MessageInput = observer(({ channel }: Props) => {
     }
   };
 
+  const scheduleContent = async (
+    time: Date,
+    text: string,
+    stickerList: Expression[],
+    fileList: PickedAttachment[],
+  ) => {
+    setSaving(true);
+    try {
+      await createScheduledMessage(app, channel.id, {
+        content: text.trim(),
+        stickerIds: stickerList.map((sticker) => sticker.id),
+        attachments: fileList,
+        repliedToId: app.replyingTo?.id,
+        mentionReply: app.replyMention,
+        scheduledFor: time,
+      });
+      setContent("");
+      setEntities([]);
+      setSelection({ start: 0, end: 0 });
+      setStickers([]);
+      setAttachments([]);
+      app.setReplyingTo(null);
+      setPendingScheduleTime(null);
+      Alert.alert(
+        t("scheduledMessages.scheduledToast", {
+          time: dayjs(time).format("ddd, MMM D · h:mm A"),
+        }),
+      );
+    } catch (error) {
+      Alert.alert(formatRestError(error, t("unknownError")));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openSchedulePicker = () => {
+    const sheetId = `schedule-message-${channel.id}`;
+    openSheet(
+      sheetId,
+      <PickTimeSheet
+        sheetId={sheetId}
+        title={t("scheduledMessages.pickTitle")}
+        confirmLabel={t("scheduledMessages.setTime")}
+        initial={pendingScheduleTime ?? undefined}
+        presets={MESSAGE_SCHEDULE_PRESETS.map((preset) => {
+          const time = resolveMessageSchedulePreset(preset);
+          return {
+            key: preset,
+            label: schedulePresetLabel(t, preset, time),
+            time,
+          };
+        })}
+        onConfirm={async (time) => {
+          setPendingScheduleTime(time);
+          return true;
+        }}
+      />,
+    );
+  };
+
+  const openPlusSheet = () => {
+    const sheetId = `composer-plus-${channel.id}`;
+    openSheet(
+      sheetId,
+      <View style={{ width: "100%", padding: 12, gap: 4 }}>
+        {canAttachFiles && (
+          <Button
+            fullWidth
+            padding={12}
+            variant="plain"
+            disabled={attachments.length >= MAX_ATTACHMENTS}
+            startDecorator={<FileArrowUpIcon size={20} weight="fill" />}
+            onPress={() => {
+              closeSheet(sheetId);
+              void pickAttachments();
+            }}
+          >
+            {t("scheduledMessages.uploadFile")}
+          </Button>
+        )}
+        <Button
+          fullWidth
+          padding={12}
+          variant="plain"
+          startDecorator={<CalendarPlusIcon size={20} weight="fill" />}
+          onPress={() => {
+            closeSheet(sheetId);
+            openSchedulePicker();
+          }}
+        >
+          {t("scheduledMessages.menuTitle")}
+        </Button>
+      </View>,
+    );
+  };
+
   const sendMessage = async () => {
     if (editingMessage) {
       await saveEdit(editingMessage);
@@ -437,6 +560,11 @@ export const MessageInput = observer(({ channel }: Props) => {
     const stickerList = stickers;
     const fileList = canAttachFiles ? attachments : [];
 
+    if (pendingScheduleTime) {
+      await scheduleContent(pendingScheduleTime, text, stickerList, fileList);
+      return;
+    }
+
     setContent("");
     setEntities([]);
     setSelection({ start: 0, end: 0 });
@@ -448,8 +576,7 @@ export const MessageInput = observer(({ channel }: Props) => {
 
   const handleSelectEmoji = (emoji: PickerEmoji, skinTone: SkinTone) => {
     const unified =
-      (skinTone && emoji.skinVariations?.[skinTone]?.unified) ||
-      emoji.unified;
+      (skinTone && emoji.skinVariations?.[skinTone]?.unified) || emoji.unified;
     insertIntoComposer(unifiedToEmoji(unified));
   };
 
@@ -569,7 +696,9 @@ export const MessageInput = observer(({ channel }: Props) => {
                 color={app.replyMention ? "info" : undefined}
                 textColor={app.replyMention ? undefined : "secondary"}
               >
-                {app.replyMention ? t("composer.mentionOn") : t("composer.mentionOff")}
+                {app.replyMention
+                  ? t("composer.mentionOn")
+                  : t("composer.mentionOff")}
               </Typography>
             </Pressable>
           )}
@@ -738,11 +867,7 @@ export const MessageInput = observer(({ channel }: Props) => {
                         }}
                         pointerEvents="none"
                       >
-                        <PlayIcon
-                          size={22}
-                          weight="fill"
-                          color="#fff"
-                        />
+                        <PlayIcon size={22} weight="fill" color="#fff" />
                       </Box>
                     )}
                   </>
@@ -803,6 +928,36 @@ export const MessageInput = observer(({ channel }: Props) => {
         </Box>
       )}
 
+      {pendingScheduleTime && !editingMessage && (
+        <Paper
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            marginBottom: 8,
+            borderRadius: 10,
+          }}
+        >
+          <Pressable style={{ flex: 1 }} onPress={openSchedulePicker}>
+            <Typography level="body-xs" textColor="secondary">
+              {t("scheduledMessages.schedulingBanner", {
+                time: dayjs(pendingScheduleTime).format("MMMM D [at] h:mm A"),
+              })}
+            </Typography>
+          </Pressable>
+          <IconButton
+            variant="plain"
+            padding={4}
+            onPress={() => setPendingScheduleTime(null)}
+            accessibilityLabel={t("scheduledMessages.cancelScheduling")}
+          >
+            <XIcon size={14} />
+          </IconButton>
+        </Paper>
+      )}
+
       <Box
         style={{
           flexDirection: "row",
@@ -811,18 +966,13 @@ export const MessageInput = observer(({ channel }: Props) => {
       >
         <IconButton
           padding={8}
-          onPress={() => void pickAttachments()}
-          accessibilityLabel={t("composer.addAttachment")}
+          onPress={openPlusSheet}
+          accessibilityLabel={t("scheduledMessages.plusMenu")}
           hitSlop={4}
-          disabled={
-            denySendingMessages ||
-            !canAttachFiles ||
-            !!editingMessage ||
-            attachments.length >= MAX_ATTACHMENTS
-          }
+          disabled={denySendingMessages || !!editingMessage}
           style={{ borderRadius: 999, marginRight: 6 }}
         >
-          <PaperclipIcon size={20} weight="bold" />
+          <PlusIcon size={20} weight="bold" />
         </IconButton>
         <MarkdownInput
           value={content}

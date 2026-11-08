@@ -1,17 +1,37 @@
 import { Button } from "@components/Button";
 import { ReactionEmojiPicker } from "@components/Expression/ReactionEmojiPicker";
 import { ReportContentSheet } from "@components/Report/ReportContentSheet";
-import { ArrowBendUpLeftIcon, CopyIcon, FlagIcon, PencilSimpleIcon, PushPinIcon, PushPinSlashIcon, SmileyIcon, TrashIcon } from "phosphor-react-native";
+import {
+  AlarmIcon,
+  ArrowBendUpLeftIcon,
+  BookmarkSimpleIcon,
+  CopyIcon,
+  FlagIcon,
+  PencilSimpleIcon,
+  PushPinIcon,
+  PushPinSlashIcon,
+  SmileyIcon,
+  TrashIcon,
+} from "phosphor-react-native";
+import { PickTimeSheet } from "@components/Inbox/PickTimeSheet";
+import { REMINDER_PRESETS, resolveReminderPreset } from "@mutualzz/client";
 import { useRecentEmojis } from "@hooks/useRecentEmojis";
 import { useSheet } from "@hooks/useSheet";
 import { useAppStore } from "@hooks/useStores";
 import { UnicodeEmoji } from "@components/emojis/UnicodeEmoji";
-import { Box, ButtonGroup, Divider, Sheet, useTheme } from "@mutualzz/ui-native";
+import {
+  Box,
+  ButtonGroup,
+  Divider,
+  Sheet,
+  useTheme,
+} from "@mutualzz/ui-native";
 import type { Expression } from "@stores/objects/Expression";
 import type { Message } from "@stores/objects/Message";
 import {
   getQuickReactionItems,
-  type QuickReactionItem } from "@utils/quickReactionEmojis";
+  type QuickReactionItem,
+} from "@utils/quickReactionEmojis";
 import type { SkinTone } from "@utils/emojis/emojiPickerData";
 import type { PickerEmoji } from "@utils/emojis/emojiPickerData";
 import {
@@ -21,7 +41,8 @@ import {
 } from "@mutualzz/client";
 import {
   useScaledSquareSize,
-  useScaledTouchTarget } from "@utils/accessibilityLayout";
+  useScaledTouchTarget,
+} from "@utils/accessibilityLayout";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import { observer } from "mobx-react-lite";
@@ -39,7 +60,8 @@ const QuickReactionButton = ({
   item,
   onPress,
   backgroundColor,
-  accessibilityLabel}: {
+  accessibilityLabel,
+}: {
   item: QuickReactionItem;
   onPress: () => void;
   backgroundColor: string;
@@ -60,7 +82,8 @@ const QuickReactionButton = ({
         alignItems: "center",
         justifyContent: "center",
         borderRadius: 8,
-        backgroundColor}}
+        backgroundColor,
+      }}
     >
       {item.kind === "custom" ? (
         <Image
@@ -85,7 +108,7 @@ export const MessageActionSheet = observer(
     const { recents, addRecentStandard, addRecentCustom } = useRecentEmojis();
     const quickItems = getQuickReactionItems(app, recents, 3);
     const [pickerOpen, setPickerOpen] = useState(false);
-    const { openSheet } = useSheet();
+    const { openSheet, closeSheet } = useSheet();
 
     useEffect(() => {
       if (!visible) setPickerOpen(false);
@@ -99,12 +122,12 @@ export const MessageActionSheet = observer(
     const canReply = true;
     const canReport = message.author?.id !== app.account?.id;
     const canPin =
-      !message.space ||
-      !!me?.hasPermission("PinMessages", message.channel);
+      !message.space || !!me?.hasPermission("PinMessages", message.channel);
     const canReact = !message.space
       ? true
       : !!me?.hasPermission("AddReactions", message.channel);
-    const hasActions = canReply || canCopy || canEdit || canDelete || canReport || canPin;
+    const hasActions =
+      canReply || canCopy || canEdit || canDelete || canReport || canPin;
     const isPinnedNotice = isChannelPinnedMessage(message);
 
     const handlePin = async () => {
@@ -152,9 +175,52 @@ export const MessageActionSheet = observer(
       try {
         await Clipboard.setStringAsync(message.content);
       } catch {
-    // ignore
-}
+        // ignore
+      }
       onClose();
+    };
+
+    const isBookmarked = app.bookmarks.has(message.id);
+    const hasReminder = app.reminders.has(message.id);
+
+    const handleBookmark = () => {
+      void app.bookmarks.toggle(message.id);
+      onClose();
+    };
+
+    const handleRemindMe = () => {
+      onClose();
+      const sheetId = `remind-message-${message.id}`;
+      openSheet(
+        sheetId,
+        <PickTimeSheet
+          sheetId={sheetId}
+          title={t("actions.remindMe")}
+          confirmLabel={t("reminders.set")}
+          presets={REMINDER_PRESETS.map((preset) => ({
+            key: preset,
+            label: t(`reminders.presets.${preset}`),
+            time: resolveReminderPreset(preset),
+          }))}
+          onConfirm={async (time) =>
+            (await app.reminders.schedule(message.id, time)).ok
+          }
+          extra={
+            hasReminder ? (
+              <Button
+                variant="soft"
+                color="danger"
+                onPress={() => {
+                  void app.reminders.complete(message.id);
+                  closeSheet(sheetId);
+                }}
+              >
+                {t("actions.removeReminder")}
+              </Button>
+            ) : undefined
+          }
+        />,
+      );
     };
 
     const handleReply = () => {
@@ -216,48 +282,52 @@ export const MessageActionSheet = observer(
           <View style={{ width: "100%" }}>
             <View onStartShouldSetResponder={() => true}>
               <Box
-              style={{
-                width: "100%",
-                padding: 16,
-                gap: 8}}
-            >
+                style={{
+                  width: "100%",
+                  padding: 16,
+                  gap: 8,
+                }}
+              >
                 <Box style={{ gap: 12 }}>
                   {canReact && (
-                  <Box
-                    style={{
-                      flexDirection: "row",
-                      gap: 8,
-                      width: "100%"}}
-                  >
-                    {quickItems.map((item) => (
-                      <QuickReactionButton
-                        key={item.key}
-                        item={item}
-                        backgroundColor={`${theme.colors.neutral}22`}
-                        accessibilityLabel={t("actions.reactWith", {
-                          emoji: item.title})}
-                        onPress={() => handleQuickReaction(item)}
-                      />
-                    ))}
-                    <Pressable
-                      onPress={() => setPickerOpen(true)}
-                      accessibilityRole="button"
-                      accessibilityLabel={t("composer.openEmojiPicker")}
+                    <Box
                       style={{
-                        flex: 1,
-                        minWidth: 0,
-                        minHeight,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        borderRadius: 8,
-                        backgroundColor: `${theme.colors.neutral}22`}}
+                        flexDirection: "row",
+                        gap: 8,
+                        width: "100%",
+                      }}
                     >
-                      <SmileyIcon
-                        size={24}
-                        color={theme.typography.colors.primary}
-                      />
-                    </Pressable>
-                  </Box>
+                      {quickItems.map((item) => (
+                        <QuickReactionButton
+                          key={item.key}
+                          item={item}
+                          backgroundColor={`${theme.colors.neutral}22`}
+                          accessibilityLabel={t("actions.reactWith", {
+                            emoji: item.title,
+                          })}
+                          onPress={() => handleQuickReaction(item)}
+                        />
+                      ))}
+                      <Pressable
+                        onPress={() => setPickerOpen(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t("composer.openEmojiPicker")}
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          minHeight,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderRadius: 8,
+                          backgroundColor: `${theme.colors.neutral}22`,
+                        }}
+                      >
+                        <SmileyIcon
+                          size={24}
+                          color={theme.typography.colors.primary}
+                        />
+                      </Pressable>
+                    </Box>
                   )}
 
                   {canReact && hasActions && <Divider lineColor="muted" />}
@@ -326,11 +396,40 @@ export const MessageActionSheet = observer(
                               <PushPinIcon size={20} weight="fill" />
                             )
                           }
-                          onPress={() => void (message.pinned ? handleUnpin() : handlePin())}
+                          onPress={() =>
+                            void (message.pinned ? handleUnpin() : handlePin())
+                          }
                         >
                           {message.pinned
                             ? t("actions.unpinMessage")
                             : t("actions.pinMessage")}
+                        </Button>
+                      )}
+                      {!isPinnedNotice && (
+                        <Button
+                          fullWidth
+                          padding={12}
+                          startDecorator={
+                            <BookmarkSimpleIcon
+                              size={20}
+                              weight={isBookmarked ? "fill" : "regular"}
+                            />
+                          }
+                          onPress={handleBookmark}
+                        >
+                          {isBookmarked
+                            ? t("actions.removeBookmark")
+                            : t("actions.bookmark")}
+                        </Button>
+                      )}
+                      {!isPinnedNotice && (
+                        <Button
+                          fullWidth
+                          padding={12}
+                          startDecorator={<AlarmIcon size={20} weight="fill" />}
+                          onPress={handleRemindMe}
+                        >
+                          {t("actions.remindMe")}
                         </Button>
                       )}
                       {!isPinnedNotice && canReport && (

@@ -315,7 +315,9 @@ export const PostComposer = observer(({ onPosted }: Props) => {
           <IconButton
             variant="plain"
             padding={6}
-            onPress={() => navigate("/(tabs)/feed/scheduled")}
+            onPress={() =>
+              navigate({ pathname: "/inbox", params: { tab: "scheduled" } })
+            }
             accessibilityLabel={t("feed.composer.viewScheduled")}
           >
             <CalendarIcon size={22} />
