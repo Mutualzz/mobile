@@ -4,16 +4,13 @@ import {
   BridgeMessage,
   shouldStartBridgeGroup,
 } from "@components/Bridge/BridgeMessage";
-import { Button } from "@components/Button";
-import { IconButton } from "@components/IconButton";
 import { MessageDateSeparator } from "@components/Message/MessageDateSeparator";
 import { Paper } from "@components/Paper";
 import { Screen } from "@components/Screen/Screen";
-import { useKeyboardChromeInset } from "@hooks/useKeyboardChromeInset";
 import { useAppStore } from "@hooks/useStores";
 import type { BridgeDetail } from "@app-types/bridge";
 import type { BridgeFeedEntry } from "@stores/BridgeChat.store";
-import { Box, InputDefault, Typography, useTheme } from "@mutualzz/ui-native";
+import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BridgePlayersSheet,
@@ -25,16 +22,23 @@ import {
 } from "@components/Minecraft/inventory/InventorySheet";
 import { useSheet } from "@hooks/useSheet";
 import { FULL_SHEET_PROPS } from "@utils/sheet";
-import { BackpackIcon, CaretLeftIcon, UsersIcon } from "phosphor-react-native";
+import {
+  ArrowLeftIcon,
+  BackpackIcon,
+  CubeIcon,
+  UsersIcon,
+} from "phosphor-react-native";
 import { observer } from "mobx-react-lite";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-} from "react-native";
+import { Pressable } from "react-native";
+import { FlashList } from "@shopify/flash-list";
+import { ChatListScrollView } from "@components/Keyboard";
+import { KeyboardComposer } from "@components/Keyboard/KeyboardComposer";
+import { ComposerFooter } from "@components/Message/ComposerFooter";
+import { ScreenHeader } from "@components/Screen/Screen";
+import { useScreenComposer } from "@hooks/useScreenComposer";
+import { BridgeComposer } from "./BridgeComposer";
 
 interface Props {
   bridgeId: string;
@@ -115,7 +119,7 @@ export const BridgeChatView = observer(
     const app = useAppStore();
     const queryClient = useQueryClient();
     const { openSheet } = useSheet();
-    const tabBarInset = useKeyboardChromeInset();
+    const composerVisible = useScreenComposer();
     const [message, setMessage] = useState("");
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
       () => new Set(),
@@ -265,59 +269,64 @@ export const BridgeChatView = observer(
       });
     };
 
+    const goBack = () => {
+      const spaceId =
+        returnToSpaceId ?? bridgesQuery.data?.spaceId ?? undefined;
+      if (spaceId) {
+        app.spaces.setActive(spaceId);
+        app.spaces.setSidebarTab(spaceId, "bridges");
+        app.setSpacesDrawerOpen(true);
+        return;
+      }
+      app.setDMDrawerOpen(true);
+    };
+
+    const hasWallpaper = Boolean(theme.backgroundImageUrl);
+    const iconColor = theme.typography.colors.primary;
+
     return (
       <Screen
+        surfaceRole={hasWallpaper ? "content" : undefined}
+        elevation={hasWallpaper ? 0 : undefined}
         style={{
           flex: 1,
           flexDirection: "column",
-          overflow: "hidden",
           borderTopWidth: 0,
           borderBottomWidth: 0,
           borderLeftWidth: 0,
           borderRightWidth: 0,
-          paddingBottom: tabBarInset,
         }}
       >
-        <Paper
-          variant="plain"
+        <ScreenHeader
+          elevation={hasWallpaper ? 0 : undefined}
           style={{
-            paddingHorizontal: 8,
-            paddingVertical: 10,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: theme.typography.colors.muted,
+            zIndex: 1,
+            borderTopWidth: 0,
+            borderLeftWidth: 0,
+            borderRightWidth: 0,
+            ...(hasWallpaper ? { backgroundColor: "transparent" } : null),
           }}
-          elevation={app.settings?.preferEmbossed ? 2 : 0}
         >
-          <IconButton
-            accessibilityLabel="Back"
-            onPress={() => {
-              const spaceId =
-                returnToSpaceId ?? bridgesQuery.data?.spaceId ?? undefined;
-              if (spaceId) {
-                app.spaces.setActive(spaceId);
-                app.spaces.setSidebarTab(spaceId, "bridges");
-                app.setSpacesDrawerOpen(true);
-                return;
-              }
-              app.setDMDrawerOpen(true);
-            }}
+          <Pressable
+            hitSlop={8}
+            onPress={goBack}
+            accessibilityLabel={t("common:nav.goBack")}
           >
-            <CaretLeftIcon weight="bold" />
-          </IconButton>
+            <ArrowLeftIcon color={iconColor} />
+          </Pressable>
+          <CubeIcon color={iconColor} weight="fill" />
           <Box style={{ flex: 1, minWidth: 0 }}>
-            <Typography level="body-md" weight="bold" truncate="single">
+            <Typography truncate="single">
               {bridge?.name ?? t("minecraftBridge.liveTitle")}
             </Typography>
-            <Typography level="body-xs" textColor="muted">
+            <Typography level="body-xs" textColor="muted" truncate="single">
               {hubConnected
                 ? t("minecraftBridge.onlineCount", { count: players.length })
                 : t("minecraftBridge.hubDisconnected")}
             </Typography>
           </Box>
-          <IconButton
+          <Pressable
+            hitSlop={8}
             accessibilityLabel={t("minecraftBridge.inventoryButton")}
             onPress={() =>
               openSheet(
@@ -327,9 +336,10 @@ export const BridgeChatView = observer(
               )
             }
           >
-            <BackpackIcon />
-          </IconButton>
-          <IconButton
+            <BackpackIcon color={iconColor} weight="fill" />
+          </Pressable>
+          <Pressable
+            hitSlop={8}
             accessibilityLabel={t("minecraftBridge.playersTitle")}
             onPress={() =>
               openSheet(
@@ -339,9 +349,9 @@ export const BridgeChatView = observer(
               )
             }
           >
-            <UsersIcon />
-          </IconButton>
-        </Paper>
+            <UsersIcon color={iconColor} weight="fill" />
+          </Pressable>
+        </ScreenHeader>
 
         {!hubConnected && (
           <Paper
@@ -355,90 +365,72 @@ export const BridgeChatView = observer(
           </Paper>
         )}
 
-        <KeyboardAvoidingView
-          style={{ flex: 1, minWidth: 0, overflow: "hidden" }}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          keyboardVerticalOffset={8}
+        <KeyboardComposer
+          footer={
+            <ComposerFooter>
+              {composerVisible ? (
+                <BridgeComposer
+                  value={message}
+                  onChange={setMessage}
+                  onSend={send}
+                  sending={sendMutation.isPending}
+                  placeholder={
+                    hubConnected
+                      ? t("minecraftBridge.liveSendPlaceholder")
+                      : t("minecraftBridge.queueSendPlaceholder")
+                  }
+                />
+              ) : null}
+            </ComposerFooter>
+          }
         >
-          <Box style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-            <FlatList
-              data={feedRows}
-              keyExtractor={(row) => row.key}
-              extraData={expandedGroups}
-              style={{ flex: 1 }}
-              contentContainerStyle={{
-                paddingVertical: 8,
-                paddingHorizontal: 8,
-                flexGrow: 1,
-              }}
-              showsHorizontalScrollIndicator={false}
-              onStartReached={() => void loadOlder()}
-              onStartReachedThreshold={0.2}
-              ListEmptyComponent={
-                <Box style={{ padding: 16, gap: 6 }}>
-                  <Typography level="title-md" weight="bold">
-                    {t("minecraftBridge.liveWelcomeTitle", {
-                      name: bridge?.name ?? "bridge",
-                    })}
-                  </Typography>
-                  <Typography level="body-sm" textColor="muted">
-                    {t("minecraftBridge.liveEmpty")}
-                  </Typography>
-                </Box>
-              }
-              renderItem={({ item: row }) => (
-                <Fragment>
-                  {row.showDate && <MessageDateSeparator date={rowDate(row)} />}
-                  {row.type === "activity" ? (
-                    <BridgeActivityGroup
-                      family={row.family}
-                      entries={row.entries}
-                      expanded={expandedGroups.has(row.key)}
-                      onToggle={() => toggleGroup(row.key)}
-                    />
-                  ) : (
-                    <BridgeMessage entry={row.entry} header={row.header} />
-                  )}
-                </Fragment>
-              )}
-            />
-          </Box>
-
-          <Box
-            style={{
-              flexDirection: "row",
-              alignItems: "flex-end",
-              gap: 8,
-              padding: 10,
-              minWidth: 0,
-              borderTopWidth: StyleSheet.hairlineWidth,
-              borderTopColor: theme.typography.colors.muted,
-              backgroundColor: theme.colors.surface,
+          <FlashList
+            key={bridgeId}
+            data={feedRows}
+            keyExtractor={(row) => row.key}
+            extraData={expandedGroups}
+            maintainVisibleContentPosition={{ startRenderingFromBottom: true }}
+            onStartReached={() => void loadOlder()}
+            onStartReachedThreshold={0.2}
+            renderScrollComponent={ChatListScrollView}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              flexGrow: 1,
+              justifyContent: "flex-end",
+              paddingHorizontal: 8,
+              paddingTop: 8,
+              paddingBottom: 8,
             }}
-          >
-            <InputDefault
-              style={{ flexGrow: 1, flexShrink: 1, minWidth: 0 }}
-              value={message}
-              onChangeText={setMessage}
-              placeholder={
-                hubConnected
-                  ? t("minecraftBridge.liveSendPlaceholder")
-                  : t("minecraftBridge.queueSendPlaceholder")
-              }
-              onSubmitEditing={send}
-              returnKeyType="send"
-            />
-            <Button
-              size="sm"
-              disabled={!message.trim() || sendMutation.isPending}
-              onPress={send}
-            >
-              {sendMutation.isPending
-                ? t("minecraftBridge.liveSending")
-                : t("minecraftBridge.liveSend")}
-            </Button>
-          </Box>
-        </KeyboardAvoidingView>
+            style={{ flex: 1 }}
+            ListEmptyComponent={
+              <Box style={{ padding: 16, gap: 6 }}>
+                <Typography level="title-md" weight="bold">
+                  {t("minecraftBridge.liveWelcomeTitle", {
+                    name: bridge?.name ?? "bridge",
+                  })}
+                </Typography>
+                <Typography level="body-sm" textColor="muted">
+                  {t("minecraftBridge.liveEmpty")}
+                </Typography>
+              </Box>
+            }
+            renderItem={({ item: row }) => (
+              <Fragment>
+                {row.showDate && <MessageDateSeparator date={rowDate(row)} />}
+                {row.type === "activity" ? (
+                  <BridgeActivityGroup
+                    family={row.family}
+                    entries={row.entries}
+                    expanded={expandedGroups.has(row.key)}
+                    onToggle={() => toggleGroup(row.key)}
+                  />
+                ) : (
+                  <BridgeMessage entry={row.entry} header={row.header} />
+                )}
+              </Fragment>
+            )}
+          />
+        </KeyboardComposer>
       </Screen>
     );
   },

@@ -10,13 +10,14 @@ import {
 } from "@mutualzz/client";
 import { PickTimeSheet, schedulePresetLabel } from "./PickTimeSheet";
 import { EditScheduledSheet } from "./EditScheduledSheet";
-import type { APIMessage, APINotification } from "@mutualzz/types";
-import { Box, Button, Typography, useTheme } from "@mutualzz/ui-native";
 import {
-  type InfiniteData,
-  useInfiniteQuery,
-  useQuery,
-} from "@tanstack/react-query";
+  clearMentionCaches,
+  mentionsQueryKey,
+  removeMentionFromCaches,
+} from "./mentionsCache";
+import type { APINotification } from "@mutualzz/types";
+import { Box, Button, Typography, useTheme } from "@mutualzz/ui-native";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import {
   AlarmIcon,
@@ -25,6 +26,7 @@ import {
   BookmarkSimpleIcon,
   CheckIcon,
   PaperPlaneTiltIcon,
+  SlidersHorizontalIcon,
   TrayIcon,
   WarningCircleIcon,
   XIcon,
@@ -45,12 +47,6 @@ import {
   type InboxTab,
   useOpenChannel,
 } from "./InboxParts";
-
-interface MentionsPage {
-  messages: APIMessage[];
-  hasMore: boolean;
-  nextBefore: string | null;
-}
 
 const useIconColor = () => useTheme().theme.colors.primary;
 
@@ -88,6 +84,20 @@ const IconBubble = ({ children }: { children: ReactNode }) => {
     >
       {children}
     </Box>
+  );
+};
+
+const UnreadDot = () => {
+  const { theme } = useTheme();
+  return (
+    <Box
+      style={{
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: theme.colors.primary,
+      }}
+    />
   );
 };
 
@@ -402,6 +412,88 @@ export const UnreadsTab = observer(() => {
   );
 });
 
+const FilterRow = ({
+  label,
+  checked,
+  onToggle,
+}: {
+  label: string;
+  checked: boolean;
+  onToggle: () => void;
+}) => {
+  const { theme } = useTheme();
+  return (
+    <Pressable
+      onPress={onToggle}
+      style={({ pressed }) => ({
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 16,
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        backgroundColor: pressed ? theme.colors.surface : "transparent",
+      })}
+    >
+      <Typography level="body-md" weight={600}>
+        {label}
+      </Typography>
+      <Box
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: 4,
+          borderWidth: 2,
+          alignItems: "center",
+          justifyContent: "center",
+          borderColor: checked ? theme.colors.primary : theme.colors.neutral,
+          backgroundColor: checked ? theme.colors.primary : "transparent",
+        }}
+      >
+        {checked && <CheckIcon size={12} weight="bold" color="#fff" />}
+      </Box>
+    </Pressable>
+  );
+};
+
+const MentionFilterSheet = ({
+  includeEveryone,
+  includeRoles,
+  onChangeEveryone,
+  onChangeRoles,
+}: {
+  includeEveryone: boolean;
+  includeRoles: boolean;
+  onChangeEveryone: (value: boolean) => void;
+  onChangeRoles: (value: boolean) => void;
+}) => {
+  const { t } = useTranslation("common");
+  const [everyone, setEveryone] = useState(includeEveryone);
+  const [roles, setRoles] = useState(includeRoles);
+
+  return (
+    <Box style={{ width: "100%", padding: 12, gap: 2 }}>
+      <FilterRow
+        label={t("notifications.filterEveryone")}
+        checked={everyone}
+        onToggle={() => {
+          setEveryone(!everyone);
+          onChangeEveryone(!everyone);
+        }}
+      />
+      <FilterRow
+        label={t("notifications.filterRoles")}
+        checked={roles}
+        onToggle={() => {
+          setRoles(!roles);
+          onChangeRoles(!roles);
+        }}
+      />
+    </Box>
+  );
+};
+
 export const MentionsTab = observer(() => {
   const app = useAppStore();
   const { t } = useTranslation("common");
@@ -409,8 +501,9 @@ export const MentionsTab = observer(() => {
   const openChannel = useOpenChannel();
   const [includeEveryone, setIncludeEveryone] = useState(true);
   const [includeRoles, setIncludeRoles] = useState(true);
+  const { openSheet } = useSheet();
 
-  const queryKey = ["mentions", includeEveryone, includeRoles, "all"];
+  const queryKey = mentionsQueryKey(includeEveryone, includeRoles, undefined);
 
   const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } =
     useInfiniteQuery({
@@ -424,46 +517,49 @@ export const MentionsTab = observer(() => {
       initialPageParam: undefined as string | undefined,
       getNextPageParam: (lastPage) =>
         lastPage.hasMore ? (lastPage.nextBefore ?? undefined) : undefined,
-      staleTime: 30_000,
+      staleTime: Infinity,
     });
 
   const messages = data?.pages.flatMap((page) => page.messages) ?? [];
 
   const dismiss = (messageId: string) => {
-    app.queryClient.setQueriesData<
-      InfiniteData<MentionsPage, string | undefined>
-    >({ queryKey: ["mentions"] }, (current) =>
-      current
-        ? {
-            ...current,
-            pages: current.pages.map((page) => ({
-              ...page,
-              messages: page.messages.filter(
-                (message) => message.id !== messageId,
-              ),
-            })),
-          }
-        : current,
-    );
+    removeMentionFromCaches(app.queryClient, messageId);
     void app.gateway.dismissMention(messageId);
   };
 
   return (
     <Box style={{ gap: 10 }}>
-      <Box style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+      <Box style={{ flexDirection: "row", gap: 6 }}>
         <Button
           size="sm"
-          variant={includeEveryone ? "soft" : "plain"}
-          onPress={() => setIncludeEveryone(!includeEveryone)}
+          variant={includeEveryone && includeRoles ? "soft" : "solid"}
+          color={includeEveryone && includeRoles ? "neutral" : "primary"}
+          startDecorator={<SlidersHorizontalIcon size={14} weight="bold" />}
+          onPress={() =>
+            openSheet(
+              "mention-filters",
+              <MentionFilterSheet
+                includeEveryone={includeEveryone}
+                includeRoles={includeRoles}
+                onChangeEveryone={setIncludeEveryone}
+                onChangeRoles={setIncludeRoles}
+              />,
+            )
+          }
         >
-          {t("notifications.filterEveryone")}
+          {t("notifications.filterTitle")}
         </Button>
         <Button
           size="sm"
-          variant={includeRoles ? "soft" : "plain"}
-          onPress={() => setIncludeRoles(!includeRoles)}
+          variant="soft"
+          color="neutral"
+          startDecorator={<CheckIcon size={14} weight="bold" />}
+          onPress={() => {
+            clearMentionCaches(app.queryClient);
+            void app.gateway.clearAllMentions();
+          }}
         >
-          {t("notifications.filterRoles")}
+          {t("notifications.clearAllMentions")}
         </Button>
       </Box>
 
@@ -486,14 +582,21 @@ export const MentionsTab = observer(() => {
             title={channelCardTitle(channel, t)}
             subtitle={channel?.space?.name}
             actions={
-              <IconButton
-                variant="soft"
-                padding={6}
-                onPress={() => dismiss(message.id)}
-                accessibilityLabel={t("notifications.removeMention")}
-              >
-                <CheckIcon size={14} weight="bold" />
-              </IconButton>
+              <>
+                {!(
+                  app.readStates
+                    .get(message.channelId)
+                    ?.isReadUpTo(message.id) ?? false
+                ) && <UnreadDot />}
+                <IconButton
+                  variant="soft"
+                  padding={6}
+                  onPress={() => dismiss(message.id)}
+                  accessibilityLabel={t("notifications.removeMention")}
+                >
+                  <CheckIcon size={14} weight="bold" />
+                </IconButton>
+              </>
             }
           >
             <PinnedMessageCard

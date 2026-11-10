@@ -3,9 +3,12 @@ import { MinecraftAvatar } from "@components/Minecraft/MinecraftAvatar";
 import {
   MessageBase,
   MessageContent,
+  MessageContentText,
   MessageInfo,
   MessageRow,
 } from "@components/Message/MessageBase";
+import { UserProfileTrigger } from "@components/Profile/UserProfileTrigger";
+import { Time } from "@components/Time/Time";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppStore } from "@hooks/useStores";
 import { ItemIcon } from "@components/Minecraft/inventory/ItemIcon";
@@ -70,7 +73,12 @@ const BridgeAvatar = observer(({ entry }: { entry: BridgeFeedEntry }) => {
     const user =
       app.users.get(linkedId) ??
       (app.account?.id === linkedId ? app.account : null);
-    if (user) return <UserAvatar user={user} size="md" />;
+    if (user)
+      return (
+        <UserProfileTrigger user={user}>
+          <UserAvatar user={user} size="md" />
+        </UserProfileTrigger>
+      );
   }
 
   if (entry.uuid) {
@@ -220,11 +228,26 @@ const InlineMuted = ({ text }: { text: string }) => (
 
 const shortTime = (at: string) => dayjs(at).format("h:mm A");
 
-const ShortTime = ({ at }: { at: string }) => (
-  <Typography level="body-xs" textColor="muted" style={{ flexShrink: 0 }}>
-    {shortTime(at)}
-  </Typography>
-);
+const BridgeTime = observer(({ at }: { at: string }) => {
+  const app = useAppStore();
+  const { t } = useTranslation("common");
+  const timestampFormat = app.settings?.timestampFormat ?? "relative";
+
+  return (
+    <Box style={{ opacity: 0.6, flexShrink: 0 }}>
+      <Time
+        value={new Date(at)}
+        defaultMode={timestampFormat === "absolute" ? "absolute" : "relative"}
+        toggleOnPress={timestampFormat === "relative"}
+        toggleToMode="calendar"
+        relativeStyle="short"
+        refreshIntervalMs={30_000}
+        typographyProps={{ level: "body-xs", textColor: "muted" }}
+        accessibilityLabelPrefix={t("a11y.sent")}
+      />
+    </Box>
+  );
+});
 
 const EventRow = observer(({ entry }: { entry: BridgeFeedEntry }) => {
   const { t } = useTranslation("settings");
@@ -534,7 +557,6 @@ interface Props {
 }
 
 export const BridgeMessage = observer(({ entry, header }: Props) => {
-  const { t } = useTranslation("settings");
 
   if (entry.kind === "advancement" && entry.advancement) {
     return <AdvancementCard entry={entry} details={entry.advancement} />;
@@ -548,43 +570,34 @@ export const BridgeMessage = observer(({ entry, header }: Props) => {
     <MessageBase header={header} style={{ overflow: "hidden", minWidth: 0 }}>
       <MessageRow header={header}>
         <MessageInfo>
-          {header ? (
-            <BridgeAvatar entry={entry} />
-          ) : (
-            <Box style={{ width: 40 }} />
-          )}
+          {header ? <BridgeAvatar entry={entry} /> : null}
         </MessageInfo>
         <MessageContent>
           {header && (
             <Box
               style={{
+                flexShrink: 1,
+                minWidth: 0,
                 flexDirection: "row",
                 alignItems: "center",
-                flexWrap: "wrap",
                 gap: 6,
-                minWidth: 0,
               }}
             >
               <Typography level="body-sm" weight="bold" truncate="single">
                 {entry.name}
               </Typography>
               <SourceBadge source={entry.source} />
-              <ShortTime at={entry.at} />
-              {entry.pending && (
-                <Typography level="body-xs" textColor="muted">
-                  {t("minecraftBridge.pendingSend")}
-                </Typography>
-              )}
-              {entry.failed && (
-                <Typography level="body-xs" color="danger">
-                  {t("minecraftBridge.failedSend")}
-                </Typography>
-              )}
+              <Typography level="body-sm" textColor="muted">
+                ·
+              </Typography>
+              <BridgeTime at={entry.at} />
             </Box>
           )}
-          <Typography level="body-sm" style={{ flexShrink: 1 }}>
-            {entry.content}
-          </Typography>
+          <MessageContentText sending={entry.pending} failed={entry.failed}>
+            <Typography level="body-sm" style={{ flexShrink: 1 }}>
+              {entry.content}
+            </Typography>
+          </MessageContentText>
         </MessageContent>
       </MessageRow>
     </MessageBase>

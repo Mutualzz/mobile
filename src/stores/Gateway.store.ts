@@ -76,6 +76,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { AppStore } from "./App.store";
 import type { BridgeAdvancementDetails } from "./BridgeChat.store";
 import type { Channel } from "./objects/Channel";
+import {
+  clearMentionCaches,
+  insertMentionIntoCaches,
+  type MentionKind,
+  removeMentionFromCaches,
+} from "@components/Inbox/mentionsCache";
 import { fixConnectionUrl } from "@utils/urls";
 import { openWebSocket } from "@utils/openWebSocket";
 import { dismissCallNotification } from "@utils/androidMessageNotification";
@@ -791,6 +797,10 @@ export class GatewayStore {
     return this.request(GatewayOpcodes.MentionDismiss, { messageId });
   }
 
+  clearAllMentions() {
+    return this.request(GatewayOpcodes.MentionClearAll, {});
+  }
+
   private updateInventoryEdits(
     bridgeId: string,
     minecraftUuid: string,
@@ -1247,6 +1257,10 @@ export class GatewayStore {
     this.dispatchHandlers.set(
       GatewayDispatchEvents.MentionDismiss,
       this.onMentionDismiss,
+    );
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.MentionsCleared,
+      this.onMentionsCleared,
     );
     this.dispatchHandlers.set(
       GatewayDispatchEvents.BridgeInventoryEdits,
@@ -1799,6 +1813,7 @@ export class GatewayStore {
     this.app.reminders.replaceAll(reminders ?? []);
     this.app.scheduledMessages.replaceAll(scheduledMessages ?? []);
     this.app.notifications.resetFromReady(unreadNotificationCount ?? 0);
+    this.app.queryClient.removeQueries({ queryKey: ["mentions"] });
     this.app.expressions.addAll(expressions);
     this.app.readStates.addAll(readStates);
     if (spaceNotificationSettings?.length) {
@@ -1851,6 +1866,9 @@ export class GatewayStore {
     space.members.addAll(payload.members ?? []);
     for (const channel of payload.channels ?? []) {
       space.addChannel(channel);
+    }
+    for (const expression of payload.expressions ?? []) {
+      space.addExpression(expression);
     }
 
     this.app.spaces.setActive(space.id);
@@ -2045,6 +2063,38 @@ export class GatewayStore {
     this.app.channels.setPreferredActive();
   };
 
+  private mentionKindFor(
+    payload: APIMessage,
+    channel: Channel,
+  ): MentionKind | null {
+    const accountId = this.app.account?.id;
+    const mentions = payload.mentions ?? [];
+    if (!accountId || mentions.length === 0) return null;
+
+    if (
+      mentions.some(
+        (mention) => mention.type === "user" && mention.id === accountId,
+      )
+    )
+      return "user";
+
+    const member = this.app.spaces
+      .get(channel.spaceId ?? "")
+      ?.members.get(accountId);
+    if (
+      mentions.some(
+        (mention) =>
+          mention.type === "role" && (member?.roles?.has(mention.id) ?? false),
+      )
+    )
+      return "role";
+
+    if (mentions.some((mention) => mention.type === "everyone"))
+      return "everyone";
+
+    return null;
+  }
+
   private onMessageCreate = async (payload: APIMessage) => {
     let channel = this.app.channels.get(payload.channelId);
 
@@ -2062,6 +2112,15 @@ export class GatewayStore {
       this.app.readStates.updateLocal(payload.channelId, payload.id);
       return;
     }
+
+    const mentionKind = this.mentionKindFor(payload, channel);
+    if (mentionKind)
+      insertMentionIntoCaches(
+        this.app.queryClient,
+        payload,
+        mentionKind,
+        channel.spaceId ?? null,
+      );
 
     if (this.app.channels.activeId === payload.channelId) {
       this.app.readStates.updateLocal(payload.channelId, payload.id);
@@ -2105,6 +2164,7 @@ export class GatewayStore {
   };
 
   private onMessageDelete = (payload: APIMessage) => {
+    removeMentionFromCaches(this.app.queryClient, payload.id);
     const channel = this.app.channels.get(payload.channelId);
     if (!channel) return;
 
@@ -2617,8 +2677,12 @@ export class GatewayStore {
     this.app.notifications.handleDelete(payload.id);
   };
 
-  private onMentionDismiss = () => {
-    void this.app.queryClient.invalidateQueries({ queryKey: ["mentions"] });
+  private onMentionDismiss = (payload: { messageId: string }) => {
+    removeMentionFromCaches(this.app.queryClient, payload.messageId);
+  };
+
+  private onMentionsCleared = () => {
+    clearMentionCaches(this.app.queryClient);
   };
 
   private onBridgeInventoryEdits = (payload: {

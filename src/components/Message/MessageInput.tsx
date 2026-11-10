@@ -46,6 +46,8 @@ import {
   shiftEntitiesForEdit,
   type MentionEntity,
 } from "@utils/markdown/mentionEntities";
+import type { MessageDraft } from "@stores/Draft.store";
+import { File as FileSystemFile } from "expo-file-system";
 import { replaceRange } from "@utils/markdown/textUtils";
 import type { Selection } from "@utils/markdown/types";
 import type { PickerEmoji, SkinTone } from "@utils/emojis/emojiPickerData";
@@ -80,6 +82,7 @@ import * as ImagePicker from "expo-image-picker";
 const MAX_STICKERS = 3;
 const MAX_ATTACHMENTS = 10;
 const MAX_ATTACHMENT_SIZE = 100 * 1024 * 1024;
+const SHEET_CLOSE_DELAY_MS = 500;
 
 interface PickedAttachment {
   uri: string;
@@ -109,6 +112,14 @@ function resolvePickedAttachmentName(
   const trimmed = fileName?.trim();
   if (trimmed) return trimmed;
   return `attachment.${extensionForAttachmentMime(mime, isVideo)}`;
+}
+
+function attachmentFileExists(attachment: PickedAttachment) {
+  try {
+    return new FileSystemFile(attachment.uri).exists;
+  } catch {
+    return false;
+  }
 }
 
 interface Props {
@@ -142,6 +153,68 @@ export const MessageInput = observer(({ channel }: Props) => {
 
   const editingMessage =
     channel.messages.all.find((message) => message.editing) ?? null;
+
+  const draftLoadedRef = useRef(false);
+  const draftStateRef = useRef({
+    content: "",
+    entities: [] as MentionEntity[],
+    stickers: [] as Expression[],
+    attachments: [] as PickedAttachment[],
+    editing: false,
+  });
+
+  draftStateRef.current = {
+    content,
+    entities,
+    stickers,
+    attachments,
+    editing: !!editingMessage,
+  };
+
+  const persistDraft = (accountId: string, channelId: string) => {
+    const current = draftStateRef.current;
+    if (current.editing) return;
+
+    app.drafts.saveMessageDraft(accountId, channelId, {
+      content: current.content,
+      entities: current.entities,
+      stickerIds: current.stickers.map((sticker) => sticker.id),
+      attachments: current.attachments,
+    });
+  };
+
+  const applyDraft = async (
+    draft: MessageDraft | undefined,
+    isCancelled: () => boolean = () => false,
+  ) => {
+    const draftStickers = await Promise.all(
+      (draft?.stickerIds ?? []).map((stickerId) =>
+        app.expressions.resolve(stickerId).catch(() => undefined),
+      ),
+    );
+    if (isCancelled()) return;
+
+    const draftContent = draft?.content ?? "";
+    setContent(draftContent);
+    setEntities(draft?.entities ?? []);
+    setSelection({ start: draftContent.length, end: draftContent.length });
+    setStickers(
+      draftStickers.filter((sticker): sticker is Expression => !!sticker),
+    );
+    setAttachments((draft?.attachments ?? []).filter(attachmentFileExists));
+  };
+
+  const restoreDraft = () => {
+    const accountId = app.account?.id;
+    void applyDraft(
+      accountId ? app.drafts.getMessageDraft(accountId, channel.id) : undefined,
+    );
+  };
+
+  const clearDraft = () => {
+    const accountId = app.account?.id;
+    if (accountId) app.drafts.deleteMessageDraft(accountId, channel.id);
+  };
 
   const isDM =
     channel.type === ChannelType.DM || channel.type === ChannelType.GroupDM;
@@ -185,7 +258,51 @@ export const MessageInput = observer(({ channel }: Props) => {
     setSelection({ start: 0, end: 0 });
     setStickers([]);
     setAttachments([]);
+
+    const accountId = app.account?.id;
+    const channelId = channel.id;
+    draftLoadedRef.current = false;
+    let cancelled = false;
+
+    const loadDraft = async () => {
+      await app.drafts.ready;
+      if (cancelled) return;
+
+      await applyDraft(
+        accountId
+          ? app.drafts.getMessageDraft(accountId, channelId)
+          : undefined,
+        () => cancelled,
+      );
+      if (cancelled) return;
+
+      draftLoadedRef.current = true;
+    };
+
+    void loadDraft();
+
+    return () => {
+      cancelled = true;
+      if (!accountId || !draftLoadedRef.current) return;
+      persistDraft(accountId, channelId);
+    };
   }, [app, channel.id]);
+
+  useEffect(() => {
+    const accountId = app.account?.id;
+    if (!accountId || !draftLoadedRef.current || editingMessage) return;
+
+    const timer = setTimeout(() => persistDraft(accountId, channel.id), 500);
+    return () => clearTimeout(timer);
+  }, [
+    app,
+    channel.id,
+    content,
+    entities,
+    stickers,
+    attachments,
+    editingMessage,
+  ]);
 
   useEffect(() => {
     if (!editingMessage) return;
@@ -218,10 +335,7 @@ export const MessageInput = observer(({ channel }: Props) => {
     editingMessageIdRef.current = null;
 
     if (previousId && !channel.messages.get(previousId)) {
-      setContent("");
-      setEntities([]);
-      setSelection({ start: 0, end: 0 });
-      setStickers([]);
+      restoreDraft();
     }
   }, [editingMessage, channel.messages]);
 
@@ -252,10 +366,7 @@ export const MessageInput = observer(({ channel }: Props) => {
 
   const cancelEditing = () => {
     editingMessage?.setEditing(false);
-    setContent("");
-    setEntities([]);
-    setSelection({ start: 0, end: 0 });
-    setStickers([]);
+    restoreDraft();
   };
 
   const insertIntoComposer = (insert: string) => {
@@ -352,10 +463,7 @@ export const MessageInput = observer(({ channel }: Props) => {
     setSaving(true);
     try {
       await message.edit(expandCustomEmoji(rawContent));
-      setContent("");
-      setEntities([]);
-      setSelection({ start: 0, end: 0 });
-      setStickers([]);
+      restoreDraft();
     } catch {
       // ignore
     } finally {
@@ -473,6 +581,7 @@ export const MessageInput = observer(({ channel }: Props) => {
       setSelection({ start: 0, end: 0 });
       setStickers([]);
       setAttachments([]);
+      clearDraft();
       app.setReplyingTo(null);
       setPendingScheduleTime(null);
       Alert.alert(
@@ -526,7 +635,7 @@ export const MessageInput = observer(({ channel }: Props) => {
             startDecorator={<FileArrowUpIcon size={20} weight="fill" />}
             onPress={() => {
               closeSheet(sheetId);
-              void pickAttachments();
+              setTimeout(() => void pickAttachments(), SHEET_CLOSE_DELAY_MS);
             }}
           >
             {t("scheduledMessages.uploadFile")}
@@ -570,6 +679,7 @@ export const MessageInput = observer(({ channel }: Props) => {
     setSelection({ start: 0, end: 0 });
     setStickers([]);
     setAttachments([]);
+    clearDraft();
 
     await sendContent(text, stickerList, fileList);
   };
@@ -600,6 +710,7 @@ export const MessageInput = observer(({ channel }: Props) => {
     setEntities([]);
     setSelection({ start: 0, end: 0 });
     setStickers([]);
+    clearDraft();
     void sendContent(resolveGifSendUrl(gif));
   };
 

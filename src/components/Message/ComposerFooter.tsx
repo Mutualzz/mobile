@@ -5,7 +5,7 @@ import type { PropsWithChildren } from "react";
 import { View } from "react-native";
 
 interface Props extends PropsWithChildren {
-  channelId: Snowflake;
+  channelId?: Snowflake;
 }
 
 export function ComposerFooter({ channelId, children }: Props) {
@@ -18,7 +18,7 @@ export function ComposerFooter({ channelId, children }: Props) {
         backgroundColor: hasWallpaper ? "transparent" : theme.colors.surface,
       }}
     >
-      <TypingIndicator channelId={channelId} />
+      {channelId ? <TypingIndicator channelId={channelId} /> : null}
       {children}
     </View>
   );
