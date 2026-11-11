@@ -1,18 +1,20 @@
 import { Button } from "@components/Button";
 import {
+  SettingsActionRow,
   SettingsScroll,
   SettingsSection,
   SettingsToggleRow,
 } from "@components/UserSettings/SettingsField";
 import { SettingsScreen } from "@components/UserSettings/SettingsScreen";
 import { useAppStore } from "@hooks/useStores";
-import { Divider, Typography } from "@mutualzz/ui-native";
+import { Box, Divider, Typography } from "@mutualzz/ui-native";
 import {
   USER_CONNECTIONS_QUERY_KEY,
   type ConnectionProvider,
   type ProviderConnectionDto,
 } from "@mutualzz/client";
 import {
+  DiscordLogoIcon,
   GithubLogoIcon,
   LinkSimpleIcon,
   SteamLogoIcon,
@@ -186,9 +188,50 @@ export const AppConnectionsSettings = observer(() => {
   };
 
   const providers = providersQuery.data?.providers ?? [];
+  const isDiscordLinked = Boolean(app.account?.discordId);
+
+  const toggleDiscordLink = () => {
+    const account = app.account;
+    if (!account) return;
+
+    if (account.discordId) {
+      confirmDisconnect("Discord", () => {
+        void app.rest.delete("/@me/discord").then(() => {
+          account.discordId = null;
+        });
+      });
+      return;
+    }
+
+    void app.rest
+      .get<{ url: string }>("/@me/discord/link?client=mobile")
+      .then(({ url }) => Linking.openURL(url));
+  };
 
   return (
     <SettingsScroll>
+      <SettingsSection>
+        <Box style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <DiscordLogoIcon size={24} weight="fill" />
+          <Box style={{ flex: 1 }}>
+            <SettingsActionRow
+              title="Discord"
+              description={
+                isDiscordLinked
+                  ? t("connections.discord.linked")
+                  : t("connections.discord.unlinked")
+              }
+              actionLabel={
+                isDiscordLinked
+                  ? t("discord.unlinkDiscord")
+                  : t("discord.linkDiscord")
+              }
+              actionColor={isDiscordLinked ? "danger" : "primary"}
+              onPress={toggleDiscordLink}
+            />
+          </Box>
+        </Box>
+      </SettingsSection>
       {providers.map((provider) => {
         const Icon = PROVIDER_ICONS[provider.provider];
         const status = provider.connected

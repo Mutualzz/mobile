@@ -15,6 +15,7 @@ const DiscordAuthCallback = () => {
     token?: string;
     pending?: string;
     linked?: string;
+    import?: string;
     error?: string;
   }>();
   const [message, setMessage] = useState(t("discordAuth.processing"));
@@ -37,8 +38,15 @@ const DiscordAuthCallback = () => {
       void app.rest.get<APIPrivateUser>("/@me").then((user) => {
         app.setUser(user);
         void app.profiles.resolve(user.id, true);
-        router.replace("/settings/discord-import");
+        router.replace("/settings/connections");
       });
+      return;
+    }
+
+    if (params.import) {
+      router.replace(
+        `/settings/discord-import?guild=${encodeURIComponent(String(params.import))}` as Href,
+      );
       return;
     }
 
@@ -48,10 +56,26 @@ const DiscordAuthCallback = () => {
     }
 
     setMessage(t("discordAuth.invalidCallback"));
-  }, [app, params.error, params.linked, params.pending, params.token, router, t]);
+  }, [
+    app,
+    params.error,
+    params.import,
+    params.linked,
+    params.pending,
+    params.token,
+    router,
+    t,
+  ]);
 
   return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+      }}
+    >
       <Typography>{message}</Typography>
     </View>
   );

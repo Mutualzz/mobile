@@ -1,28 +1,29 @@
 {
-    "extends": "expo/tsconfig.base",
-    "compilerOptions": {
-        "rootDir": "./src", 
-        "strict": true,
-        "paths": {
-            "@hooks/*": ["./src/hooks/*"],
-            "@contexts/*": ["./src/contexts/*"],
-            "@components/*": ["./src/components/*"],
-            "@setup/*": ["./src/setup/*"],
-            "@utils/*": ["./src/utils/*"],
-            "@widgets/*": ["./src/widgets/*"],
-            "@stores/*": ["./src/stores/*"],
-            "@presence/*": ["./src/presence/*"],
-            "@app-types/*": ["./src/types/*"],
-            "@app-types": ["./src/types/index.d.ts"],
-            "@logger": ["./src/Logger.ts"],
-            "@seo": ["./src/seo.ts"]
-        }
-    },
-    "include": [
-        "./src/**/*.ts",
-        "./src/**/*.tsx",
-        ".expo/types/**/*.ts",
-        "expo-env.d.ts"
-    ],
-    "exclude": ["dist", "dist/**", "**/dist/**"]
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "strict": true,
+    "paths": {
+      "@hooks/*": ["./src/hooks/*"],
+      "@contexts/*": ["./src/contexts/*"],
+      "@components/*": ["./src/components/*"],
+      "@setup/*": ["./src/setup/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@widgets/*": ["./src/widgets/*"],
+      "@stores/*": ["./src/stores/*"],
+      "@presence/*": ["./src/presence/*"],
+      "@app-types/*": ["./src/types/*"],
+      "@app-types": ["./src/types/index.d.ts"],
+      "@logger": ["./src/Logger.ts"],
+      "@seo": ["./src/seo.ts"]
+    }
+  },
+  "include": [
+    "./src/**/*.ts",
+    "./src/**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "../app/src/renderer/src/utils/discordImportReturn.ts"
+  ],
+  "exclude": ["dist", "dist/**", "**/dist/**"]
 }

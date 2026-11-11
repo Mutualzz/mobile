@@ -16,6 +16,7 @@ import type {
   APIMessageReminderWithMessage,
   APIScheduledMessage,
   APINotification,
+  DiscordImportProgressPayload,
 } from "@mutualzz/types";
 import {
   type APIChannel,
@@ -96,6 +97,23 @@ export const GatewayStatus = {
 
 export type GatewayStatus = (typeof GatewayStatus)[keyof typeof GatewayStatus];
 
+const createRequestNonce = () =>
+  `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+
+export interface DiscordImportResult {
+  space: APISpace;
+  inviteCode: string;
+  importedExpressionCount: number;
+  skippedExpressionCount: number;
+}
+
+export interface DiscordImportSelection {
+  channelIds: string[];
+  roleIds: string[];
+  emojiIds: string[];
+  stickerIds: string[];
+}
+
 const RECONNECT_TIMEOUT = 5000;
 const RECONNECT_MAX_TIMEOUT = 30_000;
 const RESUME_STORAGE_KEY = "mutualzz:gateway:resume";
@@ -152,6 +170,10 @@ export class GatewayStore {
   private pendingRequests = new Map<
     string,
     { resolve: (ack: GatewayAck) => void; timer: Timer }
+  >();
+  private discordImportProgressListeners = new Map<
+    string,
+    (progress: DiscordImportProgressPayload) => void
   >();
   private presenceLoopInterval: Timer | null = null;
   private lastPresenceHash: string | null = null;
@@ -654,13 +676,13 @@ export class GatewayStore {
     opcode: number,
     data: Record<string, unknown>,
     timeoutMs = 10_000,
+    nonce = createRequestNonce(),
   ) {
     return new Promise<GatewayAck<Data>>((resolve) => {
       if (this.readyState !== GatewayStatus.OPEN) {
         resolve({ ok: false, message: "Not connected" });
         return;
       }
-      const nonce = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
       const timer = setTimeout(() => {
         this.pendingRequests.delete(nonce);
         resolve({ ok: false, message: "No response from the server" });
@@ -685,6 +707,31 @@ export class GatewayStore {
   private requestInventoryEdit(opcode: number, data: Record<string, unknown>) {
     return this.request(opcode, data) as Promise<InventoryEditAck>;
   }
+
+  async importDiscordServer(
+    guildId: string,
+    spaceName: string,
+    selection: DiscordImportSelection,
+    onProgress: (progress: DiscordImportProgressPayload) => void,
+  ) {
+    const nonce = createRequestNonce();
+    this.discordImportProgressListeners.set(nonce, onProgress);
+
+    try {
+      return await this.request<DiscordImportResult>(
+        GatewayOpcodes.DiscordImportExecute,
+        { guildId, spaceName, ...selection },
+        5 * 60_000,
+        nonce,
+      );
+    } finally {
+      this.discordImportProgressListeners.delete(nonce);
+    }
+  }
+
+  private onDiscordImportProgress = (payload: DiscordImportProgressPayload) => {
+    this.discordImportProgressListeners.get(payload.nonce)?.(payload);
+  };
 
   async requestLyrics(
     trackName: string,
@@ -1215,9 +1262,14 @@ export class GatewayStore {
       GatewayDispatchEvents.ScheduledMessageAck,
       GatewayDispatchEvents.NotificationAck,
       GatewayDispatchEvents.MentionAck,
+      GatewayDispatchEvents.DiscordImportAck,
     ]) {
       this.dispatchHandlers.set(ackEvent, this.resolveRequest);
     }
+    this.dispatchHandlers.set(
+      GatewayDispatchEvents.DiscordImportProgress,
+      this.onDiscordImportProgress,
+    );
     this.dispatchHandlers.set(
       GatewayDispatchEvents.MessageBookmarkCreate,
       this.onMessageBookmarkCreate,
