@@ -68,6 +68,8 @@ export class MessageBase {
         if (isLoadedRelation(data.author)) {
             this._author = this.app.users.add(data.author);
         }
+        if ("member" in data && data.member && data.spaceId)
+            this.app.spaces.get(data.spaceId)?.members.add(data.member);
 
         if ("channel" in data && isLoadedRelation(data.channel)) {
             this._channel = this.app.channels.add(data.channel);

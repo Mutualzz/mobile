@@ -11,7 +11,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { secureStorageAdapter } from "@utils/secureStorageAdapter";
 import { applyChatFontScale } from "@utils/chatFontScale";
 import { applyUiDensity } from "@mutualzz/ui-core";
-import { makeAutoObservable, reaction } from "mobx";
+import { makeAutoObservable, reaction, runInAction } from "mobx";
 import { makePersistable } from "mobx-persist-store";
 import { AccountStore } from "./Account.store";
 import { AccountSettingsStore } from "./AccountSettings.store";
@@ -51,6 +51,10 @@ import {
 import { Alert } from "react-native";
 import { SpaceNotificationSettingsStore } from "@stores/SpaceNotificationSettings.store";
 import { startWidgetSnapshotSync } from "@stores/WidgetSnapshot.sync";
+import type { FetchedSpaceMember } from "@stores/SpaceMember.store";
+
+const MEMBER_SWEEP_INTERVAL_MS = 5 * 60_000;
+const MUTUAL_SEARCH_DEBOUNCE_MS = 250;
 
 export class AppStore {
   isGatewayReady = false;
@@ -63,6 +67,9 @@ export class AppStore {
   customStatus = new CustomStatusStore();
   voice = new VoiceStore(this);
   voiceStates = new VoiceStatesStore(this);
+  memberSweepTimer: ReturnType<typeof setInterval> | null = null;
+  mutualSearchTimer: ReturnType<typeof setTimeout> | null = null;
+  mutualMemberSearchVersion = 0;
   calls = new CallStore(this);
   sounds = new SoundStore(this);
   channels = new ChannelStore(this);
@@ -172,6 +179,33 @@ export class AppStore {
 
   completeOnboarding() {
     this.onboardingCompleted = true;
+  }
+
+  searchMutualMembers(query: string) {
+    const normalizedQuery = query.trim().toLowerCase().slice(0, 32);
+    if (this.mutualSearchTimer) clearTimeout(this.mutualSearchTimer);
+    this.mutualSearchTimer = null;
+    if (!normalizedQuery) return;
+
+    this.mutualSearchTimer = setTimeout(() => {
+      this.mutualSearchTimer = null;
+      void this.gateway
+        .requestSpaceMembers(null, { query: normalizedQuery })
+        .then((ack) => {
+          if (!ack.ok) return;
+          runInAction(() => {
+            const membersBySpace = new Map<string, FetchedSpaceMember[]>();
+            for (const member of ack.members) {
+              const spaceMembers = membersBySpace.get(member.spaceId) ?? [];
+              spaceMembers.push(member);
+              membersBySpace.set(member.spaceId, spaceMembers);
+            }
+            for (const [spaceId, members] of membersBySpace)
+              this.spaces.get(spaceId)?.members.receive(members);
+            this.mutualMemberSearchVersion++;
+          });
+        });
+    }, MUTUAL_SEARCH_DEBOUNCE_MS);
   }
 
   getSuggestedGroupDMRecipients(): User[] {
@@ -305,7 +339,20 @@ export class AppStore {
     }
   }
 
+  startMemberSweep() {
+    this.stopMemberSweep();
+    this.memberSweepTimer = setInterval(() => {
+      for (const space of this.spaces.all) space.sweepMembers();
+    }, MEMBER_SWEEP_INTERVAL_MS);
+  }
+
+  stopMemberSweep() {
+    if (this.memberSweepTimer) clearInterval(this.memberSweepTimer);
+    this.memberSweepTimer = null;
+  }
+
   async logout() {
+    this.stopMemberSweep();
     try {
       await this.rest.post("auth/logout");
     } catch {

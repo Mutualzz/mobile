@@ -1,4 +1,5 @@
 import { Paper } from "@components/Paper";
+import { InviteCardSkeleton } from "@components/Skeletons";
 import { Button } from "@components/Button";
 import { SpaceIcon } from "@components/Space/SpaceIcon";
 import { UserAvatar } from "@components/User/UserAvatar";
@@ -11,7 +12,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Redirect } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
-import { ActivityIndicator } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 
@@ -135,7 +135,7 @@ const InviteScreen = () => {
           alignItems: "center",
         }}
       >
-        {isLoading && <ActivityIndicator />}
+        {isLoading && <InviteCardSkeleton label={t("invite.loading")} />}
 
         {!isLoading && invite && isFriendInvite && (
           <>

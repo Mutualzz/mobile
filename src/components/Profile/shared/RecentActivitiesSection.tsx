@@ -2,7 +2,7 @@ import { ActivityIcon } from "@components/Presence/ActivityIcon";
 import { Paper } from "@components/Paper";
 import { useAppStore } from "@hooks/useStores";
 import type { PresenceActivity, PresenceActivityAssets } from "@mutualzz/types";
-import { Stack, Typography, useTheme } from "@mutualzz/ui-native";
+import { Skeleton, Stack, Typography, useTheme } from "@mutualzz/ui-native";
 import {
   formatActivityDuration,
   formatActivityPrimary,
@@ -13,9 +13,9 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { CaretDownIcon, CaretUpIcon } from "phosphor-react-native";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Animated, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 
 dayjs.extend(relativeTime);
 
@@ -65,68 +65,19 @@ function dedupeRecent(rows: RecentActivityDto[]) {
 
 function SkeletonRow({
   isCompact,
-  surface,
+  index,
 }: {
   isCompact: boolean;
-  surface: string;
+  index: number;
 }) {
-  const opacity = useRef(new Animated.Value(0.25)).current;
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 0.45,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0.25,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [opacity]);
-
   return (
-    <Animated.View
-      style={{
-        opacity,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-      }}
-    >
-      <View
-        style={{
-          width: isCompact ? 28 : 36,
-          height: isCompact ? 28 : 36,
-          borderRadius: 8,
-          backgroundColor: surface,
-        }}
-      />
-      <View style={{ flex: 1, gap: 6 }}>
-        <View
-          style={{
-            height: 10,
-            width: "55%",
-            borderRadius: 4,
-            backgroundColor: surface,
-          }}
-        />
-        <View
-          style={{
-            height: 8,
-            width: "35%",
-            borderRadius: 4,
-            backgroundColor: surface,
-          }}
-        />
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+      <Skeleton variant="rounded" size={isCompact ? 28 : 36} />
+      <View style={{ flex: 1 }}>
+        <Skeleton width={index === 0 ? "55%" : "45%"} fontSize={13} />
+        <Skeleton width="35%" fontSize={11} />
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -206,8 +157,8 @@ export const RecentActivitiesSection = ({
 
     return (
       <Paper elevation={1} style={cardStyle}>
-        <SkeletonRow isCompact={isCompact} surface={theme.colors.surface} />
-        <SkeletonRow isCompact={isCompact} surface={theme.colors.surface} />
+        <SkeletonRow isCompact={isCompact} index={0} />
+        <SkeletonRow isCompact={isCompact} index={1} />
       </Paper>
     );
   }

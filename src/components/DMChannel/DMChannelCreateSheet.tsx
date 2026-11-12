@@ -7,7 +7,7 @@ import { Box, InputDefault, Typography, useTheme } from "@mutualzz/ui-native";
 import { useScaledSheetListMaxHeight } from "@utils/accessibilityLayout";
 import type { User } from "@stores/objects/User";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, Pressable } from "react-native";
 import { CheckIcon } from "phosphor-react-native";
@@ -30,6 +30,12 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
   const [error, setError] = useState<string | null>(null);
   const listMaxHeight = useScaledSheetListMaxHeight();
 
+  const mutualSearchVersion = app.mutualMemberSearchVersion;
+
+  useEffect(() => {
+    app.searchMutualMembers(search);
+  }, [app, search]);
+
   const suggestions = useMemo(() => {
     const all = app.getSuggestedGroupDMRecipients();
     const query = search.trim().toLowerCase();
@@ -39,7 +45,7 @@ export const DMChannelCreateSheet = observer(({ visible, onClose }: Props) => {
         user.username.toLowerCase().includes(query) ||
         user.displayName.toLowerCase().includes(query),
     );
-  }, [app, search]);
+  }, [app, search, mutualSearchVersion]);
 
   const toggleUser = (user: User) => {
     setSelected((prev) => {

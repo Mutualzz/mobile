@@ -1,16 +1,36 @@
 import { AdaptiveAppIcon } from "@components/AdaptiveAppIcon";
 import { useAppStore } from "@hooks/useStores";
-import { ThemeProvider, type ThemeProviderRef } from "@mutualzz/ui-native";
+import {
+  ThemeProvider,
+  type ThemeProviderRef,
+  UiLabelsProvider,
+} from "@mutualzz/ui-native";
 import { Theme } from "@stores/objects/Theme";
 import { reaction } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, type PropsWithChildren } from "react";
+import { useEffect, useMemo, useRef, type PropsWithChildren } from "react";
+import { useTranslation } from "react-i18next";
 import { useColorScheme } from "react-native";
 
 export const AppTheme = observer(({ children }: PropsWithChildren) => {
   const app = useAppStore();
   const themeProviderRef = useRef<ThemeProviderRef>(null);
   const prefersDark = useColorScheme() === "dark";
+  const { t } = useTranslation("common");
+
+  const uiLabels = useMemo(
+    () => ({
+      closeModal: t("a11y.closeModal"),
+      increment: t("a11y.increment"),
+      decrement: t("a11y.decrement"),
+      showPassword: t("a11y.showPassword"),
+      openColorPicker: t("a11y.openColorPicker"),
+      randomColor: t("a11y.randomColor"),
+      randomColorHint: t("a11y.randomColorHint"),
+      removeColorStop: t("a11y.removeColorStop"),
+    }),
+    [t],
+  );
 
   useEffect(() => {
     const dispose = reaction(
@@ -54,8 +74,10 @@ export const AppTheme = observer(({ children }: PropsWithChildren) => {
 
   return (
     <ThemeProvider ref={themeProviderRef}>
-      <AdaptiveAppIcon />
-      {children}
+      <UiLabelsProvider labels={uiLabels}>
+        <AdaptiveAppIcon />
+        {children}
+      </UiLabelsProvider>
     </ThemeProvider>
   );
 });

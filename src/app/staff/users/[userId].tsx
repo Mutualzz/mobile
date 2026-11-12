@@ -1,4 +1,5 @@
 import { Button } from "@components/Button";
+import { StaffUserSkeleton } from "@components/Skeletons";
 import { StaffUserDeleteConfirmSheet } from "@components/Staff/StaffUserDeleteConfirmSheet";
 import { StaffUserDisableConfirmSheet } from "@components/Staff/StaffUserDisableConfirmSheet";
 import { StaffUserForceLogoutConfirmSheet } from "@components/Staff/StaffUserForceLogoutConfirmSheet";
@@ -21,7 +22,13 @@ import type {
   APIStaffSession,
   HttpException,
 } from "@mutualzz/types";
-import { Box, Divider, InputDefault, Switch, Typography } from "@mutualzz/ui-native";
+import {
+  Box,
+  Divider,
+  InputDefault,
+  Switch,
+  Typography,
+} from "@mutualzz/ui-native";
 import {
   useInfiniteQuery,
   useMutation,
@@ -32,7 +39,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, ScrollView } from "react-native";
+import { Pressable, ScrollView } from "react-native";
 import dayjs from "dayjs";
 import type { TFunction } from "i18next";
 
@@ -306,15 +313,7 @@ const StaffUserScreen = () => {
     return (
       <Screen style={{ flexDirection: "column" }}>
         <StaffHeader title={t("title")} showBack backHref="/staff" />
-        <Box
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <ActivityIndicator />
-        </Box>
+        <StaffUserSkeleton label={t("home.loading")} />
       </Screen>
     );
   }

@@ -1,4 +1,5 @@
 import { PlayerModerationSheet } from "@components/Bridge/PlayerModerationSheet";
+import { ListSkeleton } from "@components/Skeletons";
 import { Button } from "@components/Button";
 import { MinecraftAvatar } from "@components/Minecraft/MinecraftAvatar";
 import { useBridgeServerLabel } from "@hooks/useBridgeInventory";
@@ -40,6 +41,7 @@ interface BridgeBanRow {
 export const BridgeMembersSection = observer(
   ({ spaceId, bridgeId }: { spaceId: string; bridgeId: string }) => {
     const { t } = useTranslation("settings");
+    const { t: tChat } = useTranslation("chat");
     const app = useAppStore();
     const { openBottomSheet, closeBottomSheet } = useOpenBottomSheet();
     const [searchInput, setSearchInput] = useState("");
@@ -99,7 +101,9 @@ export const BridgeMembersSection = observer(
           autoCorrect={false}
           placeholder={t("minecraftBridge.membersSearch")}
         />
-        {!membersQuery.isLoading && members.length === 0 ? (
+        {membersQuery.isLoading ? (
+          <ListSkeleton label={tChat("loading")} count={4} leading="avatar" />
+        ) : members.length === 0 ? (
           <Typography level="body-xs" textColor="muted">
             {search
               ? t("minecraftBridge.membersNoResults")

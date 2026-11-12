@@ -5,7 +5,7 @@ import type { MentionType, Snowflake } from "@mutualzz/types";
 import { Box, Typography, useTheme } from "@mutualzz/ui-native";
 import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   useScaledAutocompleteMaxHeight,
@@ -36,6 +36,11 @@ export const MentionAutocomplete = observer(
     const avatarSize = useScaledSquareSize(24);
 
     const space = channel.spaceId ? app.spaces.get(channel.spaceId) : null;
+    const loadedMemberCount = space?.members.size ?? 0;
+
+    useEffect(() => {
+      if (space && search) space.members.search(search);
+    }, [space, search]);
 
     const canMentionEveryone =
       space?.members.me?.hasPermission("MentionEveryone", channel) ?? false;
@@ -106,7 +111,13 @@ export const MentionAutocomplete = observer(
           candidate.displayName.toLowerCase().includes(lowerSearch),
         )
         .slice(0, 8);
-    }, [canMentionEveryone, channel.dmRecipientsList, search, space]);
+    }, [
+      canMentionEveryone,
+      channel.dmRecipientsList,
+      search,
+      space,
+      loadedMemberCount,
+    ]);
 
     if (candidates.length === 0) return null;
 

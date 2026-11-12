@@ -7,7 +7,7 @@ import { useScaledSheetListMaxHeight } from "@utils/accessibilityLayout";
 import type { Snowflake } from "@mutualzz/types";
 import type { Channel } from "@stores/objects/Channel";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, Pressable } from "react-native";
 
@@ -34,6 +34,12 @@ export const GroupDMAddRecipientSheet = observer(
     const spotsRemaining = maxCount - currentCount;
     const listMaxHeight = useScaledSheetListMaxHeight();
 
+    const mutualSearchVersion = app.mutualMemberSearchVersion;
+
+    useEffect(() => {
+      app.searchMutualMembers(search);
+    }, [app, search]);
+
     const suggestions = useMemo(() => {
       const query = search.trim().toLowerCase();
 
@@ -46,7 +52,7 @@ export const GroupDMAddRecipientSheet = observer(
             : user.username.toLowerCase().includes(query) ||
               user.displayName.toLowerCase().includes(query),
         );
-    }, [app, existingIds, search]);
+    }, [app, existingIds, search, mutualSearchVersion]);
 
     const addRecipient = async () => {
       if (!selected || saving || isFull) return;

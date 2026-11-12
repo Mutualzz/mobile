@@ -3,6 +3,7 @@ import { ProfileWidgetsEmptyViewer } from "@components/Profile/widgets/ProfileWi
 import { ProfileNotFoundState } from "@components/Profile/ProfileNotFoundState";
 import { Screen, ScreenHeader } from "@components/Screen/Screen";
 import { IconButton } from "@components/IconButton";
+import { ProfilePageSkeleton } from "@components/Skeletons";
 import { useAppStore } from "@hooks/useStores";
 import { Box, Typography } from "@mutualzz/ui-native";
 import { useQuery } from "@tanstack/react-query";
@@ -10,11 +11,12 @@ import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, ScrollView } from "react-native";
+import { ScrollView } from "react-native";
 import { ArrowLeftIcon } from "phosphor-react-native";
 
 const PublicProfileScreen = () => {
   const { t } = useTranslation("settings");
+  const { t: tChat } = useTranslation("chat");
   const app = useAppStore();
   const router = useRouter();
   const { username } = useLocalSearchParams<{ username: string }>();
@@ -52,8 +54,8 @@ const PublicProfileScreen = () => {
 
   if (isLoading) {
     return (
-      <Screen style={{ justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator />
+      <Screen>
+        <ProfilePageSkeleton label={tChat("loading")} />
       </Screen>
     );
   }
@@ -117,16 +119,7 @@ const PublicProfileScreen = () => {
         </Typography>
       </ScreenHeader>
       {!profileFetched ? (
-        <Box
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 24,
-          }}
-        >
-          <ActivityIndicator />
-        </Box>
+        <ProfilePageSkeleton label={tChat("loading")} />
       ) : !resolvedProfile && !isSelf ? (
         <ProfileNotFoundState onBack={() => router.back()} />
       ) : (

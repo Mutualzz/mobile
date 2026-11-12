@@ -1,4 +1,5 @@
 import { Button } from "@components/Button";
+import { TileGridSkeleton } from "@components/Skeletons";
 import { ProfileWidgetContentEditorSheet } from "@components/Profile/widgets/editor/ProfileWidgetContentEditorSheet";
 import { ProfileWidgetEditableList } from "@components/Profile/widgets/editor/ProfileWidgetEditableList";
 import { ProfileWidgetPalette } from "@components/Profile/widgets/editor/ProfileWidgetPalette";
@@ -25,16 +26,13 @@ import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  BackHandler,
-} from "react-native";
+import { Alert, BackHandler } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export const ProfileWidgetEditorScreen = observer(() => {
   const { t } = useTranslation("settings");
+  const { t: tChat } = useTranslation("chat");
   const app = useAppStore();
   const account = app.account;
   const { back } = useAppNavigation();
@@ -163,9 +161,7 @@ export const ProfileWidgetEditorScreen = observer(() => {
       back();
     } catch (e) {
       setError(
-        e instanceof Error
-          ? e.message
-          : t("profile.editor.failedSaveProfile"),
+        e instanceof Error ? e.message : t("profile.editor.failedSaveProfile"),
       );
     } finally {
       setSaving(false);
@@ -179,14 +175,8 @@ export const ProfileWidgetEditorScreen = observer(() => {
       contentStyle={{ flex: 1 }}
     >
       {isLoading && !profile ? (
-        <Box
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <ActivityIndicator />
+        <Box style={{ flex: 1, padding: 16 }}>
+          <TileGridSkeleton label={tChat("loading")} count={6} gap={12} />
         </Box>
       ) : (
         <Box

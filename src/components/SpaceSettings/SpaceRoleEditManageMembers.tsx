@@ -14,7 +14,7 @@ import {
   useScaledSquareSize,
 } from "@utils/accessibilityLayout";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, Pressable } from "react-native";
 import { PlusIcon, XIcon } from "phosphor-react-native";
@@ -30,6 +30,11 @@ export const SpaceRoleEditManageMembers = observer(({ role }: Props) => {
   const removeButtonSize = useScaledSquareSize(26);
   const { openSheet } = useSheet();
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    role.space?.members.requestRole(role.id);
+    role.space?.members.requestRole(role.space.id);
+  }, [role]);
   const space = role.space;
   const hierarchyContext = space
     ? getHierarchyContext(space, space.members.me)
@@ -269,9 +274,7 @@ const AddMembersSheet = observer(
         await role.addMembers(selectedIds);
         closeSheet(sheetId);
       } catch (e) {
-        setError(
-          e instanceof Error ? e.message : t("roles.members.addFailed"),
-        );
+        setError(e instanceof Error ? e.message : t("roles.members.addFailed"));
       } finally {
         setSaving(false);
       }

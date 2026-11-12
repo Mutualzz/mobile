@@ -10,7 +10,7 @@ import {
   type MessageSearchHasFilter,
 } from "@mutualzz/validators";
 import { observer } from "mobx-react-lite";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
@@ -51,7 +51,11 @@ function FilterChip({
       <Typography
         level="body-xs"
         weight={active ? 700 : 500}
-        style={{ color: active ? theme.typography.colors.primary : theme.typography.colors.muted }}
+        style={{
+          color: active
+            ? theme.typography.colors.primary
+            : theme.typography.colors.muted,
+        }}
       >
         {label}
       </Typography>
@@ -59,11 +63,18 @@ function FilterChip({
   );
 }
 
+const SEARCH_PEOPLE_PAGE_SIZE = 50;
+
 export const MessageSearchFilterChips = observer(
   ({ query, onQueryChange, channel }: Props) => {
     const app = useAppStore();
     const { t } = useTranslation("chat");
     const parsed = parseMessageSearchQuery(query);
+    const loadedMemberCount = channel.space?.members.size ?? 0;
+
+    useEffect(() => {
+      channel.space?.members.requestSome(SEARCH_PEOPLE_PAGE_SIZE);
+    }, [channel.space]);
 
     const people = useMemo(() => {
       if (channel.isDM || channel.isGroupDM) {
@@ -81,7 +92,7 @@ export const MessageSearchFilterChips = observer(
         .map((member) => member.user)
         .filter(Boolean)
         .slice(0, 6);
-    }, [channel, app.account]);
+    }, [channel, app.account, loadedMemberCount]);
 
     const toggleHas = (filter: MessageSearchHasFilter) => {
       onQueryChange(toggleMessageSearchHasFilter(query, filter));

@@ -68,7 +68,12 @@ import {
   inventoryQueryKey,
   type LyricsResult,
 } from "@mutualzz/client";
-import type { InventoryEditOp } from "@mutualzz/validators";
+import {
+  type InventoryEditOp,
+  MAX_MEMBER_LIST_WINDOW_CHUNKS,
+} from "@mutualzz/validators";
+import type { MemberListWindowPayload } from "@stores/SpaceMemberWindow.store";
+import type { FetchedSpaceMember } from "@stores/SpaceMember.store";
 import { notifyManager } from "@tanstack/react-query";
 import { makeAutoObservable } from "mobx";
 import type { NativeEventSubscription } from "react-native";
@@ -158,9 +163,10 @@ export class GatewayStore {
     (...args: any[]) => any
   >();
 
-  private lazyRequestChannels = new Map<string, string[]>(); // spaceId -> channelIds
-  private memberListRanges = new Map<string, [number, number][]>();
-  private memberListFetching = new Set<string>();
+  private memberListWindows = new Map<
+    string,
+    { channelId: string; chunks: number[] }
+  >();
   private resolvingChannels = new Map<
     Snowflake,
     Promise<Channel | undefined>
@@ -247,62 +253,75 @@ export class GatewayStore {
     void AsyncStorage.removeItem(RESUME_STORAGE_KEY);
   }
 
-  requestMemberListRange(spaceId: string, channelId: string, pageSize = 50) {
+  requestSpaceMembers(
+    spaceId: string | null,
+    filter:
+      | { userIds: string[] }
+      | { query: string; limit?: number }
+      | { roleId: string; limit?: number },
+  ) {
+    return this.request<{
+      spaceId: string | null;
+      members: FetchedSpaceMember[];
+      notFound: string[];
+    }>(GatewayOpcodes.RequestSpaceMembers, {
+      ...(spaceId ? { spaceId } : {}),
+      ...filter,
+    });
+  }
+
+  subscribeMemberList(spaceId: string, channelId: string, chunks: number[]) {
     if (!spaceId || !channelId) return;
 
-    const key = `${spaceId}:${channelId}`;
-    if (this.memberListFetching.has(key)) return;
+    const normalizedChunks = [...new Set(chunks)]
+      .filter((chunk) => Number.isInteger(chunk) && chunk >= 0)
+      .sort((left, right) => left - right)
+      .slice(0, MAX_MEMBER_LIST_WINDOW_CHUNKS);
+    if (!normalizedChunks.length) return;
 
-    let loadedCount: number;
-    try {
-      const space = this.app.spaces.get(spaceId);
-      const channel = this.app.channels.get(channelId);
-      const listStore =
-        space && channel ? space.memberLists.get(channel.listId) : null;
+    const current = this.memberListWindows.get(spaceId);
+    if (
+      current?.channelId === channelId &&
+      current.chunks.join(",") === normalizedChunks.join(",")
+    )
+      return;
 
-      if (listStore)
-        loadedCount = listStore.list.reduce(
-          (acc: number, g: any) => acc + (g.items?.length ?? 0),
-          0,
-        );
-      else {
-        const prevRanges = this.memberListRanges.get(key) ?? [];
-        loadedCount = prevRanges.reduce((acc, r) => acc + (r[1] - r[0] + 1), 0);
+    this.memberListWindows.set(spaceId, {
+      channelId,
+      chunks: normalizedChunks,
+    });
+    this.sendMemberListWindow(spaceId);
+  }
+
+  unsubscribeMemberList(spaceId: string) {
+    const current = this.memberListWindows.get(spaceId);
+    if (!current) return;
+
+    this.memberListWindows.delete(spaceId);
+    this.app.spaces.get(spaceId)?.clearMemberListWindow();
+    this.send({
+      op: GatewayOpcodes.LazyRequest,
+      d: { spaceId, channelId: current.channelId, chunks: [] },
+    });
+  }
+
+  private sendMemberListWindow(spaceId: string) {
+    const window = this.memberListWindows.get(spaceId);
+    if (!window) return;
+
+    this.send({
+      op: GatewayOpcodes.LazyRequest,
+      d: { spaceId, channelId: window.channelId, chunks: window.chunks },
+    });
+  }
+
+  private resubscribeMemberLists() {
+    for (const spaceId of [...this.memberListWindows.keys()]) {
+      if (!this.app.spaces.get(spaceId)) {
+        this.memberListWindows.delete(spaceId);
+        continue;
       }
-    } catch {
-      loadedCount = 0;
-    }
-
-    const nextStart = loadedCount;
-    const nextEnd = Math.max(nextStart, nextStart + pageSize - 1);
-
-    if (nextEnd < nextStart) return;
-
-    const prev = this.memberListRanges.get(key) ?? [];
-
-    for (const r of prev) {
-      if (r[0] <= nextStart && r[1] >= nextStart) return;
-    }
-
-    const newRanges = [...prev, [nextStart, nextEnd]];
-    this.memberListRanges.set(key, newRanges as [number, number][]);
-
-    this.memberListFetching.add(key);
-
-    const payload = {
-      spaceId,
-      channels: {
-        [channelId]: newRanges,
-      },
-    };
-
-    try {
-      this.send({
-        op: GatewayOpcodes.LazyRequest,
-        d: payload,
-      });
-    } finally {
-      setTimeout(() => this.memberListFetching.delete(key), 250);
+      this.sendMemberListWindow(spaceId);
     }
   }
 
@@ -578,23 +597,14 @@ export class GatewayStore {
     }
   }
 
+  ensureMemberList(spaceId: string, channelId: string) {
+    if (this.memberListWindows.has(spaceId)) return;
+    this.subscribeMemberList(spaceId, channelId, [0]);
+  }
+
   onChannelOpen = (spaceId: string, channelId: string) => {
-    const spaceChannels = this.lazyRequestChannels.get(spaceId) || [];
-
-    if (spaceChannels.includes(channelId)) return;
-
-    const payload = {
-      spaceId,
-      channels: {
-        [channelId]: [[0, 99]],
-      },
-    };
-    this.lazyRequestChannels.set(spaceId, [...spaceChannels, channelId]);
-
-    this.send({
-      op: GatewayOpcodes.LazyRequest,
-      d: payload,
-    });
+    if (this.memberListWindows.get(spaceId)?.channelId === channelId) return;
+    this.subscribeMemberList(spaceId, channelId, [0]);
   };
 
   subscribeUser(userId: string) {
@@ -1263,6 +1273,7 @@ export class GatewayStore {
       GatewayDispatchEvents.NotificationAck,
       GatewayDispatchEvents.MentionAck,
       GatewayDispatchEvents.DiscordImportAck,
+      GatewayDispatchEvents.SpaceMembersChunk,
     ]) {
       this.dispatchHandlers.set(ackEvent, this.resolveRequest);
     }
@@ -1689,8 +1700,6 @@ export class GatewayStore {
     this.sequence = 0;
     this.readyState = GatewayStatus.CLOSED;
     this.backgroundPresenceStatus = null;
-    this.lazyRequestChannels.clear();
-    this.memberListRanges.clear();
     this.subscribedUserIds.clear();
     this.stopPresenceLoop();
     this.clearResumeState();
@@ -1817,6 +1826,7 @@ export class GatewayStore {
 
     this.resubscribeUsers();
     this.resubscribeInventories();
+    this.resubscribeMemberLists();
     this.app.setGatewayReady(true);
     this.startPresenceLoop();
     this.app.voice.onGatewayReconnected();
@@ -1894,6 +1904,9 @@ export class GatewayStore {
     this.reconnectTimeout = 0;
     this.resubscribeUsers();
     this.resubscribeInventories();
+    for (const space of this.app.spaces.all) space.clearMemberListWindow();
+    this.resubscribeMemberLists();
+    this.app.startMemberSweep();
     this.app.setGatewayReady(true);
     this.startPresenceLoop();
 
@@ -1941,7 +1954,7 @@ export class GatewayStore {
     }
 
     this.app.spaces.remove(payload.id);
-    this.lazyRequestChannels.delete(space.id);
+    this.memberListWindows.delete(space.id);
     this.app.spaces.setPreferredActive();
     this.app.channels.setPreferredActive();
   };
@@ -2132,7 +2145,7 @@ export class GatewayStore {
 
     const member = this.app.spaces
       .get(channel.spaceId ?? "")
-      ?.members.get(accountId);
+      ?.members.peek(accountId);
     if (
       mentions.some(
         (mention) =>
@@ -2186,7 +2199,7 @@ export class GatewayStore {
       if (m.type === "user") return m.id === this.app.account?.id;
       if (m.type === "role") {
         const space = this.app.spaces.get(channel.spaceId ?? "");
-        const member = space?.members.get(this.app.account!.id);
+        const member = space?.members.peek(this.app.account!.id);
         return member?.roles?.has(m.id) ?? false;
       }
       return m.type === "everyone" || m.type === "here";
@@ -2310,9 +2323,12 @@ export class GatewayStore {
   };
 
   private onUserUpdate = (payload: APIUser | APIPrivateUser) => {
+    const isSelf = payload.id === this.app.account?.id;
+    if (isSelf && !("email" in payload)) return;
+
     this.app.users.update(payload);
 
-    if (payload.id === this.app.account?.id) {
+    if (isSelf) {
       const flags = BitField.fromString(userFlags, payload.flags.toString());
 
       if (flags.has("Disabled") || flags.has("Deleted")) {
@@ -2368,7 +2384,8 @@ export class GatewayStore {
     const space = this.app.spaces.get(payload.spaceId);
     if (!space) return;
 
-    space.members.add(payload);
+    if (payload.user) space.members.add(payload);
+    else space.members.forgetNonMember(payload.userId);
   };
 
   private onSpaceMemberRemove = (payload: {
@@ -2381,14 +2398,9 @@ export class GatewayStore {
     space.members.remove(payload.userId);
   };
 
-  // TODO: Add a type later
-  private onSpaceMemberListUpdate = (data: any) => {
-    const { spaceId } = data;
-    const space = this.app.spaces.get(spaceId);
-
-    if (!space) return;
-
-    space.updateMemberList(data);
+  private onSpaceMemberListUpdate = (data: MemberListWindowPayload) => {
+    if (!this.memberListWindows.has(data.spaceId)) return;
+    this.app.spaces.get(data.spaceId)?.applyMemberListWindow(data);
   };
 
   private onRoleCreate = (role: APIRole) => {
@@ -2421,7 +2433,7 @@ export class GatewayStore {
     const space = this.app.spaces.get(payload.spaceId);
     if (!space) return;
 
-    const member = space.members.get(payload.userId);
+    const member = space.members.peek(payload.userId);
     if (!member) return;
 
     member.roles.add(payload.roleId);
@@ -2434,7 +2446,7 @@ export class GatewayStore {
     const space = this.app.spaces.get(payload.spaceId);
     if (!space) return;
 
-    const member = space.members.get(payload.userId);
+    const member = space.members.peek(payload.userId);
     if (!member) return;
 
     member.roles.delete(payload.roleId);

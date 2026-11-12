@@ -9,10 +9,16 @@ import type { Space } from "@stores/objects/Space";
 import { FlashList, type FlashListRef } from "@shopify/flash-list";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator,
   Dimensions,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -25,13 +31,11 @@ import {
   notifyGifViewportChanged,
 } from "@hooks/useGifOnScreen";
 import { Paper } from "@components/Paper";
+import { MessageListSkeleton } from "@components/Skeletons";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { IconButton } from "@components/IconButton";
 import { HashIcon, ArrowDownIcon } from "phosphor-react-native";
-import {
-  getChatFontScale,
-  subscribeChatFontScale,
-} from "@utils/chatFontScale";
+import { getChatFontScale, subscribeChatFontScale } from "@utils/chatFontScale";
 
 const CHAT_DRAW_DISTANCE = Math.ceil(Dimensions.get("window").height);
 interface Props {
@@ -172,6 +176,7 @@ const ScrollToBottomFab = ({
 export const MessageList = observer(({ channel }: Props) => {
   const app = useAppStore();
   const { theme } = useTheme();
+  const { t } = useTranslation("chat");
   const chatFontScale = useSyncExternalStore(
     subscribeChatFontScale,
     getChatFontScale,
@@ -250,37 +255,38 @@ export const MessageList = observer(({ channel }: Props) => {
     ackLatest();
   }, [channel?.id, channel?.messages.groups, ackLatest]);
 
-  const { fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    initialPageParam: undefined,
-    queryKey: ["messages", channel?.id],
-    queryFn: async ({ pageParam }: any) => {
-      if (!pageParam) {
-        const count = await channel?.getMessages(true);
+  const { fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useInfiniteQuery({
+      initialPageParam: undefined,
+      queryKey: ["messages", channel?.id],
+      queryFn: async ({ pageParam }: any) => {
+        if (!pageParam) {
+          const count = await channel?.getMessages(true);
+
+          const lastGroup =
+            channel?.messages.groups[channel.messages.groups.length - 1];
+          const earliestId =
+            lastGroup?.messages?.[lastGroup.messages.length - 1]?.id ?? null;
+          return { count, earliestId };
+        }
+
+        const count = await channel?.getMessages(false, LIMIT, pageParam);
 
         const lastGroup =
           channel?.messages.groups[channel.messages.groups.length - 1];
         const earliestId =
           lastGroup?.messages?.[lastGroup.messages.length - 1]?.id ?? null;
-        return { count, earliestId };
-      }
+        return { count, earliestId, before: pageParam };
+      },
+      getNextPageParam: (lastPage) => {
+        if (lastPage?.count != null && lastPage.count < LIMIT) return undefined;
 
-      const count = await channel?.getMessages(false, LIMIT, pageParam);
+        if (!lastPage?.earliestId) return undefined;
 
-      const lastGroup =
-        channel?.messages.groups[channel.messages.groups.length - 1];
-      const earliestId =
-        lastGroup?.messages?.[lastGroup.messages.length - 1]?.id ?? null;
-      return { count, earliestId, before: pageParam };
-    },
-    getNextPageParam: (lastPage) => {
-      if (lastPage?.count != null && lastPage.count < LIMIT) return undefined;
-
-      if (!lastPage?.earliestId) return undefined;
-
-      return lastPage.earliestId;
-    },
-    enabled: !!channel?.id && (isDM || canReadHistory),
-  });
+        return lastPage.earliestId;
+      },
+      enabled: !!channel?.id && (isDM || canReadHistory),
+    });
 
   const scrollRafRef = useRef<number | null>(null);
 
@@ -454,6 +460,9 @@ export const MessageList = observer(({ channel }: Props) => {
   const listHeader = useMemo(() => {
     if (!channel) return null;
 
+    if (isLoading)
+      return <MessageListSkeleton label={t("loading")} count={8} />;
+
     return (
       <Box>
         {!hasNextPage &&
@@ -467,9 +476,7 @@ export const MessageList = observer(({ channel }: Props) => {
             />
           ))}
         {isFetchingNextPage && (
-          <Box style={{ paddingVertical: 16, alignItems: "center" }}>
-            <ActivityIndicator />
-          </Box>
+          <MessageListSkeleton label={t("loading")} count={3} />
         )}
       </Box>
     );
@@ -480,6 +487,8 @@ export const MessageList = observer(({ channel }: Props) => {
     theme,
     hasNextPage,
     isFetchingNextPage,
+    isLoading,
+    t,
   ]);
 
   return (

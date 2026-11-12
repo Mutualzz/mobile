@@ -1,4 +1,5 @@
 import { Button } from "@components/Button";
+import { ListSkeleton } from "@components/Skeletons";
 import { SettingsScreen } from "@components/UserSettings/SettingsScreen";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
@@ -26,8 +27,7 @@ const SupportTicketScreen = () => {
   const { data: ticket, isLoading } = useQuery({
     queryKey,
     enabled: !!ticketId,
-    queryFn: () =>
-      app.rest.get<APISupportTicketDetail>(`/support/${ticketId}`),
+    queryFn: () => app.rest.get<APISupportTicketDetail>(`/support/${ticketId}`),
   });
 
   const { mutate: sendReply, isPending: sending } = useMutation({
@@ -48,8 +48,7 @@ const SupportTicketScreen = () => {
     },
   });
 
-  const isClosed =
-    ticket?.status === "closed" || ticket?.status === "resolved";
+  const isClosed = ticket?.status === "closed" || ticket?.status === "resolved";
 
   return (
     <SettingsScreen
@@ -58,9 +57,7 @@ const SupportTicketScreen = () => {
     >
       <Box style={{ padding: 16, gap: 12 }}>
         {isLoading && (
-          <Typography level="body-sm" textColor="muted">
-            {t("support.loading")}
-          </Typography>
+          <ListSkeleton label={t("support.loading")} count={3} lines={3} />
         )}
 
         {ticket?.messages.map((message) => (
@@ -100,9 +97,7 @@ const SupportTicketScreen = () => {
               disabled={sending || !reply.trim()}
               onPress={() => sendReply()}
             >
-              {sending
-                ? tSettings("account.sending")
-                : t("support.sendReply")}
+              {sending ? tSettings("account.sending") : t("support.sendReply")}
             </Button>
           </Box>
         )}

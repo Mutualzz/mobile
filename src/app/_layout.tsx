@@ -20,6 +20,7 @@ import { GatewayCloseCodes } from "@mutualzz/types";
 import { GatewayStatus } from "@stores/Gateway.store";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { calendarStrings } from "@mutualzz/client";
+import { SkeletonProvider } from "@mutualzz/ui-native";
 import { BottomSheetModalProvider } from "@expo/ui/community/bottom-sheet";
 import dayjs from "dayjs";
 import calendar from "dayjs/plugin/calendar";
@@ -39,7 +40,9 @@ dayjs.extend(relativeTime);
 dayjs.extend(calendar, calendarStrings);
 dayjs.extend(duration);
 
-SplashScreen.preventAutoHideAsync().catch(() => { return; });
+SplashScreen.preventAutoHideAsync().catch(() => {
+  return;
+});
 
 const WindowOverlay = Platform.OS === "ios" ? FullWindowOverlay : Fragment;
 
@@ -137,50 +140,52 @@ const Root = () => {
 
   return (
     <AppTheme>
-      <View style={{ flex: 1 }}>
+      <SkeletonProvider animation={reducedMotion ? "none" : "shimmer"}>
         <View style={{ flex: 1 }}>
-          {app.isReady ? (
-            <QueryClientProvider client={app.queryClient}>
-              <KeyboardProvider statusBarTranslucent navigationBarTranslucent>
-                <NavigationWithTheme>
-                  <NativeBaseline>
-                    <SheetProvider>
-                      <BottomSheetModalProvider>
-                        <ChangelogPrompt />
-                        <IncomingCallOverlay />
-                        <Stack screenOptions={{ headerShown: false }}>
-                          <Stack.Screen name="(tabs)" />
-                          <Stack.Screen name="onboarding" />
-                          <Stack.Screen name="auth/discord" />
-                          <Stack.Screen name="register/discord" />
-                          <Stack.Screen
-                            name="settings"
-                            options={{
-                              presentation: "modal",
-                              animation: modalAnimation,
-                            }}
-                          />
-                          <Stack.Screen
-                            name="staff"
-                            options={{
-                              presentation: "modal",
-                              animation: modalAnimation,
-                            }}
-                          />
-                        </Stack>
-                        <WindowOverlay>
-                          <PortalHost />
-                        </WindowOverlay>
-                      </BottomSheetModalProvider>
-                    </SheetProvider>
-                  </NativeBaseline>
-                </NavigationWithTheme>
-              </KeyboardProvider>
-            </QueryClientProvider>
-          ) : null}
+          <View style={{ flex: 1 }}>
+            {app.isReady ? (
+              <QueryClientProvider client={app.queryClient}>
+                <KeyboardProvider statusBarTranslucent navigationBarTranslucent>
+                  <NavigationWithTheme>
+                    <NativeBaseline>
+                      <SheetProvider>
+                        <BottomSheetModalProvider>
+                          <ChangelogPrompt />
+                          <IncomingCallOverlay />
+                          <Stack screenOptions={{ headerShown: false }}>
+                            <Stack.Screen name="(tabs)" />
+                            <Stack.Screen name="onboarding" />
+                            <Stack.Screen name="auth/discord" />
+                            <Stack.Screen name="register/discord" />
+                            <Stack.Screen
+                              name="settings"
+                              options={{
+                                presentation: "modal",
+                                animation: modalAnimation,
+                              }}
+                            />
+                            <Stack.Screen
+                              name="staff"
+                              options={{
+                                presentation: "modal",
+                                animation: modalAnimation,
+                              }}
+                            />
+                          </Stack>
+                          <WindowOverlay>
+                            <PortalHost />
+                          </WindowOverlay>
+                        </BottomSheetModalProvider>
+                      </SheetProvider>
+                    </NativeBaseline>
+                  </NavigationWithTheme>
+                </KeyboardProvider>
+              </QueryClientProvider>
+            ) : null}
+          </View>
+          {showBootSplash ? <BootSplash key="boot-splash" /> : null}
         </View>
-        {showBootSplash ? <BootSplash key="boot-splash" /> : null}
-      </View>
+      </SkeletonProvider>
     </AppTheme>
   );
 };

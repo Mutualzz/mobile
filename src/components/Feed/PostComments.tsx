@@ -1,6 +1,7 @@
 import { CHAT_COMPOSER_NATIVE_ID } from "@contexts/ChatKeyboard.context";
 import { ChatListScrollView } from "@components/Keyboard";
 import { KeyboardComposer } from "@components/Keyboard/KeyboardComposer";
+import { CommentListSkeleton } from "@components/Skeletons";
 import { CommentActionSheet } from "@components/Feed/CommentActionSheet";
 import { ExpressionPickerSheet } from "@components/Expression/ExpressionPickerSheet";
 import { IconButton } from "@components/IconButton";
@@ -487,9 +488,7 @@ export const PostComments = observer(({ post }: Props) => {
           )}
 
           {isLoading && (
-            <Typography level="body-sm" textColor="muted">
-              {t("feed.comments.loading")}
-            </Typography>
+            <CommentListSkeleton label={t("feed.comments.loading")} />
           )}
 
           {!isLoading && post.comments.count === 0 && (

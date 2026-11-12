@@ -1,4 +1,5 @@
 import { Button } from "@components/Button";
+import { ListSkeleton } from "@components/Skeletons";
 import { Paper } from "@components/Paper";
 import { Screen } from "@components/Screen/Screen";
 import { StaffHeader } from "@components/Staff/StaffHeader";
@@ -184,9 +185,7 @@ const StaffReportDetailScreen = () => {
 
   if (!isStaff) return null;
 
-  const reasonKey =
-    report &&
-    reportReasonKeys[report.reason];
+  const reasonKey = report && reportReasonKeys[report.reason];
 
   return (
     <Screen style={{ flexDirection: "column" }}>
@@ -197,9 +196,12 @@ const StaffReportDetailScreen = () => {
       />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
         {isLoading && (
-          <Typography level="body-sm" textColor="muted">
-            {t("report.loadingReport")}
-          </Typography>
+          <ListSkeleton
+            label={t("report.loadingReport")}
+            count={3}
+            lines={3}
+            leading="avatar"
+          />
         )}
 
         {error && (
@@ -222,8 +224,7 @@ const StaffReportDetailScreen = () => {
               </Typography>
               <Typography level="body-xs" textColor="muted">
                 {t("report.reportedBy", {
-                  name:
-                    report.reporter.globalName || report.reporter.username,
+                  name: report.reporter.globalName || report.reporter.username,
                 })}{" "}
                 · {dayjs(report.createdAt).format("MMM D, YYYY h:mm A")}
               </Typography>

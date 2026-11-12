@@ -22,8 +22,7 @@
     "./src/**/*.ts",
     "./src/**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts",
-    "../app/src/renderer/src/utils/discordImportReturn.ts"
+    "expo-env.d.ts"
   ],
   "exclude": ["dist", "dist/**", "**/dist/**"]
 }

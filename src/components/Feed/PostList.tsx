@@ -1,9 +1,7 @@
 import { PostCard } from "@components/Feed/PostCard";
 import { MediaPostCard } from "@components/Feed/MediaPostCard";
-import {
-  useFeedPosts,
-  type FeedVariant,
-} from "@components/Feed/useFeedPosts";
+import { PostListSkeleton } from "@components/Skeletons";
+import { useFeedPosts, type FeedVariant } from "@components/Feed/useFeedPosts";
 import {
   GifViewportContext,
   notifyGifViewportChanged,
@@ -14,7 +12,7 @@ import { FEED_COLUMN_MAX_WIDTH } from "@utils/feedLayout";
 import { FlashList } from "@shopify/flash-list";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, RefreshControl, type ViewToken } from "react-native";
+import { RefreshControl, type ViewToken } from "react-native";
 import { useTranslation } from "react-i18next";
 
 interface Props {
@@ -23,8 +21,14 @@ interface Props {
 
 export const PostList = observer(({ variant }: Props) => {
   const { t } = useTranslation("chat");
-  const { posts, fetchMore, isFetchingNextPage, refetch, isRefetching } =
-    useFeedPosts(variant);
+  const {
+    posts,
+    fetchMore,
+    isFetchingNextPage,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useFeedPosts(variant);
   const [activePostId, setActivePostId] = useState<string | null>(null);
 
   const emptyLabel =
@@ -67,7 +71,9 @@ export const PostList = observer(({ variant }: Props) => {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         ListEmptyComponent={
-          !isFetchingNextPage ? (
+          isLoading ? (
+            <PostListSkeleton label={t("loading")} />
+          ) : !isFetchingNextPage ? (
             <Box style={{ padding: 32, alignItems: "center" }}>
               <Typography textColor="muted">{emptyLabel}</Typography>
             </Box>
@@ -75,8 +81,8 @@ export const PostList = observer(({ variant }: Props) => {
         }
         ListFooterComponent={
           isFetchingNextPage ? (
-            <Box style={{ padding: 16, alignItems: "center" }}>
-              <ActivityIndicator />
+            <Box style={{ paddingTop: 10 }}>
+              <PostListSkeleton label={t("loading")} count={1} />
             </Box>
           ) : null
         }
@@ -89,12 +95,15 @@ export const PostList = observer(({ variant }: Props) => {
           />
         }
         renderItem={({ item: post }: { item: Post }) => (
-          <Box style={{ width: "100%", maxWidth: FEED_COLUMN_MAX_WIDTH, alignSelf: "center" }}>
+          <Box
+            style={{
+              width: "100%",
+              maxWidth: FEED_COLUMN_MAX_WIDTH,
+              alignSelf: "center",
+            }}
+          >
             {post.attachments.length > 0 ? (
-              <MediaPostCard
-                post={post}
-                isActive={post.id === activePostId}
-              />
+              <MediaPostCard post={post} isActive={post.id === activePostId} />
             ) : (
               <PostCard post={post} />
             )}

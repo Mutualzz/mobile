@@ -1,6 +1,10 @@
 import { IconButton } from "@components/IconButton";
 import { PinnedMessageCard } from "@components/Channel/PinnedMessageCard";
 import { ScheduledPostCard } from "@components/Feed/ScheduledPostCard";
+import {
+  InboxListSkeleton,
+  NotificationListSkeleton,
+} from "@components/Skeletons";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppStore } from "@hooks/useStores";
 import { useSheet } from "@hooks/useSheet";
@@ -33,7 +37,7 @@ import {
 } from "phosphor-react-native";
 import { type ReactNode, useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable } from "react-native";
+import { Pressable } from "react-native";
 import {
   ChannelAvatar,
   channelCardTitle,
@@ -61,12 +65,6 @@ const SectionLabel = ({ children }: { children: string }) => (
   >
     {children}
   </Typography>
-);
-
-const Loading = () => (
-  <Box style={{ padding: 24, alignItems: "center" }}>
-    <ActivityIndicator />
-  </Box>
 );
 
 const IconBubble = ({ children }: { children: ReactNode }) => {
@@ -252,7 +250,8 @@ export const ForYouTab = observer(
     for (const notification of notifications)
       if (!notification.readAt) newIds.add(notification.id);
 
-    if (!app.notifications.loaded && incoming.length === 0) return <Loading />;
+    if (!app.notifications.loaded && incoming.length === 0)
+      return <NotificationListSkeleton label={t("notifications.loading")} />;
 
     if (incoming.length === 0 && notifications.length === 0)
       return (
@@ -563,7 +562,7 @@ export const MentionsTab = observer(() => {
         </Button>
       </Box>
 
-      {isLoading && <Loading />}
+      {isLoading && <InboxListSkeleton label={t("notifications.loading")} />}
 
       {!isLoading && messages.length === 0 && (
         <InboxEmptyState
@@ -652,7 +651,8 @@ export const BookmarksTab = observer(() => {
       />
     );
 
-  if (isLoading) return <Loading />;
+  if (isLoading)
+    return <InboxListSkeleton label={t("notifications.loading")} />;
 
   const bookmarks = data.filter((bookmark) =>
     app.bookmarks.has(bookmark.messageId),
@@ -719,7 +719,8 @@ export const RemindersTab = observer(() => {
       />
     );
 
-  if (isLoading) return <Loading />;
+  if (isLoading)
+    return <InboxListSkeleton label={t("notifications.loading")} />;
 
   const messagesById = new Map(
     data.map((reminder) => [reminder.messageId, reminder.message]),
@@ -772,7 +773,7 @@ export const RemindersTab = observer(() => {
 
 export const ScheduledTab = observer(() => {
   const app = useAppStore();
-  useQuery({
+  const { isLoading: postsLoading } = useQuery({
     queryKey: ["posts", "scheduled"],
     queryFn: () => app.posts.getScheduledFeed(),
     staleTime: 30_000,
@@ -818,7 +819,13 @@ export const ScheduledTab = observer(() => {
         (second.scheduledFor?.getTime() ?? 0),
     );
 
-  if (scheduledMessages.length === 0 && scheduledPosts.length === 0)
+  const hasNothing =
+    scheduledMessages.length === 0 && scheduledPosts.length === 0;
+
+  if (hasNothing && postsLoading)
+    return <InboxListSkeleton label={t("notifications.loading")} />;
+
+  if (hasNothing)
     return (
       <InboxEmptyState
         icon={

@@ -1,4 +1,5 @@
 import { Button } from "@components/Button";
+import { ListSkeleton } from "@components/Skeletons";
 import { Paper } from "@components/Paper";
 import { Screen } from "@components/Screen/Screen";
 import { StaffHeader } from "@components/Staff/StaffHeader";
@@ -17,7 +18,7 @@ import type { Href } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, ScrollView } from "react-native";
+import { ScrollView } from "react-native";
 import dayjs from "dayjs";
 
 const PAGE_LIMIT = 50;
@@ -118,8 +119,8 @@ const StaffAppealsScreen = () => {
       </ScrollView>
 
       {isLoading && (
-        <Box style={{ padding: 24, alignItems: "center" }}>
-          <ActivityIndicator />
+        <Box style={{ padding: 16 }}>
+          <ListSkeleton label={t("home.loading")} count={4} lines={3} />
         </Box>
       )}
 

@@ -20,13 +20,18 @@ import {
   type PermissionChannelKind,
 } from "@mutualzz/i18n";
 import { ChannelType, type APIChannel } from "@mutualzz/types";
-import { Box, InputDefault, Sheet, Typography, useTheme } from "@mutualzz/ui-native";
+import {
+  Box,
+  InputDefault,
+  Sheet,
+  Typography,
+  useTheme,
+} from "@mutualzz/ui-native";
 import {
   useScaledFeedPreviewSizes,
   useScaledSquareSize,
 } from "@utils/accessibilityLayout";
 import { useSheetMaxHeight } from "@utils/sheet";
-import type { ChannelPermissionOverwrite } from "@stores/objects/ChannelPermissionOverwrite";
 import type { Channel } from "@stores/objects/Channel";
 import { useMutation } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
@@ -81,6 +86,8 @@ function getChannelPermissionGroups(
     }));
 }
 
+const MEMBER_PICKER_PAGE_SIZE = 50;
+
 export const ChannelSettingsSheet = observer(
   ({ visible, onClose, channel }: Props) => {
     const app = useAppStore();
@@ -98,6 +105,14 @@ export const ChannelSettingsSheet = observer(
     const [overwriteSearch, setOverwriteSearch] = useState("");
 
     const space = channel.space;
+
+    useEffect(() => {
+      space?.members.requestSome(MEMBER_PICKER_PAGE_SIZE);
+    }, [space]);
+
+    useEffect(() => {
+      space?.members.search(overwriteSearch);
+    }, [space, overwriteSearch]);
     const me = space?.members.me;
     const canManagePermissions = !!me?.hasPermission("ManageRoles", channel);
 
@@ -316,353 +331,351 @@ export const ChannelSettingsSheet = observer(
               maxHeight: sheetMaxHeight,
             }}
           >
-              <Typography level="body-lg" weight="bold">
-                {t("channels.settingsTitle")}
-              </Typography>
-              <ScrollView keyboardShouldPersistTaps="handled">
-                <Box style={{ gap: 12 }}>
-                  <InputDefault
-                    fullWidth
-                    value={name ?? ""}
-                    onChangeText={setName}
-                    placeholder={t("channels.namePlaceholder")}
-                  />
-                  <MarkdownInput
-                    value={topic}
-                    onChange={setTopic}
-                    selection={selection}
-                    onChangeSelection={setSelection}
-                    channelId={channel.id}
-                    placeholder={t("channels.topicPlaceholder")}
-                    style={{ minHeight: feedSizes.composerMinHeight }}
-                  />
+            <Typography level="body-lg" weight="bold">
+              {t("channels.settingsTitle")}
+            </Typography>
+            <ScrollView keyboardShouldPersistTaps="handled">
+              <Box style={{ gap: 12 }}>
+                <InputDefault
+                  fullWidth
+                  value={name ?? ""}
+                  onChangeText={setName}
+                  placeholder={t("channels.namePlaceholder")}
+                />
+                <MarkdownInput
+                  value={topic}
+                  onChange={setTopic}
+                  selection={selection}
+                  onChangeSelection={setSelection}
+                  channelId={channel.id}
+                  placeholder={t("channels.topicPlaceholder")}
+                  style={{ minHeight: feedSizes.composerMinHeight }}
+                />
 
-                  {canManagePermissions && (
-                    <Box style={{ gap: 12, paddingTop: 8 }}>
-                      <Typography level="body-md" weight="bold">
-                        {t("channels.permissionOverwrites")}
-                      </Typography>
+                {canManagePermissions && (
+                  <Box style={{ gap: 12, paddingTop: 8 }}>
+                    <Typography level="body-md" weight="bold">
+                      {t("channels.permissionOverwrites")}
+                    </Typography>
 
-                      <Box
-                        style={{
-                          flexDirection: "row",
-                          gap: 8,
-                          flexWrap: "wrap",
+                    <Box
+                      style={{
+                        flexDirection: "row",
+                        gap: 8,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      {targetEntries.map((entry) => {
+                        const selected = entry.key === selectedKey;
+                        const dirty = dirtyKeys.has(entry.key);
+                        return (
+                          <Pressable
+                            key={entry.key}
+                            onPress={() => setSelectedKey(entry.key)}
+                            accessibilityRole="button"
+                            accessibilityLabel={entry.label}
+                          >
+                            <Paper
+                              variant={selected ? "soft" : "plain"}
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                gap: 8,
+                                paddingHorizontal: 10,
+                                paddingVertical: 8,
+                                borderRadius: 999,
+                              }}
+                            >
+                              {entry.kind === "role" ? (
+                                <ShieldIcon
+                                  size={14}
+                                  weight="fill"
+                                  color={entry.color || theme.colors.info}
+                                />
+                              ) : (
+                                <UserIcon size={14} weight="fill" />
+                              )}
+                              <Typography level="body-xs">
+                                {entry.label}
+                              </Typography>
+                              {dirty && (
+                                <Box
+                                  style={{
+                                    width: dirtyIndicatorSize,
+                                    height: dirtyIndicatorSize,
+                                    borderRadius: dirtyIndicatorSize / 2,
+                                    backgroundColor: theme.colors.warning,
+                                  }}
+                                />
+                              )}
+                            </Paper>
+                          </Pressable>
+                        );
+                      })}
+
+                      <Pressable
+                        onPress={() => {
+                          setOverwritePickerOpen(true);
+                          setOverwriteSearch("");
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel={t(
+                          "channels.permissions.addOverwrite",
+                        )}
                       >
-                        {targetEntries.map((entry) => {
-                          const selected = entry.key === selectedKey;
-                          const dirty = dirtyKeys.has(entry.key);
-                          return (
-                            <Pressable
-                              key={entry.key}
-                              onPress={() => setSelectedKey(entry.key)}
-                              accessibilityRole="button"
-                              accessibilityLabel={entry.label}
-                            >
-                              <Paper
-                                variant={selected ? "soft" : "plain"}
-                                style={{
-                                  flexDirection: "row",
-                                  alignItems: "center",
-                                  gap: 8,
-                                  paddingHorizontal: 10,
-                                  paddingVertical: 8,
-                                  borderRadius: 999,
-                                }}
-                              >
-                                {entry.kind === "role" ? (
-                                  <ShieldIcon
-                                    size={14}
-                                    weight="fill"
-                                    color={entry.color || theme.colors.info}
-                                  />
-                                ) : (
-                                  <UserIcon size={14} weight="fill" />
-                                )}
-                                <Typography level="body-xs">
-                                  {entry.label}
-                                </Typography>
-                                {dirty && (
-                                  <Box
-                                    style={{
-                                      width: dirtyIndicatorSize,
-                                      height: dirtyIndicatorSize,
-                                      borderRadius: dirtyIndicatorSize / 2,
-                                      backgroundColor: theme.colors.warning,
-                                    }}
-                                  />
-                                )}
-                              </Paper>
-                            </Pressable>
-                          );
-                        })}
-
-                        <Pressable
-                          onPress={() => {
-                            setOverwritePickerOpen(true);
-                            setOverwriteSearch("");
+                        <Paper
+                          variant="plain"
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 8,
+                            paddingHorizontal: 10,
+                            paddingVertical: 8,
+                            borderRadius: 999,
                           }}
-                          accessibilityRole="button"
-                          accessibilityLabel={t(
-                            "channels.permissions.addOverwrite",
-                          )}
                         >
-                          <Paper
+                          <PlusIcon size={14} weight="bold" />
+                          <Typography level="body-xs">
+                            {tCommon("add")}
+                          </Typography>
+                        </Paper>
+                      </Pressable>
+                    </Box>
+
+                    {!selectedDraft || !selectedKey ? (
+                      <Typography level="body-sm" textColor="muted">
+                        {t("channels.selectOverwriteTarget")}
+                      </Typography>
+                    ) : (
+                      <Box style={{ gap: 10 }}>
+                        <Box
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: 12,
+                          }}
+                        >
+                          <Typography level="body-sm" weight={700}>
+                            {selectedEntry?.label}
+                          </Typography>
+                          <Button
+                            size="sm"
+                            color="danger"
                             variant="plain"
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                              gap: 8,
-                              paddingHorizontal: 10,
-                              paddingVertical: 8,
-                              borderRadius: 999,
-                            }}
+                            disabled={deletingOverwrite}
+                            onPress={() => deleteOverwrite(selectedKey)}
                           >
-                            <PlusIcon size={14} weight="bold" />
-                            <Typography level="body-xs">
-                              {tCommon("add")}
-                            </Typography>
-                          </Paper>
-                        </Pressable>
-                      </Box>
+                            {tCommon("remove")}
+                          </Button>
+                        </Box>
 
-                      {!selectedDraft || !selectedKey ? (
-                        <Typography level="body-sm" textColor="muted">
-                          {t("channels.selectOverwriteTarget")}
-                        </Typography>
-                      ) : (
-                        <Box style={{ gap: 10 }}>
-                          <Box
-                            style={{
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              gap: 12,
-                            }}
-                          >
-                            <Typography level="body-sm" weight={700}>
-                              {selectedEntry?.label}
-                            </Typography>
-                            <Button
-                              size="sm"
-                              color="danger"
-                              variant="plain"
-                              disabled={deletingOverwrite}
-                              onPress={() => deleteOverwrite(selectedKey)}
+                        <InputDefault
+                          fullWidth
+                          value={overwriteSearch}
+                          onChangeText={setOverwriteSearch}
+                          placeholder={t("roles.permissions.searchPlaceholder")}
+                        />
+
+                        {filteredPermissionGroups.length === 0 ? (
+                          <Typography level="body-sm" textColor="muted">
+                            {t("roles.permissions.emptySearch")}
+                          </Typography>
+                        ) : (
+                          filteredPermissionGroups.map((group) => (
+                            <Paper
+                              key={group.id}
+                              style={{
+                                padding: 12,
+                                borderRadius: 12,
+                                gap: 10,
+                              }}
+                              elevation={app.settings?.preferEmbossed ? 2 : 0}
                             >
-                              {tCommon("remove")}
-                            </Button>
-                          </Box>
+                              <Typography level="body-sm" weight={700}>
+                                {group.title}
+                              </Typography>
+                              <Box style={{ gap: 8 }}>
+                                {group.items.map((item) => {
+                                  const current = getOverwriteState(
+                                    selectedDraft,
+                                    item.flag,
+                                  );
 
-                          <InputDefault
-                            fullWidth
-                            value={overwriteSearch}
-                            onChangeText={setOverwriteSearch}
-                            placeholder={t("roles.permissions.searchPlaceholder")}
-                          />
-
-                          {filteredPermissionGroups.length === 0 ? (
-                            <Typography level="body-sm" textColor="muted">
-                              {t("roles.permissions.emptySearch")}
-                            </Typography>
-                          ) : (
-                            filteredPermissionGroups.map((group) => (
-                              <Paper
-                                key={group.id}
-                                style={{
-                                  padding: 12,
-                                  borderRadius: 12,
-                                  gap: 10,
-                                }}
-                                elevation={app.settings?.preferEmbossed ? 2 : 0}
-                              >
-                                <Typography level="body-sm" weight={700}>
-                                  {group.title}
-                                </Typography>
-                                <Box style={{ gap: 8 }}>
-                                  {group.items.map((item) => {
-                                    const current = getOverwriteState(
-                                      selectedDraft,
-                                      item.flag,
+                                  const toggleState = (
+                                    next: OverwriteState,
+                                  ) => {
+                                    updateDraft(
+                                      selectedKey,
+                                      toggleOverwriteState(
+                                        selectedDraft,
+                                        item.flag,
+                                        next,
+                                      ),
                                     );
+                                  };
 
-                                    const toggleState = (
-                                      next: OverwriteState,
-                                    ) => {
-                                      updateDraft(
-                                        selectedKey,
-                                        toggleOverwriteState(
-                                          selectedDraft,
-                                          item.flag,
-                                          next,
-                                        ),
-                                      );
+                                  const stateStyle = (
+                                    state: OverwriteState,
+                                    active: boolean,
+                                  ) => {
+                                    const color =
+                                      state === "allow"
+                                        ? theme.colors.success
+                                        : state === "deny"
+                                          ? theme.colors.danger
+                                          : theme.typography.colors.muted;
+                                    return {
+                                      width: permissionToggleSize,
+                                      height: permissionToggleSize,
+                                      borderRadius: 8,
+                                      alignItems: "center" as const,
+                                      justifyContent: "center" as const,
+                                      borderWidth: 2,
+                                      borderColor: active
+                                        ? color
+                                        : `${color}55`,
+                                      backgroundColor: active
+                                        ? `${color}22`
+                                        : "transparent",
                                     };
+                                  };
 
-                                    const stateStyle = (
-                                      state: OverwriteState,
-                                      active: boolean,
-                                    ) => {
-                                      const color =
-                                        state === "allow"
-                                          ? theme.colors.success
-                                          : state === "deny"
-                                            ? theme.colors.danger
-                                            : theme.typography.colors.muted;
-                                      return {
-                                        width: permissionToggleSize,
-                                        height: permissionToggleSize,
-                                        borderRadius: 8,
-                                        alignItems: "center" as const,
-                                        justifyContent: "center" as const,
-                                        borderWidth: 2,
-                                        borderColor: active
-                                          ? color
-                                          : `${color}55`,
-                                        backgroundColor: active
-                                          ? `${color}22`
-                                          : "transparent",
-                                      };
-                                    };
-
-                                    return (
+                                  return (
+                                    <Box
+                                      key={item.flag}
+                                      style={{
+                                        gap: 8,
+                                        paddingVertical: 4,
+                                      }}
+                                    >
+                                      <Box style={{ gap: 2 }}>
+                                        <Typography
+                                          level="body-sm"
+                                          weight={600}
+                                        >
+                                          {item.label}
+                                        </Typography>
+                                        {item.description && (
+                                          <Typography
+                                            level="body-xs"
+                                            textColor="muted"
+                                          >
+                                            {item.description}
+                                          </Typography>
+                                        )}
+                                      </Box>
                                       <Box
-                                        key={item.flag}
                                         style={{
+                                          flexDirection: "row",
                                           gap: 8,
-                                          paddingVertical: 4,
                                         }}
                                       >
-                                        <Box style={{ gap: 2 }}>
-                                          <Typography
-                                            level="body-sm"
-                                            weight={600}
-                                          >
-                                            {item.label}
-                                          </Typography>
-                                          {item.description && (
-                                            <Typography
-                                              level="body-xs"
-                                              textColor="muted"
-                                            >
-                                              {item.description}
-                                            </Typography>
+                                        <Pressable
+                                          onPress={() => toggleState("allow")}
+                                          accessibilityLabel={tCommon(
+                                            "a11y.allowPermission",
+                                            { label: item.label },
                                           )}
-                                        </Box>
-                                        <Box
-                                          style={{
-                                            flexDirection: "row",
-                                            gap: 8,
-                                          }}
                                         >
-                                          <Pressable
-                                            onPress={() => toggleState("allow")}
-                                            accessibilityLabel={tCommon(
-                                              "a11y.allowPermission",
-                                              { label: item.label },
+                                          <Box
+                                            style={stateStyle(
+                                              "allow",
+                                              current === "allow",
                                             )}
                                           >
-                                            <Box
-                                              style={stateStyle(
-                                                "allow",
-                                                current === "allow",
-                                              )}
-                                            >
-                                              <CheckIcon
-                                                size={14}
-                                                weight="bold"
-                                              />
-                                            </Box>
-                                          </Pressable>
-                                          <Pressable
-                                            onPress={() =>
-                                              toggleState("neutral")
-                                            }
-                                            accessibilityLabel={tCommon(
-                                              "a11y.neutralPermission",
-                                              { label: item.label },
+                                            <CheckIcon
+                                              size={14}
+                                              weight="bold"
+                                            />
+                                          </Box>
+                                        </Pressable>
+                                        <Pressable
+                                          onPress={() => toggleState("neutral")}
+                                          accessibilityLabel={tCommon(
+                                            "a11y.neutralPermission",
+                                            { label: item.label },
+                                          )}
+                                        >
+                                          <Box
+                                            style={stateStyle(
+                                              "neutral",
+                                              current === "neutral",
                                             )}
                                           >
-                                            <Box
-                                              style={stateStyle(
-                                                "neutral",
-                                                current === "neutral",
-                                              )}
-                                            >
-                                              <MinusIcon
-                                                size={14}
-                                                weight="bold"
-                                              />
-                                            </Box>
-                                          </Pressable>
-                                          <Pressable
-                                            onPress={() => toggleState("deny")}
-                                            accessibilityLabel={tCommon(
-                                              "a11y.denyPermission",
-                                              { label: item.label },
+                                            <MinusIcon
+                                              size={14}
+                                              weight="bold"
+                                            />
+                                          </Box>
+                                        </Pressable>
+                                        <Pressable
+                                          onPress={() => toggleState("deny")}
+                                          accessibilityLabel={tCommon(
+                                            "a11y.denyPermission",
+                                            { label: item.label },
+                                          )}
+                                        >
+                                          <Box
+                                            style={stateStyle(
+                                              "deny",
+                                              current === "deny",
                                             )}
                                           >
-                                            <Box
-                                              style={stateStyle(
-                                                "deny",
-                                                current === "deny",
-                                              )}
-                                            >
-                                              <XIcon size={14} weight="bold" />
-                                            </Box>
-                                          </Pressable>
-                                        </Box>
+                                            <XIcon size={14} weight="bold" />
+                                          </Box>
+                                        </Pressable>
                                       </Box>
-                                    );
-                                  })}
-                                </Box>
-                              </Paper>
-                            ))
-                          )}
+                                    </Box>
+                                  );
+                                })}
+                              </Box>
+                            </Paper>
+                          ))
+                        )}
 
-                          {dirtyKeys.has(selectedKey) && (
-                            <Box style={{ flexDirection: "row", gap: 8 }}>
-                              <Button
-                                color="danger"
-                                variant="plain"
-                                disabled={savingOverwrite}
-                                onPress={resetSelected}
-                              >
-                                {tCommon("reset")}
-                              </Button>
-                              <Button
-                                disabled={savingOverwrite}
-                                onPress={() => saveOverwrite()}
-                              >
-                                {t("channels.saveOverwrite")}
-                              </Button>
-                            </Box>
-                          )}
-                        </Box>
-                      )}
-                    </Box>
-                  )}
+                        {dirtyKeys.has(selectedKey) && (
+                          <Box style={{ flexDirection: "row", gap: 8 }}>
+                            <Button
+                              color="danger"
+                              variant="plain"
+                              disabled={savingOverwrite}
+                              onPress={resetSelected}
+                            >
+                              {tCommon("reset")}
+                            </Button>
+                            <Button
+                              disabled={savingOverwrite}
+                              onPress={() => saveOverwrite()}
+                            >
+                              {t("channels.saveOverwrite")}
+                            </Button>
+                          </Box>
+                        )}
+                      </Box>
+                    )}
+                  </Box>
+                )}
 
-                  {space && (
-                    <ChannelInvitesSection space={space} channel={channel} />
-                  )}
-                </Box>
-              </ScrollView>
-              <Button
-                disabled={isPending || !name?.trim()}
-                onPress={() => save()}
-              >
-                {tCommon("save")}
-              </Button>
-              <Button
-                color="danger"
-                variant="soft"
-                disabled={deleting}
-                onPress={() => deleteChannel()}
-              >
-                {t("channels.deleteChannelAction")}
-              </Button>
+                {space && (
+                  <ChannelInvitesSection space={space} channel={channel} />
+                )}
+              </Box>
+            </ScrollView>
+            <Button
+              disabled={isPending || !name?.trim()}
+              onPress={() => save()}
+            >
+              {tCommon("save")}
+            </Button>
+            <Button
+              color="danger"
+              variant="soft"
+              disabled={deleting}
+              onPress={() => deleteChannel()}
+            >
+              {t("channels.deleteChannelAction")}
+            </Button>
           </View>
         </Sheet>
 
@@ -683,88 +696,87 @@ export const ChannelSettingsSheet = observer(
             <Typography level="body-lg" weight="bold">
               {t("channels.permissions.addOverwrite")}
             </Typography>
-              <InputDefault
-                fullWidth
-                value={overwriteSearch}
-                onChangeText={setOverwriteSearch}
-                placeholder={t("channels.searchTargets")}
-              />
+            <InputDefault
+              fullWidth
+              value={overwriteSearch}
+              onChangeText={setOverwriteSearch}
+              placeholder={t("channels.searchTargets")}
+            />
 
-              <ScrollView keyboardShouldPersistTaps="handled">
-                <Box style={{ gap: 12 }}>
-                  {filteredRoles.length > 0 && (
-                    <Box style={{ gap: 8 }}>
-                      <Typography level="body-xs" textColor="muted">
-                        {t("channels.permissions.roles")}
-                      </Typography>
-                      {filteredRoles.map((role) => (
-                        <Pressable
-                          key={role.id}
-                          onPress={() => addOverwrite(role.id, "role")}
+            <ScrollView keyboardShouldPersistTaps="handled">
+              <Box style={{ gap: 12 }}>
+                {filteredRoles.length > 0 && (
+                  <Box style={{ gap: 8 }}>
+                    <Typography level="body-xs" textColor="muted">
+                      {t("channels.permissions.roles")}
+                    </Typography>
+                    {filteredRoles.map((role) => (
+                      <Pressable
+                        key={role.id}
+                        onPress={() => addOverwrite(role.id, "role")}
+                      >
+                        <Paper
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: 10,
+                            borderRadius: 10,
+                          }}
                         >
-                          <Paper
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                              gap: 8,
-                              padding: 10,
-                              borderRadius: 10,
-                            }}
-                          >
-                            <ShieldIcon
-                              size={14}
-                              weight="fill"
-                              color={role.color || theme.colors.info}
-                            />
-                            <Typography level="body-sm">{role.name}</Typography>
-                          </Paper>
-                        </Pressable>
-                      ))}
-                    </Box>
-                  )}
+                          <ShieldIcon
+                            size={14}
+                            weight="fill"
+                            color={role.color || theme.colors.info}
+                          />
+                          <Typography level="body-sm">{role.name}</Typography>
+                        </Paper>
+                      </Pressable>
+                    ))}
+                  </Box>
+                )}
 
-                  {filteredMembers.length > 0 && (
-                    <Box style={{ gap: 8 }}>
-                      <Typography level="body-xs" textColor="muted">
-                        {t("channels.permissions.members")}
-                      </Typography>
-                      {filteredMembers.map((member) => (
-                        <Pressable
-                          key={member.id}
-                          onPress={() => addOverwrite(member.id, "member")}
+                {filteredMembers.length > 0 && (
+                  <Box style={{ gap: 8 }}>
+                    <Typography level="body-xs" textColor="muted">
+                      {t("channels.permissions.members")}
+                    </Typography>
+                    {filteredMembers.map((member) => (
+                      <Pressable
+                        key={member.id}
+                        onPress={() => addOverwrite(member.id, "member")}
+                      >
+                        <Paper
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: 10,
+                            borderRadius: 10,
+                          }}
                         >
-                          <Paper
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                              gap: 8,
-                              padding: 10,
-                              borderRadius: 10,
-                            }}
-                          >
-                            <UserIcon size={14} weight="fill" />
-                            <Box style={{ flex: 1, minWidth: 0 }}>
-                              <Typography level="body-sm" truncate="single">
-                                {member.displayName}
-                              </Typography>
-                              <Typography level="body-xs" textColor="muted">
-                                @{member.user?.username}
-                              </Typography>
-                            </Box>
-                          </Paper>
-                        </Pressable>
-                      ))}
-                    </Box>
-                  )}
+                          <UserIcon size={14} weight="fill" />
+                          <Box style={{ flex: 1, minWidth: 0 }}>
+                            <Typography level="body-sm" truncate="single">
+                              {member.displayName}
+                            </Typography>
+                            <Typography level="body-xs" textColor="muted">
+                              @{member.user?.username}
+                            </Typography>
+                          </Box>
+                        </Paper>
+                      </Pressable>
+                    ))}
+                  </Box>
+                )}
 
-                  {filteredRoles.length === 0 &&
-                    filteredMembers.length === 0 && (
-                      <Typography level="body-sm" textColor="muted">
-                        {t("channels.permissions.noResults")}
-                      </Typography>
-                    )}
-                </Box>
-              </ScrollView>
+                {filteredRoles.length === 0 && filteredMembers.length === 0 && (
+                  <Typography level="body-sm" textColor="muted">
+                    {t("channels.permissions.noResults")}
+                  </Typography>
+                )}
+              </Box>
+            </ScrollView>
           </View>
         </Sheet>
       </>

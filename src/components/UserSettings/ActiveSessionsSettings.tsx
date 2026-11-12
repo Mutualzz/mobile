@@ -1,4 +1,5 @@
 import { Button } from "@components/Button";
+import { ListSkeleton } from "@components/Skeletons";
 import { useAppStore } from "@hooks/useStores";
 import {
   fetchMeSessions,
@@ -31,9 +32,7 @@ export const ActiveSessionsSettings = observer(() => {
       Alert.alert(t("account.sessionRevoked"));
     },
     onError: (error) => {
-      Alert.alert(
-        formatRestError(error, t("account.sessionRevokeError")),
-      );
+      Alert.alert(formatRestError(error, t("account.sessionRevokeError")));
     },
   });
 
@@ -71,9 +70,7 @@ export const ActiveSessionsSettings = observer(() => {
   return (
     <>
       {isLoading ? (
-        <Typography level="body-sm" textColor="muted">
-          {t("account.loadingSessions")}
-        </Typography>
+        <ListSkeleton label={t("account.loadingSessions")} count={3} action />
       ) : sessions.length === 0 ? (
         <Typography level="body-sm" textColor="muted">
           {t("account.noSessions")}

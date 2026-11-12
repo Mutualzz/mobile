@@ -1,4 +1,5 @@
 import { Button } from "@components/Button";
+import { ListSkeleton } from "@components/Skeletons";
 import { Paper } from "@components/Paper";
 import { Screen } from "@components/Screen/Screen";
 import { StaffHeader } from "@components/Staff/StaffHeader";
@@ -9,9 +10,9 @@ import { reportReasonKeys } from "@mutualzz/i18n";
 import type { APIReport, ReportStatus } from "@mutualzz/types";
 import { Box, Typography } from "@mutualzz/ui-native";
 import {
-    useInfiniteQuery,
-    useMutation,
-    useQueryClient,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
 } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { observer } from "mobx-react-lite";
@@ -23,380 +24,324 @@ import dayjs from "dayjs";
 const PAGE_LIMIT = 50;
 const ANY = "any";
 
-const statusValues = [ANY, "pending", "reviewed", "dismissed", "actioned"] as const;
+const statusValues = [
+  ANY,
+  "pending",
+  "reviewed",
+  "dismissed",
+  "actioned",
+] as const;
 const targetTypeValues = [
-    ANY,
-    "message",
-    "post",
-    "comment",
-    "user",
-    "space",
+  ANY,
+  "message",
+  "post",
+  "comment",
+  "user",
+  "space",
 ] as const;
 
 function getTakedownKey(targetType: string) {
-    return targetType === "space"
-        ? "report.actions.shutDownSpace"
-        : "report.actions.takeDownContent";
+  return targetType === "space"
+    ? "report.actions.shutDownSpace"
+    : "report.actions.takeDownContent";
 }
 
 function getLockdownKey(targetType: string) {
-    return targetType === "space" ? "report.actions.lockDownSpace" : null;
+  return targetType === "space" ? "report.actions.lockDownSpace" : null;
 }
 
 const StaffReportsScreen = () => {
-    const { t } = useTranslation("staff");
-    const { t: tCommon } = useTranslation("common");
-    const { isStaff } = useRequireStaffAccess();
-    const app = useAppStore();
-    const { navigate } = useAppNavigation();
-    const queryClient = useQueryClient();
+  const { t } = useTranslation("staff");
+  const { t: tCommon } = useTranslation("common");
+  const { isStaff } = useRequireStaffAccess();
+  const app = useAppStore();
+  const { navigate } = useAppNavigation();
+  const queryClient = useQueryClient();
 
-    const [status, setStatus] = useState<string>("pending");
-    const [targetType, setTargetType] = useState<string>(ANY);
+  const [status, setStatus] = useState<string>("pending");
+  const [targetType, setTargetType] = useState<string>(ANY);
 
-    const effectiveStatus = status === ANY ? undefined : status;
-    const effectiveTargetType = targetType === ANY ? undefined : targetType;
+  const effectiveStatus = status === ANY ? undefined : status;
+  const effectiveTargetType = targetType === ANY ? undefined : targetType;
 
-    const queryKey = ["staff-reports", effectiveStatus, effectiveTargetType];
+  const queryKey = ["staff-reports", effectiveStatus, effectiveTargetType];
 
-    const {
-        data,
-        isFetching,
-        fetchNextPage,
-        hasNextPage,
-        isFetchingNextPage,
-    } = useInfiniteQuery({
-        queryKey,
-        queryFn: ({ pageParam }) =>
-            app.rest.get<APIReport[]>("/staff/reports", {
-                ...(effectiveStatus ? { status: effectiveStatus } : {}),
-                ...(effectiveTargetType
-                    ? { targetType: effectiveTargetType }
-                    : {}),
-                ...(pageParam ? { before: pageParam } : {}),
-                limit: PAGE_LIMIT,
-            }),
-        initialPageParam: undefined as string | undefined,
-        getNextPageParam: (lastPage) =>
-            lastPage.length === PAGE_LIMIT
-                ? lastPage[lastPage.length - 1].id
-                : undefined,
-        enabled: isStaff,
+  const { data, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey,
+      queryFn: ({ pageParam }) =>
+        app.rest.get<APIReport[]>("/staff/reports", {
+          ...(effectiveStatus ? { status: effectiveStatus } : {}),
+          ...(effectiveTargetType ? { targetType: effectiveTargetType } : {}),
+          ...(pageParam ? { before: pageParam } : {}),
+          limit: PAGE_LIMIT,
+        }),
+      initialPageParam: undefined as string | undefined,
+      getNextPageParam: (lastPage) =>
+        lastPage.length === PAGE_LIMIT
+          ? lastPage[lastPage.length - 1].id
+          : undefined,
+      enabled: isStaff,
     });
 
-    const reports = data?.pages.flat() ?? [];
+  const reports = data?.pages.flat() ?? [];
 
-    const { mutate: updateStatus, isPending: updatingStatus } = useMutation({
-        mutationKey: ["staff-update-report-status"],
-        mutationFn: ({
-            reportId,
-            status: newStatus,
-        }: {
-            reportId: string;
-            status: ReportStatus;
-        }) =>
-            app.rest.patch(`/staff/reports/${reportId}`, {
-                status: newStatus,
-            }),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["staff-reports"] });
-        },
-    });
+  const { mutate: updateStatus, isPending: updatingStatus } = useMutation({
+    mutationKey: ["staff-update-report-status"],
+    mutationFn: ({
+      reportId,
+      status: newStatus,
+    }: {
+      reportId: string;
+      status: ReportStatus;
+    }) =>
+      app.rest.patch(`/staff/reports/${reportId}`, {
+        status: newStatus,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-reports"] });
+    },
+  });
 
-    const { mutate: takedownContent, isPending: takingDown } = useMutation({
-        mutationKey: ["staff-report-takedown"],
-        mutationFn: (reportId: string) =>
-            app.rest.post<{ report: APIReport; contentRemoved: boolean }>(
-                `/staff/reports/${reportId}/takedown`,
-                {},
-            ),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["staff-reports"] });
-        },
-    });
+  const { mutate: takedownContent, isPending: takingDown } = useMutation({
+    mutationKey: ["staff-report-takedown"],
+    mutationFn: (reportId: string) =>
+      app.rest.post<{ report: APIReport; contentRemoved: boolean }>(
+        `/staff/reports/${reportId}/takedown`,
+        {},
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-reports"] });
+    },
+  });
 
-    const { mutate: lockdownSpace, isPending: lockingDown } = useMutation({
-        mutationKey: ["staff-report-lockdown"],
-        mutationFn: (reportId: string) =>
-            app.rest.post<{ report: APIReport; contentRemoved: boolean }>(
-                `/staff/reports/${reportId}/lockdown`,
-                {},
-            ),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["staff-reports"] });
-        },
-    });
+  const { mutate: lockdownSpace, isPending: lockingDown } = useMutation({
+    mutationKey: ["staff-report-lockdown"],
+    mutationFn: (reportId: string) =>
+      app.rest.post<{ report: APIReport; contentRemoved: boolean }>(
+        `/staff/reports/${reportId}/lockdown`,
+        {},
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-reports"] });
+    },
+  });
 
-    const acting = takingDown || lockingDown;
+  const acting = takingDown || lockingDown;
 
-    const reasonLabel = (reason: string) => {
-        const key =
-            reportReasonKeys[reason as keyof typeof reportReasonKeys];
-        return key ? tCommon(key) : reason;
-    };
+  const reasonLabel = (reason: string) => {
+    const key = reportReasonKeys[reason as keyof typeof reportReasonKeys];
+    return key ? tCommon(key) : reason;
+  };
 
-    const statusLabel = (value: string) => {
-        if (value === ANY) return t("report.anyStatus");
-        return t(`report.status.${value}`);
-    };
+  const statusLabel = (value: string) => {
+    if (value === ANY) return t("report.anyStatus");
+    return t(`report.status.${value}`);
+  };
 
-    const targetTypeLabel = (value: string) => {
-        if (value === ANY) return t("report.anyType");
-        return t(`report.targetTypes.${value}`);
-    };
+  const targetTypeLabel = (value: string) => {
+    if (value === ANY) return t("report.anyType");
+    return t(`report.targetTypes.${value}`);
+  };
 
-    if (!isStaff) return null;
+  if (!isStaff) return null;
 
-    return (
-        <Screen style={{ flexDirection: "column" }}>
-            <StaffHeader
-                title={t("nav.reports")}
-                showBack
-                backHref="/staff"
-            />
-            <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <Box style={{ flexDirection: "row", gap: 8 }}>
-                        {statusValues.map((value) => (
-                            <Button
-                                key={value}
-                                size="sm"
-                                variant={status === value ? "solid" : "soft"}
-                                color={status === value ? "primary" : "neutral"}
-                                onPress={() => setStatus(value)}
-                            >
-                                {statusLabel(value)}
-                            </Button>
-                        ))}
-                    </Box>
-                </ScrollView>
+  return (
+    <Screen style={{ flexDirection: "column" }}>
+      <StaffHeader title={t("nav.reports")} showBack backHref="/staff" />
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <Box style={{ flexDirection: "row", gap: 8 }}>
+            {statusValues.map((value) => (
+              <Button
+                key={value}
+                size="sm"
+                variant={status === value ? "solid" : "soft"}
+                color={status === value ? "primary" : "neutral"}
+                onPress={() => setStatus(value)}
+              >
+                {statusLabel(value)}
+              </Button>
+            ))}
+          </Box>
+        </ScrollView>
 
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <Box style={{ flexDirection: "row", gap: 8 }}>
-                        {targetTypeValues.map((value) => (
-                            <Button
-                                key={value}
-                                size="sm"
-                                variant={
-                                    targetType === value ? "solid" : "soft"
-                                }
-                                color={
-                                    targetType === value
-                                        ? "primary"
-                                        : "neutral"
-                                }
-                                onPress={() => setTargetType(value)}
-                            >
-                                {targetTypeLabel(value)}
-                            </Button>
-                        ))}
-                    </Box>
-                </ScrollView>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <Box style={{ flexDirection: "row", gap: 8 }}>
+            {targetTypeValues.map((value) => (
+              <Button
+                key={value}
+                size="sm"
+                variant={targetType === value ? "solid" : "soft"}
+                color={targetType === value ? "primary" : "neutral"}
+                onPress={() => setTargetType(value)}
+              >
+                {targetTypeLabel(value)}
+              </Button>
+            ))}
+          </Box>
+        </ScrollView>
 
-                {isFetching && (
-                    <Typography level="body-sm" textColor="muted">
-                        {t("home.loading")}
+        {isFetching && reports.length === 0 && (
+          <ListSkeleton label={t("home.loading")} count={5} action />
+        )}
+
+        {!isFetching && reports.length === 0 && (
+          <Typography level="body-sm" textColor="muted">
+            {t("report.empty")}
+          </Typography>
+        )}
+
+        <Box style={{ gap: 8 }}>
+          {reports.map((report) => {
+            const lockdownKey = getLockdownKey(report.targetType);
+            return (
+              <Paper
+                key={report.id}
+                variant="plain"
+                style={{
+                  padding: 12,
+                  borderRadius: 10,
+                  gap: 8,
+                }}
+              >
+                <Box
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    gap: 8,
+                  }}
+                >
+                  <Box style={{ flex: 1, gap: 2 }}>
+                    <Typography level="body-sm" weight={700}>
+                      {reasonLabel(report.reason)} · {report.targetType}{" "}
+                      {report.targetId}
                     </Typography>
-                )}
-
-                {!isFetching && reports.length === 0 && (
-                    <Typography level="body-sm" textColor="muted">
-                        {t("report.empty")}
+                    <Typography level="body-xs" textColor="muted">
+                      {t("report.reportedBy", {
+                        name:
+                          report.reporter.globalName ||
+                          report.reporter.username,
+                      })}
+                      {" · "}
+                      {dayjs(report.createdAt).format("MMM D, YYYY h:mm A")}
                     </Typography>
-                )}
-
-                <Box style={{ gap: 8 }}>
-                    {reports.map((report) => {
-                        const lockdownKey = getLockdownKey(report.targetType);
-                        return (
-                            <Paper
-                                key={report.id}
-                                variant="plain"
-                                style={{
-                                    padding: 12,
-                                    borderRadius: 10,
-                                    gap: 8,
-                                }}
-                            >
-                                <Box
-                                    style={{
-                                        flexDirection: "row",
-                                        justifyContent: "space-between",
-                                        alignItems: "flex-start",
-                                        gap: 8,
-                                    }}
-                                >
-                                    <Box style={{ flex: 1, gap: 2 }}>
-                                        <Typography
-                                            level="body-sm"
-                                            weight={700}
-                                        >
-                                            {reasonLabel(report.reason)} ·{" "}
-                                            {report.targetType}{" "}
-                                            {report.targetId}
-                                        </Typography>
-                                        <Typography
-                                            level="body-xs"
-                                            textColor="muted"
-                                        >
-                                            {t("report.reportedBy", {
-                                                name:
-                                                    report.reporter
-                                                        .globalName ||
-                                                    report.reporter.username,
-                                            })}
-                                            {" · "}
-                                            {dayjs(report.createdAt).format(
-                                                "MMM D, YYYY h:mm A",
-                                            )}
-                                        </Typography>
-                                    </Box>
-                                    <Typography
-                                        level="body-xs"
-                                        weight={700}
-                                        textColor="muted"
-                                    >
-                                        {t(
-                                            `report.status.${report.status}`,
-                                        ).toUpperCase()}
-                                    </Typography>
-                                </Box>
-
-                                {report.description && (
-                                    <Typography level="body-sm">
-                                        {report.description}
-                                    </Typography>
-                                )}
-
-                                <Button
-                                    size="sm"
-                                    color="neutral"
-                                    variant="soft"
-                                    onPress={() =>
-                                        navigate(
-                                            `/staff/reports/${report.id}` as Href,
-                                        )
-                                    }
-                                >
-                                    {t("report.viewDetails")}
-                                </Button>
-
-                                {report.status === "pending" && (
-                                    <Box
-                                        style={{
-                                            flexDirection: "row",
-                                            flexWrap: "wrap",
-                                            gap: 8,
-                                        }}
-                                    >
-                                        {lockdownKey && (
-                                            <Button
-                                                size="sm"
-                                                color="warning"
-                                                variant="solid"
-                                                disabled={
-                                                    acting || updatingStatus
-                                                }
-                                                onPress={() =>
-                                                    lockdownSpace(report.id)
-                                                }
-                                            >
-                                                {lockingDown
-                                                    ? t("working")
-                                                    : t(lockdownKey)}
-                                            </Button>
-                                        )}
-                                        {report.targetType !== "user" && (
-                                            <Button
-                                                size="sm"
-                                                color="danger"
-                                                variant="solid"
-                                                disabled={
-                                                    acting || updatingStatus
-                                                }
-                                                onPress={() =>
-                                                    takedownContent(report.id)
-                                                }
-                                            >
-                                                {takingDown
-                                                    ? t("working")
-                                                    : t(
-                                                          getTakedownKey(
-                                                              report.targetType,
-                                                          ),
-                                                      )}
-                                            </Button>
-                                        )}
-                                        <Button
-                                            size="sm"
-                                            color="success"
-                                            variant="soft"
-                                            disabled={
-                                                updatingStatus || acting
-                                            }
-                                            onPress={() =>
-                                                updateStatus({
-                                                    reportId: report.id,
-                                                    status: "reviewed",
-                                                })
-                                            }
-                                        >
-                                            {t("report.reviewedShort")}
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            color="danger"
-                                            variant="soft"
-                                            disabled={
-                                                updatingStatus || acting
-                                            }
-                                            onPress={() =>
-                                                updateStatus({
-                                                    reportId: report.id,
-                                                    status: "actioned",
-                                                })
-                                            }
-                                        >
-                                            {t("report.actionedShort")}
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            color="neutral"
-                                            variant="soft"
-                                            disabled={
-                                                updatingStatus || acting
-                                            }
-                                            onPress={() =>
-                                                updateStatus({
-                                                    reportId: report.id,
-                                                    status: "dismissed",
-                                                })
-                                            }
-                                        >
-                                            {t("report.dismiss")}
-                                        </Button>
-                                    </Box>
-                                )}
-                            </Paper>
-                        );
-                    })}
+                  </Box>
+                  <Typography level="body-xs" weight={700} textColor="muted">
+                    {t(`report.status.${report.status}`).toUpperCase()}
+                  </Typography>
                 </Box>
 
-                {hasNextPage && (
-                    <Button
-                        color="neutral"
-                        variant="soft"
-                        disabled={isFetchingNextPage}
-                        onPress={() => fetchNextPage()}
-                    >
-                        {isFetchingNextPage
-                            ? t("home.loading")
-                            : t("home.loadMore")}
-                    </Button>
+                {report.description && (
+                  <Typography level="body-sm">{report.description}</Typography>
                 )}
-            </ScrollView>
-        </Screen>
-    );
+
+                <Button
+                  size="sm"
+                  color="neutral"
+                  variant="soft"
+                  onPress={() =>
+                    navigate(`/staff/reports/${report.id}` as Href)
+                  }
+                >
+                  {t("report.viewDetails")}
+                </Button>
+
+                {report.status === "pending" && (
+                  <Box
+                    style={{
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: 8,
+                    }}
+                  >
+                    {lockdownKey && (
+                      <Button
+                        size="sm"
+                        color="warning"
+                        variant="solid"
+                        disabled={acting || updatingStatus}
+                        onPress={() => lockdownSpace(report.id)}
+                      >
+                        {lockingDown ? t("working") : t(lockdownKey)}
+                      </Button>
+                    )}
+                    {report.targetType !== "user" && (
+                      <Button
+                        size="sm"
+                        color="danger"
+                        variant="solid"
+                        disabled={acting || updatingStatus}
+                        onPress={() => takedownContent(report.id)}
+                      >
+                        {takingDown
+                          ? t("working")
+                          : t(getTakedownKey(report.targetType))}
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      color="success"
+                      variant="soft"
+                      disabled={updatingStatus || acting}
+                      onPress={() =>
+                        updateStatus({
+                          reportId: report.id,
+                          status: "reviewed",
+                        })
+                      }
+                    >
+                      {t("report.reviewedShort")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      color="danger"
+                      variant="soft"
+                      disabled={updatingStatus || acting}
+                      onPress={() =>
+                        updateStatus({
+                          reportId: report.id,
+                          status: "actioned",
+                        })
+                      }
+                    >
+                      {t("report.actionedShort")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      color="neutral"
+                      variant="soft"
+                      disabled={updatingStatus || acting}
+                      onPress={() =>
+                        updateStatus({
+                          reportId: report.id,
+                          status: "dismissed",
+                        })
+                      }
+                    >
+                      {t("report.dismiss")}
+                    </Button>
+                  </Box>
+                )}
+              </Paper>
+            );
+          })}
+        </Box>
+
+        {hasNextPage && (
+          <Button
+            color="neutral"
+            variant="soft"
+            disabled={isFetchingNextPage}
+            onPress={() => fetchNextPage()}
+          >
+            {isFetchingNextPage ? t("home.loading") : t("home.loadMore")}
+          </Button>
+        )}
+      </ScrollView>
+    </Screen>
+  );
 };
 
 export default observer(StaffReportsScreen);

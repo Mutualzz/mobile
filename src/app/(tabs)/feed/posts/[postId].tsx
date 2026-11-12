@@ -1,12 +1,13 @@
 import { MediaPostCard } from "@components/Feed/MediaPostCard";
 import { PostCard } from "@components/Feed/PostCard";
 import { Screen } from "@components/Screen/Screen";
+import { PostListSkeleton } from "@components/Skeletons";
 import { useAppStore } from "@hooks/useStores";
-import { Box, Typography } from "@mutualzz/ui-native";
+import { Typography } from "@mutualzz/ui-native";
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { observer } from "mobx-react-lite";
-import { ActivityIndicator, ScrollView } from "react-native";
+import { ScrollView } from "react-native";
 import { useTranslation } from "react-i18next";
 
 const FeedPostDetailScreen = () => {
@@ -38,10 +39,8 @@ const FeedPostDetailScreen = () => {
           paddingVertical: 16,
         }}
       >
-        {isLoading && (
-          <Box style={{ padding: 24, alignItems: "center" }}>
-            <ActivityIndicator />
-          </Box>
+        {isLoading && !post && (
+          <PostListSkeleton label={t("loading")} count={1} />
         )}
 
         {isError && !post && (

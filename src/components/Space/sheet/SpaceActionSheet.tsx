@@ -10,9 +10,7 @@ import {
   type SpaceSheetMenuItem,
   type SpaceSheetQuickAction,
 } from "@components/Space/sheet/components";
-import {
-  spaceSettingsHref,
-} from "./SpaceSettingsNavContent";
+import { spaceSettingsHref } from "./SpaceSettingsNavContent";
 import { useOpenSpaceNotificationSettingsSheet } from "./SpaceNotificationSettingsSheet";
 import { useOpenSpaceSettingsSheet } from "./SpaceSettingsSheet";
 import { useAppNavigation } from "@hooks/useAppNavigation";
@@ -75,8 +73,7 @@ export const SpaceActionSheet = observer(
     const canViewRoles =
       me?.hasAnyPermission(["ManageRoles", "ManageSpace"]) ?? false;
     const canViewExpressions =
-      me?.hasAnyPermission(["ManageExpressions", "CreateExpressions"]) ??
-      false;
+      me?.hasAnyPermission(["ManageExpressions", "CreateExpressions"]) ?? false;
 
     const canInvite = space.visibleChannels.some(
       (ch) =>
@@ -105,7 +102,7 @@ export const SpaceActionSheet = observer(
         channel ??
         space.visibleChannels.find((ch) => ch.type !== ChannelType.Category);
       if (!listChannel) return;
-      app.gateway.requestMemberListRange(space.id, listChannel.id, 100);
+      app.gateway.ensureMemberList(space.id, listChannel.id);
     }, [app.gateway, channel, space]);
 
     const close = () => closeSheet(sheetId);

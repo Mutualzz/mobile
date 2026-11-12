@@ -1,5 +1,6 @@
 import { MarkdownRenderer } from "@components/Markdown/MarkdownRenderer/MarkdownRenderer";
 import { Paper } from "@components/Paper";
+import { PostEmbedSkeleton } from "@components/Skeletons";
 import { IconButton } from "@components/IconButton";
 import { UserAvatar } from "@components/User/UserAvatar";
 import { useAppNavigation } from "@hooks/useAppNavigation";
@@ -164,10 +165,12 @@ export const PostEmbedPreview = observer(({ post: postData }: Props) => {
           borderWidth: 1,
           borderColor: theme.colors.surface,
         }}
+        accessible
+        accessibilityRole="progressbar"
+        accessibilityLabel={t("feed.embed.loadingPost")}
+        accessibilityState={{ busy: true }}
       >
-        <Typography level="body-sm" textColor="muted">
-          {t("feed.embed.loadingPost")}
-        </Typography>
+        <PostEmbedSkeleton />
       </Paper>
     );
   }

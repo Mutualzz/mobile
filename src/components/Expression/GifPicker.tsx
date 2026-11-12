@@ -1,4 +1,5 @@
 import { IconButton } from "@components/IconButton";
+import { TileGridSkeleton } from "@components/Skeletons";
 import { useAppStore } from "@hooks/useStores";
 import {
   ArrowLeftIcon,
@@ -321,7 +322,11 @@ export const GifPickerContent = observer(
           </Typography>
         )}
 
-        {(isLoading || isFetching) && debouncedSearch.trim() && (
+        {isLoading && debouncedSearch.trim() && (
+          <TileGridSkeleton label={t("loading")} />
+        )}
+
+        {!isLoading && isFetching && debouncedSearch.trim() && (
           <ActivityIndicator
             style={{ paddingVertical: 24 }}
             color={theme.colors.primary}
@@ -409,10 +414,9 @@ export const GifPickerContent = observer(
           onEndReachedThreshold={0.4}
           ListFooterComponent={
             !viewingFavorites && hasNextPage ? (
-              <ActivityIndicator
-                style={{ paddingVertical: 16 }}
-                color={theme.colors.primary}
-              />
+              <Box style={{ paddingTop: 6 }}>
+                <TileGridSkeleton label={t("loading")} count={2} />
+              </Box>
             ) : null
           }
           renderItem={({ item }) => (
