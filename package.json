@@ -81,6 +81,7 @@
     "react-native-webrtc": "^124.0.6",
     "react-native-webview": "13.16.1",
     "react-native-worklets": "catalog:",
+    "media-session": "link:./modules/media-session",
     "voice-live-activity": "file:./modules/voice-live-activity"
   },
   "devDependencies": {

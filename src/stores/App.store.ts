@@ -33,6 +33,7 @@ import { ProfileStore } from "@stores/Profile.store";
 import { TypingStore } from "@stores/Typing.store";
 import { PresenceStore } from "@stores/Presence.store";
 import { CustomStatusStore } from "@stores/CustomStatus.store";
+import { MusicPresenceStore } from "@stores/MusicPresence.store";
 import { VoiceStore } from "@stores/Voice.store";
 import type { Message } from "@stores/objects/Message";
 import { VoiceStatesStore } from "@stores/VoiceStates.store";
@@ -65,6 +66,7 @@ export class AppStore {
   account: AccountStore | null = null;
   presence = new PresenceStore();
   customStatus = new CustomStatusStore();
+  musicPresence = new MusicPresenceStore();
   voice = new VoiceStore(this);
   voiceStates = new VoiceStatesStore(this);
   memberSweepTimer: ReturnType<typeof setInterval> | null = null;

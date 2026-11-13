@@ -1,0 +1,13 @@
+{
+  "description": "Native Mutualzz Android media session reader",
+  "main": "index.ts",
+  "name": "media-session",
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  },
+  "private": true,
+  "types": "index.ts",
+  "version": "1.0.0"
+}

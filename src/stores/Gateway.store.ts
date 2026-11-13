@@ -92,6 +92,13 @@ import { fixConnectionUrl } from "@utils/urls";
 import { openWebSocket } from "@utils/openWebSocket";
 import { dismissCallNotification } from "@utils/androidMessageNotification";
 import i18n from "../i18n";
+import {
+  addMediaChangedListener,
+  startWatchingMedia,
+  type NowPlayingMedia,
+} from "media-session";
+import { buildListeningActivity } from "@presence/mediaApps";
+import { resolveMediaArtworkUrl } from "@presence/mediaArtwork";
 
 export const GatewayStatus = {
   CONNECTING: 0,
@@ -125,6 +132,7 @@ const RESUME_STORAGE_KEY = "mutualzz:gateway:resume";
 const RESUME_MAX_AGE_MS = 110_000;
 const FOREGROUND_DEBOUNCE_MS = 1000;
 const FOREGROUND_FRESH_MS = 15_000;
+const MEDIA_CLEAR_DELAY_MS = 1500;
 
 type Timer = ReturnType<typeof setTimeout>;
 
@@ -192,6 +200,8 @@ export class GatewayStore {
   private lastInboundAt = 0;
   private connectionGeneration = 0;
   private readonly appStateSubscription: NativeEventSubscription;
+  private nowPlaying: NowPlayingMedia | null = null;
+  private mediaClearTimer: Timer | null = null;
 
   constructor(private readonly app: AppStore) {
     makeAutoObservable(this);
@@ -203,7 +213,53 @@ export class GatewayStore {
       "change",
       this.handleAppStateChange,
     );
+    addMediaChangedListener(this.handleMediaChanged);
     void this.restoreResumeState();
+  }
+
+  private handleMediaChanged = (media: NowPlayingMedia | null) => {
+    if (this.mediaClearTimer) {
+      clearTimeout(this.mediaClearTimer);
+      this.mediaClearTimer = null;
+    }
+
+    if (media) {
+      this.setNowPlaying(media);
+      return;
+    }
+
+    this.mediaClearTimer = setTimeout(() => {
+      this.mediaClearTimer = null;
+      this.setNowPlaying(null);
+    }, MEDIA_CLEAR_DELAY_MS);
+  };
+
+  private setNowPlaying(media: NowPlayingMedia | null) {
+    this.nowPlaying = media;
+    this.refreshPresenceActivities();
+  }
+
+  private buildActivities(): PresenceActivity[] {
+    const activities: PresenceActivity[] = [];
+
+    const customActivity = this.app.customStatus.activity;
+    if (customActivity) activities.push(customActivity);
+
+    const musicPresence = this.app.musicPresence;
+    if (
+      this.nowPlaying &&
+      this.app.settings?.shareActivity !== false &&
+      musicPresence.shareMusicActivity
+    ) {
+      const listeningActivity = buildListeningActivity(this.nowPlaying, {
+        disabledMusicApps: musicPresence.disabledMusicApps,
+        syncLyrics: musicPresence.syncLyrics,
+        resolveArtwork: this.resolveMediaArtwork,
+      });
+      if (listeningActivity) activities.push(listeningActivity);
+    }
+
+    return activities;
   }
 
   private async restoreResumeState() {
@@ -464,6 +520,7 @@ export class GatewayStore {
         this.backgroundPresenceStatus = null;
       }
 
+      startWatchingMedia();
       void this.handleForeground();
     }
   };
@@ -755,6 +812,21 @@ export class GatewayStore {
     return ack.ok ? (ack.lyrics ?? null) : null;
   }
 
+  async uploadActivityArt(image: string) {
+    const ack = await this.request<{ url?: string }>(
+      GatewayOpcodes.ActivityArtUpload,
+      { image },
+    );
+    return ack.ok ? (ack.url ?? null) : null;
+  }
+
+  private resolveMediaArtwork = (trackKey: string) =>
+    resolveMediaArtworkUrl(
+      trackKey,
+      (image) => this.uploadActivityArt(image),
+      () => this.refreshPresenceActivities(),
+    );
+
   sendBookmark(action: "add" | "remove", messageId: string) {
     return this.request(
       action === "add"
@@ -924,7 +996,7 @@ export class GatewayStore {
       {
         status,
         device: "mobile",
-        activities: prev?.activities?.filter((a) => a.type === "custom") ?? [],
+        activities: this.buildActivities(),
       },
       { persist: Boolean(opts?.persist) },
     );
@@ -955,9 +1027,7 @@ export class GatewayStore {
     const draft: PresenceUpdateDraft = {
       status: this.getEffectiveStatus(),
       device: "mobile",
-      activities: this.app.customStatus.activity
-        ? [this.app.customStatus.activity]
-        : [],
+      activities: this.buildActivities(),
     };
 
     this.sendPresenceUpdate(draft);
@@ -1017,13 +1087,12 @@ export class GatewayStore {
     const userId = this.app.account?.id;
     if (!userId) return;
 
-    const customActivity = this.app.customStatus.activity;
     const status = this.getEffectiveStatus();
 
     const draft: PresenceUpdateDraft = {
       status,
       device: "mobile",
-      activities: customActivity ? [customActivity] : [],
+      activities: this.buildActivities(),
     };
 
     this.lastPresenceHash = null;
@@ -2941,11 +3010,12 @@ export class GatewayStore {
     this.sendPresenceUpdate({
       status: revertTo,
       device: "mobile",
-      activities: prev?.activities?.filter((a) => a.type === "custom") ?? [],
+      activities: this.buildActivities(),
     });
   };
 
   private startPresenceLoop() {
+    startWatchingMedia();
     if (this.presenceLoopInterval) return;
 
     const tick = () => {
@@ -2955,9 +3025,7 @@ export class GatewayStore {
       const draft: PresenceUpdateDraft = {
         status: this.getEffectiveStatus(),
         device: "mobile",
-        activities: this.app.customStatus.activity
-          ? [this.app.customStatus.activity]
-          : [],
+        activities: this.buildActivities(),
       };
 
       const draftHash = JSON.stringify(draft);

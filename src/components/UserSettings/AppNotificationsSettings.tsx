@@ -4,6 +4,7 @@ import {
   SettingsSection,
   SettingsToggleRow,
 } from "@components/UserSettings/SettingsField";
+import { MusicPresenceSettings } from "@components/UserSettings/MusicPresenceSettings";
 import { useAppStore } from "@hooks/useStores";
 import { Divider, Typography } from "@mutualzz/ui-native";
 import { useQueryClient } from "@tanstack/react-query";
@@ -133,6 +134,8 @@ export const AppNotificationsSettings = observer(() => {
           {t("notifications.dndSuppressNote")}
         </Typography>
       </SettingsSection>
+
+      <MusicPresenceSettings />
     </SettingsScroll>
   );
 });
