@@ -18,7 +18,7 @@ export function ActionMenuItem({
 }: Props) {
   const { theme } = useTheme();
   const pressedBackground = formatColor(theme.typography.colors.primary, {
-    alpha: 0.08,
+    alpha: 8,
     format: "hexa",
   });
 

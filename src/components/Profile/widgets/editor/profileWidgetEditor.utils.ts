@@ -1,6 +1,10 @@
 import type {
   APIMobileProfileBlock,
   APIProfileBlock,
+  ProfileCountdownBlock,
+  ProfileGalleryBlock,
+  ProfileNowPlayingBlock,
+  ProfileEmbedBlock,
   ProfileBlockType,
 } from "@mutualzz/types";
 import { Snowflake } from "@mutualzz/client";
@@ -15,8 +19,13 @@ type MobileBlockContent = DistributiveOmit<
   "id" | "size" | "order"
 >;
 
+export type MobileWidgetType = Exclude<
+  ProfileBlockType,
+  "countdown" | "gallery" | "nowPlaying" | "embed"
+>;
+
 export function createDefaultMobileBlockContent(
-  type: ProfileBlockType,
+  type: MobileWidgetType,
 ): MobileBlockContent {
   switch (type) {
     case "text":
@@ -71,7 +80,7 @@ export function createDefaultMobileBlockContent(
 
 export function addMobileWidget(
   blocks: APIMobileProfileBlock[],
-  type: ProfileBlockType,
+  type: MobileWidgetType,
 ): APIMobileProfileBlock[] {
   const content = createDefaultMobileBlockContent(type);
   const block = {
@@ -181,7 +190,23 @@ export function validateMobileBlocksForSave(
 export function copyDesktopBlocksToMobile(
   blocks: APIProfileBlock[],
 ): APIMobileProfileBlock[] {
-  return blocks.map((block, index) => {
+  return blocks
+    .filter(
+      (
+        block,
+      ): block is Exclude<
+        APIProfileBlock,
+        | ProfileCountdownBlock
+        | ProfileGalleryBlock
+        | ProfileNowPlayingBlock
+        | ProfileEmbedBlock
+      > =>
+        block.type !== "countdown" &&
+        block.type !== "gallery" &&
+        block.type !== "nowPlaying" &&
+        block.type !== "embed",
+    )
+    .map((block, index) => {
     const {
       x: _x,
       y: _y,

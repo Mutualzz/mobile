@@ -72,7 +72,7 @@ export const VoiceChannelControls = observer(() => {
         paddingBottom: Math.max(insets.bottom, 12),
         gap: 10,
         backgroundColor: formatColor(theme.colors.background, {
-          alpha: 0.92,
+          alpha: 92,
           format: "hexa",
         }),
         borderTopWidth: 1,

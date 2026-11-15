@@ -48,6 +48,10 @@ export const WIDGET_SUPPORTED_SIZES: Record<
   ProfileBlockSize[]
 > = {
   header: ["m", "l"],
+  countdown: ["s", "m"],
+  gallery: ["m", "l"],
+  nowPlaying: ["m", "l"],
+  embed: ["m", "l"],
   text: ["s", "m", "l"],
   image: ["s", "m", "l"],
   sticker: ["s", "m", "l"],

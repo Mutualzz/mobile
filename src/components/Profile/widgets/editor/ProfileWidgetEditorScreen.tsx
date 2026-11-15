@@ -6,6 +6,7 @@ import { ProfileWidgetPalette } from "@components/Profile/widgets/editor/Profile
 import { ProfileWidgetsEmptyEditor } from "@components/Profile/widgets/editor/ProfileWidgetsEmptyEditor";
 import {
   addMobileWidget,
+  type MobileWidgetType,
   copyDesktopBlocksToMobile,
   prepareMobileBlocksForSave,
   removeMobileWidget,
@@ -19,7 +20,6 @@ import { useAppStore } from "@hooks/useStores";
 import type {
   APIMobileProfileBlock,
   ProfileBlockSize,
-  ProfileBlockType,
 } from "@mutualzz/types";
 import { Box, Typography, hasOpenSheets, useTheme } from "@mutualzz/ui-native";
 import { useQuery } from "@tanstack/react-query";
@@ -110,7 +110,7 @@ export const ProfileWidgetEditorScreen = observer(() => {
   const sortedBlocks = [...blocks].sort((a, b) => a.order - b.order);
   const editingBlock = blocks.find((b) => b.id === editingBlockId) ?? null;
 
-  const handleAddWidget = (type: ProfileBlockType) => {
+  const handleAddWidget = (type: MobileWidgetType) => {
     syncBlocks(addMobileWidget(blocks, type));
   };
 

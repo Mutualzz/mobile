@@ -72,7 +72,7 @@ export function ContextMenuContent({
 
   const borderColor = formatColor(theme.typography.colors.muted, {
 
-    alpha: 0.2,
+    alpha: 20,
 
     format: "hexa",
 
@@ -80,7 +80,7 @@ export function ContextMenuContent({
 
   const shadowColor = formatColor(theme.typography.colors.primary, {
 
-    alpha: 0.18,
+    alpha: 18,
 
     format: "hexa",
 
@@ -186,7 +186,7 @@ export function ContextMenuItem({
 
   const pressedBackground = formatColor(theme.typography.colors.primary, {
 
-    alpha: 0.08,
+    alpha: 8,
 
     format: "hexa",
 
@@ -280,7 +280,7 @@ export function ContextMenuSeparator() {
 
   const lineColor = formatColor(theme.typography.colors.muted, {
 
-    alpha: 0.25,
+    alpha: 25,
 
     format: "hexa",
 

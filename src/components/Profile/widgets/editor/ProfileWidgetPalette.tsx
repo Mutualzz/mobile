@@ -1,6 +1,6 @@
 import { Typography, useTheme } from "@mutualzz/ui-native";
 import { useScaledWidgetPaletteItemWidth } from "@utils/accessibilityLayout";
-import type { ProfileBlockType } from "@mutualzz/types";
+import type { MobileWidgetType } from "./profileWidgetEditor.utils";
 import {
   ImageIcon,
   LinkIcon,
@@ -20,7 +20,7 @@ import { Pressable, ScrollView } from "react-native";
 import { useTranslation } from "react-i18next";
 
 const ITEMS: {
-  type: ProfileBlockType;
+  type: MobileWidgetType;
   Icon: typeof TextAaIcon;
 }[] = [
   { type: "header", Icon: UserCircleIcon },
@@ -39,7 +39,7 @@ const ITEMS: {
 ];
 
 interface Props {
-  onAddWidget: (type: ProfileBlockType) => void;
+  onAddWidget: (type: MobileWidgetType) => void;
 }
 
 export function ProfileWidgetPalette({ onAddWidget }: Props) {

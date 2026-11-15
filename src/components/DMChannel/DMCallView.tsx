@@ -94,7 +94,7 @@ const CallParticipantTile = observer(
               justifyContent: "center",
               zIndex: 2,
               backgroundColor: formatColor(theme.colors.danger, {
-                alpha: 0.92,
+                alpha: 92,
                 format: "hexa",
               }),
             }}
@@ -112,7 +112,7 @@ const CallParticipantTile = observer(
             paddingVertical: 3,
             borderRadius: 4,
             backgroundColor: formatColor(theme.colors.background, {
-              alpha: 0.65,
+              alpha: 65,
               format: "hexa",
             }),
           }}
@@ -179,7 +179,7 @@ const CallRingingParticipantTile = observer(
             borderRadius: 4,
             zIndex: 2,
             backgroundColor: formatColor(theme.colors.background, {
-              alpha: 0.65,
+              alpha: 65,
               format: "hexa",
             }),
           }}
@@ -274,7 +274,7 @@ export const DMCallView = observer(({ channel }: Props) => {
   const controlsBackground = dynamicElevation(theme.colors.surface, 4);
   const controlCircle = dynamicElevation(theme.colors.surface, 5);
   const divider = formatColor(theme.colors.neutral, {
-    alpha: 0.22,
+    alpha: 22,
     format: "hexa",
   });
 
@@ -354,7 +354,7 @@ export const DMCallView = observer(({ channel }: Props) => {
                 paddingHorizontal: 12,
                 paddingVertical: 8,
                 backgroundColor: formatColor(theme.colors.background, {
-                  alpha: 0.55,
+                  alpha: 55,
                   format: "hexa",
                 }),
               }}

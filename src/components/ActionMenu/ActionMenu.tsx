@@ -50,11 +50,11 @@ export function ActionMenu({
   }, []);
 
   const borderColor = formatColor(theme.typography.colors.muted, {
-    alpha: 0.2,
+    alpha: 20,
     format: "hexa",
   });
   const shadowColor = formatColor(theme.typography.colors.primary, {
-    alpha: 0.18,
+    alpha: 18,
     format: "hexa",
   });
 
@@ -122,7 +122,7 @@ export function ActionMenuLabel({ children }: ActionMenuLabelProps) {
 export function ActionMenuSeparator() {
   const { theme } = useTheme();
   const lineColor = formatColor(theme.typography.colors.muted, {
-    alpha: 0.25,
+    alpha: 25,
     format: "hexa",
   });
 

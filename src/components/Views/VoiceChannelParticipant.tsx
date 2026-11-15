@@ -52,7 +52,7 @@ export const VoiceChannelParticipant = observer(
     const showMuteBadge = muted || locallyMuted || deafened;
     const showDeafBadge = deafened;
     const badgeBackground = formatColor(theme.colors.danger, {
-      alpha: 0.92,
+      alpha: 92,
       format: "hexa",
     });
 
@@ -157,7 +157,7 @@ export const VoiceChannelParticipant = observer(
               borderRadius: 6,
               zIndex: 2,
               backgroundColor: formatColor(theme.colors.background, {
-                alpha: 0.65,
+                alpha: 65,
                 format: "hexa",
               }),
             }}
