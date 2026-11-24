@@ -14,7 +14,4 @@ export const adaptColors = (input: AdaptInput) =>
   });
 
 export const applyAdaptiveThemeValues = (values: APITheme) =>
-  applyAdaptiveThemeValuesBase(
-    values,
-    Appearance.getColorScheme() === "dark",
-  );
+  applyAdaptiveThemeValuesBase(values);
