@@ -91,9 +91,6 @@ const InventorySheetLayout = ({
             editing={editingFor?.(snapshot.serverId)}
           />
         ))}
-        <Typography level="body-xs" textColor="muted">
-          {t("minecraftBridge.inventoryDisclaimer")}
-        </Typography>
       </ScrollView>
     </Box>
   );

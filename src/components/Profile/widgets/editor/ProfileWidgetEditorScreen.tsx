@@ -17,10 +17,7 @@ import {
 import { SettingsScreen } from "@components/UserSettings/SettingsScreen";
 import { useAppNavigation } from "@hooks/useAppNavigation";
 import { useAppStore } from "@hooks/useStores";
-import type {
-  APIMobileProfileBlock,
-  ProfileBlockSize,
-} from "@mutualzz/types";
+import type { APIMobileProfileBlock, ProfileBlockSize } from "@mutualzz/types";
 import { Box, Typography, hasOpenSheets, useTheme } from "@mutualzz/ui-native";
 import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
@@ -153,7 +150,6 @@ export const ProfileWidgetEditorScreen = observer(() => {
         backgroundColor: profile.backgroundColor ?? null,
         backgroundImage: profile.backgroundImage ?? null,
         pageFontFamily: profile.pageFontFamily ?? null,
-        profileMusic: profile.profileMusic ?? null,
         blocks: profile.blocks,
         mobileBlocks: prepareMobileBlocksForSave(blocks),
       });

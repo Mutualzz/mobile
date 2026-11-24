@@ -1,3 +1,4 @@
+import { AppleMusicAttribution } from "@components/Profile/AppleMusicAttribution";
 import type { UserProfile } from "@stores/objects/UserProfile";
 import type {
   MobileProfileMusicBlock,
@@ -63,6 +64,9 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
       ? "youtube"
       : null;
 
+  const fromItunes = !audioHash && block.track?.source === "itunes";
+  const trackUrl = block.track?.trackUrl ?? block.trackUrl ?? null;
+
   const sourceBadge = audioHash
     ? t("profile.music.fullSong")
     : youtubeVideoId && !audioSrc
@@ -76,12 +80,14 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
   const playWhenReadyRef = useRef(false);
 
   const player = useAudioPlayer(loadAudio && audioSrc ? audioSrc : null, {
-    downloadFirst: true,
+    downloadFirst: !!audioHash,
   });
   const status = useAudioPlayerStatus(player);
 
   useEffect(() => {
-    setAudioModeAsync({ playsInSilentMode: true }).catch(() => { return; });
+    setAudioModeAsync({ playsInSilentMode: true }).catch(() => {
+      return;
+    });
   }, []);
 
   useEffect(() => {
@@ -200,7 +206,7 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
   if (size === "s") {
     return (
       <Pressable
-        disabled={!playbackMode}
+        disabled={!playbackMode || fromItunes}
         onPress={togglePlay}
         style={{ width: "100%", height: "100%", position: "relative" }}
       >
@@ -257,7 +263,7 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
             </Typography>
           ) : null}
         </View>
-        {playbackMode ? (
+        {playbackMode && !fromItunes ? (
           <View
             style={{
               position: "absolute",
@@ -305,6 +311,9 @@ export function ProfileMusicWidgetView({ block, size, profile }: Props) {
           <Typography level="body-xs" textColor="muted">
             {sourceBadge}
           </Typography>
+        )}
+        {fromItunes && (
+          <AppleMusicAttribution trackUrl={trackUrl} showBadge={size === "l"} />
         )}
       </Stack>
       {playbackMode && (

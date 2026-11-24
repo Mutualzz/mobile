@@ -1,144 +1,141 @@
 import type {
-    APIProfileMusicSearchTrack,
-    APIUserProfile,
-    Snowflake,
+  APIProfileMusicSearchTrack,
+  APIUserProfile,
+  Snowflake,
 } from "@mutualzz/types";
 import { HttpStatusCode } from "@mutualzz/types";
 import {
-    makeAutoObservable,
-    observable,
-    type ObservableMap,
-    type ObservableSet,
+  makeAutoObservable,
+  observable,
+  type ObservableMap,
+  type ObservableSet,
 } from "mobx";
 import type { AppStore } from "./App.store";
 import { UserProfile } from "./objects/UserProfile";
 
 export class ProfileStore {
-    readonly profiles: ObservableMap<string, UserProfile>;
-    private readonly restrictedUserIds: ObservableSet<string> = observable.set();
-    private readonly pending = new Map<string, Promise<UserProfile | undefined>>();
+  readonly profiles: ObservableMap<string, UserProfile>;
+  private readonly restrictedUserIds: ObservableSet<string> = observable.set();
+  private readonly pending = new Map<
+    string,
+    Promise<UserProfile | undefined>
+  >();
 
-    constructor(private readonly app: AppStore) {
-        this.profiles = observable.map();
-        makeAutoObservable(this, {}, { autoBind: true });
+  constructor(private readonly app: AppStore) {
+    this.profiles = observable.map();
+    makeAutoObservable(this, {}, { autoBind: true });
+  }
+
+  get(userId: Snowflake) {
+    return this.profiles.get(userId);
+  }
+
+  isProfileRestricted(userId: Snowflake) {
+    const me = this.app.account?.id;
+    if (!me || userId === me) return false;
+    if (this.app.relationships.isBlocked(userId)) return true;
+    return this.restrictedUserIds.has(userId);
+  }
+
+  add(profile: APIUserProfile) {
+    const existing = this.profiles.get(profile.userId);
+    if (existing) {
+      existing.update(profile);
+      return existing;
     }
 
-    get(userId: Snowflake) {
-        return this.profiles.get(userId);
+    this.restrictedUserIds.delete(profile.userId);
+    const created = new UserProfile(profile);
+    this.profiles.set(profile.userId, created);
+    return created;
+  }
+
+  update(profile: APIUserProfile) {
+    const existing = this.profiles.get(profile.userId);
+    if (existing) existing.update(profile);
+    else this.add(profile);
+  }
+
+  async resolve(userId: Snowflake, force = false) {
+    if (this.profiles.has(userId) && !force) {
+      return this.profiles.get(userId);
     }
 
-    isProfileRestricted(userId: Snowflake) {
-        const me = this.app.account?.id;
-        if (!me || userId === me) return false;
-        if (this.app.relationships.isBlocked(userId)) return true;
-        return this.restrictedUserIds.has(userId);
-    }
+    const inflight = this.pending.get(userId);
+    if (inflight && !force) return inflight;
 
-    add(profile: APIUserProfile) {
-        const existing = this.profiles.get(profile.userId);
-        if (existing) {
-            existing.update(profile);
-            return existing;
+    const request = this.app.rest
+      .get<APIUserProfile>(`/users/${userId}/profile`)
+      .then((profile) => {
+        if (!profile) return undefined;
+        return this.add(profile);
+      })
+      .catch((err: unknown) => {
+        const info =
+          err && typeof err === "object"
+            ? (err as { status?: number; message?: string })
+            : {};
+        const isNotFound =
+          info.status === HttpStatusCode.NotFound ||
+          info.message === "User not found";
+
+        if (isNotFound) {
+          this.profiles.delete(userId);
+          this.restrictedUserIds.add(userId);
         }
 
-        this.restrictedUserIds.delete(profile.userId);
-        const created = new UserProfile(profile);
-        this.profiles.set(profile.userId, created);
-        return created;
-    }
+        return undefined;
+      })
+      .finally(() => {
+        this.pending.delete(userId);
+      });
 
-    update(profile: APIUserProfile) {
-        const existing = this.profiles.get(profile.userId);
-        if (existing) existing.update(profile);
-        else this.add(profile);
-    }
+    this.pending.set(userId, request);
+    return request;
+  }
 
-    async resolve(userId: Snowflake, force = false) {
-        if (this.profiles.has(userId) && !force) {
-            return this.profiles.get(userId);
-        }
+  async save(
+    payload: Omit<APIUserProfile, "userId" | "configured" | "updatedAt"> & {
+      profileMusicUrl?: string | null;
+      profileMusicTrackId?: string | null;
+      profileMusicTrackSource?: "itunes" | null;
+    },
+  ) {
+    const result = await this.app.rest.put<APIUserProfile>(
+      "@me/profile",
+      payload,
+    );
+    if (!result) return undefined;
+    return this.add(result);
+  }
 
-        const inflight = this.pending.get(userId);
-        if (inflight && !force) return inflight;
+  searchMusic(query: string, opts: { limit?: number } = {}) {
+    return this.app.rest.get<{ tracks: APIProfileMusicSearchTrack[] }>(
+      "@me/profile/music/search",
+      { q: query, limit: opts.limit ?? 10 },
+    );
+  }
 
-        const request = this.app.rest
-            .get<APIUserProfile>(`/users/${userId}/profile`)
-            .then((profile) => {
-                if (!profile) return undefined;
-                return this.add(profile);
-            })
-            .catch((err: unknown) => {
-                const info =
-                    err && typeof err === "object"
-                        ? (err as { status?: number; message?: string })
-                        : {};
-                const isNotFound =
-                    info.status === HttpStatusCode.NotFound ||
-                    info.message === "User not found";
+  uploadAsset(
+    type: "banner" | "background" | "image" | "music" | "font",
+    file: {
+      uri: string;
+      type: string;
+      name: string;
+    },
+  ) {
+    const formData = new FormData();
+    formData.append("file", file as unknown as Blob);
 
-                if (isNotFound) {
-                    this.profiles.delete(userId);
-                    this.restrictedUserIds.add(userId);
-                }
+    return this.app.rest.postFormData<{ hash: string }>(
+      `@me/profile/assets?type=${type}`,
+      formData,
+    );
+  }
 
-                return undefined;
-            })
-            .finally(() => {
-                this.pending.delete(userId);
-            });
-
-        this.pending.set(userId, request);
-        return request;
-    }
-
-    async save(
-        payload: Omit<
-            APIUserProfile,
-            "userId" | "configured" | "updatedAt"
-        > & {
-            profileMusicUrl?: string | null;
-            profileMusicTrackId?: string | null;
-            profileMusicTrackSource?: "itunes" | "deezer" | null;
-        },
-    ) {
-        const result = await this.app.rest.put<APIUserProfile>(
-            "@me/profile",
-            payload,
-        );
-        if (!result) return undefined;
-        return this.add(result);
-    }
-
-    searchMusic(
-        query: string,
-        opts: { limit?: number; source?: "itunes" | "deezer" | "all" } = {},
-    ) {
-        return this.app.rest.get<{ tracks: APIProfileMusicSearchTrack[] }>(
-            "@me/profile/music/search",
-            { q: query, limit: opts.limit ?? 10, source: opts.source ?? "all" },
-        );
-    }
-
-    uploadAsset(
-        type: "banner" | "background" | "image" | "music" | "font",
-        file: {
-            uri: string;
-            type: string;
-            name: string;
-        },
-    ) {
-        const formData = new FormData();
-        formData.append("file", file as unknown as Blob);
-
-        return this.app.rest.postFormData<{ hash: string }>(
-            `@me/profile/assets?type=${type}`,
-            formData,
-        );
-    }
-
-    clear() {
-        this.profiles.clear();
-        this.pending.clear();
-        this.restrictedUserIds.clear();
-    }
+  clear() {
+    this.profiles.clear();
+    this.pending.clear();
+    this.restrictedUserIds.clear();
+  }
 }

@@ -24,11 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  BackHandler,
-} from "react-native";
+import { ActivityIndicator, Alert, BackHandler } from "react-native";
 import type { APIMobileProfileBlock, APIProfileMusic } from "@mutualzz/types";
 import { expandCustomEmojiShortcodes } from "@utils/markdown/composerQueries";
 import { findCustomEmojiByLabel } from "@utils/expressions";
@@ -223,6 +219,8 @@ export const ProfileEditorScreen = observer(() => {
       );
 
       const savedMobileBlocks = prepareMobileBlocksForSave(mobileBlocks);
+      const musicUrl = profileMusic?.url?.trim() || null;
+      const savedMusicUrl = profile.profileMusic?.url ?? null;
 
       await app.profiles.save({
         bio: expandedBio || null,
@@ -231,7 +229,9 @@ export const ProfileEditorScreen = observer(() => {
         backgroundColor: backgroundColor.trim() || null,
         backgroundImage: profile.backgroundImage ?? null,
         pageFontFamily: pageFontFamily.trim() || null,
-        profileMusic: profileMusic || null,
+        ...(musicUrl !== savedMusicUrl
+          ? { profileMusicUrl: musicUrl, profileMusicTrackId: null }
+          : {}),
         blocks: profile.blocks,
         mobileBlocks: savedMobileBlocks,
       });
@@ -408,4 +408,3 @@ export const ProfileEditorScreen = observer(() => {
     </SettingsScreen>
   );
 });
-

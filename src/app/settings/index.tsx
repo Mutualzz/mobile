@@ -16,6 +16,7 @@ import {
   DevicesIcon,
   LifebuoyIcon,
   DiscordLogoIcon,
+  HeartIcon,
   LinkSimpleIcon,
   MicrophoneIcon,
   PaletteIcon,
@@ -36,6 +37,7 @@ import { type Href } from "expo-router";
 import { observer } from "mobx-react-lite";
 import { type ComponentType } from "react";
 import { useTranslation } from "react-i18next";
+import { Linking } from "react-native";
 import type { IconProps } from "phosphor-react-native";
 
 type SettingsPages = Record<UserSettingsSidebarCategories, Pages[]>;
@@ -142,6 +144,14 @@ const SettingsIndex = () => {
           onPress={() => navigate("/staff")}
         />
       ) : null}
+
+      <SettingsNavButton
+        label={t("credits")}
+        icon={<HeartIcon weight="fill" size={20} color={navIconColor} />}
+        onPress={() => {
+          Linking.openURL("https://mutualzz.com/credits").catch(() => {});
+        }}
+      />
 
       <SettingsNavButton
         label={t("logOut")}
